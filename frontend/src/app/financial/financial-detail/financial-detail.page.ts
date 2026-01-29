@@ -1,0 +1,282 @@
+import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { FinancialService, BankAccount } from '../../services/financial/financial';
+import { CategoriesService, Category, Subcategory } from '../../services/financial/categories.service';
+import { ClientsService, Cliente } from '../../services/clients/clients';
+import { CostCentersService, CostCenter } from '../../services/financial/cost-centers.service';
+import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline } from 'ionicons/icons';
+
+@Component({
+  selector: 'app-financial-detail',
+  templateUrl: './financial-detail.page.html',
+  styleUrls: ['./financial-detail.page.scss'],
+  standalone: true,
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote]
+})
+export class FinancialDetailPage implements OnInit {
+  financialForm: FormGroup;
+  isEditMode = false;
+  itemId: string | null = null;
+  type: 'receivables' | 'payables' = 'receivables';
+  toastMessage = '';
+  isToastOpen = false;
+  activeTab = 'observacoes';
+
+  categories: Category[] = [];
+  filteredSubcategories: Subcategory[] = [];
+  clients: Cliente[] = [];
+  costCenters: CostCenter[] = [];
+  bankAccounts: BankAccount[] = [];
+
+  constructor(
+    private fb: FormBuilder,
+    private route: ActivatedRoute,
+    private router: Router,
+    private financialService: FinancialService,
+    private categoriesService: CategoriesService,
+    private clientsService: ClientsService,
+    private costCentersService: CostCentersService,
+    private alertController: AlertController
+  ) {
+    addIcons({ trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline });
+
+    this.financialForm = this.fb.group({
+      // Launch Info
+      clienteId: [''], // Optional
+      dataCompetencia: [new Date().toISOString(), [Validators.required]],
+      descricao: ['', [Validators.required]],
+      valor: ['', [Validators.required]],
+
+      // Details
+      habilitarRateio: [false],
+      categoriaId: ['', [Validators.required]],
+      subcategoriaId: [''],
+      centroCustoId: [''],
+      codigoReferencia: [''],
+
+      // Payment Condition
+      condicaoPagamento: ['A_VISTA', [Validators.required]],
+      vencimento: [new Date().toISOString(), [Validators.required]],
+      formaPagamento: ['PIX', [Validators.required]],
+      contaBancariaId: ['', [Validators.required]],
+      informarNsu: [false],
+      nsu: [''],
+      recebido: [false], // If true, status = REALIZADO
+
+      // Tabs
+      observacoes: ['']
+    });
+  }
+
+  ngOnInit() {
+    // Determine type from URL segment
+    const url = this.router.url;
+    if (url.includes('payables')) {
+      this.type = 'payables';
+    } else {
+      this.type = 'receivables';
+    }
+
+    this.itemId = this.route.snapshot.paramMap.get('id');
+
+    // Load dependencies first
+    Promise.all([
+      this.loadCategories(),
+      this.loadClients(),
+      this.loadCostCenters(),
+      this.loadBankAccounts()
+    ]).then(() => {
+      if (this.itemId && this.itemId !== 'new') {
+        this.isEditMode = true;
+        this.loadItem(this.itemId);
+      } else {
+        // Check for query params (e.g. from quick add)
+        this.route.queryParams.subscribe(params => {
+          if (params['clientId']) {
+            this.financialForm.patchValue({ clienteId: params['clientId'] });
+          }
+        });
+      }
+    });
+  }
+
+  loadCategories() {
+    return new Promise<void>((resolve) => {
+      this.categoriesService.findAll().subscribe({
+        next: (cats) => {
+          const typeFilter = this.type === 'receivables' ? 'RECEITA' : 'DESPESA';
+          this.categories = cats.filter(c => c.tipo === typeFilter);
+          resolve();
+        },
+        error: () => resolve()
+      });
+    });
+  }
+
+  loadClients() {
+    return new Promise<void>((resolve) => {
+      this.clientsService.findAll().subscribe({
+        next: (clients) => {
+          this.clients = clients;
+          resolve();
+        },
+        error: () => resolve()
+      })
+    })
+  }
+
+  loadCostCenters() {
+    return new Promise<void>((resolve) => {
+      this.costCentersService.findAll().subscribe({
+        next: (ccs) => {
+          this.costCenters = ccs;
+          resolve();
+        },
+        error: () => resolve()
+      })
+    })
+  }
+
+  loadBankAccounts() {
+    return new Promise<void>((resolve) => {
+      this.financialService.getBankAccounts().subscribe({
+        next: (accs) => {
+          this.bankAccounts = accs;
+          resolve();
+        },
+        error: () => resolve()
+      })
+    })
+  }
+
+  onCategoryChange(event: any) {
+    const categoryId = event.detail.value;
+    const category = this.categories.find(c => c.id === categoryId);
+    if (category && category.subcategorias) {
+      this.filteredSubcategories = category.subcategorias;
+    } else {
+      this.filteredSubcategories = [];
+    }
+  }
+
+  loadItem(id: string) {
+    this.financialService.getTransaction(id).subscribe((item: any) => {
+      // Setup subcategories before patching
+      if (item.categoriaId) {
+        // Check if the item.categoriaId is a subcategory or a parent category
+        // Logic: Find if it matches a parent. If not, find parent that contains it as sub.
+        let parentCat = this.categories.find(c => c.id === item.categoriaId);
+        let subCatId = '';
+
+        if (!parentCat) {
+          // Maybe it's a subcategory ID
+          for (const c of this.categories) {
+            if (c.subcategorias?.find(s => s.id === item.categoriaId)) {
+              parentCat = c;
+              subCatId = item.categoriaId;
+              break;
+            }
+          }
+        }
+
+        if (parentCat) {
+          this.filteredSubcategories = parentCat.subcategorias || [];
+          this.financialForm.patchValue({
+            categoriaId: parentCat.id,
+            subcategoriaId: subCatId
+          });
+        }
+      }
+
+      this.financialForm.patchValue({
+        ...item,
+        vencimento: item.dataVencimento,
+        recebido: item.status === 'REALIZADO' || item.status === 'CONCILIADO',
+        clienteId: item.clienteId,
+        contaBancariaId: item.contaBancariaId // Ensure backend returns this
+      });
+    });
+  }
+
+  async onSubmit() {
+    if (this.financialForm.valid) {
+      const formValue = this.financialForm.value;
+
+      const transactionData: any = {
+        ...formValue,
+        valor: parseFloat(formValue.valor),
+        dataVencimento: formValue.vencimento,
+        // If 'recebido' is true, set status to REALIZADO, else PREVISTO
+        status: formValue.recebido ? 'REALIZADO' : 'PREVISTO',
+        tipo: this.type === 'receivables' ? 'RECEITA' : 'DESPESA',
+        // Send the subcategory ID if selected, otherwise parent category ID
+        categoriaId: formValue.subcategoriaId || formValue.categoriaId
+      };
+
+      // Cleanup auxiliary fields if not part of DTO
+      delete transactionData.subcategoriaId;
+      delete transactionData.recebido;
+      delete transactionData.vencimento; // we used dataVencimento
+
+      if (this.isEditMode && this.itemId) {
+        this.financialService.updateTransaction(this.itemId, transactionData).subscribe({
+          next: () => {
+            this.showToast('Registro atualizado com sucesso!');
+            this.router.navigate(['/financial']);
+          },
+          error: () => this.showToast('Erro ao atualizar registro.')
+        });
+      } else {
+        this.financialService.createTransaction(transactionData).subscribe({
+          next: () => {
+            this.showToast('Registro criado com sucesso!');
+            this.router.navigate(['/financial']);
+          },
+          error: () => this.showToast('Erro ao criar registro.')
+        });
+      }
+    } else {
+      this.showToast('Por favor, preencha todos os campos obrigatórios.');
+      this.financialForm.markAllAsTouched();
+    }
+  }
+
+  async onDelete() {
+    const alert = await this.alertController.create({
+      header: 'Confirmar Exclusão',
+      message: 'Tem certeza que deseja excluir este registro?',
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Excluir',
+          role: 'destructive',
+          handler: () => {
+            if (this.itemId) {
+              this.financialService.deleteTransaction(this.itemId).subscribe({
+                next: () => {
+                  this.showToast('Registro excluído com sucesso!');
+                  this.router.navigate(['/financial']);
+                },
+                error: () => this.showToast('Erro ao excluir registro.')
+              });
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  showToast(message: string) {
+    this.toastMessage = message;
+    this.isToastOpen = true;
+  }
+
+  setToastOpen(isOpen: boolean) {
+    this.isToastOpen = isOpen;
+  }
+}

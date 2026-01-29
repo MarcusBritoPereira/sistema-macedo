@@ -1,0 +1,62 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button color="primary"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Categorias</ion-title>
+    <ion-buttons slot="end">
+      <ion-button>
+        <ion-icon name="search-outline" slot="icon-only" color="primary"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding-horizontal">
+  <div class="header-section">
+    <h1>Gestão de <strong>Categorias</strong></h1>
+    <ion-searchbar placeholder="Buscar categorias..." mode="ios" class="custom-search"></ion-searchbar>
+  </div>
+
+  <ion-refresher slot="fixed" (ionRefresh)="loadCategories($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="list-container">
+    <ion-card *ngFor="let category of categories" [routerLink]="['/financial/categories', category.id]"
+      class="standard-card" button>
+      <div class="card-content-wrapper">
+        <div class="icon-box" [class.revenue]="category.tipo === 'RECEITA'"
+          [class.expense]="category.tipo === 'DESPESA'">
+          <ion-icon
+            [name]="category.tipo === 'RECEITA' ? 'arrow-down-circle-outline' : 'arrow-up-circle-outline'"></ion-icon>
+        </div>
+        <div class="info-content">
+          <h3>{{ category.nome }}</h3>
+          <div class="meta-row">
+            <span class="type-badge" [class.revenue]="category.tipo === 'RECEITA'"
+              [class.expense]="category.tipo === 'DESPESA'">
+              {{ category.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }}
+            </span>
+            <span class="dot">•</span>
+            <span class="count">{{ category.subcategorias?.length || 0 }} subcategorias</span>
+          </div>
+        </div>
+        <div class="arrow-action">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </div>
+      </div>
+    </ion-card>
+
+    <div *ngIf="categories.length === 0" class="empty-state">
+      <ion-icon name="pricetags-outline"></ion-icon>
+      <p>Nenhuma categoria encontrada.</p>
+    </div>
+  </div>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button routerLink="/financial/categories/new" color="primary" class="custom-fab">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

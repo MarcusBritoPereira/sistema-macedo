@@ -1,0 +1,225 @@
+/* Modern Financial Detail Styles */
+
+ion-content.bg-light {
+    --background: #f4f6f8;
+}
+
+.form-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-bottom: 60px;
+}
+
+/* Section Styling */
+.section-container {
+    background: transparent;
+    margin-bottom: 24px;
+
+    &.mt-4 {
+        margin-top: 32px;
+    }
+}
+
+.section-header {
+    margin-bottom: 16px;
+    padding-left: 4px;
+    border-left: 4px solid var(--ion-color-primary);
+    padding-left: 12px;
+
+    h3 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 0;
+        color: var(--ion-color-dark);
+    }
+}
+
+.form-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+    background: #ffffff;
+    padding: 24px;
+    margin: 0;
+}
+
+/* Custom Input Styling (Material-like) */
+.custom-input {
+    --background: #ffffff;
+    --border-width: 1px;
+    --border-style: solid;
+    --border-color: #e2e8f0;
+    --border-radius: 6px;
+    --inner-padding-end: 8px;
+    --padding-start: 12px;
+    margin-bottom: 0;
+    height: 56px;
+    /* Explicit height for alignment */
+    align-items: center;
+
+    &.item-has-focus {
+        --border-color: var(--ion-color-primary);
+        --highlight-height: 0;
+        /* Remove default underline */
+    }
+
+    ion-label {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--ion-color-medium-shade) !important;
+        margin-bottom: 4px;
+    }
+
+    ion-input,
+    ion-select {
+        font-size: 0.95rem;
+        font-weight: 400;
+        color: var(--ion-color-dark);
+        --padding-top: 8px;
+        --padding-bottom: 8px;
+    }
+}
+
+.mt-2 {
+    margin-top: 8px;
+}
+
+/* Specific Helpers */
+.date-input-wrapper {
+    display: flex;
+    align-items: center;
+    height: 100%;
+
+    ion-datetime-button {
+        &::part(native) {
+            background: transparent;
+            color: var(--ion-color-dark);
+            padding-left: 0;
+        }
+    }
+}
+
+.money-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+
+    .currency-symbol {
+        font-size: 0.95rem;
+        color: var(--ion-color-medium);
+        margin-right: 4px;
+    }
+}
+
+.rateio-wrapper,
+.toggle-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 100%;
+
+    .small-label {
+        font-size: 0.9rem;
+        color: var(--ion-color-medium-shade);
+        margin: 0;
+    }
+
+    ion-toggle {
+        transform: scale(0.8);
+    }
+}
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 10px;
+    /* Align with inputs */
+}
+
+.flex-center-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Tabs Segment */
+.custom-segment {
+    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 16px;
+
+    ion-segment {
+        justify-content: flex-start;
+        background: transparent;
+
+        ion-segment-button {
+            --indicator-color: var(--ion-color-primary);
+            --color: var(--ion-color-medium);
+            --color-checked: var(--ion-color-primary);
+            max-width: 150px;
+            font-weight: 600;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+    }
+}
+
+.tab-content {
+    /* min-height: 150px; */
+}
+
+.textarea-item {
+    height: auto;
+    /* Allow growth */
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+}
+
+.attachment-area {
+    border: 2px dashed #e2e8f0;
+    border-radius: 8px;
+    padding: 32px;
+    text-align: center;
+    background: #f8fafc;
+    color: var(--ion-color-medium);
+
+    .upload-box {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+
+        ion-icon {
+            font-size: 48px;
+            color: var(--ion-color-medium-tint);
+        }
+
+        p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+    }
+}
+
+/* Actions */
+.form-actions {
+    margin-top: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    /* Right align action buttons */
+    gap: 16px;
+
+    .delete-btn {
+        margin-right: auto;
+        /* Push delete to left */
+    }
+
+    .save-btn {
+        min-width: 200px;
+        font-weight: 600;
+    }
+}
+
+ion-grid {
+    --ion-grid-padding: 0;
+}

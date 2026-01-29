@@ -1,0 +1,154 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Visão Geral</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="loadData()">
+        <ion-icon slot="icon-only" name="sync-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="dashboard-content">
+  <div *ngIf="loading" class="loading-overlay">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div *ngIf="operationalData && !loading" class="dashboard-wrapper">
+
+    <!-- Top KPI Grid -->
+    <div class="kpi-grid">
+      <!-- Receivables Group -->
+      <div class="kpi-group">
+        <ion-card class="kpi-card receivable-overdue">
+          <ion-card-content>
+            <div class="kpi-header">
+              <ion-icon name="alert-circle-outline" class="text-success"></ion-icon>
+              <div class="kpi-label">Vencidos</div>
+            </div>
+            <div class="kpi-value text-success">{{ operationalData.receivables.overdue | currency:'BRL' }}</div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="kpi-card receivable-today">
+          <ion-card-content>
+            <div class="kpi-header">
+              <ion-icon name="trending-up-outline" class="text-success"></ion-icon>
+              <div class="kpi-label">Vencem hoje</div>
+            </div>
+            <div class="kpi-value text-success">{{ operationalData.receivables.today | currency:'BRL' }}</div>
+            <div class="kpi-sublabel">Restante do mês: {{ operationalData.receivables.remainingMonth | currency:'BRL' }}
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- Payables Group -->
+      <div class="kpi-group">
+        <ion-card class="kpi-card payable-overdue">
+          <ion-card-content>
+            <div class="kpi-header">
+              <ion-icon name="alert-circle-outline" class="text-danger"></ion-icon>
+              <div class="kpi-label">Vencidos</div>
+            </div>
+            <div class="kpi-value text-danger">{{ operationalData.payables.overdue | currency:'BRL' }}</div>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="kpi-card payable-today">
+          <ion-card-content>
+            <div class="kpi-header">
+              <ion-icon name="trending-down-outline" class="text-danger"></ion-icon>
+              <div class="kpi-label">Vencem hoje</div>
+            </div>
+            <div class="kpi-value text-danger">{{ operationalData.payables.today | currency:'BRL' }}</div>
+            <div class="kpi-sublabel">Restante do mês: {{ operationalData.payables.remainingMonth | currency:'BRL' }}
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+    </div>
+
+    <!-- Main Grid (Accounts, Cash Flow, Sales) -->
+    <div class="main-sections">
+
+      <!-- Financial Accounts -->
+      <div class="section-card accounts-section">
+        <div class="section-header">
+          <h2>Contas financeiras</h2>
+        </div>
+        <div class="accounts-summary">
+          <div class="total-val">{{ operationalData.totalBalance | currency:'BRL' }}</div>
+          <div class="total-label">Valor total</div>
+        </div>
+        <ion-list lines="none">
+          <ion-item *ngFor="let acc of operationalData.accounts" class="account-item">
+            <div slot="start" class="account-icon">
+              <ion-icon name="wallet-outline"></ion-icon>
+            </div>
+            <ion-label>
+              <h3>{{ acc.nome }}</h3>
+              <p>{{ acc.banco }}</p>
+              <p class="acc-val">Valor {{ acc.saldo | currency:'BRL' }}</p>
+            </ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- Daily Cash Flow -->
+      <div class="section-card flow-section">
+        <div class="section-header">
+          <h2>Fluxo de caixa diário</h2>
+        </div>
+        <div class="chart-container">
+          <div class="custom-chart">
+            <div class="chart-y-axis">
+              <span>0</span>
+            </div>
+            <div class="chart-content">
+              <!-- Grid line -->
+              <div class="grid-line zero"></div>
+
+              <div class="data-points">
+                <div *ngFor="let day of operationalData.dailyFlow" class="data-group">
+                  <div class="point-marker shadow" [style.bottom.%]="50"></div> <!-- Placeholder for balance line -->
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-legend">
+            <div class="legend-item"><span class="dot received"></span> Recebimentos</div>
+            <div class="legend-item"><span class="dot paid"></span> Pagamentos</div>
+            <div class="legend-item"><span class="dot balance"></span> Saldo</div>
+          </div>
+          <div class="chart-x-axis">
+            <span *ngFor="let day of operationalData.dailyFlow">{{ day.label }}</span>
+          </div>
+        </div>
+        <div class="chart-footer">
+          <ion-button fill="outline" size="small" (click)="loadData()">Atualizar gráfico</ion-button>
+          <p class="update-info">Última atualização: {{ formatLastUpdate(operationalData.lastUpdate) }}</p>
+        </div>
+      </div>
+
+      <!-- Sales Chart Placeholder -->
+      <div class="section-card sales-section">
+        <div class="section-header">
+          <h2>Gráfico de vendas</h2>
+        </div>
+        <div class="empty-sales">
+          <div class="sales-illustration">
+            <ion-icon name="stats-chart-outline"></ion-icon>
+          </div>
+          <p>Vamos lançar sua primeira venda?</p>
+          <ion-button fill="outline">Lançar primeira venda</ion-button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</ion-content>

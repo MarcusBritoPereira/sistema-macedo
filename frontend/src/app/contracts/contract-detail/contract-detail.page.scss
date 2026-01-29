@@ -1,0 +1,165 @@
+/* Material Design Contract Detail Styles */
+
+ion-content {
+    --background: #f4f5f8;
+}
+
+.bg-light {
+    --background: #f8fafc;
+}
+
+.form-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding-bottom: 40px;
+}
+
+.header-info {
+    margin-bottom: 24px;
+    padding: 0 8px;
+
+    h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--ion-color-dark);
+        margin: 0 0 8px;
+        letter-spacing: -0.5px;
+    }
+
+    p {
+        font-size: 1rem;
+        color: var(--ion-color-medium);
+        margin: 0;
+        line-height: 1.5;
+    }
+}
+
+.section-card {
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+    margin: 0 0 20px;
+    background: #ffffff;
+    overflow: visible;
+    /* Allow help text to show */
+
+    ion-card-header {
+        padding: 20px 20px 10px;
+
+        ion-card-subtitle {
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 1px;
+            font-weight: 600;
+            color: var(--ion-color-primary);
+            margin-bottom: 4px;
+        }
+
+        ion-card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--ion-color-dark);
+        }
+    }
+
+    ion-card-content {
+        padding: 0 20px 24px;
+    }
+}
+
+/* Material Outline Input Style */
+.input-item {
+    --background: transparent;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    --border-width: 0;
+    margin-top: 12px;
+
+    /* Customizing the Ionic input to look like Material Outline */
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: #fff;
+    padding: 4px 12px;
+
+    &:focus-within {
+        border-color: var(--ion-color-primary);
+        box-shadow: 0 0 0 1px var(--ion-color-primary);
+    }
+
+    &.item-has-error {
+        border-color: var(--ion-color-danger);
+    }
+
+    ion-label {
+        font-size: 0.85rem;
+        color: var(--ion-color-medium) !important;
+        transform: translateY(2px);
+    }
+
+    ion-input,
+    ion-select {
+        font-size: 1rem;
+        font-weight: 500;
+        --padding-top: 8px;
+        --padding-bottom: 8px;
+    }
+
+    ion-note {
+        font-size: 0.75rem;
+        padding-top: 4px;
+    }
+}
+
+/* Date Groups */
+.date-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    ion-label {
+        font-size: 0.85rem;
+        color: var(--ion-color-medium);
+        font-weight: 500;
+        margin-left: 4px;
+    }
+
+    ion-datetime-button {
+        align-self: flex-start;
+
+        &::part(native) {
+            background: #f1f5f9;
+            color: var(--ion-color-dark);
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+        }
+    }
+}
+
+/* Actions */
+.form-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 32px;
+
+    ion-button[type="submit"] {
+        --box-shadow: 0 8px 16px rgba(var(--ion-color-primary-rgb), 0.2);
+        font-weight: 600;
+        font-size: 1.05rem;
+        height: 56px;
+    }
+}
+
+/* Helper Text */
+ion-note[slot="helper"] {
+    margin-top: 6px;
+    font-size: 0.75rem;
+}
+
+/* Responsive adjustments */
+@media (min-width: 768px) {
+    .section-card {
+        padding: 8px;
+    }
+}

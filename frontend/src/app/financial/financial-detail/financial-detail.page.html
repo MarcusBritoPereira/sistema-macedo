@@ -1,0 +1,251 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/financial" color="primary"></ion-back-button>
+    </ion-buttons>
+    <ion-title color="primary">{{ isEditMode ? 'Editar' : 'Nova' }} {{ type === 'receivables' ? 'Receita' : 'Despesa'
+      }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding bg-light">
+
+  <div class="form-wrapper">
+    <form [formGroup]="financialForm" (ngSubmit)="onSubmit()">
+
+      <!-- Section 1: Launch Info -->
+      <div class="section-container">
+        <div class="section-header">
+          <h3>Informações do lançamento</h3>
+        </div>
+
+        <ion-card class="form-card">
+          <ion-grid>
+            <!-- Row 1: Client, Date, Description, Value -->
+            <ion-row>
+              <ion-col size="12" size-md="3">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Cliente</ion-label>
+                  <ion-select formControlName="clienteId" placeholder="Selecione" interface="popover">
+                    <ion-select-option *ngFor="let client of clients" [value]="client.id">{{ client.razaoSocial
+                      }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="2">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Data de competência *</ion-label>
+                  <div class="date-input-wrapper">
+                    <ion-datetime-button datetime="competenciaDate"></ion-datetime-button>
+                    <ion-modal [keepContentsMounted]="true">
+                      <ng-template>
+                        <ion-datetime id="competenciaDate" presentation="date"
+                          formControlName="dataCompetencia"></ion-datetime>
+                      </ng-template>
+                    </ion-modal>
+                  </div>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="5">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Descrição *</ion-label>
+                  <ion-input formControlName="descricao" placeholder="Ex: Venda de Produto"></ion-input>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="2">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Valor *</ion-label>
+                  <div class="money-wrapper">
+                    <span class="currency-symbol">R$</span>
+                    <ion-input type="number" formControlName="valor" placeholder="0,00"></ion-input>
+                  </div>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+
+            <!-- Row 2: Rateio (Toggle), Category, Cost Center, Ref -->
+            <ion-row class="row-spacing">
+              <ion-col size="12" size-md="1" class="flex-center">
+                <div class="rateio-wrapper">
+                  <ion-label class="small-label">Habilitar rateio</ion-label>
+                  <ion-toggle formControlName="habilitarRateio" color="primary"></ion-toggle>
+                </div>
+              </ion-col>
+
+              <ion-col size="12" size-md="3">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Categoria *</ion-label>
+                  <ion-select formControlName="categoriaId" (ionChange)="onCategoryChange($event)" interface="popover"
+                    placeholder="Selecione">
+                    <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome
+                      }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+                <!-- Subcategory Input (Optional/Conditional) -->
+                <ion-item class="custom-input mt-2" *ngIf="filteredSubcategories.length > 0">
+                  <ion-select formControlName="subcategoriaId" interface="popover" placeholder="Subcategoria">
+                    <ion-select-option *ngFor="let sub of filteredSubcategories" [value]="sub.id">{{ sub.nome
+                      }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="5">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Centro de custo</ion-label>
+                  <ion-select formControlName="centroCustoId" interface="popover" placeholder="Selecione">
+                    <ion-select-option *ngFor="let cc of costCenters" [value]="cc.id">{{ cc.nome }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="3">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Código de referência</ion-label>
+                  <ion-input formControlName="codigoReferencia"></ion-input>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card>
+      </div>
+
+      <!-- Section 2: Payment Condition -->
+      <div class="section-container mt-4">
+        <div class="section-header">
+          <h3>Condição de pagamento</h3>
+        </div>
+
+        <ion-card class="form-card">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="12" size-md="2">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Parcelamento *</ion-label>
+                  <ion-select formControlName="condicaoPagamento" interface="popover">
+                    <ion-select-option value="A_VISTA">À vista</ion-select-option>
+                    <ion-select-option value="PARCELADO">Parcelado</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="2">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Vencimento *</ion-label>
+                  <div class="date-input-wrapper">
+                    <ion-datetime-button datetime="vencimentoDate"></ion-datetime-button>
+                    <ion-modal [keepContentsMounted]="true">
+                      <ng-template>
+                        <ion-datetime id="vencimentoDate" presentation="date"
+                          formControlName="vencimento"></ion-datetime>
+                      </ng-template>
+                    </ion-modal>
+                  </div>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="3">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Forma de pagamento</ion-label>
+                  <ion-select formControlName="formaPagamento" interface="popover">
+                    <ion-select-option value="PIX">Pix</ion-select-option>
+                    <ion-select-option value="BOLETO">Boleto</ion-select-option>
+                    <ion-select-option value="CARTAO_CREDITO">Cartão de Crédito</ion-select-option>
+                    <ion-select-option value="DINHEIRO">Dinheiro</ion-select-option>
+                    <ion-select-option value="TED">TED/DOC</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="3">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Conta de recebimento</ion-label>
+                  <ion-select formControlName="contaBancariaId" interface="popover" placeholder="Selecione">
+                    <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">{{ acc.nome
+                      }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="2" class="flex-center-row">
+                <div class="toggle-group">
+                  <ion-label class="small-label">Informar NSU?</ion-label>
+                  <ion-toggle formControlName="informarNsu"></ion-toggle>
+                </div>
+                <div class="toggle-group">
+                  <ion-label class="small-label">Recebido</ion-label>
+                  <ion-toggle formControlName="recebido" color="success"></ion-toggle>
+                </div>
+              </ion-col>
+            </ion-row>
+
+            <!-- NSU Input (Conditional) -->
+            <ion-row *ngIf="financialForm.get('informarNsu')?.value">
+              <ion-col size="12" size-md="3">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">NSU</ion-label>
+                  <ion-input formControlName="nsu"></ion-input>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card>
+      </div>
+
+      <!-- Section 3: Tabs (Observations / Attachments) -->
+      <div class="section-container mt-4">
+        <div class="custom-segment">
+          <ion-segment [(ngModel)]="activeTab" [ngModelOptions]="{standalone: true}" mode="md">
+            <ion-segment-button value="observacoes">
+              <ion-label>Observações</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="anexo">
+              <ion-label>Anexo</ion-label>
+            </ion-segment-button>
+          </ion-segment>
+        </div>
+
+        <div class="tab-content" [ngSwitch]="activeTab">
+          <!-- Observations -->
+          <div *ngSwitchCase="'observacoes'">
+            <ion-list lines="none" class="bg-transparent">
+              <ion-item class="custom-input textarea-item">
+                <ion-label position="stacked">Observações</ion-label>
+                <ion-textarea formControlName="observacoes" rows="4"
+                  placeholder="Descreva observações relevantes sobre esse lançamento financeiro"></ion-textarea>
+              </ion-item>
+            </ion-list>
+          </div>
+
+          <!-- Attachments -->
+          <div *ngSwitchCase="'anexo'" class="attachment-area">
+            <div class="upload-box">
+              <ion-icon name="cloud-upload-outline"></ion-icon>
+              <p>Arraste e solte o arquivo aqui ou clique para selecionar</p>
+              <ion-button fill="outline" size="small">Selecionar Arquivo</ion-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="form-actions">
+        <ion-button type="submit" [disabled]="!financialForm.valid" class="save-btn" shape="round"
+          [color]="type === 'receivables' ? 'primary' : 'danger'">
+          {{ isEditMode ? 'Salvar Alterações' : 'Salvar' }}
+        </ion-button>
+
+        <ion-button *ngIf="isEditMode" fill="clear" color="medium" class="delete-btn" (click)="onDelete()">
+          <ion-icon name="trash-outline" slot="start"></ion-icon>
+          Excluir Lançamento
+        </ion-button>
+      </div>
+    </form>
+  </div>
+
+  <ion-toast [isOpen]="isToastOpen" [message]="toastMessage" [duration]="2000" (didDismiss)="setToastOpen(false)"
+    position="top" color="dark"></ion-toast>
+</ion-content>

@@ -1,0 +1,144 @@
+/* Modern Categories List Styles (Matched with Cost Centers) */
+
+ion-content {
+    --background: var(--ion-background-color);
+}
+
+.header-section {
+    padding: 20px 0 10px 0;
+
+    h1 {
+        font-size: 1.75rem;
+        font-weight: 400;
+        margin: 0 0 20px 8px;
+        line-height: 1.2;
+        color: var(--ion-color-dark);
+
+        strong {
+            font-weight: 700;
+            color: var(--ion-color-primary);
+        }
+    }
+}
+
+.custom-search {
+    --background: #ffffff;
+    --box-shadow: none !important;
+    --border-radius: 12px;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 80px;
+}
+
+.standard-card {
+    margin: 0;
+    border-radius: 16px;
+    background: white;
+    box-shadow: none !important;
+    transition: transform 0.2s ease;
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    .card-content-wrapper {
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .icon-box {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: #f0f0f0;
+        color: var(--ion-color-medium);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+
+        &.revenue {
+            background: rgba(var(--ion-color-success-rgb), 0.1);
+            color: var(--ion-color-success);
+        }
+
+        &.expense {
+            background: rgba(var(--ion-color-danger-rgb), 0.1);
+            color: var(--ion-color-danger);
+        }
+    }
+
+    .info-content {
+        flex: 1;
+
+        h3 {
+            margin: 0 0 4px 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--ion-color-dark);
+        }
+
+        .meta-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+        }
+
+        .type-badge {
+            font-weight: 500;
+
+            &.revenue {
+                color: var(--ion-color-success);
+            }
+
+            &.expense {
+                color: var(--ion-color-danger);
+            }
+        }
+
+        .dot {
+            color: var(--ion-color-medium);
+            font-size: 0.5rem;
+        }
+
+        .count {
+            color: var(--ion-color-medium);
+        }
+    }
+
+    .arrow-action {
+        color: var(--ion-color-medium-tint);
+        font-size: 20px;
+    }
+}
+
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--ion-color-medium);
+    margin-top: 20px;
+
+    ion-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        opacity: 0.5;
+    }
+
+    p {
+        margin: 0;
+        font-size: 1rem;
+    }
+}
+
+.custom-fab {
+    --box-shadow: none !important;
+}

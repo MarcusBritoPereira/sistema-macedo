@@ -1,0 +1,79 @@
+/* Modern User Detail Styles */
+
+ion-content {
+    --background: var(--ion-background-color);
+}
+
+.form-wrapper {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.section-header {
+    margin-bottom: 24px;
+    padding-left: 8px;
+
+    h2 {
+        font-size: 1.5rem;
+        font-weight: 400;
+        margin: 0 0 6px 0;
+        color: var(--ion-color-dark);
+
+        strong {
+            color: var(--ion-color-primary);
+            font-weight: 700;
+        }
+    }
+
+    p {
+        margin: 0;
+        font-size: 0.95rem;
+        color: var(--ion-color-medium);
+    }
+}
+
+.form-card {
+    border-radius: 20px;
+    box-shadow: none !important;
+    background: #ffffff;
+    padding: 16px;
+    margin: 0;
+}
+
+/* Specific Input Overrides for Form */
+ion-item {
+    --background: #f8fafc;
+    --border-radius: 12px;
+    margin-bottom: 0;
+
+    ion-label {
+        font-weight: 500;
+        color: var(--ion-color-medium-shade) !important;
+    }
+}
+
+ion-col {
+    padding-bottom: 16px;
+}
+
+.form-actions {
+    margin-top: 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.save-btn {
+    --box-shadow: none !important;
+    font-size: 1rem;
+    height: 52px;
+}
+
+.delete-btn {
+    font-size: 0.9rem;
+    opacity: 0.8;
+
+    &:hover {
+        opacity: 1;
+    }
+}

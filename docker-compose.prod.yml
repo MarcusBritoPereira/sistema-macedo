@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: erp_postgres_prod
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-erp_system}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    networks:
+      - erp_network
+    restart: always
+
+  redis:
+    image: redis:alpine
+    container_name: erp_redis_prod
+    networks:
+      - erp_network
+    restart: always
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: erp_backend_prod
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-erp_system}
+      JWT_SECRET: ${JWT_SECRET:-supersecretkeyCHANGE}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: 3000
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - erp_network
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: erp_frontend_prod
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - erp_network
+    restart: always
+
+networks:
+  erp_network:
+    driver: bridge
+
+volumes:
+  postgres_data_prod:

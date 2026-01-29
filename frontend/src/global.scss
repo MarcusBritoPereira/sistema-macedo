@@ -1,0 +1,184 @@
+/*
+ * App Global CSS
+ */
+
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/* Google Fonts: Inter */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Global Overrides */
+* {
+    font-family: 'Inter', sans-serif !important;
+}
+
+body {
+    color: var(--ion-text-color);
+    background-color: var(--ion-background-color);
+}
+
+/* Modern Card Style */
+ion-card {
+    border-radius: var(--bor-radius);
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+
+    &.high-elevation {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+}
+
+ion-card-header {
+    padding-bottom: 8px;
+}
+
+ion-card-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.025em;
+}
+
+/* Modern Inputs (Floating / Rounded) */
+ion-item {
+    --border-radius: 12px;
+    --background: transparent;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    margin-bottom: 12px;
+
+    &::part(native) {
+        padding: 0;
+    }
+}
+
+ion-input,
+ion-select,
+ion-textarea {
+    --padding-start: 16px;
+    --padding-end: 16px;
+    --padding-top: 12px;
+    --padding-bottom: 12px;
+    --background: #f1f5f9;
+    /* Slate 100 */
+    border-radius: 12px;
+    margin-top: 4px;
+}
+
+/* Explicit Searchbar Styling */
+ion-searchbar {
+    --background: #f1f5f9;
+    --box-shadow: none;
+    --border-radius: 12px;
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: 12px;
+}
+
+/* Checkbox Styling */
+ion-checkbox {
+    --background: #ffffff;
+    --border-color: #cbd5e1;
+    --border-radius: 4px;
+    --checkmark-color: var(--ion-color-primary);
+
+    &::part(container) {
+        border-radius: 4px;
+        border: 2px solid #cbd5e1;
+    }
+}
+
+/* Remove default item lines */
+ion-item {
+    --border-width: 0;
+    --inner-border-width: 0;
+}
+
+/* Buttons */
+ion-button {
+    --border-radius: 12px;
+    --box-shadow: none !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: none;
+    /* No CAPS */
+
+    &.secondary {
+        --box-shadow: none !important;
+    }
+}
+
+/* Header & Toolbar */
+/* Header & Toolbar (Fixed White) */
+/* Header & Toolbar (Fixed White) */
+ion-header {
+    box-shadow: none !important;
+
+    ion-toolbar {
+        --background: #ffffff;
+        --border-color: rgba(0, 0, 0, 0.05);
+        --border-width: 0 0 1px 0;
+        --border-style: solid;
+    }
+}
+
+ion-title {
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-size: 1.25rem;
+}
+
+/* Split Pane Menu */
+ion-menu {
+    --width: 280px;
+
+    ion-content {
+        --background: #ffffff;
+        border-right: 1px solid #e5e7eb;
+    }
+
+    ion-list {
+        background: transparent;
+    }
+
+    ion-item {
+        --background: transparent;
+        --color: #374151;
+        /* Dark Grey Text */
+        margin: 4px 12px;
+        border-radius: 8px;
+
+        &.selected {
+            --background: var(--ion-color-primary);
+            --color: #ffffff;
+            font-weight: 600;
+        }
+
+        ion-icon {
+            color: inherit;
+        }
+    }
+}
+
+/* Wizard Modal Sizes */
+.wizard-modal {
+    --width: 90%;
+    --max-width: 1200px;
+    --height: 90%;
+    --max-height: 800px;
+    --border-radius: 12px;
+
+    &::part(content) {
+        border-radius: 12px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+}

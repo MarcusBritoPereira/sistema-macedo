@@ -1,0 +1,53 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button color="primary"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Centros de Custo</ion-title>
+    <ion-buttons slot="end">
+      <ion-button>
+        <ion-icon name="search-outline" slot="icon-only" color="primary"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding-horizontal">
+  <div class="header-section">
+    <h1>Centros de <strong>Custo</strong></h1>
+    <ion-searchbar placeholder="Buscar centros de custo..." mode="ios" class="custom-search"></ion-searchbar>
+  </div>
+
+  <ion-refresher slot="fixed" (ionRefresh)="loadCostCenters($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="list-container">
+    <ion-card *ngFor="let cc of costCenters" [routerLink]="['/financial/cost-centers', cc.id]" class="standard-card"
+      button>
+      <div class="card-content-wrapper">
+        <div class="icon-box">
+          <ion-icon name="business-outline"></ion-icon>
+        </div>
+        <div class="info-content">
+          <h3>{{ cc.nome }}</h3>
+          <p>{{ cc.codigo || 'Sem código' }}</p>
+        </div>
+        <div class="arrow-action">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </div>
+      </div>
+    </ion-card>
+
+    <div *ngIf="costCenters.length === 0" class="empty-state">
+      <ion-icon name="business-outline"></ion-icon>
+      <p>Nenhum centro de custo encontrado.</p>
+    </div>
+  </div>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button routerLink="/financial/cost-centers/new" color="primary" class="custom-fab">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

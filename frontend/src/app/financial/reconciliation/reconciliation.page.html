@@ -1,0 +1,217 @@
+<ion-header class="ion-no-border">
+    <!-- Header Layer 1: Bank Selector, Actions & Period -->
+    <ion-toolbar class="main-header">
+        <div class="header-container">
+            <div class="header-left">
+                <ion-buttons slot="start">
+                    <ion-menu-button></ion-menu-button>
+                </ion-buttons>
+
+                <div class="bank-selector-wrapper">
+                    <ion-item lines="none" class="bank-item">
+                        <ion-icon name="business-outline" slot="start" color="primary"></ion-icon>
+                        <ion-select [(ngModel)]="selectedAccountId" (ionChange)="loadStatements()" interface="popover"
+                            toggle-icon="chevron-down">
+                            <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">
+                                {{ acc.nome }} ({{ acc.banco }})
+                            </ion-select-option>
+                        </ion-select>
+                    </ion-item>
+                </div>
+
+                <div class="action-buttons">
+                    <ion-button fill="outline" class="btn-sec" (click)="showToast('Em desenvolvimento', 'primary')">
+                        Ações da conta
+                        <ion-icon slot="end" name="chevron-down"></ion-icon>
+                    </ion-button>
+                    <ion-button fill="outline" class="btn-sec" routerLink="/financial/cash-flow">
+                        <ion-icon slot="start" name="cash-outline"></ion-icon>
+                        Fluxo de caixa
+                    </ion-button>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="period-navigator">
+                    <ion-button fill="clear" (click)="prevMonth()">
+                        <ion-icon name="chevron-back-outline"></ion-icon>
+                    </ion-button>
+                    <div class="period-label">
+                        <span>{{ getPeriodLabel() }}</span>
+                        <ion-icon name="chevron-down"></ion-icon>
+                    </div>
+                    <ion-button fill="clear" (click)="nextMonth()">
+                        <ion-icon name="chevron-forward-outline"></ion-icon>
+                    </ion-button>
+                </div>
+            </div>
+        </div>
+    </ion-toolbar>
+
+    <!-- Header Layer 2: Metadata & Balances -->
+    <ion-toolbar class="meta-header" *ngIf="selectedAccount">
+        <div class="meta-container">
+            <div class="meta-left">
+                <div class="meta-info-item">
+                    <span class="label">Data da última atualização:</span>
+                    <span class="value">{{ formatDateTime(selectedAccount.lastSync) }}</span>
+                    <ion-icon name="sync-outline" class="refresh-icon" (click)="syncBank()"></ion-icon>
+                </div>
+                <div class="meta-info-item">
+                    <span class="label">Data do último lançamento importado:</span>
+                    <span class="value">{{ formatDate(selectedAccount.lastImported) }}</span>
+                    <ion-icon name="information-circle-outline" class="info-icon"></ion-icon>
+                </div>
+            </div>
+            <div class="meta-right">
+                <div class="balance-item">
+                    <span class="label">Saldo atual na UP_Fin</span>
+                    <span class="balance-value">{{ (selectedAccount.saldoAtual || 0) | currency:'BRL' }}</span>
+                </div>
+                <div class="balance-item">
+                    <span class="label">Valor pendente de conciliação</span>
+                    <span class="balance-value-pending">{{ summary.totalPendingValue | currency:'BRL' }}</span>
+                    <ion-icon name="help-circle-outline" class="help-icon"></ion-icon>
+                </div>
+            </div>
+        </div>
+    </ion-toolbar>
+
+    <!-- Tabs Container -->
+    <div class="tabs-container">
+        <div class="tab" [class.active]="viewMode === 'PENDING'" (click)="setViewMode('PENDING')">
+            Conciliações pendentes
+        </div>
+        <div class="tab" [class.active]="viewMode === 'MOVEMENTS'" (click)="setViewMode('MOVEMENTS')">
+            Movimentações
+        </div>
+    </div>
+</ion-header>
+
+<ion-content class="light-bg">
+    <div class="main-workspace">
+        <!-- Pending Alert Banner -->
+        <div class="alert-banner" *ngIf="summary.totalCount > 0 && viewMode === 'PENDING'">
+            <div class="alert-content">
+                <ion-icon name="alert-circle" color="warning"></ion-icon>
+                <span>Existem <strong>{{ summary.totalCount }} lançamentos bancários</strong> que não foram conciliados
+                    em {{ getPeriodLabel().toLowerCase() }}.</span>
+            </div>
+            <ion-button fill="outline" size="small" (click)="showToast('Filtrando...', 'primary')">Ver conciliações
+                pendentes</ion-button>
+            <ion-button fill="clear" color="medium" class="close-alert">
+                <ion-icon name="close"></ion-icon>
+            </ion-button>
+        </div>
+
+        <!-- Search and Global Actions -->
+        <div class="search-filter-bar">
+            <div class="search-section">
+                <div class="search-input-wrapper">
+                    <ion-icon name="search-outline"></ion-icon>
+                    <input type="text" placeholder="Pesquise o lançamento bancário" [(ngModel)]="searchTerm"
+                        (input)="onSearch($event)">
+                </div>
+                <ion-button fill="clear" class="clear-filters" (click)="searchTerm = ''; applySearch()">
+                    <ion-icon name="trash-outline" slot="start"></ion-icon>
+                    Limpar filtros
+                </ion-button>
+            </div>
+            <div class="view-actions">
+                <ion-button fill="outline" class="btn-sec">Ver lançamentos ignorados</ion-button>
+            </div>
+        </div>
+
+        <!-- Summary Statistics Bar -->
+        <div class="stats-bar">
+            <div class="stat-tab" [class.active]="filterType === 'ALL'" (click)="setFilterType('ALL')">
+                <span class="label">Todos</span>
+                <span class="count">{{ summary.totalCount }}</span>
+            </div>
+            <div class="stat-tab" [class.active]="filterType === 'CREDIT'" (click)="setFilterType('CREDIT')">
+                <span class="label">Recebimentos</span>
+                <span class="count text-success">{{ summary.receivablesCount }}</span>
+            </div>
+            <div class="stat-tab" [class.active]="filterType === 'DEBIT'" (click)="setFilterType('DEBIT')">
+                <span class="label">Pagamentos</span>
+                <span class="count text-danger">{{ summary.payablesCount }}</span>
+            </div>
+        </div>
+
+        <!-- Bulk Action/Table Operations Bar -->
+        <div class="ops-bar">
+            <div class="ops-left">
+                <ion-button fill="outline" class="btn-sec">
+                    Selecionar lançamentos
+                    <ion-icon slot="end" name="chevron-down"></ion-icon>
+                </ion-button>
+                <ion-button fill="clear" color="medium" disabled>Conciliar</ion-button>
+                <ion-button fill="clear" color="medium" disabled>Editar</ion-button>
+                <ion-button fill="clear" color="medium" disabled>Desvincular</ion-button>
+                <ion-button fill="clear" color="medium" disabled>Ignorar</ion-button>
+            </div>
+            <div class="ops-right">
+                <ion-button fill="clear" class="btn-sec">
+                    Ordenar
+                    <ion-icon slot="end" name="chevron-down"></ion-icon>
+                </ion-button>
+            </div>
+        </div>
+
+        <!-- Statements Data -->
+        <div class="data-content">
+            <div *ngIf="loading" class="loader">
+                <ion-spinner name="crescent"></ion-spinner>
+                <p>Carregando extratos...</p>
+            </div>
+
+            <!-- List of Items -->
+            <div *ngIf="!loading && filteredStatements.length > 0" class="statements-list">
+                <div *ngFor="let s of filteredStatements" class="statement-row"
+                    [class.active]="selectedStatement?.id === s.id" [class.conciliated]="s.conciliado"
+                    (click)="selectStatement(s)">
+                    <div class="row-selection">
+                        <ion-checkbox mode="md"></ion-checkbox>
+                    </div>
+                    <div class="row-date">
+                        {{ formatDate(s.data) }}
+                    </div>
+                    <div class="row-desc">
+                        {{ s.descricao }}
+                    </div>
+                    <div class="row-value" [class.credit]="s.tipo === 'CREDIT'" [class.debit]="s.tipo === 'DEBIT'">
+                        {{ s.valor | currency:'BRL' }}
+                    </div>
+                    <div class="row-status">
+                        <ion-chip [color]="s.conciliado ? 'success' : 'warning'" mode="ios">
+                            <ion-icon name="checkmark-circle" *ngIf="s.conciliado"></ion-icon>
+                            {{ s.conciliado ? 'Conciliado' : 'Pendente' }}
+                        </ion-chip>
+                    </div>
+                    <div class="row-actions">
+                        <ion-button fill="clear" color="medium">
+                            <ion-icon name="ellipsis-vertical-outline"></ion-icon>
+                        </ion-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div *ngIf="!loading && filteredStatements.length === 0" class="empty-state">
+                <div class="empty-illustration">
+                    <img src="assets/imgs/reconciliation-empty.svg" alt="Sem dados" (error)="showDefaultIcon($event)">
+                    <ion-icon name="receipt-outline" *ngIf="!illustrationLoaded"></ion-icon>
+                </div>
+                <h2>Não existem conciliações pendentes no mês.</h2>
+                <div class="empty-actions">
+                    <ion-button fill="solid" class="btn-primary" (click)="syncBank()">
+                        Importar lançamentos automaticamente
+                    </ion-button>
+                    <ion-button fill="clear" class="btn-link" (click)="showToast('Em desenvolvimento', 'primary')">
+                        Importar lançamentos via OFX
+                    </ion-button>
+                </div>
+            </div>
+        </div>
+    </div>
+</ion-content>

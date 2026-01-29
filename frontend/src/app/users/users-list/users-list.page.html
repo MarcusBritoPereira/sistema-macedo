@@ -1,0 +1,53 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button color="primary"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Gestão de Usuários</ion-title>
+    <ion-buttons slot="end">
+      <ion-button>
+        <ion-icon name="search-outline" slot="icon-only" color="primary"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding-horizontal">
+  <ion-refresher slot="fixed" (ionRefresh)="loadUsers($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div class="header-section">
+    <h1>Gestão de <strong>Usuários</strong></h1>
+    <ion-searchbar placeholder="Buscar usuários..." mode="ios" class="custom-search"></ion-searchbar>
+  </div>
+
+  <div class="user-list">
+    <ion-card *ngFor="let user of users" [routerLink]="['/users', user.id]" class="user-card" button
+      [class.inactive]="!user.ativo">
+      <div class="card-content-wrapper">
+        <div class="user-avatar" [class.admin]="getProfileName(user) === 'ADMINISTRADOR'"
+          [class.manager]="getProfileName(user) === 'GERENTE'">
+          {{ user.nome.charAt(0) }}
+        </div>
+        <div class="user-info">
+          <h3>{{ user.nome }} <span *ngIf="!user.ativo">(Inativo)</span></h3>
+          <p>{{ user.email }}</p>
+          <div class="role-badge" [class.admin]="getProfileName(user) === 'ADMINISTRADOR'"
+            [class.manager]="getProfileName(user) === 'GERENTE'">
+            {{ getProfileName(user) }}
+          </div>
+        </div>
+        <div class="arrow-action">
+          <ion-icon name="chevron-forward-outline"></ion-icon>
+        </div>
+      </div>
+    </ion-card>
+  </div>
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button routerLink="/users/new" color="primary" class="custom-fab">
+      <ion-icon name="add"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>

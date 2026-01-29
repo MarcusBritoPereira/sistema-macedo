@@ -1,0 +1,250 @@
+<ion-header class="ion-no-border">
+    <ion-toolbar>
+        <ion-title>Cadastrar conta financeira</ion-title>
+        <ion-buttons slot="end">
+            <ion-button (click)="dismiss()">
+                <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+    <div class="wizard-container">
+
+        <!-- Step 1: Account Type Selection -->
+        <div *ngIf="currentStep === 1" class="step-content">
+            <header class="step-header">
+                <div class="step-indicator active">
+                    <ion-icon name="checkmark-circle" color="success"></ion-icon>
+                    <span>Escolha o tipo de conta *</span>
+                </div>
+                <button class="edit-link">Editar</button>
+            </header>
+
+            <div class="main-types-grid">
+                <div *ngFor="let type of accountTypes" class="type-card" [class.selected]="selectedType === type.id"
+                    (click)="selectType(type.id)">
+                    <div class="card-header">
+                        <div class="radio-circle">
+                            <div class="inner-circle" *ngIf="selectedType === type.id"></div>
+                        </div>
+                        <span class="type-title">{{ type.title }}</span>
+                        <ion-icon [name]="type.icon" class="type-icon"></ion-icon>
+                    </div>
+                    <p class="type-desc">{{ type.description }}</p>
+                </div>
+            </div>
+
+            <section class="other-options-section">
+                <h3>Outras opções:</h3>
+                <div class="secondary-types-grid">
+                    <div *ngFor="let type of otherOptions" class="mini-type-card"
+                        [class.selected]="selectedType === type.id" (click)="selectType(type.id)">
+                        <div class="card-header">
+                            <div class="radio-circle">
+                                <div class="inner-circle" *ngIf="selectedType === type.id"></div>
+                            </div>
+                            <span class="type-title">{{ type.title }}</span>
+                            <ion-icon [name]="type.icon" class="type-icon"></ion-icon>
+                        </div>
+                        <p class="type-desc">{{ type.description }}</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="help-link">
+                Saiba mais sobre os tipos de conta na <a href="#">Central de ajuda <ion-icon name="launch-outline"
+                        size="small"></ion-icon></a>
+            </div>
+
+            <div class="action-footer">
+                <ion-button color="success" fill="solid" (click)="next()" class="continue-btn">
+                    Continuar
+                </ion-button>
+            </div>
+        </div>
+
+        <!-- Step 2: Account Details -->
+        <div *ngIf="currentStep === 2" class="step-content">
+            <header class="step-header minimized">
+                <div class="step-indicator done">
+                    <ion-icon name="checkmark-circle" color="success"></ion-icon>
+                    <span>Escolha o tipo de conta *</span>
+                </div>
+                <button class="edit-link" (click)="currentStep = 1">Editar</button>
+            </header>
+
+            <section class="form-section">
+                <header class="step-header">
+                    <div class="step-indicator active">
+                        <div class="step-number">
+                            <ion-icon name="checkmark-circle" color="medium" *ngIf="false"></ion-icon>
+                            <!-- Placeholder for non-completed state check -->
+                            <div class="circle-outline"></div>
+                        </div>
+                        <span>Preencha os dados *</span>
+                    </div>
+                </header>
+
+                <div class="form-grid">
+                    <div class="form-field col-6">
+                        <label>Banco *</label>
+                        <ion-select [(ngModel)]="formData.banco" interface="popover" placeholder="Selecione o banco"
+                            class="custom-select">
+                            <ion-select-option *ngFor="let bank of banks" [value]="bank.name">{{ bank.name
+                                }}</ion-select-option>
+                        </ion-select>
+                    </div>
+
+                    <div class="form-field col-3">
+                        <label>Agência (sem dígito) *</label>
+                        <ion-input [(ngModel)]="formData.agencia" type="text" placeholder="12345"
+                            class="custom-input"></ion-input>
+                    </div>
+
+                    <div class="form-field col-3">
+                        <label>Conta (com dígito) *</label>
+                        <ion-input [(ngModel)]="formData.conta" type="text" placeholder="123456-7"
+                            class="custom-input"></ion-input>
+                    </div>
+
+                    <div class="form-field col-6">
+                        <label>Nome da conta *</label>
+                        <ion-input [(ngModel)]="formData.nome" type="text" placeholder="Ex: Conta Principal"
+                            class="custom-input"></ion-input>
+                        <span class="field-hint">Dê um nome para identificar esta conta depois</span>
+                    </div>
+
+                    <div class="form-field col-6">
+                        <label>Modalidade da conta *</label>
+                        <ion-radio-group [(ngModel)]="formData.modalidade" class="radio-row">
+                            <div class="radio-item">
+                                <ion-radio value="PJ"></ion-radio>
+                                <ion-label>Conta empresarial (PJ)</ion-label>
+                            </div>
+                            <div class="radio-item">
+                                <ion-radio value="PF"></ion-radio>
+                                <ion-label>Conta pessoal (PF)</ion-label>
+                            </div>
+                        </ion-radio-group>
+                    </div>
+                </div>
+
+                <div class="checkbox-field">
+                    <ion-checkbox [(ngModel)]="formData.isDefault"></ion-checkbox>
+                    <ion-label>Use esta conta como padrão ao criar receitas e despesas. <ion-icon
+                            name="help-circle-outline"></ion-icon></ion-label>
+                </div>
+            </section>
+
+            <div class="action-footer">
+                <ion-button color="success" fill="solid" (click)="next()" class="continue-btn"
+                    [disabled]="!formData.banco || !formData.nome">
+                    Continuar
+                </ion-button>
+            </div>
+        </div>
+
+        <!-- Step 3: Registration Mode -->
+        <div *ngIf="currentStep === 3" class="step-content">
+            <header class="step-header minimized">
+                <div class="step-indicator done">
+                    <ion-icon name="checkmark-circle" color="success"></ion-icon>
+                    <span>Preencha os dados *</span>
+                </div>
+                <button class="edit-link" (click)="currentStep = 2">Editar</button>
+            </header>
+
+            <section class="integration-section">
+                <header class="step-header">
+                    <div class="step-indicator active">
+                        <div class="step-number">
+                            <div class="circle-outline"></div>
+                        </div>
+                        <span>Defina a forma de cadastro *</span>
+                    </div>
+                </header>
+
+                <div class="integration-grid">
+                    <div *ngFor="let option of integrationOptions" class="integration-card"
+                        [class.selected]="formData.integrationMode === option.id"
+                        (click)="formData.integrationMode = option.id">
+
+                        <div class="card-header">
+                            <div class="radio-circle">
+                                <div class="inner-circle" *ngIf="formData.integrationMode === option.id"></div>
+                            </div>
+                            <span class="option-title">{{ option.title }}</span>
+                            <span class="recommended-badge" *ngIf="option.recommended">Recomendado</span>
+                        </div>
+
+                        <div class="card-content">
+                            <p class="option-desc">{{ option.description }}</p>
+
+                            <ul class="benefit-list">
+                                <li *ngFor="let b of option.benefits">
+                                    <ion-icon name="checkmark-outline" color="primary"></ion-icon>
+                                    <span>{{ b }}</span>
+                                </li>
+                                <li *ngFor="let n of option.negative" class="negative">
+                                    <ion-icon name="close-outline" color="danger"></ion-icon>
+                                    <span style="color: #666;">{{ n }}</span>
+                                </li>
+                            </ul>
+
+                            <div class="card-footer" *ngIf="option.footer">
+                                <div class="footer-divider"></div>
+                                <div class="footer-items">
+                                    <p *ngIf="isArray(option.footer)">{{ option.footer[0] }}</p>
+                                    <p *ngIf="isArray(option.footer)">{{ option.footer[1] }}</p>
+                                    <p *ngIf="!isArray(option.footer)">{{ option.footer }}</p>
+                                </div>
+                            </div>
+
+                            <!-- Special Form for NONE option -->
+                            <div class="none-option-form"
+                                *ngIf="option.id === 'NONE' && formData.integrationMode === 'NONE'">
+                                <div class="footer-divider"></div>
+                                <p class="form-hint">Informe uma data de início e o saldo do dia anterior:</p>
+
+                                <div class="form-field">
+                                    <label>Início dos lançamentos *</label>
+                                    <div class="date-input-wrapper">
+                                        <input type="date" [(ngModel)]="formData.startingDate">
+                                    </div>
+                                    <span class="field-hint">Informe uma data até 11/12/2025</span>
+                                </div>
+
+                                <div class="form-field">
+                                    <label>Saldo final da conta no dia anterior *</label>
+                                    <div class="currency-input-wrapper">
+                                        <span>R$</span>
+                                        <input type="number" [(ngModel)]="formData.startingBalance" placeholder="0,00">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="action-footer">
+                <ion-button color="success" fill="solid" (click)="next()" class="continue-btn">
+                    Continuar
+                </ion-button>
+            </div>
+        </div>
+
+        <!-- Step 4: Final Success -->
+        <div *ngIf="currentStep === 4" class="step-content empty-step">
+            <ion-icon name="checkmark-circle" color="success" style="font-size: 4rem;"></ion-icon>
+            <h2>Conta cadastrada!</h2>
+            <p>Sua conta <b>{{ formData.nome }}</b> foi configurada com sucesso.</p>
+            <div style="margin-top: 30px;">
+                <ion-button color="primary" fill="solid" (click)="dismiss()">Ir para Minhas Contas</ion-button>
+            </div>
+        </div>
+
+    </div>
+</ion-content>

@@ -1,0 +1,168 @@
+
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../../prisma/prisma.service';
+import { StatusLancamento } from '@prisma/client';
+
+@Injectable()
+export class ReconciliationService {
+    constructor(private prisma: PrismaService) { }
+
+    async getBankStatements(contaBancariaId: string, filters?: any) {
+        const where: any = {
+            importacao: { contaBancariaId }
+        };
+
+        if (filters?.startDate || filters?.endDate) {
+            where.data = {};
+            if (filters.startDate) where.data.gte = new Date(filters.startDate);
+            if (filters.endDate) where.data.lte = new Date(filters.endDate);
+        }
+
+        if (filters?.status === 'PENDING') where.conciliado = false;
+        if (filters?.status === 'CONCILIATED') where.conciliado = true;
+
+        return this.prisma.extratoBancario.findMany({
+            where,
+            include: {
+                conciliacoes: {
+                    include: {
+                        lancamentoFinanceiro: true
+                    }
+                },
+                importacao: true
+            },
+            orderBy: { data: 'desc' }
+        });
+    }
+
+    async findSuggestedMatches(statementId: string) {
+        const statement = await this.prisma.extratoBancario.findUnique({
+            where: { id: statementId }
+        });
+
+        if (!statement) throw new NotFoundException('Extrato não encontrado');
+
+        // Basic suggestion: exact value and close date (+/- 7 days)
+        const marginDays = 7;
+        const startDate = new Date(statement.data);
+        startDate.setDate(startDate.getDate() - marginDays);
+        const endDate = new Date(statement.data);
+        endDate.setDate(endDate.getDate() + marginDays);
+
+        return this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                valor: statement.valor,
+                dataVencimento: {
+                    gte: startDate,
+                    lte: endDate
+                },
+                status: { not: 'CANCELADO' },
+                conciliacoes: { none: {} } // Only those not yet conciliated
+            },
+            include: {
+                categoria: true,
+                centroCusto: true
+            }
+        });
+    }
+
+    async linkManual(statementId: string, lancamentoId: string) {
+        return this.prisma.$transaction(async (tx) => {
+            const statement = await tx.extratoBancario.findUnique({ where: { id: statementId } });
+            const lancamento = await tx.lancamentoFinanceiro.findUnique({ where: { id: lancamentoId } });
+
+            if (!statement || !lancamento) throw new NotFoundException('Extrato ou Lançamento não encontrado');
+            if (statement.conciliado) throw new BadRequestException('Extrato já conciliado');
+
+            // Create link
+            await tx.conciliacaoBancaria.create({
+                data: {
+                    extratoBancarioId: statementId,
+                    lancamentoFinanceiroId: lancamentoId,
+                    type: 'MANUAL_LINK'
+                }
+            });
+
+            // Update statuses
+            await tx.extratoBancario.update({
+                where: { id: statementId },
+                data: { conciliado: true }
+            });
+
+            await tx.lancamentoFinanceiro.update({
+                where: { id: lancamentoId },
+                data: {
+                    status: 'CONCILIADO',
+                    dataPagamento: statement.data // Use bank date as payment date
+                }
+            });
+
+            return { success: true };
+        });
+    }
+
+    async createAndLink(statementId: string, data: any) {
+        return this.prisma.$transaction(async (tx) => {
+            const statement = await tx.extratoBancario.findUnique({ where: { id: statementId } });
+            if (!statement) throw new NotFoundException('Extrato não encontrado');
+            if (statement.conciliado) throw new BadRequestException('Extrato já conciliado');
+
+            // 1. Create Lancamento
+            const lancamento = await tx.lancamentoFinanceiro.create({
+                data: {
+                    descricao: data.descricao || statement.descricao,
+                    valor: statement.valor,
+                    tipo: statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA',
+                    dataVencimento: statement.data,
+                    dataPagamento: statement.data,
+                    status: 'CONCILIADO',
+                    categoriaId: data.categoriaId,
+                    centroCustoId: data.centroCustoId,
+                    clienteId: data.clienteId,
+                    observacoes: `Criado via conciliação bancária: ${statement.descricao}`
+                }
+            });
+
+            // 2. Create link
+            await tx.conciliacaoBancaria.create({
+                data: {
+                    extratoBancarioId: statementId,
+                    lancamentoFinanceiroId: lancamento.id,
+                    type: 'MANUAL_CREATE'
+                }
+            });
+
+            // 3. Update statement
+            await tx.extratoBancario.update({
+                where: { id: statementId },
+                data: { conciliado: true }
+            });
+
+            return lancamento;
+        });
+    }
+
+    async unlink(conciliacaoId: string) {
+        return this.prisma.$transaction(async (tx) => {
+            const link = await tx.conciliacaoBancaria.findUnique({
+                where: { id: conciliacaoId }
+            });
+
+            if (!link) throw new NotFoundException('Conciliação não encontrada');
+
+            await tx.conciliacaoBancaria.delete({ where: { id: conciliacaoId } });
+
+            await tx.extratoBancario.update({
+                where: { id: link.extratoBancarioId },
+                data: { conciliado: false }
+            });
+
+            await tx.lancamentoFinanceiro.update({
+                where: { id: link.lancamentoFinanceiroId },
+                data: { status: 'REALIZADO' } // Revert to Paid
+            });
+
+            return { success: true };
+        });
+    }
+}

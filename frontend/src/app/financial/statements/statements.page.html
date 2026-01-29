@@ -1,0 +1,223 @@
+<ion-header>
+    <!-- Top Bar: Title & Primary Actions -->
+    <ion-toolbar class="top-toolbar">
+        <div class="header-content">
+            <div class="left-actions">
+                <ion-buttons slot="start">
+                    <ion-menu-button color="primary"></ion-menu-button>
+                </ion-buttons>
+                <ion-button color="primary" class="add-btn" id="new-transaction-trigger">
+                    <ion-icon name="add" slot="start"></ion-icon>
+                    Nova <ion-icon name="chevron-down" slot="end"></ion-icon>
+                </ion-button>
+
+                <!-- New Transaction Popover -->
+                <ion-popover trigger="new-transaction-trigger" triggerAction="click" placement="bottom" mode="ios"
+                    #newPopover>
+                    <ng-template>
+                        <ion-list lines="none" class="new-transaction-list">
+                            <ion-item button (click)="addReceita()">
+                                <ion-label>Receita</ion-label>
+                                <ion-note slot="end" class="shortcut-badge">Alt+R</ion-note>
+                            </ion-item>
+                            <ion-item button (click)="addDespesa()">
+                                <ion-label>Despesa</ion-label>
+                                <ion-note slot="end" class="shortcut-badge">Alt+D</ion-note>
+                            </ion-item>
+                            <ion-item button (click)="addTransferencia()">
+                                <ion-label>Transferência</ion-label>
+                                <ion-note slot="end" class="shortcut-badge">Alt+T</ion-note>
+                            </ion-item>
+                        </ion-list>
+                    </ng-template>
+                </ion-popover>
+            </div>
+
+            <div class="right-actions">
+                <ion-button fill="outline" size="small" color="medium" class="action-btn">Importar planilha</ion-button>
+                <ion-button fill="outline" size="small" color="medium" class="action-btn"
+                    (click)="exportCSV()">Exportar</ion-button>
+                <ion-button fill="outline" size="small" color="medium" class="action-btn">Imprimir</ion-button>
+
+                <div class="pagination-controls">
+                    <ion-button fill="clear" size="small">
+                        <ion-icon name="chevron-back"></ion-icon>
+                    </ion-button>
+                    <span>Página 1</span>
+                    <ion-button fill="clear" size="small">
+                        <ion-icon name="chevron-forward"></ion-icon>
+                    </ion-button>
+                </div>
+
+                <ion-button fill="clear" id="column-settings-trigger" class="settings-btn">
+                    <ion-icon name="add" slot="icon-only"></ion-icon>
+                </ion-button>
+
+                <!-- Column Settings Popover -->
+                <ion-popover trigger="column-settings-trigger" triggerAction="click">
+                    <ng-template>
+                        <div class="popover-content">
+                            <h3>Personalizar Colunas</h3>
+                            <ion-list lines="none">
+                                <ion-item>
+                                    <ion-checkbox [(ngModel)]="columns.date" labelPlacement="end">Data</ion-checkbox>
+                                </ion-item>
+                                <ion-item>
+                                    <ion-checkbox [(ngModel)]="columns.description"
+                                        labelPlacement="end">Descrição</ion-checkbox>
+                                </ion-item>
+                                <ion-item>
+                                    <ion-checkbox [(ngModel)]="columns.situation"
+                                        labelPlacement="end">Situação</ion-checkbox>
+                                </ion-item>
+                                <ion-item>
+                                    <ion-checkbox [(ngModel)]="columns.value" labelPlacement="end">Valor
+                                        (R$)</ion-checkbox>
+                                </ion-item>
+                                <ion-item>
+                                    <ion-checkbox [(ngModel)]="columns.balance" labelPlacement="end">Saldo
+                                        (R$)</ion-checkbox>
+                                </ion-item>
+                            </ion-list>
+                            <div class="popover-footer">
+                                <ion-button fill="clear" size="small" (click)="restoreDefaults()">Restaurar
+                                    padrão</ion-button>
+                            </div>
+                        </div>
+                    </ng-template>
+                </ion-popover>
+            </div>
+        </div>
+    </ion-toolbar>
+
+    <!-- Period Navigation & Filters -->
+    <ion-toolbar class="filter-toolbar">
+        <div class="filter-row">
+            <div class="period-selector">
+                <div class="label-text">Período</div>
+                <div class="selector-box">
+                    <ion-button fill="clear" size="small" (click)="changePeriod(-1)">
+                        <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
+                    </ion-button>
+                    <span class="current-period">{{ periodLabel }}</span>
+                    <ion-button fill="clear" size="small" (click)="changePeriod(1)">
+                        <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
+                    </ion-button>
+                </div>
+            </div>
+
+            <div class="search-box">
+                <div class="label-text">Pesquisar no período selecionado</div>
+                <div class="input-wrapper">
+                    <input type="text" placeholder="Pesquisar" class="clean-search" [(ngModel)]="searchQuery"
+                        (input)="applyFilters()">
+                    <ion-icon name="search"></ion-icon>
+                </div>
+            </div>
+
+            <div class="more-filters">
+                <ion-button fill="outline" size="default" class="filter-btn">
+                    Mais filtros <ion-icon name="chevron-down" slot="end"></ion-icon>
+                </ion-button>
+            </div>
+        </div>
+    </ion-toolbar>
+
+    <!-- KPI Cards -->
+    <div class="kpi-container">
+        <div class="kpi-card orange-text">
+            <span class="label">Receitas em aberto (R$)</span>
+            <span class="value">{{ receiptsOpen | number:'1.2-2' }}</span>
+        </div>
+        <div class="kpi-card blue-text">
+            <span class="label">Receitas realizadas (R$)</span>
+            <span class="value">{{ receiptsRealized | number:'1.2-2' }}</span>
+        </div>
+        <div class="kpi-card red-text">
+            <span class="label">Despesas em aberto (R$)</span>
+            <span class="value">{{ expensesOpen | number:'1.2-2' }}</span>
+        </div>
+        <div class="kpi-card red-text">
+            <span class="label">Despesas realizadas (R$)</span>
+            <span class="value">{{ expensesRealized | number:'1.2-2' }}</span>
+        </div>
+        <div class="kpi-card border-blue">
+            <span class="label">Total do período (R$) <ion-icon name="help-circle-outline"></ion-icon></span>
+            <span class="value">{{ periodTotal | number:'1.2-2' }}</span>
+        </div>
+    </div>
+
+    <!-- Bulk Actions -->
+    <div class="bulk-actions-bar" *ngIf="selectedIds.size > 0">
+        <span>{{ selectedIds.size }} registro(s) selecionado(s)</span>
+        <ion-button fill="outline" size="small" class="dropdown-btn" (click)="openBulkActions()">
+            Ações em lote <ion-icon name="chevron-down" slot="end"></ion-icon>
+        </ion-button>
+    </div>
+</ion-header>
+
+<ion-content class="light-bg">
+    <ion-refresher slot="fixed" (ionRefresh)="loadTransactions($event)">
+        <ion-refresher-content></ion-refresher-content>
+    </ion-refresher>
+
+    <!-- Data Table -->
+    <div class="data-table-container">
+        <div class="table-header">
+            <div class="col-check"><input type="checkbox" [checked]="allSelected" (change)="toggleAll()"></div>
+            <div class="col-date" *ngIf="columns.date">Data</div>
+            <div class="col-desc" *ngIf="columns.description">Descrição</div>
+            <div class="col-value text-right" *ngIf="columns.value">Valor (R$)</div>
+            <div class="col-value text-right" *ngIf="columns.balance && !isMoreFiltersActive">Saldo (R$)</div>
+            <div class="col-status" *ngIf="columns.situation">Situação</div>
+            <div class="col-actions"></div>
+        </div>
+
+        <div class="table-body">
+            <div class="table-row" *ngFor="let t of filteredTransactions">
+                <div class="col-check">
+                    <input type="checkbox" [checked]="isSelected(t.id!)" (change)="toggleSelection(t.id!)">
+                </div>
+                <div class="col-date" *ngIf="columns.date">{{ formatDate(t.dataVencimento) }}</div>
+                <div class="col-desc" *ngIf="columns.description">
+                    <span class="desc-main">{{ t.descricao }}</span>
+                    <span class="desc-sub" *ngIf="t.fornecedor">{{ t.fornecedor }}</span>
+                    <span class="desc-sub" *ngIf="!t.fornecedor">Sem categoria</span>
+                </div>
+                <div class="col-value text-right" *ngIf="columns.value"
+                    [ngClass]="t.tipo === 'RECEITA' ? 'income' : 'expense'">
+                    {{ t.valor | number:'1.2-2' }}
+                </div>
+                <div class="col-value text-right" *ngIf="columns.balance && !isMoreFiltersActive" class="balance-cell">
+                    {{ t.runningBalance | number:'1.2-2' }}
+                </div>
+                <div class="col-status" *ngIf="columns.situation">
+                    <span class="status-badge" [ngClass]="getStatusColor(t.status)">
+                        {{ getStatusLabel(t.status, t.tipo) }}
+                    </span>
+                </div>
+                <div class="col-actions">
+                    <ion-button fill="outline" size="small" class="actions-dropdown-btn">
+                        Ações <ion-icon name="chevron-down" slot="end"></ion-icon>
+                    </ion-button>
+                </div>
+            </div>
+
+            <div class="empty-state" *ngIf="filteredTransactions.length === 0">
+                <p>Nenhum lançamento neste período.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Period Totals Footer -->
+    <div class="table-footer">
+        <div class="footer-label">
+            <strong>Total do período</strong> <br>
+            {{ periodLabel }}
+        </div>
+        <div class="footer-value">
+            Total do período (R$) <br>
+            <strong>{{ periodTotal | number:'1.2-2' }}</strong>
+        </div>
+    </div>
+</ion-content>

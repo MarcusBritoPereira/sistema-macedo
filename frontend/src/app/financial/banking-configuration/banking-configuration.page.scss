@@ -1,0 +1,184 @@
+// Colors
+$bg-color: #F5F7FA;
+$primary-blue: #4D8DFF;
+$success-green: #34D399;
+$error-red: #F87171;
+$text-dark: #1F2937;
+$text-gray: #6B7280;
+
+ion-content.bg-light {
+    --background: #{$bg-color};
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px 16px;
+}
+
+// Status Card
+.status-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    margin-bottom: 24px;
+    border-left: 6px solid #ccc;
+    background: white;
+
+    &.status-connected {
+        border-left-color: $success-green;
+
+        .status-icon ion-icon {
+            color: $success-green;
+        }
+    }
+
+    &.status-error {
+        border-left-color: $error-red;
+
+        .status-icon ion-icon {
+            color: $error-red;
+        }
+    }
+
+    .flex-row {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .flex-1 {
+        flex: 1;
+    }
+
+    .flex-2 {
+        flex: 2;
+    }
+
+    .status-icon {
+        font-size: 32px;
+    }
+
+    .status-info {
+        flex: 1;
+
+        h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: $text-dark;
+        }
+
+        p {
+            margin: 4px 0 0;
+            font-size: 14px;
+            color: $text-gray;
+        }
+    }
+}
+
+// Form Blocks
+.form-block {
+    background: white;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+
+    .block-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: $text-dark;
+        margin-top: 0;
+        margin-bottom: 8px;
+    }
+
+    .block-desc {
+        font-size: 14px;
+        color: $text-gray;
+        margin-bottom: 20px;
+    }
+}
+
+// Custom Inputs
+.custom-input {
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    --background: transparent;
+    margin-bottom: 16px;
+
+    ion-label {
+        font-weight: 600;
+        color: $text-dark !important;
+        font-size: 14px !important;
+        margin-bottom: 8px !important;
+    }
+
+    ion-input,
+    ion-textarea,
+    ion-select {
+        --background: #F9FAFB;
+        --padding-start: 12px;
+        --padding-end: 12px;
+        --padding-top: 12px;
+        --padding-bottom: 12px;
+        border: 1px solid #E5E7EB;
+        border-radius: 8px;
+        margin-top: 4px;
+    }
+
+    ion-note {
+        font-size: 12px;
+        color: $text-gray;
+        margin-top: 4px;
+    }
+}
+
+.field-helper {
+    display: flex;
+    gap: 8px;
+    font-size: 13px;
+    color: $primary-blue;
+    background: #EFF6FF;
+    padding: 12px;
+    border-radius: 8px;
+    align-items: center;
+}
+
+.spacer {
+    height: 16px;
+}
+
+// File Upload
+.file-upload-row {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+
+    .file-field {
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            color: $text-dark;
+            margin-bottom: 8px;
+        }
+    }
+}
+
+// Action Footer
+.action-footer {
+    margin-top: 32px;
+    text-align: center;
+
+    .connect-btn {
+        --background: #{$primary-blue};
+        --border-radius: 12px;
+        font-weight: 600;
+        margin-bottom: 12px;
+    }
+
+    .footer-note {
+        font-size: 13px;
+        color: $text-gray;
+    }
+}

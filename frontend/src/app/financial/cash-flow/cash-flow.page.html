@@ -1,0 +1,154 @@
+<ion-header class="ion-no-border">
+    <ion-toolbar class="top-toolbar">
+        <div class="header-content">
+            <div class="left-actions">
+                <ion-buttons slot="start">
+                    <ion-menu-button></ion-menu-button>
+                </ion-buttons>
+                <div class="page-title">
+                    <h1>Fluxo de Caixa</h1>
+                    <p>Visão detalhada das movimentações financeiras</p>
+                </div>
+            </div>
+            <div class="right-actions">
+                <div class="period-navigation">
+                    <ion-button fill="clear" (click)="changeMonth(-1)">
+                        <ion-icon name="chevron-back"></ion-icon>
+                    </ion-button>
+                    <div class="current-month">
+                        <ion-icon name="calendar-outline"></ion-icon>
+                        <ion-select [value]="selectedMonthStr" (ionChange)="onMonthChange($event)" interface="popover">
+                            <ion-select-option *ngFor="let m of months" [value]="m.value">{{ m.label
+                                }}</ion-select-option>
+                        </ion-select>
+                    </div>
+                    <ion-button fill="clear" (click)="changeMonth(1)">
+                        <ion-icon name="chevron-forward"></ion-icon>
+                    </ion-button>
+                </div>
+
+                <ion-button fill="outline" class="action-btn" (click)="loadData()">
+                    <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                    Atualizar
+                </ion-button>
+            </div>
+        </div>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="light-bg">
+    <div class="workspace-wrapper" *ngIf="!loading && data">
+
+        <!-- Sidebar: Accounts -->
+        <div class="sidebar-accounts">
+            <div class="sidebar-header">
+                <h3>Minhas Contas</h3>
+            </div>
+            <div class="bank-list">
+                <div class="bank-item" *ngFor="let acc of data.accounts">
+                    <div class="bank-icon-v2">
+                        <ion-icon name="business-outline"></ion-icon>
+                    </div>
+                    <div class="bank-details">
+                        <span class="acc-name">{{ acc.name }}</span>
+                        <span class="acc-bank">{{ acc.bank }}</span>
+                    </div>
+                    <div class="acc-balance">
+                        {{ acc.balance | currency:'BRL' }}
+                    </div>
+                </div>
+            </div>
+            <div class="sidebar-hint">
+                <ion-icon name="information-circle-outline"></ion-icon>
+                <p>O saldo das contas é atualizado via conciliação bancária.</p>
+            </div>
+        </div>
+
+        <!-- Main Workspace -->
+        <div class="main-dashboard">
+
+            <!-- KPI Cards Row -->
+            <div class="premium-kpi-row">
+                <!-- Received Today -->
+                <div class="premium-kpi-card green">
+                    <div class="kpi-icon">
+                        <ion-icon name="trending-up-outline"></ion-icon>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">A receber hoje</span>
+                        <h2 class="kpi-value">{{ data.today.in | currency:'BRL' }}</h2>
+                        <div class="kpi-meta">
+                            <span>Mês: <strong class="green-text">{{ data.summary.totalIn | currency:'BRL'
+                                    }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pay Today -->
+                <div class="premium-kpi-card red">
+                    <div class="kpi-icon">
+                        <ion-icon name="trending-down-outline"></ion-icon>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">A pagar hoje</span>
+                        <h2 class="kpi-value">{{ data.today.out | currency:'BRL' }}</h2>
+                        <div class="kpi-meta">
+                            <span>Mês: <strong class="red-text">{{ data.summary.totalOut | currency:'BRL'
+                                    }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Balance -->
+                <div class="premium-kpi-card blue">
+                    <div class="kpi-icon">
+                        <ion-icon name="wallet-outline"></ion-icon>
+                    </div>
+                    <div class="kpi-content">
+                        <span class="kpi-label">Resultado do Mês</span>
+                        <h2 class="kpi-value" [class.negative]="data.summary.balance < 0">{{ data.summary.balance |
+                            currency:'BRL' }}</h2>
+                        <div class="kpi-meta">
+                            <span>Restante Entradas: <strong>{{ data.remaining.in | currency:'BRL' }}</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Chart Area -->
+            <div class="chart-section">
+                <div class="chart-header">
+                    <div class="title">
+                        <ion-icon name="bar-chart-outline"></ion-icon>
+                        <h2>Fluxo de Caixa Diário</h2>
+                    </div>
+                    <div class="legend">
+                        <div class="legend-item"><span class="dot revenue"></span> Entradas</div>
+                        <div class="legend-item"><span class="dot expense"></span> Saídas</div>
+                    </div>
+                </div>
+
+                <div class="chart-canvas-mock">
+                    <div class="bars-container">
+                        <div *ngFor="let day of dailyData" class="bar-col">
+                            <div class="bar-pair">
+                                <div class="bar-fill rev" [style.height.%]="(day.in / maxVal) * 100"
+                                    [title]="day.in | currency:'BRL'"></div>
+                                <div class="bar-fill exp" [style.height.%]="(day.out / maxVal) * 100"
+                                    [title]="day.out | currency:'BRL'"></div>
+                            </div>
+                            <span class="day-label">{{ day.date | date: 'dd' }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="empty-state-loading">
+        <ion-spinner name="crescent"></ion-spinner>
+        <p>Analisando dados financeiros...</p>
+    </div>
+</ion-content>

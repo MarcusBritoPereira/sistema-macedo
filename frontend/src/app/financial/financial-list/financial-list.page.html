@@ -1,0 +1,134 @@
+<ion-header>
+  <!-- Top Bar: Title & Primary Actions -->
+  <ion-toolbar class="top-toolbar">
+    <div class="header-content">
+      <div class="left-actions">
+        <ion-button color="primary" class="add-btn" routerLink="/financial/new">
+          <ion-icon name="add" slot="start"></ion-icon>
+          Nova
+        </ion-button>
+      </div>
+
+      <div class="right-actions">
+        <ion-button fill="outline" size="small" color="medium" class="action-btn">Importar planilha</ion-button>
+        <ion-button fill="outline" size="small" color="medium" class="action-btn">Exportar</ion-button>
+        <ion-button fill="outline" size="small" color="medium" class="action-btn">Imprimir</ion-button>
+        <div class="pagination-controls">
+          <ion-button fill="clear" size="small" disabled>
+            <ion-icon name="chevron-back"></ion-icon>
+          </ion-button>
+          <span>1-{{ displayedItems.length }} de {{ displayedItems.length }}</span>
+          <ion-button fill="clear" size="small" disabled>
+            <ion-icon name="chevron-forward"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  </ion-toolbar>
+
+  <!-- Period Navigation & Filters -->
+  <ion-toolbar class="filter-toolbar">
+    <div class="filter-row">
+      <div class="period-selector">
+        <div class="label-text">Período</div>
+        <div class="selector-box">
+          <ion-button fill="clear" size="small" (click)="changePeriod(-1)">
+            <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
+          </ion-button>
+          <span class="current-period">{{ periodLabel }}</span>
+          <ion-button fill="clear" size="small" (click)="changePeriod(1)">
+            <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="search-box">
+        <div class="label-text">Pesquisar no período selecionado</div>
+        <div class="input-wrapper">
+          <input type="text" placeholder="Pesquisar" class="clean-search" [(ngModel)]="searchTerm"
+            (input)="updateView()">
+          <ion-icon name="search"></ion-icon>
+        </div>
+      </div>
+
+      <div class="more-filters">
+        <ion-button fill="outline" size="default" class="filter-btn">
+          Mais filtros <ion-icon name="chevron-down" slot="end"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+  </ion-toolbar>
+
+  <!-- KPI Cards -->
+  <div class="kpi-container">
+    <div class="kpi-card blue-text">
+      <span class="label">Receitas (R$)</span>
+      <span class="value">{{ kpis.receivables | number:'1.2-2' }}</span>
+    </div>
+    <div class="kpi-card red-text">
+      <span class="label">Despesas (R$)</span>
+      <span class="value">-{{ kpis.payables | number:'1.2-2' }}</span>
+    </div>
+    <div class="kpi-card border-blue">
+      <span class="label">Total do período (R$) <ion-icon name="help-circle-outline"></ion-icon></span>
+      <span class="value">{{ kpis.balance | number:'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <div class="bulk-actions-bar" *ngIf="selectedIds.size > 0">
+    <span>{{ selectedIds.size }} registro(s) selecionado(s)</span>
+    <ion-button fill="clear" size="small" class="link-btn">Editar lançamento(s)</ion-button>
+    <ion-button fill="clear" size="small" class="link-btn" (click)="processBulkDelete()">Excluir
+      lançamento(s)</ion-button>
+  </div>
+
+</ion-header>
+
+<ion-content class="light-bg">
+  <ion-refresher slot="fixed" (ionRefresh)="loadData($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Data Table -->
+  <div class="data-table-container">
+    <div class="table-header">
+      <div class="col-check"><input type="checkbox" [checked]="allSelected" (change)="toggleAll()"></div>
+      <div class="col-date">Competência</div>
+      <div class="col-type">Tipo</div>
+      <div class="col-desc">Descrição</div>
+      <div class="col-entity">Cliente/Fornecedor</div>
+      <div class="col-category">Categoria</div>
+      <div class="col-paymethod">Cond. pagto</div>
+      <div class="col-value">Valor (R$)</div>
+      <div class="col-actions"></div>
+    </div>
+
+    <div class="table-body">
+      <div class="table-row" *ngFor="let item of displayedItems">
+        <div class="col-check"><input type="checkbox" [checked]="isSelected(item.id!)"
+            (change)="toggleSelection(item.id!)"></div>
+        <div class="col-date">{{ item.dataVencimento | date:'dd/MM/yyyy' }}</div>
+        <div class="col-type">{{ item.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }}</div>
+        <div class="col-desc">
+          <span class="desc-main">{{ item.descricao }}</span>
+        </div>
+        <div class="col-entity">{{ item.clienteId ? 'Cliente' : (item.fornecedor || '-') }}</div>
+        <div class="col-category">Sem categoria</div>
+        <div class="col-paymethod">{{ item.formaPagamento || 'À vista' }}</div>
+        <div class="col-value" [class.text-danger]="item.tipo === 'DESPESA'">
+          {{ item.valor | number:'1.2-2' }}
+        </div>
+        <div class="col-actions">
+          <ion-button fill="outline" size="small" class="actions-dropdown-btn" (click)="openItemActions($event, item)">
+            Ações <ion-icon name="chevron-down" slot="end"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="displayedItems.length === 0">
+        <p>Nenhum lançamento neste período.</p>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

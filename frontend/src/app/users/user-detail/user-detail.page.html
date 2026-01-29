@@ -1,0 +1,74 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/users" color="primary"></ion-back-button>
+    </ion-buttons>
+    <ion-title color="primary">{{ isEditMode ? 'Editar Usuário' : 'Novo Usuário' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+
+  <div class="form-wrapper">
+    <div class="section-header">
+      <h2>Dados do <strong>Usuário</strong></h2>
+      <p>Gerencie o acesso e permissões.</p>
+    </div>
+
+    <form [formGroup]="userForm" (ngSubmit)="onSubmit()">
+      <ion-card class="form-card">
+        <ion-grid>
+          <ion-row>
+            <ion-col size="12">
+              <ion-item>
+                <ion-label position="floating">Nome Completo</ion-label>
+                <ion-input formControlName="nome"></ion-input>
+              </ion-item>
+            </ion-col>
+
+            <ion-col size="12">
+              <ion-item>
+                <ion-label position="floating">Email de Acesso</ion-label>
+                <ion-input type="email" formControlName="email"></ion-input>
+              </ion-item>
+            </ion-col>
+
+            <ion-col size="12" size-md="6">
+              <ion-item>
+                <ion-label position="floating">Senha</ion-label>
+                <ion-input type="password" formControlName="senha"
+                  [placeholder]="isEditMode ? 'Deixe vazio para manter' : ''"></ion-input>
+              </ion-item>
+            </ion-col>
+
+            <ion-col size="12" size-md="6">
+              <ion-item>
+                <ion-label position="floating">Perfil de Acesso</ion-label>
+                <ion-select formControlName="perfil" interface="popover">
+                  <ion-select-option value="ADMIN">Administrador</ion-select-option>
+                  <ion-select-option value="FINANCEIRO">Financeiro</ion-select-option>
+                </ion-select>
+              </ion-item>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-card>
+
+      <div class="form-actions">
+        <ion-button expand="block" type="submit" [disabled]="!userForm.valid" class="save-btn" shape="round">
+          {{ isEditMode ? 'Salvar Alterações' : 'Criar Usuário' }}
+        </ion-button>
+
+        <ion-button *ngIf="isEditMode" expand="block" fill="clear" color="danger" class="delete-btn"
+          (click)="onDelete()">
+          <ion-icon name="trash-outline" slot="start"></ion-icon>
+          Excluir Usuário
+        </ion-button>
+      </div>
+    </form>
+  </div>
+
+
+  <ion-toast [isOpen]="isToastOpen" [message]="toastMessage" [duration]="2000"
+    (didDismiss)="setToastOpen(false)"></ion-toast>
+</ion-content>

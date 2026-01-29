@@ -1,0 +1,238 @@
+/* Executive View Styles */
+
+ion-content {
+    --background: #f3f4f6;
+}
+
+.kpi-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    margin-bottom: 2px;
+}
+
+.kpi-card {
+    background: #f9fafb;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e7eb;
+
+    .label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6b7280;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 4px;
+    }
+
+    .value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    &.blue-text .value {
+        color: #2563eb;
+    }
+
+    &.red-text .value {
+        color: #dc2626;
+    }
+
+    &.green-text .value {
+        color: #059669;
+    }
+
+    &.purple-text .value {
+        color: #7c3aed;
+    }
+}
+
+.insights-banner {
+    padding: 12px 16px;
+    background: #fffbeb;
+    border-bottom: 1px solid #fcd34d;
+
+    p {
+        margin: 4px 0;
+        font-size: 0.9rem;
+        color: #92400e;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+}
+
+.header-section {
+    padding: 20px 16px 10px 16px;
+    background: white;
+
+    h1 {
+        font-size: 1.5rem;
+        margin: 0 0 12px 0;
+        color: #111827;
+    }
+}
+
+.filters-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+
+    /* Hide scrollbar */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+
+    ion-chip {
+        margin: 0;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+}
+
+.client-list {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.client-exec-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #e5e7eb;
+    overflow: hidden;
+    position: relative;
+    transition: transform 0.2s;
+
+    &:active {
+        transform: scale(0.99);
+    }
+
+    .card-header {
+        padding: 16px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .client-identity {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #f3f4f6;
+            color: #374151;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
+
+        .names {
+            h3 {
+                margin: 0;
+                font-size: 1rem;
+                font-weight: 600;
+                color: #111827;
+            }
+
+            .plan-badge {
+                font-size: 0.75rem;
+                color: #6b7280;
+                background: #f3f4f6;
+                padding: 2px 6px;
+                border-radius: 4px;
+            }
+        }
+    }
+
+    .health-indicator {
+        font-size: 1.5rem;
+
+        &.GOOD {
+            color: #10b981;
+        }
+
+        &.ATTENTION {
+            color: #f59e0b;
+        }
+
+        &.RISK {
+            color: #ef4444;
+        }
+    }
+
+    .card-body {
+        padding: 16px;
+    }
+
+    .revenue-highlight {
+        display: flex;
+        align-items: baseline;
+        gap: 2px;
+        margin-bottom: 8px;
+
+        .currency {
+            font-size: 0.9rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .amount {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #111827;
+            letter-spacing: -0.02em;
+        }
+
+        .period {
+            font-size: 0.9rem;
+            color: #9ca3af;
+        }
+    }
+
+    .meta-row {
+        .duration {
+            font-size: 0.85rem;
+            color: #6b7280;
+        }
+    }
+
+    .card-footer {
+        padding: 8px 16px;
+        background: #fafafa;
+        border-top: 1px solid #f3f4f6;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+
+        ion-button {
+            flex: 1;
+            font-weight: 500;
+            font-size: 0.85rem;
+            --color: #4b5563;
+        }
+
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #e5e7eb;
+        }
+    }
+}

@@ -1,0 +1,446 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 3. Modelo de Domínio (ERD Conceitual)
+
+// 3. Modelo de Domínio (ERD V2 - Unificado)
+
+model Usuario {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String   @unique
+  senha     String
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  perfilId String
+  perfil   Perfil @relation(fields: [perfilId], references: [id])
+
+  logs        LogAuditoria[]
+
+  @@map("usuarios")
+}
+
+model Perfil {
+  id        String   @id @default(uuid())
+  nome      String   @unique // ex: ADMIN, FINANCEIRO, GESTOR
+  descricao String?
+  permissoes Json?   // Armazenar permissões como JSON para flexibilidade
+  usuarios  Usuario[]
+
+  @@map("perfis")
+}
+
+model Cliente {
+  id             String   @id @default(uuid())
+  // 1. Dados Cadastrais (PJ)
+  razaoSocial    String
+  nomeFantasia   String?
+  cnpj           String?  @unique
+  inscricaoEstadual String?
+  cpf            String?  @unique
+  email          String?
+  telefone       String?
+  endereco       String? // Endereço completo
+
+  // 2. Representante Legal
+  representanteNome     String?
+  representanteCpf      String?
+  representanteCargo    String?
+  representanteEmail    String?
+  representanteTelefone String?
+
+  // 3. Responsável Financeiro
+  financeiroNome               String?
+  financeiroEmail              String?
+  financeiroWhatsapp           String?
+  financeiroPreferenciaContato String? // Whatsapp, E-mail, Telefone
+
+  // 4. Dados Operacionais
+  redesSociais   Json?    // { instagram: "@...", linkedin: "..." }
+  usuariosAdmins String?  // Lista de nomes/emails
+  linksUteis     Json?    // { drive: "...", trello: "..." }
+  nicho          String?
+  qtdConteudo    String?
+  consultora     String?
+
+  // 5. Dados Fiscais
+  emissaoNf      Boolean  @default(false)
+  emailNf        String?
+  obsFiscais     String?
+
+  // 6. Dados Jurídicos
+  foro               String?
+  lgpdAceito         Boolean @default(false)
+  aceiteEletronico   Boolean @default(false)
+  contratoArquivoUrl String?
+
+  ativo          Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  contratos Contrato[]
+  contatos  Contato[]
+  leads     Lead[]
+  lancamentos LancamentoFinanceiro[]
+
+  @@map("clientes")
+}
+
+model Contato {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String?
+  telefone  String?
+  cargo     String?
+  principal Boolean  @default(false)
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  @@map("contatos")
+}
+
+model Contrato {
+  id          String   @id @default(uuid())
+  descricao   String?
+  
+  // Dados do Contrato (Regra de Negócio)
+  tipo               String? // RECORRENTE, PROJETO
+  valorMensal        Decimal  @db.Decimal(10, 2)
+  quantidadeParcelas Int?
+  diaVencimento      Int?
+  formaPagamento     String? // Boleto, Pix, Cartão
+  multaJuros         String? // Descrição de multa/juros
+  
+  dataInicio  DateTime
+  dataFim     DateTime?
+  ativo       Boolean  @default(true)
+  status      StatusContrato @default(ATIVO)
+
+  clienteId String
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+
+  // O Contrato não gera "ContaReceber" direta, mas "LancamentoFinanceiro"
+  lancamentos LancamentoFinanceiro[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contratos")
+}
+
+enum StatusContrato {
+  ATIVO
+  VENCIDO
+  CANCELADO
+  RENOVADO
+}
+
+// --- V2: Lançamento Financeiro Unificado ---
+
+model LancamentoFinanceiro {
+  id          String   @id @default(uuid())
+  descricao   String
+  valor       Decimal  @db.Decimal(10, 2)
+  dataVencimento  DateTime
+  dataPagamento   DateTime?
+  dataCompetencia DateTime? // Nova data de competência (opcional, pode ser diferente de pagamento/vencimento)
+  
+  tipo        TipoLancamento // RECEITA, DESPESA
+  status      StatusLancamento @default(PREVISTO)
+  
+  observacoes     String?
+  urlComprovante  String?
+
+  // Relacionamentos V2
+  contaBancariaId String?
+  contaBancaria   ContaBancaria? @relation(fields: [contaBancariaId], references: [id])
+
+  categoriaId String?
+  categoria   CategoriaFinanceira? @relation(fields: [categoriaId], references: [id])
+
+  centroCustoId String?
+  centroCusto   CentroCusto? @relation(fields: [centroCustoId], references: [id])
+
+  // Origem do Lançamento
+  contratoId String?
+  contrato   Contrato? @relation(fields: [contratoId], references: [id])
+
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id])
+  
+  fornecedor String? // Simples string por enquanto, futuramente tabela Fornecedor
+
+  conciliacoes ConciliacaoBancaria[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("lancamentos_financeiros")
+}
+
+enum TipoLancamento {
+  RECEITA
+  DESPESA
+}
+
+enum StatusLancamento {
+  PREVISTO
+  REALIZADO
+  CONCILIADO
+  CANCELADO
+}
+
+// --- V2: Bancário & Conciliação ---
+
+model ContaBancaria {
+  id          String   @id @default(uuid())
+  nome        String   // Apelido: "Inter Principal"
+  banco       String   // "Banco Inter"
+  agencia     String?
+  conta       String?
+  codigoBanco String?
+  saldoInicial Decimal @db.Decimal(10, 2) @default(0)
+  
+  lancamentos LancamentoFinanceiro[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  integracao  IntegracaoBancaria?
+  importacoes ImportacaoBancaria[]
+
+  @@map("contas_bancarias")
+}
+
+model IntegracaoBancaria {
+  id          String   @id @default(uuid())
+  banco       String   // "INTER"
+  apiKey      String?  // Stored credential (should be encrypted in real prod)
+  clientId    String?
+  clientSecret String?
+  crtFile     String?  // Path to certificate file if needed
+  keyFile     String?  // Path to key file if needed
+  
+  status      StatusIntegracao @default(DISCONNECTED)
+  lastSync    DateTime?
+  
+  contaBancariaId String @unique
+  contaBancaria   ContaBancaria @relation(fields: [contaBancariaId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("integracoes_bancarias")
+}
+
+enum StatusIntegracao {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+}
+
+model ExtratoBancario {
+  id          String   @id @default(uuid())
+  data        DateTime
+  descricao   String
+  valor       Decimal  @db.Decimal(10, 2)
+  tipo        TipoTransacao // CREDIT, DEBIT
+  hash        String   @unique // Para evitar duplicatas
+  
+  // V2: Campos para importação robusta (CSV/OFX)
+  fitid           String?  // ID único do OFX ou gerado
+  sourceType      SourceType @default(CSV)
+  balance         Decimal? @db.Decimal(10, 2)
+  matchConfidence Int?     // 0-100
+  currency        String   @default("BRL")
+  importedAt      DateTime @default(now())
+
+  // Relacionamento com log de importação
+  importacaoId    String?
+  importacao      ImportacaoBancaria? @relation(fields: [importacaoId], references: [id])
+
+  // V2: Status de conciliação simples no extrato, detalhe na tabela pivot
+  conciliado  Boolean @default(false)
+  
+  conciliacoes ConciliacaoBancaria[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("extratos_bancarios")
+}
+
+enum SourceType {
+  CSV
+  OFX
+  MANUAL
+}
+
+model ImportacaoBancaria {
+  id          String   @id @default(uuid())
+  filename    String
+  fileType    SourceType
+  status      StatusImportacao @default(PROCESSING)
+  log         String?  // JSON ou Texto com erros
+  
+  importedAt  DateTime @default(now())
+  
+  contaBancariaId String
+  contaBancaria   ContaBancaria @relation(fields: [contaBancariaId], references: [id])
+
+  extratos    ExtratoBancario[]
+
+  @@map("importacoes_bancarias")
+}
+
+enum StatusImportacao {
+  PROCESSING
+  COMPLETED
+  ERROR
+  PARTIAL
+}
+
+model ConciliacaoBancaria {
+  id                    String   @id @default(uuid())
+  dataConciliacao       DateTime @default(now())
+  
+  type                  TipoConciliacao @default(SYSTEM_MATCH)
+
+  lancamentoFinanceiroId String @unique // 1 para 1 geralmente
+  lancamentoFinanceiro   LancamentoFinanceiro @relation(fields: [lancamentoFinanceiroId], references: [id])
+
+  extratoBancarioId     String @unique
+  extratoBancario       ExtratoBancario @relation(fields: [extratoBancarioId], references: [id])
+
+  @@map("conciliacoes_bancarias")
+}
+
+enum TipoConciliacao {
+  SYSTEM_MATCH
+  MANUAL_CREATE
+  MANUAL_LINK
+}
+
+
+enum TipoTransacao {
+  CREDIT
+  DEBIT
+
+}
+
+// --- V2: Categoria Financeira Hierárquica ---
+
+model CategoriaFinanceira {
+  id        String   @id @default(uuid())
+  nome      String
+  tipo      TipoCategoria // RECEITA ou DESPESA
+  descricao String?
+  classificacao ClassificacaoDRE?
+  
+  parentId  String?
+  parent    CategoriaFinanceira? @relation("CategoriaHierarchy", fields: [parentId], references: [id])
+  children  CategoriaFinanceira[] @relation("CategoriaHierarchy")
+
+  lancamentos LancamentoFinanceiro[]
+
+  @@map("categorias_financeiras")
+}
+
+enum ClassificacaoDRE {
+  RECEITA_RECORRENTE
+  RECEITA_NAO_RECORRENTE
+  DEDUCOES_RECEITA
+  CUSTO_SERVICOS_PRESTADOS
+  DESPESA_ADMINISTRATIVA
+  DESPESA_COMERCIAL
+  DESPESA_ESTRUTURAL
+  DESPESA_SOCIOS
+  DESPESA_FINANCEIRA
+  RECEITA_FINANCEIRA
+  IMPOSTOS_LUCRO
+  OUTROS
+}
+
+enum TipoCategoria {
+  RECEITA
+  DESPESA
+}
+
+model CentroCusto {
+  id        String   @id @default(uuid())
+  nome      String
+  codigo    String?
+  descricao String?
+
+  lancamentos LancamentoFinanceiro[]
+
+  @@map("centros_custo")
+}
+
+
+
+model FinancialBudget {
+  id           String   @id @default(uuid())
+  mes          Int
+  ano          Int
+  receitaMeta  Decimal  @db.Decimal(10, 2)
+  despesaMeta  Decimal  @db.Decimal(10, 2)
+  
+  updatedAt    DateTime @updatedAt
+
+  @@unique([mes, ano])
+  @@map("orcamentos_financeiros")
+}
+
+
+
+// Removed: Pagamento Model (Redundant with LancamentoFinanceiro REALIZADO)
+
+model Lead {
+  id        String   @id @default(uuid())
+  nome      String
+  email     String?
+  status    String   // Novo, Qualificado, Perdido, Cliente
+
+  clienteId String?
+  cliente   Cliente? @relation(fields: [clienteId], references: [id]) // Se virou cliente
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("leads")
+}
+
+model ParametroFiscal {
+  id        String   @id @default(uuid())
+  nome      String   @unique // ex: ALIQUOTA_ISS
+  valor     String
+  descricao String?
+
+  @@map("parametros_fiscais")
+}
+
+model LogAuditoria {
+  id        String   @id @default(uuid())
+  data      DateTime @default(now())
+  acao      String
+  tabela    String?
+  registroId String?
+  valorAntigo String?
+  valorNovo   String?
+  motivo    String
+
+  usuarioId String
+  usuario   Usuario @relation(fields: [usuarioId], references: [id])
+
+  @@map("logs_auditoria")
+}

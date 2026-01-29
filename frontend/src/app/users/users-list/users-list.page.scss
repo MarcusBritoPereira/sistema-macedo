@@ -1,0 +1,134 @@
+/* Modern Users List Styles */
+
+ion-content {
+    --background: var(--ion-background-color);
+}
+
+.header-section {
+    padding: 20px 0 10px 0;
+
+    h1 {
+        font-size: 1.75rem;
+        font-weight: 400;
+        margin: 0 0 20px 8px;
+        line-height: 1.2;
+        color: var(--ion-color-dark);
+
+        strong {
+            font-weight: 700;
+            color: var(--ion-color-primary);
+        }
+    }
+}
+
+.custom-search {
+    --background: #ffffff;
+    --box-shadow: none !important;
+    --border-radius: 12px;
+    padding: 0;
+    margin-bottom: 20px;
+}
+
+.user-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-bottom: 80px;
+}
+
+.user-card {
+    margin: 0;
+    border-radius: 16px;
+    background: white;
+    box-shadow: none !important;
+    transition: transform 0.2s ease;
+
+    &:active {
+        transform: scale(0.98);
+    }
+
+    &.inactive {
+        opacity: 0.6;
+        background: #f1f5f9;
+    }
+
+    .card-content-wrapper {
+        padding: 16px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .user-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--ion-color-medium-tint);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        box-shadow: none !important;
+
+        &.admin {
+            background: linear-gradient(135deg, var(--ion-color-danger-tint) 0%, var(--ion-color-danger) 100%);
+            box-shadow: none !important;
+        }
+
+        &.manager {
+            background: linear-gradient(135deg, var(--ion-color-tertiary-tint) 0%, var(--ion-color-tertiary) 100%);
+            box-shadow: none !important;
+        }
+    }
+
+    .user-info {
+        flex: 1;
+
+        h3 {
+            margin: 0 0 4px 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--ion-color-dark);
+        }
+
+        p {
+            margin: 0 0 6px 0;
+            font-size: 0.85rem;
+            color: var(--ion-color-medium);
+            font-weight: 500;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: #e2e8f0;
+            color: #64748b;
+
+            &.admin {
+                background: rgba(var(--ion-color-danger-rgb), 0.1);
+                color: var(--ion-color-danger);
+            }
+
+            &.manager {
+                background: rgba(var(--ion-color-tertiary-rgb), 0.1);
+                color: var(--ion-color-tertiary-shade);
+            }
+        }
+    }
+
+    .arrow-action {
+        color: var(--ion-color-medium-tint);
+        font-size: 20px;
+    }
+}
+
+.custom-fab {
+    --box-shadow: none !important;
+}

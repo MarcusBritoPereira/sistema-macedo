@@ -25,7 +25,9 @@ export interface Transaction {
   habilitarRateio?: boolean;
   observacoes?: string;
   anexoUrl?: string; // Placeholder for attachment
-  fornecedor?: string;
+  fornecedor?: any; // Can be string (legacy) or Supplier object
+  fornecedorId?: string; // New relation
+  fornecedorObj?: { nomeFantasia: string }; // Optional included relation
   runningBalance?: number;
   createdAt?: string;
 }

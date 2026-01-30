@@ -177,7 +177,13 @@ model LancamentoFinanceiro {
   clienteId String?
   cliente   Cliente? @relation(fields: [clienteId], references: [id])
   
-  fornecedor String? // Simples string por enquanto, futuramente tabela Fornecedor
+  fornecedorId String?
+  fornecedor   Fornecedor? @relation(fields: [fornecedorId], references: [id])
+  
+  fornecedorNome String? // Mantendo para compatibilidade ou uso simples se necessário
+
+  recurrenciaId String?
+  recurrencia   Recurrencia? @relation(fields: [recurrenciaId], references: [id])
 
   conciliacoes ConciliacaoBancaria[]
 
@@ -443,4 +449,47 @@ model LogAuditoria {
   usuario   Usuario @relation(fields: [usuarioId], references: [id])
 
   @@map("logs_auditoria")
+}
+
+model Fornecedor {
+  id             String   @id @default(uuid())
+  nomeFantasia   String
+  razaoSocial    String?
+  cnpj           String?  @unique
+  email          String?
+  telefone       String?
+  
+  // Categoria padrão para agilizar lançamentos
+  categoriaDefaultId String?
+  
+  ativo          Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  lancamentos    LancamentoFinanceiro[]
+
+  @@map("fornecedores")
+}
+
+model Recurrencia {
+  id             String   @id @default(uuid())
+  frequencia     FrequenciaRecurrencia
+  dataInicio     DateTime
+  dataFim        DateTime?
+  diaVencimento  Int?     // Para mensal
+  ativo          Boolean  @default(true)
+  
+  lancamentos    LancamentoFinanceiro[]
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("recurrencias")
+}
+
+enum FrequenciaRecurrencia {
+  MENSAL
+  SEMANAL
+  ANUAL
+  DIARIO
 }

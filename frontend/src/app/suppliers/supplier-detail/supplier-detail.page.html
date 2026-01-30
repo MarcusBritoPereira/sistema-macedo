@@ -1,0 +1,63 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-buttons slot="start">
+            <ion-back-button defaultHref="/suppliers"></ion-back-button>
+        </ion-buttons>
+        <ion-title>{{ isEditMode ? 'Editar Fornecedor' : 'Novo Fornecedor' }}</ion-title>
+        <ion-buttons slot="end">
+            <ion-button (click)="onDelete()" color="danger" *ngIf="isEditMode">
+                <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+    <form [formGroup]="supplierForm" (ngSubmit)="onSave()">
+        <ion-item>
+            <ion-label position="stacked">Nome Fantasia *</ion-label>
+            <ion-input formControlName="nomeFantasia" placeholder="Nome comercial"></ion-input>
+        </ion-item>
+        <div style="color: red; font-size: small; padding-left: 16px;"
+            *ngIf="supplierForm.get('nomeFantasia')?.invalid && supplierForm.get('nomeFantasia')?.touched">
+            Campo obrigatório
+        </div>
+
+        <ion-item>
+            <ion-label position="stacked">Razão Social</ion-label>
+            <ion-input formControlName="razaoSocial" placeholder="Razão social completa"></ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-label position="stacked">CNPJ</ion-label>
+            <ion-input formControlName="cnpj" placeholder="00.000.000/0000-00"></ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-label position="stacked">Email</ion-label>
+            <ion-input formControlName="email" type="email" placeholder="contato@empresa.com"></ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-label position="stacked">Telefone</ion-label>
+            <ion-input formControlName="telefone" type="tel" placeholder="(00) 00000-0000"></ion-input>
+        </ion-item>
+
+        <ion-item>
+            <ion-label position="stacked">Categoria Padrão</ion-label>
+            <ion-select formControlName="categoriaDefaultId" placeholder="Selecione (opcional)">
+                <ion-select-option value="">Nenhuma</ion-select-option>
+                <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</ion-select-option>
+            </ion-select>
+        </ion-item>
+
+        <ion-item lines="none">
+            <ion-checkbox formControlName="ativo">Fornecedor Ativo</ion-checkbox>
+        </ion-item>
+
+        <ion-button expand="block" type="submit" class="ion-margin-top">
+            <ion-icon slot="start" name="save-outline"></ion-icon>
+            Salvar
+        </ion-button>
+    </form>
+</ion-content>

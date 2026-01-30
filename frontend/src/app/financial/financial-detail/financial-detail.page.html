@@ -25,9 +25,19 @@
             <ion-row>
               <ion-col size="12" size-md="3">
                 <ion-item class="custom-input">
-                  <ion-label position="stacked">Cliente</ion-label>
-                  <ion-select formControlName="clienteId" placeholder="Selecione" interface="popover">
+                  <ion-label position="stacked">{{ type === 'receivables' ? 'Cliente' : 'Fornecedor' }}</ion-label>
+
+                  <!-- Cliente Select -->
+                  <ion-select *ngIf="type === 'receivables'" formControlName="clienteId" placeholder="Selecione"
+                    interface="popover">
                     <ion-select-option *ngFor="let client of clients" [value]="client.id">{{ client.razaoSocial
+                      }}</ion-select-option>
+                  </ion-select>
+
+                  <!-- Fornecedor Select -->
+                  <ion-select *ngIf="type === 'payables'" formControlName="fornecedorId" placeholder="Selecione"
+                    interface="popover">
+                    <ion-select-option *ngFor="let supplier of suppliers" [value]="supplier.id">{{ supplier.nomeFantasia
                       }}</ion-select-option>
                   </ion-select>
                 </ion-item>
@@ -195,7 +205,62 @@
         </ion-card>
       </div>
 
-      <!-- Section 3: Tabs (Observations / Attachments) -->
+      <!-- Section 3: Recurrence -->
+      <div class="section-container mt-4">
+        <div class="section-header">
+          <div class="flex items-center gap-2">
+            <h3>Recorrência</h3>
+            <ion-toggle formControlName="habilitarRecurrencia" style="margin-left: 10px;"></ion-toggle>
+            <ion-label *ngIf="financialForm.get('habilitarRecurrencia')?.value" color="primary"
+              class="text-sm font-bold">Ativado</ion-label>
+          </div>
+        </div>
+
+        <ion-card class="form-card" *ngIf="financialForm.get('habilitarRecurrencia')?.value">
+          <ion-grid>
+            <ion-row>
+              <ion-col size="12" size-md="4">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Frequência</ion-label>
+                  <ion-select formControlName="frequencia" interface="popover">
+                    <ion-select-option value="MENSAL">Mensal</ion-select-option>
+                    <ion-select-option value="SEMANAL">Semanal</ion-select-option>
+                    <ion-select-option value="ANUAL">Anual</ion-select-option>
+                    <ion-select-option value="DIARIO">Diário</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="4">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Terminar em</ion-label>
+                  <ion-select formControlName="tipoFimRecurrencia" interface="popover">
+                    <ion-select-option value="UNDEFINED">Indefinidamente</ion-select-option>
+                    <ion-select-option value="DATE">Data específica</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+
+              <ion-col size="12" size-md="4" *ngIf="financialForm.get('tipoFimRecurrencia')?.value === 'DATE'">
+                <ion-item class="custom-input">
+                  <ion-label position="stacked">Data Final</ion-label>
+                  <div class="date-input-wrapper">
+                    <ion-datetime-button datetime="recurrenceEndDate"></ion-datetime-button>
+                    <ion-modal [keepContentsMounted]="true">
+                      <ng-template>
+                        <ion-datetime id="recurrenceEndDate" presentation="date"
+                          formControlName="dataFimRecurrencia"></ion-datetime>
+                      </ng-template>
+                    </ion-modal>
+                  </div>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card>
+      </div>
+
+      <!-- Section 4: Tabs (Observations / Attachments) -->
       <div class="section-container mt-4">
         <div class="custom-segment">
           <ion-segment [(ngModel)]="activeTab" [ngModelOptions]="{standalone: true}" mode="md">

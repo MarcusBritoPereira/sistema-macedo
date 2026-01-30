@@ -28,6 +28,16 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'suppliers',
+    loadComponent: () => import('./suppliers/suppliers-list/suppliers-list.page').then(m => m.SuppliersListPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'suppliers/:id',
+    loadComponent: () => import('./suppliers/supplier-detail/supplier-detail.page').then(m => m.SupplierDetailPage),
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'users',
     loadComponent: () => import('./users/users-list/users-list.page').then(m => m.UsersListPage),
     canActivate: [AuthGuard]
@@ -76,6 +86,11 @@ export const routes: Routes = [
   {
     path: 'financial/dashboard',
     loadComponent: () => import('./financial/dashboard/dashboard.page').then(m => m.DashboardPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'financial/budget',
+    loadComponent: () => import('./financial/budget/budget.page').then(m => m.BudgetPage),
     canActivate: [AuthGuard]
   },
   {

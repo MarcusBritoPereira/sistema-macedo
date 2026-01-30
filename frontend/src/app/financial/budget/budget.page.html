@@ -1,0 +1,73 @@
+<ion-header>
+  <ion-toolbar class="top-toolbar">
+    <div class="header-content">
+      <div class="left-actions">
+        Orçamento & Metas (Vendas vs Despesas)
+      </div>
+
+      <div class="period-selector">
+        <ion-button fill="clear" size="small" (click)="changeYear(-1)">
+          <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
+        </ion-button>
+        <span class="current-year">{{ currentYear }}</span>
+        <ion-button fill="clear" size="small" (click)="changeYear(1)">
+          <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+  </ion-toolbar>
+
+  <!-- Annual Summary Cards -->
+  <div class="kpi-container">
+    <div class="kpi-card blue-text">
+        <span class="label">Meta de Receita Anual</span>
+        <span class="value">{{ totalReceitaMeta | number:'1.2-2' }}</span>
+    </div>
+    <div class="kpi-card red-text">
+        <span class="label">Meta de Despesa Anual</span>
+        <span class="value">{{ totalDespesaMeta | number:'1.2-2' }}</span>
+    </div>
+    <div class="kpi-card green-text">
+        <span class="label">Resultado Projetado</span>
+        <span class="value">{{ (totalReceitaMeta - totalDespesaMeta) | number:'1.2-2' }}</span>
+    </div>
+  </div>
+</ion-header>
+
+<ion-content class="light-bg">
+  <div class="data-table-container">
+    <div class="table-header">
+      <div class="col-month">Mês</div>
+      <div class="col-money">Meta Receita</div>
+      <div class="col-money">Meta Despesa</div>
+      <div class="col-money">Resultado</div>
+      <div class="col-actions">Ações</div>
+    </div>
+
+    <div class="table-body">
+      <div class="table-row" *ngFor="let m of months; let i = index">
+        <div class="col-month">{{ getMonthName(i + 1) }}</div>
+        
+        <div class="col-money">
+            <span *ngIf="getBudget(i + 1)?.receitaMeta as r">{{ r | number:'1.2-2' }}</span>
+            <span *ngIf="!getBudget(i + 1)?.receitaMeta" class="empty-col">-</span>
+        </div>
+
+        <div class="col-money text-danger">
+            <span *ngIf="getBudget(i + 1)?.despesaMeta as d">{{ d | number:'1.2-2' }}</span>
+            <span *ngIf="!getBudget(i + 1)?.despesaMeta" class="empty-col">-</span>
+        </div>
+
+        <div class="col-money">
+             {{ ((getBudget(i+1)?.receitaMeta || 0) - (getBudget(i+1)?.despesaMeta || 0)) | number:'1.2-2' }}
+        </div>
+
+        <div class="col-actions">
+          <ion-button fill="clear" size="small" (click)="openEditModal(i + 1)">
+            <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  </div>
+</ion-content>

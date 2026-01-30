@@ -120,7 +120,8 @@
                     (item.dataPagamento | date:'dd/MM/yyyy') : '-' }}</div>
                 <div class="col-desc">
                     <span class="desc-main">{{ item.descricao }}</span>
-                    <span class="desc-sub">Sem fornecedor</span>
+                    <span class="desc-sub">{{ item.fornecedor?.nomeFantasia || item.fornecedor || 'Sem fornecedor'
+                        }}</span>
                 </div>
                 <div class="col-value">{{ item.valor | number:'1.2-2' }}</div>
                 <div class="col-value">{{ (item.status === 'REALIZADO' || item.status === 'CONCILIADO') ? '0,00' :

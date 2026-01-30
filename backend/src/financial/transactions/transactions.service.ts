@@ -36,7 +36,7 @@ export class FinancialTransactionsService {
                 categoria: true,
                 centroCusto: true,
                 cliente: true,
-                // fornecedor is a string column, not a relation
+                fornecedor: true,
                 contaBancaria: true,
             },
             orderBy: { dataVencimento: 'asc' },
@@ -51,6 +51,7 @@ export class FinancialTransactionsService {
                 centroCusto: true,
                 cliente: true,
                 contrato: true,
+                fornecedor: true,
                 contaBancaria: true,
             },
         });

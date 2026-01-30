@@ -6,7 +6,9 @@ import { FinancialService, BankAccount } from '../../services/financial/financia
 import { CategoriesService, Category, Subcategory } from '../../services/financial/categories.service';
 import { ClientsService, Cliente } from '../../services/clients/clients';
 import { CostCentersService, CostCenter } from '../../services/financial/cost-centers.service';
-import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote } from '@ionic/angular/standalone';
+import { SuppliersService, Supplier } from '../../services/suppliers/suppliers.service';
+import { RecurringService } from '../../services/financial/recurring.service';
+import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline } from 'ionicons/icons';
 
@@ -15,7 +17,7 @@ import { trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, c
   templateUrl: './financial-detail.page.html',
   styleUrls: ['./financial-detail.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote]
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList]
 })
 export class FinancialDetailPage implements OnInit {
   financialForm: FormGroup;
@@ -31,6 +33,7 @@ export class FinancialDetailPage implements OnInit {
   clients: Cliente[] = [];
   costCenters: CostCenter[] = [];
   bankAccounts: BankAccount[] = [];
+  suppliers: Supplier[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -40,6 +43,8 @@ export class FinancialDetailPage implements OnInit {
     private categoriesService: CategoriesService,
     private clientsService: ClientsService,
     private costCentersService: CostCentersService,
+    private suppliersService: SuppliersService,
+    private recurringService: RecurringService,
     private alertController: AlertController
   ) {
     addIcons({ trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline });
@@ -47,6 +52,7 @@ export class FinancialDetailPage implements OnInit {
     this.financialForm = this.fb.group({
       // Launch Info
       clienteId: [''], // Optional
+      fornecedorId: [''], // NEW
       dataCompetencia: [new Date().toISOString(), [Validators.required]],
       descricao: ['', [Validators.required]],
       valor: ['', [Validators.required]],
@@ -66,6 +72,12 @@ export class FinancialDetailPage implements OnInit {
       informarNsu: [false],
       nsu: [''],
       recebido: [false], // If true, status = REALIZADO
+
+      // Recurrence
+      habilitarRecurrencia: [false],
+      frequencia: ['MENSAL'],
+      tipoFimRecurrencia: ['UNDEFINED'], // 'UNDEFINED' | 'DATE'
+      dataFimRecurrencia: [''],
 
       // Tabs
       observacoes: ['']
@@ -88,7 +100,8 @@ export class FinancialDetailPage implements OnInit {
       this.loadCategories(),
       this.loadClients(),
       this.loadCostCenters(),
-      this.loadBankAccounts()
+      this.loadBankAccounts(),
+      this.loadSuppliers()
     ]).then(() => {
       if (this.itemId && this.itemId !== 'new') {
         this.isEditMode = true;
@@ -122,6 +135,18 @@ export class FinancialDetailPage implements OnInit {
       this.clientsService.findAll().subscribe({
         next: (clients) => {
           this.clients = clients;
+          resolve();
+        },
+        error: () => resolve()
+      })
+    })
+  }
+
+  loadSuppliers() {
+    return new Promise<void>((resolve) => {
+      this.suppliersService.findAll().subscribe({
+        next: (items) => {
+          this.suppliers = items.filter(i => i.ativo !== false); // Only active suppliers
           resolve();
         },
         error: () => resolve()
@@ -197,6 +222,7 @@ export class FinancialDetailPage implements OnInit {
         vencimento: item.dataVencimento,
         recebido: item.status === 'REALIZADO' || item.status === 'CONCILIADO',
         clienteId: item.clienteId,
+        fornecedorId: item.fornecedorId,
         contaBancariaId: item.contaBancariaId // Ensure backend returns this
       });
     });
@@ -222,9 +248,24 @@ export class FinancialDetailPage implements OnInit {
       delete transactionData.recebido;
       delete transactionData.vencimento; // we used dataVencimento
 
+      const createRecurring = (transactionId: string) => {
+        if (formValue.habilitarRecurrencia) {
+          this.recurringService.create({
+            sourceTransactionId: transactionId,
+            frequencia: formValue.frequencia,
+            dataInicio: formValue.vencimento, // Start from the first due date
+            dataFim: formValue.tipoFimRecurrencia === 'DATE' ? formValue.dataFimRecurrencia : undefined
+          }).subscribe({
+            error: (e) => console.error('Error creating recurrence', e)
+          });
+        }
+      };
+
       if (this.isEditMode && this.itemId) {
         this.financialService.updateTransaction(this.itemId, transactionData).subscribe({
           next: () => {
+            // For simplicity V1: Editing transaction does NOT update recurrence settings yet.
+            // User would need to go to Recurring List (Future V2)
             this.showToast('Registro atualizado com sucesso!');
             this.router.navigate(['/financial']);
           },
@@ -232,7 +273,10 @@ export class FinancialDetailPage implements OnInit {
         });
       } else {
         this.financialService.createTransaction(transactionData).subscribe({
-          next: () => {
+          next: (res) => {
+            if (res && res.id) {
+              createRecurring(res.id);
+            }
             this.showToast('Registro criado com sucesso!');
             this.router.navigate(['/financial']);
           },

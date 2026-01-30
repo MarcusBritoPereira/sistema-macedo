@@ -10,6 +10,8 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ClientsModule } from './clients/clients.module';
 import { FinancialModule } from './financial/financial.module';
 import { ContractsModule } from './contracts/contracts.module';
+import { FiscalModule } from './fiscal/fiscal.module';
+import { SuppliersModule } from './suppliers/suppliers.module';
 
 
 @Module({
@@ -22,11 +24,13 @@ import { ContractsModule } from './contracts/contracts.module';
     FinancialModule,
     ContractsModule,
     ContractsModule,
+    FiscalModule,
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{
       ttl: 60000,
       limit: 10,
     }]),
+    SuppliersModule,
   ],
   controllers: [AppController],
   providers: [AppService],

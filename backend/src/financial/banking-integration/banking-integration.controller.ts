@@ -27,4 +27,8 @@ export class BankingIntegrationController {
         return this.service.getStatus(contaId);
     }
 
+    @Post('sync/:contaId')
+    sync(@Param('contaId') contaId: string) {
+        return this.service.syncStatements(contaId);
+    }
 }

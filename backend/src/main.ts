@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
 
 import helmet from 'helmet';
 
@@ -8,9 +9,15 @@ async function bootstrap() {
 
   // Security
   app.use(helmet());
+  app.useGlobalPipes(new ValidationPipe());
+
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (!frontendUrl) {
+    console.warn('FRONTEND_URL is not defined! CORS might block requests or be insecure.');
+  }
 
   app.enableCors({
-    origin: process.env.FRONTEND_URL, // Restrict this in production
+    origin: frontendUrl || 'http://localhost:8100', // Fallback for dev if needed
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });

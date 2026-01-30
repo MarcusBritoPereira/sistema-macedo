@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 import { ApiService } from '../api/api.service';
 import { BehaviorSubject, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { jwtDecode } from 'jwt-decode';
 
 @Injectable({
     providedIn: 'root'
@@ -19,9 +20,21 @@ export class AuthService {
     checkToken() {
         const token = localStorage.getItem('token');
         const user = localStorage.getItem('user');
+
         if (token && user) {
-            this.isAuthenticated = true;
-            this.userSubject.next(JSON.parse(user));
+            try {
+                const decoded: any = jwtDecode(token);
+                const currentTime = Date.now() / 1000;
+
+                if (decoded.exp < currentTime) {
+                    this.logout();
+                } else {
+                    this.isAuthenticated = true;
+                    this.userSubject.next(JSON.parse(user));
+                }
+            } catch (error) {
+                this.logout();
+            }
         }
     }
 

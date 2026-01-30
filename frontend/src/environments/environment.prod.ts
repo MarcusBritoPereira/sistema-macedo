@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: '' // TODO: Set this to your production API URL (e.g. https://api.mydomain.com)
+  apiUrl: 'https://api.replace-me.com' // TODO: Replace with your actual production API URL
 };

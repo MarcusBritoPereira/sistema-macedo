@@ -1,7 +1,9 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { FinancialDashboardService } from './financial-dashboard.service';
 
 @Controller('financial/dashboard')
+@UseGuards(AuthGuard('jwt'))
 export class FinancialDashboardController {
     constructor(private readonly dashboardService: FinancialDashboardService) { }
 

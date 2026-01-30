@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { CostCentersService } from './cost-centers.service';
 import { CreateCostCenterDto } from './dto/create-cost-center.dto';
 import { UpdateCostCenterDto } from './dto/update-cost-center.dto';
 
 @Controller('financial/cost-centers')
+@UseGuards(AuthGuard('jwt'))
 export class CostCentersController {
   constructor(private readonly costCentersService: CostCentersService) { }
 

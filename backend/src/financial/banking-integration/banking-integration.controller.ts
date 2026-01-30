@@ -1,10 +1,12 @@
 
-import { Body, Controller, Get, Param, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { AuthGuard } from '@nestjs/passport';
 import { BankingIntegrationService } from './banking-integration.service';
 import { ConfigureBankingDto } from './dto/configure-banking.dto';
 
 @Controller('financial/banking')
+@UseGuards(AuthGuard('jwt'))
 export class BankingIntegrationController {
     constructor(private readonly service: BankingIntegrationService) { }
 
@@ -17,15 +19,6 @@ export class BankingIntegrationController {
         @Body() dto: ConfigureBankingDto,
         @UploadedFiles() files: { certificate?: Express.Multer.File[], privateKey?: Express.Multer.File[] }
     ) {
-        console.log('Received Configure Request');
-        console.log('DTO:', JSON.stringify(dto));
-        if (files) {
-            console.log('Files:', Object.keys(files));
-            if (files.certificate) console.log('Certificate size:', files.certificate[0].size);
-            if (files.privateKey) console.log('PrivateKey size:', files.privateKey[0].size);
-        } else {
-            console.log('No files received');
-        }
         return this.service.configure(dto, files);
     }
 

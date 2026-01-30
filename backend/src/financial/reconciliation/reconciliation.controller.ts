@@ -1,8 +1,10 @@
 
-import { Controller, Get, Post, Body, Query, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, Delete, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { ReconciliationService } from './reconciliation.service';
 
 @Controller('financial/reconciliation')
+@UseGuards(AuthGuard('jwt'))
 export class ReconciliationController {
     constructor(private readonly service: ReconciliationService) { }
 

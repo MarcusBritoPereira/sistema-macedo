@@ -1,0 +1,25 @@
+ion-searchbar {
+    --background: var(--ion-color-light);
+    padding-top: 0;
+    padding-bottom: 10px;
+}
+
+.create-item {
+    --background: var(--ion-color-light-tint);
+    font-weight: 500;
+}
+
+.empty-results {
+    padding: 30px;
+    text-align: center;
+    color: var(--ion-color-medium);
+
+    p {
+        margin: 0;
+        font-size: 0.9rem;
+    }
+}
+
+ion-toolbar {
+    --border-width: 0;
+}

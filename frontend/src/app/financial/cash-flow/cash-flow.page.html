@@ -69,54 +69,61 @@
 
             <!-- KPI Cards Row -->
             <div class="premium-kpi-row">
-                <!-- Received Today -->
+                <!-- Received (Filtered) -->
                 <div class="premium-kpi-card green">
                     <div class="kpi-icon">
                         <ion-icon name="trending-up-outline"></ion-icon>
                     </div>
                     <div class="kpi-content">
-                        <span class="kpi-label">A receber hoje</span>
-                        <h2 class="kpi-value">{{ data.today.in | currency:'BRL' }}</h2>
-                        <div class="kpi-meta">
-                            <span>Mês: <strong class="green-text">{{ data.summary.totalIn | currency:'BRL'
-                                    }}</strong></span>
-                        </div>
+                        <span class="kpi-label">A receber ({{ currentFilter === 'today' ? 'Hoje' : (currentFilter ===
+                            'week' ? 'Semana' : 'Mês') }})</span>
+                        <h2 class="kpi-value">{{ filteredSummary.receivables | currency:'BRL' }}</h2>
                     </div>
                 </div>
 
-                <!-- Pay Today -->
+                <!-- Pay (Filtered) -->
                 <div class="premium-kpi-card red">
                     <div class="kpi-icon">
                         <ion-icon name="trending-down-outline"></ion-icon>
                     </div>
                     <div class="kpi-content">
-                        <span class="kpi-label">A pagar hoje</span>
-                        <h2 class="kpi-value">{{ data.today.out | currency:'BRL' }}</h2>
-                        <div class="kpi-meta">
-                            <span>Mês: <strong class="red-text">{{ data.summary.totalOut | currency:'BRL'
-                                    }}</strong></span>
-                        </div>
+                        <span class="kpi-label">A pagar ({{ currentFilter === 'today' ? 'Hoje' : (currentFilter ===
+                            'week' ? 'Semana' : 'Mês') }})</span>
+                        <h2 class="kpi-value">{{ filteredSummary.payables | currency:'BRL' }}</h2>
                     </div>
                 </div>
 
-                <!-- Balance -->
+                <!-- Balance (Filtered) -->
                 <div class="premium-kpi-card blue">
                     <div class="kpi-icon">
                         <ion-icon name="wallet-outline"></ion-icon>
                     </div>
                     <div class="kpi-content">
-                        <span class="kpi-label">Resultado do Mês</span>
-                        <h2 class="kpi-value" [class.negative]="data.summary.balance < 0">{{ data.summary.balance |
-                            currency:'BRL' }}</h2>
-                        <div class="kpi-meta">
-                            <span>Restante Entradas: <strong>{{ data.remaining.in | currency:'BRL' }}</strong></span>
-                        </div>
+                        <span class="kpi-label">Resultado ({{ currentFilter === 'today' ? 'Hoje' : (currentFilter ===
+                            'week' ? 'Semana' : 'Mês') }})</span>
+                        <h2 class="kpi-value" [class.negative]="filteredSummary.balance < 0">{{ filteredSummary.balance
+                            | currency:'BRL' }}</h2>
                     </div>
                 </div>
             </div>
 
-            <!-- Main Chart Area -->
-            <div class="chart-section">
+            <!-- Filter Controls -->
+            <div class="filter-controls">
+                <ion-segment [value]="currentFilter" (ionChange)="setFilter($any($event.detail.value))" mode="ios">
+                    <ion-segment-button value="today">
+                        <ion-label>Hoje</ion-label>
+                    </ion-segment-button>
+                    <ion-segment-button value="week">
+                        <ion-label>Esta Semana</ion-label>
+                    </ion-segment-button>
+                    <ion-segment-button value="month">
+                        <ion-label>Este Mês</ion-label>
+                    </ion-segment-button>
+                </ion-segment>
+            </div>
+
+            <!-- Main Chart Area (Hidden if Today filter is active, maybe? user just wants filter. keeping it for context) -->
+            <div class="chart-section" *ngIf="currentFilter === 'month'">
                 <div class="chart-header">
                     <div class="title">
                         <ion-icon name="bar-chart-outline"></ion-icon>
@@ -139,6 +146,41 @@
                             </div>
                             <span class="day-label">{{ day.date | date: 'dd' }}</span>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction List (Detail View) -->
+            <div class="data-table-container">
+                <div class="table-header">
+                    <div class="col-date">Data</div>
+                    <div class="col-desc">Descrição</div>
+                    <div class="col-type">Tipo</div>
+                    <div class="col-value">Valor</div>
+                </div>
+
+                <div class="table-body">
+                    <div class="table-row" *ngFor="let item of filteredTransactions">
+                        <div class="col-date">{{ item.dataVencimento | date:'dd/MM' }}</div>
+                        <div class="col-desc">
+                            {{ item.descricao }}
+                            <span class="secondary-text" *ngIf="item.clienteId || item.fornecedor">{{ item.clienteId ?
+                                'Cliente' : (item.fornecedor || 'Fornecedor') }}</span>
+                        </div>
+                        <div class="col-type">
+                            <span class="badge" [class.success]="item.tipo === 'RECEITA'"
+                                [class.danger]="item.tipo === 'DESPESA'">
+                                {{ item.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }}
+                            </span>
+                        </div>
+                        <div class="col-value" [class.text-danger]="item.tipo === 'DESPESA'"
+                            [class.text-success]="item.tipo === 'RECEITA'">
+                            {{ item.valor | currency:'BRL' }}
+                        </div>
+                    </div>
+
+                    <div class="empty-state" *ngIf="filteredTransactions.length === 0">
+                        <p>Nenhuma movimentação para o período selecionado.</p>
                     </div>
                 </div>
             </div>

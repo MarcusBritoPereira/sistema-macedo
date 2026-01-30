@@ -1,0 +1,134 @@
+<div class="detail-container">
+
+    <!-- RECONCILED VIEW -->
+    <div class="reconciled-view" *ngIf="statement.conciliado">
+        <div class="r-header">
+            <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
+            <h3>Lançamento Conciliado</h3>
+        </div>
+
+        <div class="r-info" *ngIf="statement.conciliacoes && statement.conciliacoes[0]?.lancamentoFinanceiro as linked">
+            <div class="info-row">
+                <label>Descrição</label>
+                <span>{{ linked.descricao }}</span>
+            </div>
+            <div class="info-row">
+                <label>Data Vencimento</label>
+                <span>{{ formatDate(linked.dataVencimento) }}</span>
+            </div>
+            <div class="info-row">
+                <label>Valor</label>
+                <span [class.credit]="linked.tipo === 'RECEITA'" [class.debit]="linked.tipo === 'DESPESA'">
+                    {{ linked.valor | currency:'BRL' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <ion-button fill="clear" color="medium" (click)="cancel()">Fechar</ion-button>
+            <ion-button color="danger" fill="outline" (click)="unreconcile()" [disabled]="loadingAction">
+                <ion-spinner *ngIf="loadingAction" name="crescent"></ion-spinner>
+                <span *ngIf="!loadingAction">Desconciliar Lançamento</span>
+            </ion-button>
+        </div>
+    </div>
+
+    <!-- UNRECONCILED VIEW -->
+    <ng-container *ngIf="!statement.conciliado">
+        <!-- Header / Tabs -->
+        <div class="detail-header">
+            <div class="tabs">
+                <div class="tab" [class.active]="activeTab === 'NEW'" (click)="activeTab = 'NEW'">
+                    Novo {{ statement.tipo === 'CREDIT' ? 'Recebimento' : 'Pagamento' }}
+                </div>
+                <div class="tab" [class.active]="activeTab === 'TRANSFER'" (click)="activeTab = 'TRANSFER'">
+                    Transferência
+                </div>
+            </div>
+            <div class="actions">
+                <div class="search-toggle" (click)="toggleMode()">
+                    <ion-icon name="search-outline"></ion-icon>
+                    {{ mode === 'FORM' ? 'Buscar existente' : 'Novo lançamento' }}
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-body">
+
+            <!-- FORM VIEW -->
+            <div class="form-view" *ngIf="mode === 'FORM'">
+                <div class="form-grid">
+                    <div class="field-item description-field">
+                        <label>Descrição</label>
+                        <ion-input [(ngModel)]="form.descricao" class="custom-input"></ion-input>
+                    </div>
+
+                    <div class="field-item">
+                        <label>Categoria</label>
+                        <div class="custom-select-trigger" (click)="openSelection('CATEGORY')">
+                            <span [class.placeholder]="!form.categoriaId">{{ getCategoryName() || 'Selecione' }}</span>
+                            <ion-icon name="chevron-down-outline"></ion-icon>
+                        </div>
+                    </div>
+
+                    <div class="field-item">
+                        <label>{{ statement.tipo === 'CREDIT' ? 'Cliente' : 'Fornecedor' }}</label>
+                        <div class="custom-select-trigger" (click)="openSelection('ENTITY')">
+                            <span [class.placeholder]="!form.fornecedorId">{{ getEntityName() || 'Selecione' }}</span>
+                            <ion-icon name="chevron-down-outline"></ion-icon>
+                        </div>
+                    </div>
+
+                    <div class="field-item">
+                        <label>Centro de Custo</label>
+                        <div class="custom-select-trigger" (click)="openSelection('COST_CENTER')">
+                            <span [class.placeholder]="!form.centroCustoId">{{ getCostCenterName() || 'Selecione'
+                                }}</span>
+                            <ion-icon name="chevron-down-outline"></ion-icon>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <ion-button fill="clear" color="medium" (click)="cancel()">Cancelar</ion-button>
+                    <ion-button class="confirm-btn" (click)="confirmCreation()" [disabled]="loadingAction">
+                        <ion-spinner *ngIf="loadingAction" name="crescent"></ion-spinner>
+                        <span *ngIf="!loadingAction">Conciliar Lançamento</span>
+                    </ion-button>
+                </div>
+            </div>
+
+            <!-- SEARCH VIEW (SUGGESTIONS) -->
+            <div class="search-view" *ngIf="mode === 'SEARCH'">
+                <div class="suggestions-header">
+                    <h3>Sugestões encontradas ({{ suggestions.length }})</h3>
+                </div>
+
+                <div class="suggestions-list" *ngIf="!loadingSuggestions">
+                    <div *ngFor="let match of suggestions" class="suggestion-row" (click)="link(match)">
+                        <div class="s-info">
+                            <span class="s-date">{{ formatDate(match.dataVencimento) }}</span>
+                            <span class="s-desc">{{ match.descricao }}</span>
+                            <span class="s-cat" *ngIf="match.categoria">{{ match.categoria.nome }}</span>
+                        </div>
+                        <div class="s-val">
+                            {{ match.valor | currency:'BRL' }}
+                            <ion-chip color="success" outline="true" *ngIf="(match.confidence || 0) > 80">High
+                                Match</ion-chip>
+                        </div>
+                        <ion-button fill="clear" size="small">
+                            <ion-icon name="link-outline" slot="icon-only"></ion-icon>
+                        </ion-button>
+                    </div>
+                    <div class="no-results" *ngIf="suggestions.length === 0">
+                        Nenhuma sugestão encontrada para este valor e data.
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <ion-button fill="clear" color="medium" (click)="cancel()">Cancelar</ion-button>
+                </div>
+            </div>
+
+        </div>
+    </ng-container>
+</div>

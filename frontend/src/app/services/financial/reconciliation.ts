@@ -19,4 +19,5 @@ export interface SuggestedMatch {
     status: string;
     categoria?: { nome: string };
     centroCusto?: { nome: string };
+    confidence?: number;
 }

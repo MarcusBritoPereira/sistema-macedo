@@ -130,11 +130,14 @@ export class BankAccountsPage implements OnInit {
         this.showToast('Funcionalidade em desenvolvimento', 'primary');
     }
 
-    async openWizard() {
+    async openWizard(accountToEdit?: BankAccount) {
         try {
             const modal = await this.modalCtrl.create({
                 component: BankAccountWizardComponent,
-                cssClass: 'wizard-modal'
+                cssClass: 'wizard-modal',
+                componentProps: {
+                    existingAccount: accountToEdit // Pass the account if editing
+                }
             });
 
             await modal.present();
@@ -147,6 +150,10 @@ export class BankAccountsPage implements OnInit {
         } catch (err) {
             console.error('BankAccountsPage: Error in openWizard', err);
         }
+    }
+
+    editAccount(acc: BankAccount) {
+        this.openWizard(acc);
     }
 
     goToReconciliation(accountId: string) {

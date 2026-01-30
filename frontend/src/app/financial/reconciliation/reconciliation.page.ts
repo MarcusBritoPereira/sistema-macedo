@@ -1,15 +1,14 @@
-
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import {
     IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
     IonList, IonItem, IonLabel, IonIcon, IonButton, IonSegment, IonSegmentButton,
     IonBadge, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonNote,
     IonChip, ToastController, LoadingController, AlertController, IonRefresher,
     IonRefresherContent, IonInput, IonSelect, IonSelectOption, IonSpinner,
-    IonSearchbar, IonCheckbox
+    IonSearchbar, IonCheckbox, ModalController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -19,14 +18,15 @@ import {
     cloudUploadOutline, chevronBackOutline, chevronForwardOutline,
     calendarOutline, cashOutline, walletOutline, arrowUpOutline, arrowDownOutline,
     trashBinOutline, createOutline, ellipsisVerticalOutline, closeOutline,
-    funnelOutline, businessOutline, checkmarkCircle, helpCircleOutline
+    funnelOutline, businessOutline, checkmarkCircle, helpCircleOutline,
+    chevronUpOutline, chevronDownOutline
 } from 'ionicons/icons';
-import { RouterLink } from '@angular/router';
 import { ReconciliationService } from '../../services/financial/reconciliation.service';
 import { FinancialService, BankAccount } from '../../services/financial/financial';
 import { BankStatement, SuggestedMatch } from '../../services/financial/reconciliation';
 import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { ReconciliationDetailComponent } from './components/reconciliation-detail/reconciliation-detail.component';
 
 @Component({
     selector: 'app-reconciliation',
@@ -34,12 +34,14 @@ import { ptBR } from 'date-fns/locale';
     styleUrls: ['./reconciliation.page.scss'],
     standalone: true,
     imports: [
-        CommonModule, FormsModule, IonHeader, IonToolbar, IonButtons, IonMenuButton,
-        IonTitle, IonContent, IonList, IonItem, IonLabel, IonIcon, IonButton,
+        CommonModule, FormsModule, RouterLink,
+        IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
+        IonList, IonItem, IonLabel, IonIcon, IonButton,
         IonSegment, IonSegmentButton, IonBadge, IonCard, IonCardHeader, IonCardTitle,
         IonCardContent, IonNote, IonChip, IonRefresher, IonRefresherContent,
         IonInput, IonSelect, IonSelectOption, IonSpinner, IonSearchbar,
-        IonCheckbox, RouterLink
+        IonCheckbox,
+        ReconciliationDetailComponent
     ]
 })
 export class ReconciliationPage implements OnInit {
@@ -50,6 +52,7 @@ export class ReconciliationPage implements OnInit {
     statements: BankStatement[] = [];
     filteredStatements: BankStatement[] = [];
     selectedStatement: BankStatement | null = null;
+    expandedStatementId: string | null = null;
     suggestions: SuggestedMatch[] = [];
 
     // Filter and View State
@@ -57,14 +60,6 @@ export class ReconciliationPage implements OnInit {
     filterType: 'ALL' | 'CREDIT' | 'DEBIT' = 'ALL';
     viewMode: 'PENDING' | 'MOVEMENTS' = 'PENDING';
     searchTerm: string = '';
-
-    setViewMode(mode: 'PENDING' | 'MOVEMENTS') {
-        this.viewMode = mode;
-        // When switching to PENDING, we show only pending (all time)
-        // When switching to MOVEMENTS, we show ALL (reconciled + pending) for the month
-        this.filterStatus = (mode === 'PENDING') ? 'PENDING' : 'ALL';
-        this.loadStatements();
-    }
 
     // Period State
     currentDate: Date = new Date();
@@ -86,7 +81,8 @@ export class ReconciliationPage implements OnInit {
         private financialService: FinancialService,
         private toastCtrl: ToastController,
         private loadingCtrl: LoadingController,
-        private alertCtrl: AlertController
+        private alertCtrl: AlertController,
+        private modalCtrl: ModalController
     ) {
         addIcons({
             receiptOutline, syncOutline, checkmarkCircleOutline, alertCircleOutline,
@@ -95,7 +91,8 @@ export class ReconciliationPage implements OnInit {
             cloudUploadOutline, chevronBackOutline, chevronForwardOutline,
             calendarOutline, cashOutline, walletOutline, arrowUpOutline, arrowDownOutline,
             trashBinOutline, createOutline, ellipsisVerticalOutline, closeOutline,
-            funnelOutline, businessOutline, checkmarkCircle, helpCircleOutline
+            funnelOutline, businessOutline, checkmarkCircle, helpCircleOutline,
+            chevronUpOutline, chevronDownOutline
         });
     }
 
@@ -104,6 +101,12 @@ export class ReconciliationPage implements OnInit {
             const accId = params['accountId'];
             this.loadAccounts(accId);
         });
+    }
+
+    setViewMode(mode: 'PENDING' | 'MOVEMENTS') {
+        this.viewMode = mode;
+        this.filterStatus = (mode === 'PENDING') ? 'PENDING' : 'ALL';
+        this.loadStatements();
     }
 
     loadAccounts(targetId?: string) {
@@ -122,12 +125,9 @@ export class ReconciliationPage implements OnInit {
         if (!this.selectedAccountId) return;
         this.loading = true;
 
-        // Update selected account object
         this.selectedAccount = this.bankAccounts.find(a => a.id === this.selectedAccountId) || null;
 
         const filters = {
-            // When filtering pending, we want to see ALL pending, including old ones.
-            // When filtering MOVEMENTS (Conciliated/All), we use the month period.
             startDate: this.filterStatus === 'PENDING' ? undefined : format(startOfMonth(this.currentDate), 'yyyy-MM-dd'),
             endDate: format(endOfMonth(this.currentDate), 'yyyy-MM-dd'),
             status: this.filterStatus === 'ALL' ? undefined : this.filterStatus
@@ -140,15 +140,6 @@ export class ReconciliationPage implements OnInit {
                 this.applySearch();
                 this.loading = false;
                 if (event) event.target.complete();
-
-                if (this.selectedStatement) {
-                    const stillExists = this.statements.find(s => s.id === this.selectedStatement?.id);
-                    if (stillExists) {
-                        this.selectStatement(stillExists);
-                    } else {
-                        this.selectedStatement = null;
-                    }
-                }
             },
             error: () => {
                 this.loading = false;
@@ -161,8 +152,6 @@ export class ReconciliationPage implements OnInit {
         this.summary.totalCount = this.statements.length;
         this.summary.receivablesCount = this.statements.filter(s => s.tipo === 'CREDIT').length;
         this.summary.payablesCount = this.statements.filter(s => s.tipo === 'DEBIT').length;
-
-        // Calculate total pending value (absolute sum of debits and credits)
         this.summary.totalPendingValue = this.statements
             .filter(s => !s.conciliado)
             .reduce((acc, s) => acc + Math.abs(Number(s.valor)), 0);
@@ -176,12 +165,10 @@ export class ReconciliationPage implements OnInit {
     applySearch() {
         let filtered = [...this.statements];
 
-        // Apply Type Filter
         if (this.filterType !== 'ALL') {
             filtered = filtered.filter(s => s.tipo === this.filterType);
         }
 
-        // Apply Search Term Filter
         if (this.searchTerm.trim()) {
             const query = this.searchTerm.toLowerCase();
             filtered = filtered.filter(s =>
@@ -213,76 +200,27 @@ export class ReconciliationPage implements OnInit {
         return label.charAt(0).toUpperCase() + label.slice(1);
     }
 
-    selectStatement(statement: BankStatement | null) {
-        this.selectedStatement = statement;
-        this.suggestions = [];
-        if (statement && !statement.conciliado) {
-            this.loadSuggestions(statement.id);
+    toggleExpand(statement: BankStatement) {
+        if (this.expandedStatementId === statement.id) {
+            this.expandedStatementId = null;
+        } else {
+            this.expandedStatementId = statement.id;
         }
     }
 
-    loadSuggestions(id: string) {
-        this.reconciliationService.getSuggestedMatches(id).subscribe({
-            next: (data) => this.suggestions = data
-        });
+    onDetailAction(event: any) {
+        this.expandedStatementId = null;
+        this.loadStatements();
+        if (event && event.action === 'created') this.showToast('Conciliação criada com sucesso!');
+        if (event && event.action === 'linked') this.showToast('Conciliação vinculada com sucesso!');
     }
 
-    async linkManual(lancamentoId: string) {
-        if (!this.selectedStatement) return;
-        const loader = await this.loadingCtrl.create({ message: 'Conciliando...' });
-        await loader.present();
-
-        this.reconciliationService.linkManual(this.selectedStatement.id, lancamentoId).subscribe({
-            next: () => {
-                loader.dismiss();
-                this.showToast('Lançamento conciliado com sucesso!');
-                this.loadStatements();
-                this.selectedStatement = null;
-            },
-            error: (err) => {
-                loader.dismiss();
-                this.showToast(err.error?.message || 'Erro ao conciliar', 'danger');
-            }
-        });
+    async showDefaultIcon(event: any) {
+        event.target.src = 'assets/icon/favicon.png';
     }
 
-    async createFromBank() {
-        if (!this.selectedStatement) return;
-
-        const alert = await this.alertCtrl.create({
-            header: 'Novo Lançamento',
-            message: `Deseja criar um novo lançamento para "${this.selectedStatement.descricao}"?`,
-            buttons: [
-                { text: 'Cancelar', role: 'cancel' },
-                {
-                    text: 'Criar e Conciliar',
-                    handler: () => {
-                        this.reconciliationService.createAndLink(this.selectedStatement!.id, {}).subscribe({
-                            next: () => {
-                                this.showToast('Criado e conciliado!');
-                                this.loadStatements();
-                                this.selectedStatement = null;
-                            }
-                        });
-                    }
-                }
-            ]
-        });
-        await alert.present();
-    }
-
-    async unlink(conciliacaoId: string) {
-        const loader = await this.loadingCtrl.create({ message: 'Desfazendo...' });
-        await loader.present();
-
-        this.reconciliationService.unlink(conciliacaoId).subscribe({
-            next: () => {
-                loader.dismiss();
-                this.showToast('Conciliação desfeita');
-                this.loadStatements();
-            },
-            error: () => loader.dismiss()
-        });
+    showIllustrationError(event: any) {
+        this.illustrationLoaded = false;
     }
 
     async syncBank() {
@@ -331,9 +269,5 @@ export class ReconciliationPage implements OnInit {
             position: 'bottom'
         });
         toast.present();
-    }
-
-    showDefaultIcon(event: any) {
-        this.illustrationLoaded = false;
     }
 }

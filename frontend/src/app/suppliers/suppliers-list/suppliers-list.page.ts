@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { addOutline, createOutline, searchOutline, trashOutline } from 'ionicons/icons';
+import { add, searchOutline, downloadOutline, chevronForwardOutline } from 'ionicons/icons';
 import { SuppliersService, Supplier } from '../../services/suppliers/suppliers.service';
 
 @Component({
@@ -20,7 +20,7 @@ export class SuppliersListPage implements OnInit {
     searchTerm = '';
 
     constructor(private suppliersService: SuppliersService) {
-        addIcons({ addOutline, createOutline, searchOutline, trashOutline });
+        addIcons({ add, searchOutline, downloadOutline, chevronForwardOutline });
     }
 
     ngOnInit() {

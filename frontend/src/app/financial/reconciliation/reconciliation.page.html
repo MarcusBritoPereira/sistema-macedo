@@ -167,31 +167,38 @@
 
             <!-- List of Items -->
             <div *ngIf="!loading && filteredStatements.length > 0" class="statements-list">
-                <div *ngFor="let s of filteredStatements" class="statement-row"
-                    [class.active]="selectedStatement?.id === s.id" [class.conciliated]="s.conciliado"
-                    (click)="selectStatement(s)">
-                    <div class="row-selection">
-                        <ion-checkbox mode="md"></ion-checkbox>
+                <div *ngFor="let s of filteredStatements" class="statement-wrapper">
+                    <div class="statement-row" [class.active]="expandedStatementId === s.id"
+                        [class.conciliated]="s.conciliado" (click)="toggleExpand(s)">
+                        <div class="row-selection" (click)="$event.stopPropagation()">
+                            <ion-checkbox mode="md"></ion-checkbox>
+                        </div>
+                        <div class="row-date">
+                            {{ formatDate(s.data) }}
+                        </div>
+                        <div class="row-desc">
+                            {{ s.descricao }}
+                        </div>
+                        <div class="row-value" [class.credit]="s.tipo === 'CREDIT'" [class.debit]="s.tipo === 'DEBIT'">
+                            {{ s.valor | currency:'BRL' }}
+                        </div>
+                        <div class="row-status">
+                            <ion-chip [color]="s.conciliado ? 'success' : 'warning'" mode="ios">
+                                <ion-icon name="checkmark-circle" *ngIf="s.conciliado"></ion-icon>
+                                {{ s.conciliado ? 'Conciliado' : 'Pendente' }}
+                            </ion-chip>
+                        </div>
+                        <div class="row-actions">
+                            <ion-icon
+                                [name]="expandedStatementId === s.id ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                        </div>
                     </div>
-                    <div class="row-date">
-                        {{ formatDate(s.data) }}
-                    </div>
-                    <div class="row-desc">
-                        {{ s.descricao }}
-                    </div>
-                    <div class="row-value" [class.credit]="s.tipo === 'CREDIT'" [class.debit]="s.tipo === 'DEBIT'">
-                        {{ s.valor | currency:'BRL' }}
-                    </div>
-                    <div class="row-status">
-                        <ion-chip [color]="s.conciliado ? 'success' : 'warning'" mode="ios">
-                            <ion-icon name="checkmark-circle" *ngIf="s.conciliado"></ion-icon>
-                            {{ s.conciliado ? 'Conciliado' : 'Pendente' }}
-                        </ion-chip>
-                    </div>
-                    <div class="row-actions">
-                        <ion-button fill="clear" color="medium">
-                            <ion-icon name="ellipsis-vertical-outline"></ion-icon>
-                        </ion-button>
+
+                    <!-- Accordion Content -->
+                    <div class="statement-detail" *ngIf="expandedStatementId === s.id">
+                        <app-reconciliation-detail [statement]="s" (close)="toggleExpand(s)"
+                            (complete)="onDetailAction($event)">
+                        </app-reconciliation-detail>
                     </div>
                 </div>
             </div>

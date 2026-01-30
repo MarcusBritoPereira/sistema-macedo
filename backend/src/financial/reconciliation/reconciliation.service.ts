@@ -107,6 +107,14 @@ export class ReconciliationService {
             if (!statement) throw new NotFoundException('Extrato não encontrado');
             if (statement.conciliado) throw new BadRequestException('Extrato já conciliado');
 
+            // Sanitize optional fields ('' -> null)
+            const sanitize = (val: any) => (val === '' || val === 'null' || val === undefined) ? null : val;
+
+            const categoriaId = sanitize(data.categoriaId);
+            const centroCustoId = sanitize(data.centroCustoId);
+            const fornecedorId = sanitize(data.fornecedorId);
+            const clienteId = sanitize(data.clienteId);
+
             // 1. Create Lancamento
             const lancamento = await tx.lancamentoFinanceiro.create({
                 data: {
@@ -116,9 +124,10 @@ export class ReconciliationService {
                     dataVencimento: statement.data,
                     dataPagamento: statement.data,
                     status: 'CONCILIADO',
-                    categoriaId: data.categoriaId,
-                    centroCustoId: data.centroCustoId,
-                    clienteId: data.clienteId,
+                    categoriaId: categoriaId,
+                    centroCustoId: centroCustoId,
+                    clienteId: clienteId,
+                    fornecedorId: fornecedorId, // Added missing mapping
                     observacoes: `Criado via conciliação bancária: ${statement.descricao}`
                 }
             });

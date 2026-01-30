@@ -77,10 +77,7 @@ model Cliente {
   obsFiscais     String?
 
   // 6. Dados Jurídicos
-  foro               String?
-  lgpdAceito         Boolean @default(false)
-  aceiteEletronico   Boolean @default(false)
-  contratoArquivoUrl String?
+  // 6. Dados Jurídicos - REMOVED
 
   ativo          Boolean  @default(true)
   createdAt      DateTime @default(now())

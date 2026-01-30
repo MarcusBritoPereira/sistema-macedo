@@ -147,34 +147,47 @@ ion-title {
     }
 }
 
-/* Split Pane Menu */
+/* Split Pane Menu - Black Sidebar */
 ion-menu {
     --width: 280px;
 
     ion-content {
-        --background: #ffffff;
-        border-right: 1px solid #e5e7eb;
+        --background: var(--ion-color-secondary);
+        /* Black */
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        /* Subtle divider */
     }
 
     ion-list {
         background: transparent;
+        padding-top: 16px;
     }
 
     ion-item {
         --background: transparent;
-        --color: #374151;
-        /* Dark Grey Text */
+        --color: #d1d5db;
+        /* Light Grey for inactive */
         margin: 4px 12px;
         border-radius: 8px;
+        font-weight: 500;
 
         &.selected {
             --background: var(--ion-color-primary);
+            /* Yellow */
+            --color: var(--ion-color-secondary);
+            /* Black Text for Contrast */
+            font-weight: 700;
+        }
+
+        &:hover:not(.selected) {
+            --background: rgba(255, 255, 255, 0.05);
             --color: #ffffff;
-            font-weight: 600;
+            cursor: pointer;
         }
 
         ion-icon {
             color: inherit;
+            margin-right: 8px;
         }
     }
 }
@@ -190,5 +203,21 @@ ion-menu {
     &::part(content) {
         border-radius: 12px;
         box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+}
+
+// Custom Modal for Reconciliation
+.reconciliation-modal {
+    --width: 95%;
+    --max-width: 1100px;
+    --height: 90%;
+    --max-height: 800px;
+    --border-radius: 16px;
+    --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+
+    @media (max-width: 768px) {
+        --width: 100%;
+        --height: 100%;
+        --border-radius: 0;
     }
 }

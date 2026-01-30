@@ -9,7 +9,7 @@ async function bootstrap() {
 
   // Security
   app.use(helmet());
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true }));
 
   const frontendUrl = process.env.FRONTEND_URL;
   if (!frontendUrl) {

@@ -2,34 +2,67 @@
   <ion-toolbar class="top-toolbar">
     <div class="header-content">
       <div class="left-actions">
-        Orçamento & Metas (Vendas vs Despesas)
+        <div class="page-title">
+          <h1>Orçamento & Metas</h1>
+          <p>Planejamento de Vendas e Despesas ({{ currentYear }})</p>
+        </div>
       </div>
 
-      <div class="period-selector">
-        <ion-button fill="clear" size="small" (click)="changeYear(-1)">
-          <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
-        </ion-button>
-        <span class="current-year">{{ currentYear }}</span>
-        <ion-button fill="clear" size="small" (click)="changeYear(1)">
-          <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
+      <div class="right-actions">
+        <div class="period-navigation">
+          <ion-button fill="clear" size="small" (click)="changeYear(-1)">
+            <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
+          </ion-button>
+          <span class="current-year">{{ currentYear }}</span>
+          <ion-button fill="clear" size="small" (click)="changeYear(1)">
+            <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
+          </ion-button>
+        </div>
+
+        <ion-button fill="outline" class="action-btn" disabled>
+          <ion-icon name="download-outline" slot="start"></ion-icon>
+          Exportar
         </ion-button>
       </div>
     </div>
   </ion-toolbar>
 
-  <!-- Annual Summary Cards -->
-  <div class="kpi-container">
-    <div class="kpi-card blue-text">
-        <span class="label">Meta de Receita Anual</span>
-        <span class="value">{{ totalReceitaMeta | number:'1.2-2' }}</span>
+  <!-- Premium KPI Cards -->
+  <div class="premium-kpi-row">
+    <!-- Card 1: Receita -->
+    <div class="premium-kpi-card green">
+      <div class="kpi-icon">
+        <ion-icon name="trending-up-outline"></ion-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-label">Meta de Receita Anual</div>
+        <div class="kpi-value value-text">{{ totalReceitaMeta | number:'1.2-2' }}</div>
+        <div class="kpi-meta">Projeção de entradas</div>
+      </div>
     </div>
-    <div class="kpi-card red-text">
-        <span class="label">Meta de Despesa Anual</span>
-        <span class="value">{{ totalDespesaMeta | number:'1.2-2' }}</span>
+
+    <!-- Card 2: Despesa -->
+    <div class="premium-kpi-card red">
+      <div class="kpi-icon">
+        <ion-icon name="trending-down-outline"></ion-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-label">Meta de Despesa Anual</div>
+        <div class="kpi-value value-text">{{ totalDespesaMeta | number:'1.2-2' }}</div>
+        <div class="kpi-meta">Limite de gastos</div>
+      </div>
     </div>
-    <div class="kpi-card green-text">
-        <span class="label">Resultado Projetado</span>
-        <span class="value">{{ (totalReceitaMeta - totalDespesaMeta) | number:'1.2-2' }}</span>
+
+    <!-- Card 3: Resultado -->
+    <div class="premium-kpi-card blue">
+      <div class="kpi-icon">
+        <ion-icon name="wallet-outline"></ion-icon>
+      </div>
+      <div class="kpi-content">
+        <div class="kpi-label">Resultado Projetado</div>
+        <div class="kpi-value value-text">{{ (totalReceitaMeta - totalDespesaMeta) | number:'1.2-2' }}</div>
+        <div class="kpi-meta">Lucro esperado</div>
+      </div>
     </div>
   </div>
 </ion-header>
@@ -40,31 +73,34 @@
       <div class="col-month">Mês</div>
       <div class="col-money">Meta Receita</div>
       <div class="col-money">Meta Despesa</div>
-      <div class="col-money">Resultado</div>
-      <div class="col-actions">Ações</div>
+      <div class="col-result">Resultado</div>
+      <div class="col-actions"></div>
     </div>
 
     <div class="table-body">
       <div class="table-row" *ngFor="let m of months; let i = index">
         <div class="col-month">{{ getMonthName(i + 1) }}</div>
-        
-        <div class="col-money">
-            <span *ngIf="getBudget(i + 1)?.receitaMeta as r">{{ r | number:'1.2-2' }}</span>
-            <span *ngIf="!getBudget(i + 1)?.receitaMeta" class="empty-col">-</span>
+
+        <div class="col-money text-success">
+          <span *ngIf="getBudget(i + 1)?.receitaMeta as r">{{ r | number:'1.2-2' }}</span>
+          <span *ngIf="!getBudget(i + 1)?.receitaMeta" class="empty-col">-</span>
         </div>
 
         <div class="col-money text-danger">
-            <span *ngIf="getBudget(i + 1)?.despesaMeta as d">{{ d | number:'1.2-2' }}</span>
-            <span *ngIf="!getBudget(i + 1)?.despesaMeta" class="empty-col">-</span>
+          <span *ngIf="getBudget(i + 1)?.despesaMeta as d">{{ d | number:'1.2-2' }}</span>
+          <span *ngIf="!getBudget(i + 1)?.despesaMeta" class="empty-col">-</span>
         </div>
 
-        <div class="col-money">
-             {{ ((getBudget(i+1)?.receitaMeta || 0) - (getBudget(i+1)?.despesaMeta || 0)) | number:'1.2-2' }}
+        <div class="col-result"
+          [class.text-danger]="((getBudget(i+1)?.receitaMeta || 0) - (getBudget(i+1)?.despesaMeta || 0)) < 0"
+          [class.text-primary]="((getBudget(i+1)?.receitaMeta || 0) - (getBudget(i+1)?.despesaMeta || 0)) >= 0">
+          {{ ((getBudget(i+1)?.receitaMeta || 0) - (getBudget(i+1)?.despesaMeta || 0)) | number:'1.2-2' }}
         </div>
 
         <div class="col-actions">
-          <ion-button fill="clear" size="small" (click)="openEditModal(i + 1)">
-            <ion-icon name="create-outline" slot="icon-only"></ion-icon>
+          <ion-button fill="outline" size="small" (click)="openEditModal(i + 1)">
+            Editar
+            <ion-icon name="create-outline" slot="end"></ion-icon>
           </ion-button>
         </div>
       </div>

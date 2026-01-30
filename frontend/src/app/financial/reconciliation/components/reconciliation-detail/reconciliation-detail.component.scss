@@ -1,0 +1,287 @@
+.detail-container {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 20px;
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e2e8f0;
+    margin-bottom: 20px;
+    padding-bottom: 8px;
+
+    .tabs {
+        display: flex;
+        gap: 24px;
+
+        .tab {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #64748b;
+            cursor: pointer;
+            padding-bottom: 8px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+
+            &:hover {
+                color: #3b82f6;
+            }
+
+            &.active {
+                color: #3b82f6;
+                border-bottom-color: #3b82f6;
+                font-weight: 600;
+            }
+        }
+    }
+
+    .search-toggle {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: #3b82f6;
+        font-size: 0.9rem;
+        cursor: pointer;
+        font-weight: 500;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+
+    @media (max-width: 900px) {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    @media (max-width: 600px) {
+        grid-template-columns: 1fr;
+    }
+}
+
+.field-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+
+    label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+    }
+
+    .custom-input,
+    .custom-select,
+    .custom-select-trigger {
+        --background: white;
+        --border-color: #cbd5e1;
+        --border-radius: 8px;
+        --padding-start: 12px;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        height: 40px;
+        font-size: 0.9rem;
+        background: white;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        justify-content: space-between;
+        cursor: pointer;
+        color: #333;
+
+        span.placeholder {
+            color: #94a3b8;
+        }
+
+        ion-icon {
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        &:hover {
+            border-color: #94a3b8;
+        }
+    }
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    align-items: center;
+
+    .confirm-btn {
+        --background: #2563eb;
+        --border-radius: 8px;
+        font-weight: 600;
+        text-transform: none;
+        height: 40px;
+        font-size: 0.95rem;
+    }
+}
+
+.suggestions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+
+    .suggestion-row {
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 8px;
+        padding: 12px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        cursor: pointer;
+        transition: all 0.2s;
+
+        @media (max-width: 600px) {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+
+        &:hover {
+            border-color: #3b82f6;
+            background: #f0f9ff;
+        }
+
+        .s-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+
+            @media (max-width: 600px) {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+                width: 100%;
+            }
+
+            .s-date {
+                color: #64748b;
+                font-size: 0.9rem;
+            }
+
+            .s-desc {
+                font-weight: 600;
+                color: #333;
+            }
+
+            .s-cat {
+                background: #f1f5f9;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                color: #475569;
+            }
+        }
+
+        .s-val {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            color: #333;
+
+            @media (max-width: 600px) {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    }
+}
+
+// Reconciled View
+.reconciled-view {
+    padding: 24px;
+    text-align: center;
+    background: #f8fafc;
+    border-radius: 8px;
+
+    .r-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 24px;
+
+        ion-icon {
+            font-size: 3rem;
+        }
+
+        h3 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: #1e293b;
+            font-weight: 600;
+        }
+    }
+
+    .r-info {
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+        text-align: left;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+
+            &:last-child {
+                border-bottom: none;
+            }
+
+            label {
+                color: #64748b;
+                font-size: 0.9rem;
+            }
+
+            span {
+                color: #333;
+                font-weight: 500;
+                font-size: 0.95rem;
+
+                &.credit {
+                    color: var(--ion-color-success);
+                }
+
+                &.debit {
+                    color: var(--ion-color-danger);
+                }
+            }
+        }
+    }
+}

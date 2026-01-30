@@ -66,7 +66,9 @@
 
         <!-- Table Body -->
         <div class="table-body">
-            <div *ngFor="let acc of filteredAccounts" class="table-row" [class.has-pending]="(acc.pendingReconciliations || 0) > 0" (click)="(acc.pendingReconciliations || 0) > 0 ? goToReconciliation(acc.id) : null">
+            <div *ngFor="let acc of filteredAccounts" class="table-row"
+                [class.has-pending]="(acc.pendingReconciliations || 0) > 0"
+                (click)="(acc.pendingReconciliations || 0) > 0 ? goToReconciliation(acc.id) : null">
                 <div class="col-name">{{ acc.nome }}</div>
                 <div class="col-bank">
                     <ion-icon name="business-outline" style="font-size: 1.1rem; color: #0076a8;"></ion-icon>
@@ -83,7 +85,8 @@
                     </span>
                 </div>
                 <div class="col-integration">
-                    <span class="integration-badge" [class.direct]="acc.integracao?.status === 'CONNECTED'" [class.manual]="acc.integracao?.status !== 'CONNECTED'">
+                    <span class="integration-badge" [class.direct]="acc.integracao?.status === 'CONNECTED'"
+                        [class.manual]="acc.integracao?.status !== 'CONNECTED'">
                         {{ acc.integracao?.status === 'CONNECTED' ? 'Direta' : 'Manual' }}
                     </span>
                 </div>
@@ -93,7 +96,7 @@
                         Excluir
                     </ion-button>
                     <ion-button fill="outline" size="small" class="actions-dropdown-btn" style="margin-left: 8px;"
-                        (click)="$event.stopPropagation()">
+                        (click)="$event.stopPropagation(); editAccount(acc)">
                         Editar
                     </ion-button>
                 </div>

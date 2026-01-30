@@ -1,0 +1,149 @@
+<ion-content class="modal-bg">
+    <div class="split-container">
+
+        <!-- LEFT COLUMN: Bank Statement -->
+        <div class="column bank-column">
+            <div class="col-header">
+                <ion-icon name="business-outline" class="bank-icon"></ion-icon>
+                <h2>Lançamentos do banco</h2>
+            </div>
+
+            <div class="bank-card">
+                <div class="card-top">
+                    <div class="checkbox-placeholder"></div>
+                    <div class="date-info">
+                        <span class="date">{{ formatDate(statement.data) }}</span>
+                        <span class="amount" [class.negative]="statement.tipo === 'DEBIT'"
+                            [class.positive]="statement.tipo === 'CREDIT'">
+                            {{ statement.tipo === 'DEBIT' ? '-' : '' }} {{ statement.valor | currency:'BRL' }}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <p class="description">{{ statement.descricao }}</p>
+                    <p class="meta-info">Hash: {{ statement.hash.substring(0,8) }}</p>
+                </div>
+
+                <div class="card-footer">
+                    <ion-button fill="clear" size="small" class="grey-btn">Integração manual</ion-button>
+                    <ion-button fill="clear" size="small" class="grey-btn">Ignorar</ion-button>
+                </div>
+            </div>
+        </div>
+
+        <!-- CENTER ACTION -->
+        <div class="center-action">
+            <ion-button class="reconcile-btn" (click)="confirmCreation()" [disabled]="mode === 'SEARCH'">
+                Conciliar
+            </ion-button>
+        </div>
+
+        <!-- RIGHT COLUMN: System Form -->
+        <div class="column system-column">
+            <div class="col-header">
+                <ion-icon name="cloud-upload-outline" class="system-icon"></ion-icon>
+                <h2>Lançamentos do Sistema</h2>
+            </div>
+
+            <div class="system-card">
+                <!-- Tabs -->
+                <div class="tabs-header">
+                    <div class="tab-group">
+                        <div class="tab" [class.active]="activeTab === 'NEW'" (click)="activeTab = 'NEW'">
+                            Novo lançamento
+                        </div>
+                        <div class="tab" [class.active]="activeTab === 'TRANSFER'" (click)="activeTab = 'TRANSFER'">
+                            Nova transferência
+                        </div>
+                    </div>
+
+                    <div class="search-toggle" (click)="toggleMode()">
+                        <ion-icon name="search-outline"></ion-icon>
+                        Buscar lançamento
+                    </div>
+                </div>
+
+                <!-- FORM MODE -->
+                <div class="form-content" *ngIf="mode === 'FORM'">
+                    <div class="form-row">
+                        <div class="input-group full-width">
+                            <label>Descrição *</label>
+                            <ion-input [(ngModel)]="form.descricao" mode="md" fill="outline"></ion-input>
+                        </div>
+
+                        <div class="input-group full-width">
+                            <label>Categoria *</label>
+                            <ion-select [(ngModel)]="form.categoriaId" mode="md" fill="outline" interface="popover"
+                                placeholder="Selecione">
+                                <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome
+                                    }}</ion-select-option>
+                            </ion-select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="input-group half-width">
+                            <label>Fornecedor/Cliente</label>
+                            <ion-select [(ngModel)]="form.fornecedorId" mode="md" fill="outline" interface="popover"
+                                placeholder="Selecione">
+                                <ion-select-option *ngFor="let sup of suppliers" [value]="sup.id">{{ sup.nomeFantasia
+                                    }}</ion-select-option>
+                            </ion-select>
+                        </div>
+
+                        <div class="input-group half-width">
+                            <label>Centro de Custo</label>
+                            <ion-select [(ngModel)]="form.centroCustoId" mode="md" fill="outline" interface="popover"
+                                placeholder="Selecione">
+                                <ion-select-option *ngFor="let cc of costCenters" [value]="cc.id">{{ cc.nome
+                                    }}</ion-select-option>
+                            </ion-select>
+                        </div>
+                    </div>
+
+                    <div class="form-footer">
+                        <div class="spacer"></div>
+                        <ion-button size="small" fill="outline" class="complete-btn"
+                            (click)="confirmCreation()">Completar informações</ion-button>
+                    </div>
+                </div>
+
+                <!-- SEARCH MODE (Suggestions) -->
+                <div class="search-content" *ngIf="mode === 'SEARCH'">
+                    <ion-searchbar placeholder="Buscar por valor ou nome" mode="ios"></ion-searchbar>
+
+                    <div class="suggestions-list-small">
+                        <div *ngFor="let match of suggestions" class="mini-match" (click)="link(match)">
+                            <div class="match-info">
+                                <div class="m-date">{{ formatDate(match.dataVencimento) }}</div>
+                                <div class="m-desc">{{ match.descricao }}</div>
+                            </div>
+                            <div class="match-val">
+                                {{ match.valor | currency:'BRL' }}
+                                <span class="match-pct" *ngIf="match.confidence && match.confidence > 0">{{
+                                    match.confidence }}%</span>
+                            </div>
+                        </div>
+                        <div class="no-matches" *ngIf="suggestions.length === 0">
+                            Nenhuma sugestão encontrada.
+                        </div>
+                    </div>
+
+                    <div class="form-footer">
+                        <ion-button fill="clear" size="small" (click)="toggleMode()">Voltar para Novo
+                            Lançamento</ion-button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <div class="close-btn-corner">
+        <ion-button fill="clear" (click)="dismiss()">
+            <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+        </ion-button>
+    </div>
+</ion-content>

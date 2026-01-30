@@ -3,6 +3,9 @@ ion-content.light-bg {
     --background: #f4f7f9;
 }
 
+/* --- Responsive Breakpoints --- */
+$breakpoint-mobile: 768px;
+
 /* --- Header Styling --- */
 .main-header {
     --background: #fff;
@@ -15,8 +18,17 @@ ion-content.light-bg {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        height: 64px;
+        height: auto; // Allow height to grow if wrapped
+        min-height: 64px;
         width: 100%;
+        flex-wrap: wrap; // Safety wrap
+        gap: 12px; // Gap for wrapped items
+
+        @media (max-width: $breakpoint-mobile) {
+            flex-direction: column;
+            padding: 12px 0;
+            gap: 12px;
+        }
     }
 
     .header-left {
@@ -24,7 +36,17 @@ ion-content.light-bg {
         align-items: center;
         gap: 16px;
 
+        @media (max-width: $breakpoint-mobile) {
+            width: 100%;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
         .bank-selector-wrapper {
+            @media (max-width: $breakpoint-mobile) {
+                flex: 1;
+            }
+
             .bank-item {
                 --background: transparent;
                 --padding-start: 0;
@@ -33,6 +55,10 @@ ion-content.light-bg {
                 border-radius: 6px;
                 padding: 0 12px;
                 max-width: 250px;
+
+                @media (max-width: $breakpoint-mobile) {
+                    max-width: 100%;
+                }
 
                 ion-select {
                     font-weight: 600;
@@ -45,10 +71,20 @@ ion-content.light-bg {
         .action-buttons {
             display: flex;
             gap: 8px;
+
+            @media (max-width: $breakpoint-mobile) {
+                display: none;
+            }
         }
     }
 
     .header-right {
+        @media (max-width: $breakpoint-mobile) {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+        }
+
         .period-navigator {
             display: flex;
             align-items: center;
@@ -56,6 +92,11 @@ ion-content.light-bg {
             border: 1px solid #d1d9e2;
             border-radius: 6px;
             padding: 2px;
+
+            @media (max-width: $breakpoint-mobile) {
+                width: 100%;
+                justify-content: space-between;
+            }
 
             .period-label {
                 display: flex;
@@ -95,12 +136,29 @@ ion-content.light-bg {
         justify-content: space-between;
         padding: 10px 0;
         font-size: 0.85rem;
+        flex-wrap: wrap;
+        /* Added */
+        gap: 16px;
+        /* Added */
+
+        @media (max-width: $breakpoint-mobile) {
+            flex-direction: column;
+            gap: 16px;
+        }
     }
 
     .meta-left,
     .meta-right {
         display: flex;
         gap: 32px;
+        flex-wrap: wrap;
+        /* Added */
+
+        @media (max-width: $breakpoint-mobile) {
+            flex-direction: column;
+            gap: 8px;
+            width: 100%;
+        }
     }
 
     .meta-info-item,
@@ -108,6 +166,7 @@ ion-content.light-bg {
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-wrap: wrap;
 
         .label {
             color: #5c6770;
@@ -125,14 +184,16 @@ ion-content.light-bg {
             color: #0076a8;
             cursor: pointer;
         }
+
+        @media (max-width: $breakpoint-mobile) {
+            justify-content: space-between;
+            width: 100%;
+        }
     }
 
     .balance-item {
-        .balance-value {
-            font-weight: 700;
-            color: #262e33;
-        }
 
+        .balance-value,
         .balance-value-pending {
             font-weight: 700;
             color: #262e33;
@@ -147,6 +208,12 @@ ion-content.light-bg {
     padding: 0 32px;
     border-bottom: 1px solid #e6e9ed;
 
+    @media (max-width: $breakpoint-mobile) {
+        padding: 0;
+        justify-content: space-around;
+        gap: 0;
+    }
+
     .tab {
         padding: 16px 24px;
         color: #5c6770;
@@ -154,6 +221,14 @@ ion-content.light-bg {
         cursor: pointer;
         position: relative;
         transition: all 0.2s;
+
+        @media (max-width: $breakpoint-mobile) {
+            padding: 16px 8px;
+            font-size: 0.9rem;
+            flex: 1;
+            text-align: center;
+            border-bottom: 2px solid transparent; // Ensure consistent height
+        }
 
         &:hover {
             color: #262e33;
@@ -180,6 +255,10 @@ ion-content.light-bg {
     max-width: 1200px;
     margin: 0 auto;
     padding: 24px;
+
+    @media (max-width: $breakpoint-mobile) {
+        padding: 16px;
+    }
 }
 
 .alert-banner {
@@ -191,6 +270,13 @@ ion-content.light-bg {
     border-radius: 8px;
     padding: 12px 20px;
     margin-bottom: 24px;
+    position: relative;
+
+    @media (max-width: $breakpoint-mobile) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
 
     .alert-content {
         display: flex;
@@ -210,6 +296,13 @@ ion-content.light-bg {
 
     .close-alert {
         margin-left: 8px;
+
+        @media (max-width: $breakpoint-mobile) {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            margin: 0;
+        }
     }
 }
 
@@ -219,11 +312,23 @@ ion-content.light-bg {
     align-items: center;
     margin-bottom: 24px;
 
+    @media (max-width: $breakpoint-mobile) {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+
     .search-section {
         display: flex;
         align-items: center;
         gap: 16px;
         flex: 1;
+
+        @media (max-width: $breakpoint-mobile) {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
+        }
 
         .search-input-wrapper {
             display: flex;
@@ -235,6 +340,10 @@ ion-content.light-bg {
             height: 40px;
             flex: 1;
             max-width: 400px;
+
+            @media (max-width: $breakpoint-mobile) {
+                max-width: 100%;
+            }
 
             ion-icon {
                 color: #5c6770;
@@ -254,6 +363,12 @@ ion-content.light-bg {
             --color: #0076a8;
             text-transform: none;
             font-size: 0.9rem;
+        }
+    }
+
+    .view-actions {
+        @media (max-width: $breakpoint-mobile) {
+            display: none;
         }
     }
 }
@@ -321,6 +436,29 @@ ion-content.light-bg {
     padding: 8px 16px;
     margin-bottom: 16px;
 
+    @media (max-width: $breakpoint-mobile) {
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px;
+
+        .ops-left {
+            width: 100%;
+            justify-content: flex-start;
+            flex-wrap: wrap; // Allow buttons to wrap
+            gap: 8px;
+
+            ion-button:not(:first-child) {
+                display: none; // Still hide bulk actions for now on mobile
+            }
+
+            // Except ensure "Select" or primary action is visible if needed
+        }
+
+        .ops-right {
+            display: none;
+        }
+    }
+
     .ops-left {
         display: flex;
         align-items: center;
@@ -346,6 +484,13 @@ ion-content.light-bg {
     cursor: pointer;
     transition: all 0.2s;
 
+    @media (max-width: $breakpoint-mobile) {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 16px;
+        gap: 12px;
+    }
+
     &:hover {
         border-color: #0076a8;
         box-shadow: 0 4px 12px rgba(0, 118, 168, 0.08);
@@ -358,18 +503,41 @@ ion-content.light-bg {
 
     .row-selection {
         width: 40px;
+
+        @media (max-width: $breakpoint-mobile) {
+            display: none;
+        }
     }
 
     .row-date {
         width: 100px;
         color: #5c6770;
         font-size: 0.9rem;
+
+        @media (max-width: $breakpoint-mobile) {
+            width: 100%;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: flex;
+            justify-content: space-between;
+
+            // Hack: Move status here visually if needed, or just keep date alone
+            margin-bottom: 4px;
+        }
     }
 
     .row-desc {
         flex: 1;
         font-weight: 600;
         color: #262e33;
+
+        @media (max-width: $breakpoint-mobile) {
+            width: 100%;
+            white-space: normal;
+            line-height: 1.4;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
     }
 
     .row-value {
@@ -386,16 +554,45 @@ ion-content.light-bg {
         &.debit {
             color: #c92a2a;
         }
+
+        @media (max-width: $breakpoint-mobile) {
+            width: 100%;
+            text-align: left;
+            margin-right: 0;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
     }
 
     .row-status {
         width: 140px;
+
+        @media (max-width: $breakpoint-mobile) {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start; // Stack under value or date
+            margin-top: 4px;
+        }
 
         ion-chip {
             ion-icon {
                 margin-right: 4px;
                 font-size: 16px;
             }
+
+            @media (max-width: $breakpoint-mobile) {
+                height: 24px;
+                font-size: 0.75rem;
+                margin: 0;
+            }
+        }
+    }
+
+    .row-actions {
+        @media (max-width: $breakpoint-mobile) {
+            display: none; // Hide chevron on mobile card view since card is clickable
         }
     }
 }

@@ -16,6 +16,7 @@ import { RouterModule } from '@angular/router';
 })
 export class CategoriesListPage implements OnInit {
   categories: Category[] = [];
+  filteredCategories: Category[] = [];
 
   constructor(
     private categoriesService: CategoriesService
@@ -31,6 +32,7 @@ export class CategoriesListPage implements OnInit {
     this.categoriesService.findAll().subscribe({
       next: (data) => {
         this.categories = data;
+        this.filteredCategories = data; // Initialize filtered list
         if (event) event.target.complete();
       },
       error: (error) => {
@@ -38,5 +40,18 @@ export class CategoriesListPage implements OnInit {
         if (event) event.target.complete();
       }
     });
+  }
+
+  filterCategories(event: any) {
+    const query = event.target.value?.toLowerCase() || '';
+
+    if (!query) {
+      this.filteredCategories = [...this.categories];
+      return;
+    }
+
+    this.filteredCategories = this.categories.filter(category =>
+      category.nome.toLowerCase().includes(query)
+    );
   }
 }

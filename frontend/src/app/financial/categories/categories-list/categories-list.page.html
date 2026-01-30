@@ -15,7 +15,8 @@
 <ion-content class="ion-padding-horizontal">
   <div class="header-section">
     <h1>Gestão de <strong>Categorias</strong></h1>
-    <ion-searchbar placeholder="Buscar categorias..." mode="ios" class="custom-search"></ion-searchbar>
+    <ion-searchbar placeholder="Buscar categorias..." mode="ios" class="custom-search"
+      (ionInput)="filterCategories($event)"></ion-searchbar>
   </div>
 
   <ion-refresher slot="fixed" (ionRefresh)="loadCategories($event)">
@@ -23,7 +24,7 @@
   </ion-refresher>
 
   <div class="list-container">
-    <ion-card *ngFor="let category of categories" [routerLink]="['/financial/categories', category.id]"
+    <ion-card *ngFor="let category of filteredCategories" [routerLink]="['/financial/categories', category.id]"
       class="standard-card" button>
       <div class="card-content-wrapper">
         <div class="icon-box" [class.revenue]="category.tipo === 'RECEITA'"
@@ -48,7 +49,7 @@
       </div>
     </ion-card>
 
-    <div *ngIf="categories.length === 0" class="empty-state">
+    <div *ngIf="filteredCategories.length === 0" class="empty-state">
       <ion-icon name="pricetags-outline"></ion-icon>
       <p>Nenhuma categoria encontrada.</p>
     </div>

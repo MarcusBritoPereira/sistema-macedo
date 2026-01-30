@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, AlertController, ToastController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { chevronBack, chevronForward, createOutline } from 'ionicons/icons';
+import { chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline } from 'ionicons/icons';
 import { FinancialBudgetService, FinancialBudget } from '../../services/financial/financial-budget.service';
 
 @Component({
@@ -23,7 +23,7 @@ export class BudgetPage implements OnInit {
         private alertCtrl: AlertController,
         private toastCtrl: ToastController
     ) {
-        addIcons({ chevronBack, chevronForward, createOutline });
+        addIcons({ chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline });
     }
 
     ngOnInit() {

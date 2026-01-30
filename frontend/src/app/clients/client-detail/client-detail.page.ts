@@ -67,11 +67,7 @@ export class ClientDetailPage implements OnInit {
       emailNf: [''],
       obsFiscais: [''],
 
-      // 6. Dados Jurídicos
-      foro: [''],
-      lgpdAceito: [false],
-      aceiteEletronico: [false],
-      contratoArquivoUrl: ['']
+      // 6. Dados Jurídicos - REMOVED
     });
   }
 

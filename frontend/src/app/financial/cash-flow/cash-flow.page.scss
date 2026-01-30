@@ -198,6 +198,85 @@ ion-content.light-bg {
     gap: 32px;
 }
 
+@media (max-width: 1024px) {
+    .workspace-wrapper {
+        flex-direction: column;
+    }
+
+    .sidebar-accounts {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #eee;
+    }
+}
+
+@media (max-width: 768px) {
+    .top-toolbar {
+        padding: 0 12px;
+
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .right-actions {
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+            gap: 12px;
+        }
+    }
+
+    .main-dashboard {
+        padding: 16px;
+        gap: 24px;
+    }
+
+    .premium-kpi-row {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+    }
+
+    .chart-section {
+        padding: 16px;
+
+        .chart-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+
+            .legend {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .sidebar-accounts {
+        padding: 16px;
+    }
+
+    .premium-kpi-card {
+        padding: 16px;
+        gap: 12px;
+
+        .kpi-icon {
+            width: 48px;
+            height: 48px;
+            font-size: 22px;
+        }
+
+        .kpi-content {
+            .kpi-value {
+                font-size: 1.5rem;
+            }
+        }
+    }
+}
+
 /* Premium KPI Cards */
 .premium-kpi-row {
     display: grid;

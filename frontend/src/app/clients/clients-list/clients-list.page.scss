@@ -236,3 +236,44 @@ ion-content {
         }
     }
 }
+
+@media (max-width: 768px) {
+    .kpi-container {
+        padding: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    }
+
+    .header-section {
+        padding: 16px 12px 8px 12px;
+
+        h1 {
+            font-size: 1.3rem;
+        }
+    }
+
+    .client-list {
+        padding: 12px;
+    }
+
+    .client-exec-card {
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .card-footer {
+            flex-wrap: wrap;
+            gap: 8px;
+
+            ion-button {
+                flex: 1 1 45%;
+                justify-content: center;
+            }
+
+            .separator {
+                display: none;
+            }
+        }
+    }
+}

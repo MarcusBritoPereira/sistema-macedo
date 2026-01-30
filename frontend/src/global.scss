@@ -137,6 +137,16 @@ ion-title {
     font-size: 1.25rem;
 }
 
+@media (max-width: 768px) {
+    ion-title {
+        font-size: 1.05rem;
+    }
+
+    ion-card {
+        border-radius: 12px;
+    }
+}
+
 /* Split Pane Menu */
 ion-menu {
     --width: 280px;

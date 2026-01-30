@@ -10,6 +10,8 @@ ion-content {
     max-width: 900px;
     margin: 20px auto;
     padding-bottom: 60px;
+    padding-left: 12px;
+    padding-right: 12px;
 }
 
 /* Section Header (Title hidden in HTML but if used externally) */
@@ -221,5 +223,52 @@ ion-checkbox {
     ion-icon {
         font-size: 20px;
         margin-right: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-wrapper {
+        margin: 12px auto;
+        padding-bottom: 40px;
+    }
+
+    ion-accordion-group {
+        gap: 12px;
+
+        ion-accordion {
+            .accordion-custom-header {
+                --min-height: 64px;
+                --padding-start: 12px;
+                --inner-padding-end: 12px;
+
+                ion-icon.header-icon {
+                    font-size: 20px;
+                    padding: 8px;
+                    margin-right: 12px;
+                }
+
+                ion-label.header-info {
+                    h2 {
+                        font-size: 0.95rem;
+                    }
+
+                    p {
+                        font-size: 0.75rem;
+                    }
+                }
+            }
+
+            div[slot="content"] {
+                padding: 16px 16px 24px 16px;
+            }
+        }
+    }
+
+    ion-col {
+        padding: 6px 0;
+    }
+
+    .form-actions {
+        padding: 0;
     }
 }

@@ -12,6 +12,8 @@ ion-content {
     max-width: 700px;
     margin: 0 auto;
     padding-bottom: 40px;
+    padding-left: 12px;
+    padding-right: 12px;
 }
 
 .header-info {
@@ -161,5 +163,37 @@ ion-note[slot="helper"] {
 @media (min-width: 768px) {
     .section-card {
         padding: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .header-info {
+        padding: 0;
+
+        h1 {
+            font-size: 1.4rem;
+        }
+
+        p {
+            font-size: 0.95rem;
+        }
+    }
+
+    .section-card {
+        margin-bottom: 16px;
+
+        ion-card-header {
+            padding: 16px 16px 8px;
+        }
+
+        ion-card-content {
+            padding: 0 16px 20px;
+        }
+    }
+
+    .form-actions {
+        ion-button[type="submit"] {
+            height: 52px;
+        }
     }
 }

@@ -132,3 +132,40 @@ ion-content {
 .custom-fab {
     --box-shadow: none !important;
 }
+
+@media (max-width: 768px) {
+    .header-section {
+        padding: 16px 12px 8px 12px;
+
+        h1 {
+            font-size: 1.4rem;
+            margin-left: 0;
+        }
+    }
+
+    .user-card {
+        .card-content-wrapper {
+            padding: 12px;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+    }
+}
+
+@media (max-width: 480px) {
+    .user-card {
+        .card-content-wrapper {
+            flex-direction: column;
+        }
+
+        .arrow-action {
+            align-self: flex-end;
+        }
+    }
+}

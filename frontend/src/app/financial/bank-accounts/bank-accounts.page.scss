@@ -281,3 +281,58 @@ ion-content.light-bg {
         margin: 0;
     }
 }
+
+@media (max-width: 900px) {
+    .top-toolbar {
+        padding: 0 12px;
+
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .right-actions {
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-toolbar {
+        padding: 0 12px;
+
+        .filter-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+
+            .search-box {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .more-filters {
+                margin-top: 0;
+            }
+        }
+    }
+
+    .data-table-container {
+        margin: 12px;
+    }
+
+    .table-header,
+    .table-row {
+        min-width: 720px;
+    }
+}
+
+@media (max-width: 480px) {
+    .table-header,
+    .table-row {
+        min-width: 620px;
+    }
+}

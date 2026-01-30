@@ -402,3 +402,64 @@ ion-content.light-bg {
         }
     }
 }
+
+@media (max-width: 900px) {
+    .top-toolbar {
+        padding: 0 12px;
+
+        .header-content {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .right-actions {
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: flex-start;
+
+            .pagination-controls {
+                margin-left: 0;
+            }
+        }
+    }
+}
+
+@media (max-width: 768px) {
+    .filter-toolbar {
+        padding: 0 12px;
+
+        .filter-row {
+            gap: 12px;
+        }
+    }
+
+    .bulk-actions-bar {
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .data-table-container {
+        margin: 12px;
+    }
+
+    .table-header,
+    .table-row {
+        min-width: 720px;
+    }
+
+    .table-footer {
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 12px;
+        padding: 16px;
+        margin: 0 12px 32px 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .table-header,
+    .table-row {
+        min-width: 620px;
+    }
+}

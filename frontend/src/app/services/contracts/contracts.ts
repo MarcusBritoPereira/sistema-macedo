@@ -51,4 +51,8 @@ export class ContractsService {
   delete(id: string): Observable<any> {
     return this.api.delete(`contracts/${id}`);
   }
+
+  generateFinancial(id: string): Observable<any> {
+    return this.api.post(`contracts/${id}/generate`, {});
+  }
 }

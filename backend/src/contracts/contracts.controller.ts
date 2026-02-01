@@ -34,4 +34,9 @@ export class ContractsController {
     remove(@Param('id') id: string) {
         return this.contractsService.remove(id);
     }
+
+    @Post(':id/generate')
+    generate(@Param('id') id: string) {
+        return this.contractsService.generateFinancial(id);
+    }
 }

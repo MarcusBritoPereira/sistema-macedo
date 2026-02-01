@@ -68,15 +68,28 @@
         <ion-card-content>
           <ion-grid class="ion-no-padding">
             <ion-row>
-              <ion-col size="12">
+              <ion-col size="12" size-md="6">
                 <ion-item fill="outline" mode="md" class="input-item">
                   <ion-label position="floating">Valor Mensal (R$)</ion-label>
                   <ion-input type="number" formControlName="valorMensal" placeholder="0,00"></ion-input>
                   <ion-note slot="helper">Valor cobrado mensalmente</ion-note>
-                  <ion-note slot="error"
-                    *ngIf="contractForm.get('valorMensal')?.invalid && contractForm.get('valorMensal')?.touched">
-                    Informe o valor
-                  </ion-note>
+                </ion-item>
+              </ion-col>
+              <ion-col size="12" size-md="6">
+                <ion-item fill="outline" mode="md" class="input-item">
+                  <ion-label position="floating">Dia Vencimento</ion-label>
+                  <ion-select formControlName="diaVencimento" placeholder="Dia" interface="popover">
+                    <ion-select-option *ngFor="let day of days" [value]="day">{{ day }}</ion-select-option>
+                  </ion-select>
+                </ion-item>
+              </ion-col>
+              <ion-col size="12" size-md="6">
+                <ion-item fill="outline" mode="md" class="input-item">
+                  <ion-label position="floating">Tipo de Contrato</ion-label>
+                  <ion-select formControlName="tipo" placeholder="Selecione" interface="popover">
+                    <ion-select-option value="RECORRENTE">Recorrente (Mensal)</ion-select-option>
+                    <ion-select-option value="PROJETO">Projeto (Pontual/Parcelado)</ion-select-option>
+                  </ion-select>
                 </ion-item>
               </ion-col>
             </ion-row>
@@ -112,6 +125,12 @@
       <div class="form-actions ion-padding-top">
         <ion-button expand="block" type="submit" size="large" shape="round" [disabled]="!contractForm.valid">
           {{ isEditMode ? 'Salvar Alterações' : 'Criar Contrato' }}
+        </ion-button>
+
+        <ion-button *ngIf="isEditMode" expand="block" color="success" size="large" shape="round" class="ion-margin-top"
+          (click)="generateFinancial()">
+          <ion-icon name="cash-outline" slot="start"></ion-icon>
+          Gerar Financeiro
         </ion-button>
 
         <ion-button *ngIf="isEditMode" expand="block" fill="clear" color="danger" (click)="onDelete()">

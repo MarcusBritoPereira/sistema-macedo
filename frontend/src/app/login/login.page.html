@@ -31,21 +31,29 @@
       </header>
 
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-        <ion-item fill="outline" class="login-item" [class.item-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-          <ion-label position="floating">Email</ion-label>
-          <ion-input type="email" formControlName="email" autocomplete="email"></ion-input>
-        </ion-item>
-        <ion-note *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched" color="danger">
-          Informe um e-mail válido.
-        </ion-note>
+        <ion-input
+          class="login-item"
+          fill="outline"
+          label="Email"
+          label-placement="floating"
+          type="email"
+          formControlName="email"
+          autocomplete="email"
+          [class.ion-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+          error-text="Informe um e-mail válido"
+        ></ion-input>
 
-        <ion-item fill="outline" class="login-item" [class.item-invalid]="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched">
-          <ion-label position="floating">Senha</ion-label>
-          <ion-input type="password" formControlName="senha" autocomplete="current-password"></ion-input>
-        </ion-item>
-        <ion-note *ngIf="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched" color="danger">
-          A senha precisa ser informada.
-        </ion-note>
+        <ion-input
+          class="login-item"
+          fill="outline"
+          label="Senha"
+          label-placement="floating"
+          type="password"
+          formControlName="senha"
+          autocomplete="current-password"
+          [class.ion-invalid]="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched"
+          error-text="A senha precisa ser informada"
+        ></ion-input>
 
         <ion-text color="danger" *ngIf="errorMessage" role="alert">
           <p>{{ errorMessage }}</p>

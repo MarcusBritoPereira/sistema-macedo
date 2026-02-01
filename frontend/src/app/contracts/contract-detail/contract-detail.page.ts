@@ -34,9 +34,11 @@ export class ContractDetailPage implements OnInit {
   ) {
     this.contractForm = this.fb.group({
       descricao: ['', [Validators.required]],
-      valorMensal: ['', [Validators.required]], // Changed from valor
+      valorMensal: ['', [Validators.required]],
+      tipo: ['RECORRENTE', [Validators.required]],
+      diaVencimento: [10, [Validators.required, Validators.min(1), Validators.max(31)]],
       dataInicio: [new Date().toISOString(), [Validators.required]],
-      dataFim: [null], // Optional to match schema
+      dataFim: [null],
       clienteId: ['', [Validators.required]],
       ativo: [true]
     });
@@ -140,5 +142,41 @@ export class ContractDetailPage implements OnInit {
 
   setToastOpen(isOpen: boolean) {
     this.isToastOpen = isOpen;
+  }
+
+  get days(): number[] {
+    return Array.from({ length: 31 }, (_, i) => i + 1);
+  }
+
+  async generateFinancial() {
+    if (!this.contractId) return;
+
+    const alert = await this.alertController.create({
+      header: 'Gerar Financeiro',
+      message: 'Deseja gerar os lançamentos financeiros para este contrato? Isso criará contas a receber para todo o período do contrato (ou próximos 12 meses).',
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Gerar',
+          handler: () => {
+            if (this.contractId) {
+              this.contractsService.generateFinancial(this.contractId).subscribe({
+                next: (res) => {
+                  this.showToast(`Sucesso! ${res.count} lançamentos gerados.`);
+                },
+                error: (err) => {
+                  console.error(err);
+                  this.showToast('Erro ao gerar financeiro.');
+                }
+              });
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 }

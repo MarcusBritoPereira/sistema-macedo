@@ -36,7 +36,8 @@ export class ClientDetailPage implements OnInit {
       razaoSocial: ['', [Validators.required]],
       nomeFantasia: [''],
       cnpj: ['', [Validators.required]],
-      inscricaoEstadual: [''], // New
+
+
       email: ['', [Validators.email]],
       telefone: [''],
       endereco: [''],
@@ -54,14 +55,7 @@ export class ClientDetailPage implements OnInit {
       financeiroWhatsapp: [''],
       financeiroPreferenciaContato: [''],
 
-      // 4. Dados Operacionais
-      redesSociais: [''], // Will handle JSON as string or generic input for now
-      usuariosAdmins: [''],
-      nicho: [''],
-      qtdConteudo: [''],
-      consultora: [''],
-      linksUteis: [''],
-
+      // 4. Dados Operacionais - REMOVED
       // 5. Dados Fiscais
       emissaoNf: [false],
       emailNf: [''],

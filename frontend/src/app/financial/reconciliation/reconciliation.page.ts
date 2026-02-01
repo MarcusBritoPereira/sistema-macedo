@@ -7,8 +7,8 @@ import {
     IonList, IonItem, IonLabel, IonIcon, IonButton, IonSegment, IonSegmentButton,
     IonBadge, IonCard, IonCardHeader, IonCardTitle, IonCardContent, IonNote,
     IonChip, ToastController, LoadingController, AlertController, IonRefresher,
-    IonRefresherContent, IonInput, IonSelect, IonSelectOption, IonSpinner,
-    IonSearchbar, IonCheckbox, ModalController
+    IonInput, IonSelect, IonSelectOption, IonSpinner, IonSearchbar, IonCheckbox,
+    IonAccordion, IonAccordionGroup, IonRefresherContent, ModalController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -40,7 +40,7 @@ import { ReconciliationDetailComponent } from './components/reconciliation-detai
         IonSegment, IonSegmentButton, IonBadge, IonCard, IonCardHeader, IonCardTitle,
         IonCardContent, IonNote, IonChip, IonRefresher, IonRefresherContent,
         IonInput, IonSelect, IonSelectOption, IonSpinner, IonSearchbar,
-        IonCheckbox,
+        IonCheckbox, IonAccordion, IonAccordionGroup,
         ReconciliationDetailComponent
     ]
 })

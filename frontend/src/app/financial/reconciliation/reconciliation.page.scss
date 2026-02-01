@@ -7,196 +7,127 @@ ion-content.light-bg {
 $breakpoint-mobile: 768px;
 
 /* --- Header Styling --- */
+/* --- Compact Header Styling --- */
 .main-header {
     --background: #fff;
     --border-color: #e6e9ed;
-    --padding-start: 16px;
-    --padding-end: 16px;
+    --padding-start: 8px;
+    --padding-end: 8px;
     border-bottom: 1px solid #e6e9ed;
 
-    .header-container {
+    .header-compact {
         display: flex;
+        flex-direction: column;
+        padding: 4px 0;
+    }
+
+    .header-row-top {
+        display: flex;
+        align-items: center;
         justify-content: space-between;
-        align-items: center;
-        height: auto; // Allow height to grow if wrapped
-        min-height: 64px;
+        gap: 8px;
         width: 100%;
-        flex-wrap: wrap; // Safety wrap
-        gap: 12px; // Gap for wrapped items
 
-        @media (max-width: $breakpoint-mobile) {
-            flex-direction: column;
-            padding: 12px 0;
-            gap: 12px;
-        }
-    }
-
-    .header-left {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-
-        @media (max-width: $breakpoint-mobile) {
-            width: 100%;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-
-        .bank-selector-wrapper {
-            @media (max-width: $breakpoint-mobile) {
-                flex: 1;
-            }
-
-            .bank-item {
-                --background: transparent;
+        .bank-selector-compact {
+            flex: 1;
+            /* Allow it to shrink */
+            min-width: 0;
+            
+            ion-select {
+                width: 100%;
+                font-weight: 700;
+                color: #262e33;
+                font-size: 0.95rem;
                 --padding-start: 0;
-                --min-height: 40px;
-                border: 1px solid #d1d9e2;
-                border-radius: 6px;
-                padding: 0 12px;
-                max-width: 250px;
-
-                @media (max-width: $breakpoint-mobile) {
-                    max-width: 100%;
-                }
-
-                ion-select {
-                    font-weight: 600;
-                    color: #262e33;
-                    --padding-start: 8px;
-                }
             }
         }
 
-        .action-buttons {
-            display: flex;
-            gap: 8px;
-
-            @media (max-width: $breakpoint-mobile) {
-                display: none;
-            }
-        }
-    }
-
-    .header-right {
-        @media (max-width: $breakpoint-mobile) {
-            width: 100%;
-            display: flex;
-            justify-content: center;
-        }
-
-        .period-navigator {
+        .period-compact {
             display: flex;
             align-items: center;
-            background: #fff;
-            border: 1px solid #d1d9e2;
-            border-radius: 6px;
-            padding: 2px;
+            background: #f1f3f5;
+            border-radius: 20px;
+            padding: 2px 8px;
+            flex-shrink: 0; 
 
-            @media (max-width: $breakpoint-mobile) {
-                width: 100%;
-                justify-content: space-between;
+            ion-button {
+                --padding-start: 4px;
+                --padding-end: 4px;
+                margin: 0;
+                height: 24px;
+                min-height: 24px;
+                --color: #5c6770;
             }
 
             .period-label {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                padding: 0 16px;
+                font-size: 0.8rem;
                 font-weight: 600;
                 color: #262e33;
-                cursor: pointer;
-
-                ion-icon {
-                    font-size: 14px;
-                    color: #5c6770;
-                }
-            }
-
-            ion-button {
-                --padding-start: 8px;
-                --padding-end: 8px;
-                margin: 0;
-                height: 32px;
-                --color: #0076a8;
+                margin: 0 4px;
+                white-space: nowrap;
             }
         }
     }
 }
 
-.meta-header {
-    --background: #fcfdfe;
-    --border-color: #e6e9ed;
-    --padding-start: 16px;
-    --padding-end: 16px;
+.meta-accordion {
+    background: #fff;
     border-bottom: 1px solid #e6e9ed;
 
-    .meta-container {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
+    ion-item {
+        --background: #fff;
+        --min-height: 48px;
         font-size: 0.85rem;
-        flex-wrap: wrap;
-        /* Added */
-        gap: 16px;
-        /* Added */
-
-        @media (max-width: $breakpoint-mobile) {
-            flex-direction: column;
-            gap: 16px;
-        }
     }
 
-    .meta-left,
-    .meta-right {
-        display: flex;
-        gap: 32px;
-        flex-wrap: wrap;
-        /* Added */
-
-        @media (max-width: $breakpoint-mobile) {
-            flex-direction: column;
-            gap: 8px;
-            width: 100%;
-        }
-    }
-
-    .meta-info-item,
-    .balance-item {
+    .header-summary {
         display: flex;
         align-items: center;
-        gap: 8px;
         flex-wrap: wrap;
+        gap: 6px;
+        font-size: 0.85rem;
 
-        .label {
+        .summary-label {
             color: #5c6770;
         }
 
-        .value {
+        .summary-value {
             font-weight: 700;
             color: #262e33;
+            
+            &.pending {
+                color: #e67700;
+            }
         }
 
-        .refresh-icon,
-        .info-icon,
-        .help-icon {
-            font-size: 16px;
-            color: #0076a8;
-            cursor: pointer;
-        }
-
-        @media (max-width: $breakpoint-mobile) {
-            justify-content: space-between;
-            width: 100%;
+        .summary-divider {
+            color: #dee2e6;
+            margin: 0 4px;
         }
     }
 
-    .balance-item {
+    .meta-container {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        font-size: 0.85rem;
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 8px;
 
-        .balance-value,
-        .balance-value-pending {
-            font-weight: 700;
-            color: #262e33;
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            .label {
+                color: #5c6770;
+            }
+
+            .value {
+                font-weight: 600;
+                color: #262e33;
+            }
         }
     }
 }

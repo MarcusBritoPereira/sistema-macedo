@@ -1,46 +1,27 @@
 <ion-header class="ion-no-border">
-    <!-- Header Layer 1: Bank Selector, Actions & Period -->
+    <!-- Header Layer 1: Bank Selector & Period (Compact) -->
     <ion-toolbar class="main-header">
-        <div class="header-container">
-            <div class="header-left">
+        <div class="header-compact">
+            <div class="header-row-top">
                 <ion-buttons slot="start">
                     <ion-menu-button></ion-menu-button>
                 </ion-buttons>
 
-                <div class="bank-selector-wrapper">
-                    <ion-item lines="none" class="bank-item">
-                        <ion-icon name="business-outline" slot="start" color="primary"></ion-icon>
-                        <ion-select [(ngModel)]="selectedAccountId" (ionChange)="loadStatements()" interface="popover"
-                            toggle-icon="chevron-down">
-                            <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">
-                                {{ acc.nome }} ({{ acc.banco }})
-                            </ion-select-option>
-                        </ion-select>
-                    </ion-item>
+                <div class="bank-selector-compact">
+                    <ion-select [(ngModel)]="selectedAccountId" (ionChange)="loadStatements()" interface="popover"
+                        toggle-icon="chevron-down">
+                        <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">
+                            {{ acc.nome }}
+                        </ion-select-option>
+                    </ion-select>
                 </div>
 
-                <div class="action-buttons">
-                    <ion-button fill="outline" class="btn-sec" (click)="showToast('Em desenvolvimento', 'primary')">
-                        Ações da conta
-                        <ion-icon slot="end" name="chevron-down"></ion-icon>
-                    </ion-button>
-                    <ion-button fill="outline" class="btn-sec" routerLink="/financial/cash-flow">
-                        <ion-icon slot="start" name="cash-outline"></ion-icon>
-                        Fluxo de caixa
-                    </ion-button>
-                </div>
-            </div>
-
-            <div class="header-right">
-                <div class="period-navigator">
-                    <ion-button fill="clear" (click)="prevMonth()">
+                <div class="period-compact">
+                    <ion-button fill="clear" size="small" (click)="prevMonth()">
                         <ion-icon name="chevron-back-outline"></ion-icon>
                     </ion-button>
-                    <div class="period-label">
-                        <span>{{ getPeriodLabel() }}</span>
-                        <ion-icon name="chevron-down"></ion-icon>
-                    </div>
-                    <ion-button fill="clear" (click)="nextMonth()">
+                    <span class="period-label">{{ getPeriodLabel() }}</span>
+                    <ion-button fill="clear" size="small" (click)="nextMonth()">
                         <ion-icon name="chevron-forward-outline"></ion-icon>
                     </ion-button>
                 </div>
@@ -48,34 +29,35 @@
         </div>
     </ion-toolbar>
 
-    <!-- Header Layer 2: Metadata & Balances -->
-    <ion-toolbar class="meta-header" *ngIf="selectedAccount">
-        <div class="meta-container">
-            <div class="meta-left">
-                <div class="meta-info-item">
-                    <span class="label">Data da última atualização:</span>
-                    <span class="value">{{ formatDateTime(selectedAccount.lastSync) }}</span>
-                    <ion-icon name="sync-outline" class="refresh-icon" (click)="syncBank()"></ion-icon>
-                </div>
-                <div class="meta-info-item">
-                    <span class="label">Data do último lançamento importado:</span>
-                    <span class="value">{{ formatDate(selectedAccount.lastImported) }}</span>
-                    <ion-icon name="information-circle-outline" class="info-icon"></ion-icon>
+    <!-- Header Layer 2: Metadata & Balances (Collapsible) -->
+    <ion-accordion-group class="meta-accordion">
+        <ion-accordion value="details">
+            <ion-item slot="header" color="light" lines="none" class="accordion-header-item">
+                <ion-label>
+                    <div class="header-summary">
+                        <span class="summary-label">Saldo:</span>
+                        <span class="summary-value">{{ (selectedAccount?.saldoAtual || 0) | currency:'BRL' }}</span>
+                        <span class="summary-divider">|</span>
+                        <span class="summary-label">Pendente:</span>
+                        <span class="summary-value pending">{{ summary.totalPendingValue | currency:'BRL' }}</span>
+                    </div>
+                </ion-label>
+            </ion-item>
+            <div class="ion-padding" slot="content">
+                <div class="meta-container">
+                    <div class="meta-row">
+                        <span class="label">Última atualização:</span>
+                        <span class="value">{{ formatDateTime(selectedAccount?.lastSync) }}</span>
+                        <ion-icon name="sync-outline" color="primary" (click)="syncBank()"></ion-icon>
+                    </div>
+                    <div class="meta-row">
+                        <span class="label">Último lançamento:</span>
+                        <span class="value">{{ formatDate(selectedAccount?.lastImported) }}</span>
+                    </div>
                 </div>
             </div>
-            <div class="meta-right">
-                <div class="balance-item">
-                    <span class="label">Saldo atual na UP_Fin</span>
-                    <span class="balance-value">{{ (selectedAccount.saldoAtual || 0) | currency:'BRL' }}</span>
-                </div>
-                <div class="balance-item">
-                    <span class="label">Valor pendente de conciliação</span>
-                    <span class="balance-value-pending">{{ summary.totalPendingValue | currency:'BRL' }}</span>
-                    <ion-icon name="help-circle-outline" class="help-icon"></ion-icon>
-                </div>
-            </div>
-        </div>
-    </ion-toolbar>
+        </ion-accordion>
+    </ion-accordion-group>
 
     <!-- Tabs Container -->
     <div class="tabs-container">

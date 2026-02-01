@@ -23,7 +23,6 @@ import { SuppliersModule } from './suppliers/suppliers.module';
     ClientsModule,
     FinancialModule,
     ContractsModule,
-    ContractsModule,
     FiscalModule,
     ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{

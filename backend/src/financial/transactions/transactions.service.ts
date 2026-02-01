@@ -1,31 +1,42 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma, TipoLancamento, StatusLancamento } from '@prisma/client';
-import { AuditLogService } from '../../audit-log/audit-log.service';
 
 @Injectable()
 export class FinancialTransactionsService {
     constructor(
-        private prisma: PrismaService,
-        private auditLog: AuditLogService
+        private prisma: PrismaService
     ) { }
 
+    private readonly transactionInclude: Prisma.LancamentoFinanceiroInclude = {
+        categoria: true,
+        centroCusto: true,
+        cliente: true,
+        contrato: true,
+        fornecedor: true,
+        contaBancaria: true,
+    };
+
     async create(data: Prisma.LancamentoFinanceiroCreateInput, usuarioId: string) {
-        const transaction = await this.prisma.lancamentoFinanceiro.create({ data });
+        return this.prisma.$transaction(async (tx) => {
+            const transaction = await tx.lancamentoFinanceiro.create({ data });
 
-        await this.auditLog.createLog({
-            acao: `Adicionou o ${transaction.tipo === 'RECEITA' ? 'recebimento' : 'pagamento'} "${transaction.descricao}"`,
-            tabela: 'lancamentos_financeiros',
-            registroId: transaction.id,
-            valorNovo: JSON.stringify(transaction),
-            motivo: 'Criação manual',
-            usuarioId
+            await tx.logAuditoria.create({
+                data: {
+                    acao: `Adicionou o ${transaction.tipo === 'RECEITA' ? 'recebimento' : 'pagamento'} "${transaction.descricao}"`,
+                    tabela: 'lancamentos_financeiros',
+                    registroId: transaction.id,
+                    valorNovo: JSON.stringify(transaction),
+                    motivo: 'Criação manual',
+                    usuarioId,
+                },
+            });
+
+            return transaction;
         });
-
-        return transaction;
     }
 
-    findAll(type?: TipoLancamento, status?: StatusLancamento) {
+    findAll(type?: TipoLancamento, status?: StatusLancamento, skip = 0, take = 50) {
         const where: Prisma.LancamentoFinanceiroWhereInput = {};
         if (type) where.tipo = type;
         if (status) where.status = status;
@@ -39,6 +50,8 @@ export class FinancialTransactionsService {
                 fornecedor: true,
                 contaBancaria: true,
             },
+            skip,
+            take,
             orderBy: { dataVencimento: 'asc' },
         });
     }
@@ -46,52 +59,59 @@ export class FinancialTransactionsService {
     findOne(id: string) {
         return this.prisma.lancamentoFinanceiro.findUnique({
             where: { id },
-            include: {
-                categoria: true,
-                centroCusto: true,
-                cliente: true,
-                contrato: true,
-                fornecedor: true,
-                contaBancaria: true,
-            },
+            include: this.transactionInclude,
         });
     }
 
     async update(id: string, data: Prisma.LancamentoFinanceiroUpdateInput, usuarioId: string) {
-        const oldTransaction = await this.findOne(id);
-        const transaction = await this.prisma.lancamentoFinanceiro.update({
-            where: { id },
-            data,
-        });
+        return this.prisma.$transaction(async (tx) => {
+            const oldTransaction = await tx.lancamentoFinanceiro.findUnique({
+                where: { id },
+                include: this.transactionInclude,
+            });
+            const transaction = await tx.lancamentoFinanceiro.update({
+                where: { id },
+                data,
+            });
 
-        await this.auditLog.createLog({
-            acao: `Editou o ${transaction.tipo === 'RECEITA' ? 'recebimento' : 'pagamento'} "${transaction.descricao}"`,
-            tabela: 'lancamentos_financeiros',
-            registroId: transaction.id,
-            valorAntigo: JSON.stringify(oldTransaction),
-            valorNovo: JSON.stringify(transaction),
-            motivo: 'Edição manual',
-            usuarioId
-        });
+            await tx.logAuditoria.create({
+                data: {
+                    acao: `Editou o ${transaction.tipo === 'RECEITA' ? 'recebimento' : 'pagamento'} "${transaction.descricao}"`,
+                    tabela: 'lancamentos_financeiros',
+                    registroId: transaction.id,
+                    valorAntigo: JSON.stringify(oldTransaction),
+                    valorNovo: JSON.stringify(transaction),
+                    motivo: 'Edição manual',
+                    usuarioId,
+                },
+            });
 
-        return transaction;
+            return transaction;
+        });
     }
 
     async remove(id: string, usuarioId: string) {
-        const transaction = await this.findOne(id);
-        await this.prisma.lancamentoFinanceiro.delete({
-            where: { id },
-        });
+        return this.prisma.$transaction(async (tx) => {
+            const transaction = await tx.lancamentoFinanceiro.findUnique({
+                where: { id },
+                include: this.transactionInclude,
+            });
+            await tx.lancamentoFinanceiro.delete({
+                where: { id },
+            });
 
-        await this.auditLog.createLog({
-            acao: `Excluiu o ${transaction?.tipo === 'RECEITA' ? 'recebimento' : 'pagamento'} "${transaction?.descricao}"`,
-            tabela: 'lancamentos_financeiros',
-            registroId: id,
-            valorAntigo: JSON.stringify(transaction),
-            motivo: 'Exclusão manual',
-            usuarioId
-        });
+            await tx.logAuditoria.create({
+                data: {
+                    acao: `Excluiu o ${transaction?.tipo === 'RECEITA' ? 'recebimento' : 'pagamento'} "${transaction?.descricao}"`,
+                    tabela: 'lancamentos_financeiros',
+                    registroId: id,
+                    valorAntigo: JSON.stringify(transaction),
+                    motivo: 'Exclusão manual',
+                    usuarioId,
+                },
+            });
 
-        return transaction;
+            return transaction;
+        });
     }
 }

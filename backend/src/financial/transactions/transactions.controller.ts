@@ -17,8 +17,12 @@ export class FinancialTransactionsController {
     findAll(
         @Query('type') type?: TipoLancamento,
         @Query('status') status?: StatusLancamento,
+        @Query('skip') skip?: string,
+        @Query('take') take?: string,
     ) {
-        return this.transactionsService.findAll(type, status);
+        const normalizedSkip = Math.max(0, Number(skip) || 0);
+        const normalizedTake = Math.min(Math.max(1, Number(take) || 50), 200);
+        return this.transactionsService.findAll(type, status, normalizedSkip, normalizedTake);
     }
 
     @Get(':id')

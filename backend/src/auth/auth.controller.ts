@@ -1,7 +1,8 @@
 
-import { Controller, Request, Post, UseGuards, Body, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, UseGuards, Body, UnauthorizedException } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -9,8 +10,8 @@ export class AuthController {
 
     @UseGuards(ThrottlerGuard)
     @Post('login')
-    async login(@Body() req) {
-        const user = await this.authService.validateUser(req.email, req.senha);
+    async login(@Body() body: LoginDto) {
+        const user = await this.authService.validateUser(body.email, body.senha);
         if (!user) {
             throw new UnauthorizedException('Credenciais inválidas');
         }

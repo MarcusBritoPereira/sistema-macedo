@@ -67,7 +67,7 @@
                 <!-- FORM MODE -->
                 <div class="form-content" *ngIf="mode === 'FORM'">
                     <div class="form-row">
-                        <div class="input-group full-width">
+                        <div class="input-group full-width" *ngIf="activeTab === 'NEW'">
                             <label>Descrição *</label>
                             <ion-input [(ngModel)]="form.descricao" mode="md" fill="outline"></ion-input>
                         </div>
@@ -85,7 +85,7 @@
                             </div>
                         </div>
 
-                        <div class="input-group full-width">
+                        <div class="input-group full-width" *ngIf="activeTab === 'NEW'">
                             <label>Categoria *</label>
                             <ion-select [(ngModel)]="form.categoriaId" mode="md" fill="outline" interface="popover"
                                 placeholder="Selecione">
@@ -93,9 +93,19 @@
                                     }}</ion-select-option>
                             </ion-select>
                         </div>
+
+                        <div class="input-group full-width" *ngIf="activeTab === 'TRANSFER'">
+                            <label>Conta de destino *</label>
+                            <ion-select [(ngModel)]="form.contaDestinoId" mode="md" fill="outline" interface="popover"
+                                placeholder="Selecione">
+                                <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">
+                                    {{ acc.nome }} - {{ acc.banco }}
+                                </ion-select-option>
+                            </ion-select>
+                        </div>
                     </div>
 
-                    <div class="form-row">
+                    <div class="form-row" *ngIf="activeTab === 'NEW'">
                         <div class="input-group half-width">
                             <label>Fornecedor/Cliente</label>
                             <ion-select [(ngModel)]="form.fornecedorId" mode="md" fill="outline" interface="popover"

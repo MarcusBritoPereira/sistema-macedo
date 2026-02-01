@@ -20,6 +20,7 @@ import { ReconciliationService } from '../../../../services/financial/reconcilia
 import { CategoriesService, Category } from '../../../../services/financial/categories.service';
 import { SuppliersService, Supplier } from '../../../../services/suppliers/suppliers.service';
 import { CostCentersService, CostCenter } from '../../../../services/financial/cost-centers.service';
+import { FinancialService, BankAccount } from '../../../../services/financial/financial';
 import { format, parseISO } from 'date-fns';
 
 @Component({
@@ -47,6 +48,7 @@ export class ReconciliationActionModalComponent implements OnInit {
     suppliers: Supplier[] = [];
     costCenters: CostCenter[] = [];
     suggestions: SuggestedMatch[] = [];
+    bankAccounts: BankAccount[] = [];
 
     // Form Data
     form = {
@@ -56,7 +58,8 @@ export class ReconciliationActionModalComponent implements OnInit {
         centroCustoId: '',
         valor: 0,
         dataVencimento: '',
-        dataCompetencia: ''
+        dataCompetencia: '',
+        contaDestinoId: ''
     };
 
     // State
@@ -69,7 +72,8 @@ export class ReconciliationActionModalComponent implements OnInit {
         private reconciliationService: ReconciliationService,
         private categoriesService: CategoriesService,
         private suppliersService: SuppliersService,
-        private costCentersService: CostCentersService
+        private costCentersService: CostCentersService,
+        private financialService: FinancialService
     ) {
         addIcons({
             closeOutline, checkmarkCircleOutline, searchOutline, addOutline,
@@ -108,7 +112,22 @@ export class ReconciliationActionModalComponent implements OnInit {
 
         this.costCentersService.findAll().subscribe(ccs => {
             this.costCenters = ccs;
-            this.loadingAux = false;
+            this.loadBankAccounts();
+        });
+    }
+
+    loadBankAccounts() {
+        this.financialService.getBankAccounts().subscribe({
+            next: (accounts) => {
+                const originAccountId = this.statement.importacao?.contaBancariaId;
+                this.bankAccounts = originAccountId
+                    ? accounts.filter(acc => acc.id !== originAccountId)
+                    : accounts;
+                this.loadingAux = false;
+            },
+            error: () => {
+                this.loadingAux = false;
+            }
         });
     }
 
@@ -148,7 +167,11 @@ export class ReconciliationActionModalComponent implements OnInit {
 
     // Action: Create New Transaction and Link
     async confirmCreation() {
-        if (!this.form.descricao || !this.form.categoriaId || !this.form.dataCompetencia) {
+        if (this.activeTab === 'TRANSFER') {
+            if (!this.form.contaDestinoId || !this.form.dataCompetencia) {
+                return;
+            }
+        } else if (!this.form.descricao || !this.form.categoriaId || !this.form.dataCompetencia) {
             // Simple validation
             return;
         }
@@ -163,6 +186,8 @@ export class ReconciliationActionModalComponent implements OnInit {
             valor: this.form.valor,
             dataVencimento: this.form.dataVencimento,
             dataCompetencia: this.form.dataCompetencia,
+            contaDestinoId: this.form.contaDestinoId,
+            isTransfer: this.activeTab === 'TRANSFER',
             tipo: this.statement.tipo // Add type
         };
 

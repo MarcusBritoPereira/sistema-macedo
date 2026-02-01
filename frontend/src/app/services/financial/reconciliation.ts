@@ -8,6 +8,9 @@ export interface BankStatement {
     hash: string;
     conciliado: boolean;
     importacaoId?: string;
+    importacao?: {
+        contaBancariaId: string;
+    };
     conciliacoes?: any[];
 }
 

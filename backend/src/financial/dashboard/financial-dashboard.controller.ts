@@ -26,4 +26,10 @@ export class FinancialDashboardController {
     getOperationalDashboard() {
         return this.dashboardService.getOperationalDashboard();
     }
+
+    @Get('balance')
+    getBalanceSheet(@Query('asOf') asOf: string) {
+        const referenceDate = asOf ? new Date(asOf) : new Date();
+        return this.dashboardService.getBalanceSheet(referenceDate);
+    }
 }

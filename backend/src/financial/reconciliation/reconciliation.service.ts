@@ -103,7 +103,10 @@ export class ReconciliationService {
 
     async createAndLink(statementId: string, data: any) {
         return this.prisma.$transaction(async (tx) => {
-            const statement = await tx.extratoBancario.findUnique({ where: { id: statementId } });
+            const statement = await tx.extratoBancario.findUnique({
+                where: { id: statementId },
+                include: { importacao: true }
+            });
             if (!statement) throw new NotFoundException('Extrato não encontrado');
             if (statement.conciliado) throw new BadRequestException('Extrato já conciliado');
 
@@ -114,6 +117,68 @@ export class ReconciliationService {
             const centroCustoId = sanitize(data.centroCustoId);
             const fornecedorId = sanitize(data.fornecedorId);
             const clienteId = sanitize(data.clienteId);
+            const dataCompetencia = sanitize(data.dataCompetencia);
+            const competenciaDate = dataCompetencia ? new Date(dataCompetencia) : statement.data;
+            const isTransfer = data?.isTransfer === true || data?.isTransfer === 'true';
+            const contaDestinoId = sanitize(data.contaDestinoId);
+
+            if (isTransfer) {
+                if (!contaDestinoId) {
+                    throw new BadRequestException('Conta de destino é obrigatória para transferência');
+                }
+
+                const contaOrigemId = statement.importacao?.contaBancariaId;
+                if (!contaOrigemId) {
+                    throw new BadRequestException('Conta de origem não encontrada no extrato');
+                }
+
+                const tipoOrigem = statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
+                const tipoDestino = tipoOrigem === 'RECEITA' ? 'DESPESA' : 'RECEITA';
+                const descricaoTransferencia = data.descricao || `Transferência entre contas: ${statement.descricao}`;
+
+                const lancamentoOrigem = await tx.lancamentoFinanceiro.create({
+                    data: {
+                        descricao: descricaoTransferencia,
+                        valor: statement.valor,
+                        tipo: tipoOrigem,
+                        dataVencimento: statement.data,
+                        dataPagamento: statement.data,
+                        dataCompetencia: competenciaDate,
+                        status: 'CONCILIADO',
+                        contaBancariaId: contaOrigemId,
+                        observacoes: `Transferência conciliada: ${statement.descricao}`
+                    }
+                });
+
+                await tx.lancamentoFinanceiro.create({
+                    data: {
+                        descricao: descricaoTransferencia,
+                        valor: statement.valor,
+                        tipo: tipoDestino,
+                        dataVencimento: statement.data,
+                        dataPagamento: statement.data,
+                        dataCompetencia: competenciaDate,
+                        status: 'REALIZADO',
+                        contaBancariaId: contaDestinoId,
+                        observacoes: `Transferência gerada via conciliação: ${statement.descricao}`
+                    }
+                });
+
+                await tx.conciliacaoBancaria.create({
+                    data: {
+                        extratoBancarioId: statementId,
+                        lancamentoFinanceiroId: lancamentoOrigem.id,
+                        type: 'MANUAL_CREATE'
+                    }
+                });
+
+                await tx.extratoBancario.update({
+                    where: { id: statementId },
+                    data: { conciliado: true }
+                });
+
+                return lancamentoOrigem;
+            }
 
             // 1. Create Lancamento
             const lancamento = await tx.lancamentoFinanceiro.create({
@@ -123,6 +188,7 @@ export class ReconciliationService {
                     tipo: statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA',
                     dataVencimento: statement.data,
                     dataPagamento: statement.data,
+                    dataCompetencia: competenciaDate,
                     status: 'CONCILIADO',
                     categoriaId: categoriaId,
                     centroCustoId: centroCustoId,

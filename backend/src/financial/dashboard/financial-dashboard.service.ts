@@ -330,4 +330,95 @@ export class FinancialDashboardService {
             lastUpdate: now.toISOString()
         };
     }
+
+    async getBalanceSheet(asOf: Date) {
+        const referenceDate = new Date(asOf);
+        const endOfDay = new Date(
+            referenceDate.getFullYear(),
+            referenceDate.getMonth(),
+            referenceDate.getDate(),
+            23,
+            59,
+            59,
+            999
+        );
+
+        const contasReceber = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'RECEITA',
+                status: 'PREVISTO',
+                dataVencimento: { lte: endOfDay }
+            }
+        });
+
+        const contasPagar = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'DESPESA',
+                status: 'PREVISTO',
+                dataVencimento: { lte: endOfDay }
+            }
+        });
+
+        const contas = await this.prisma.contaBancaria.findMany();
+        const contasComSaldo = await Promise.all(
+            contas.map(async (acc) => {
+                const movimentacoes = await this.prisma.lancamentoFinanceiro.aggregate({
+                    _sum: { valor: true },
+                    where: {
+                        contaBancariaId: acc.id,
+                        status: { in: ['REALIZADO', 'CONCILIADO'] },
+                        dataPagamento: { lte: endOfDay },
+                        tipo: 'RECEITA'
+                    }
+                });
+
+                const saidas = await this.prisma.lancamentoFinanceiro.aggregate({
+                    _sum: { valor: true },
+                    where: {
+                        contaBancariaId: acc.id,
+                        status: { in: ['REALIZADO', 'CONCILIADO'] },
+                        dataPagamento: { lte: endOfDay },
+                        tipo: 'DESPESA'
+                    }
+                });
+
+                const saldo = Number(acc.saldoInicial || 0)
+                    + Number(movimentacoes._sum.valor || 0)
+                    - Number(saidas._sum.valor || 0);
+
+                return {
+                    id: acc.id,
+                    nome: acc.nome,
+                    banco: acc.banco,
+                    saldo
+                };
+            })
+        );
+
+        const totalCaixaBancos = contasComSaldo.reduce((sum, acc) => sum + acc.saldo, 0);
+        const totalReceber = Number(contasReceber._sum.valor || 0);
+        const totalPagar = Number(contasPagar._sum.valor || 0);
+        const totalAtivos = totalCaixaBancos + totalReceber;
+        const totalPassivos = totalPagar;
+        const patrimonioLiquido = totalAtivos - totalPassivos;
+
+        return {
+            asOf: endOfDay.toISOString(),
+            assets: {
+                cashAndBanks: totalCaixaBancos,
+                accountsReceivable: totalReceber,
+                total: totalAtivos,
+                accounts: contasComSaldo
+            },
+            liabilities: {
+                accountsPayable: totalPagar,
+                total: totalPassivos
+            },
+            equity: {
+                total: patrimonioLiquido
+            }
+        };
+    }
 }

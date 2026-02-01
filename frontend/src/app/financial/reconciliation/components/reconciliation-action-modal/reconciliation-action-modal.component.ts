@@ -5,7 +5,8 @@ import {
     IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton,
     IonIcon, IonList, IonItem, IonLabel, IonNote, IonSpinner, ModalController,
     IonSearchbar, IonChip, IonFooter, IonSegment, IonSegmentButton,
-    IonInput, IonSelect, IonSelectOption, IonRow, IonCol, IonGrid
+    IonInput, IonSelect, IonSelectOption, IonRow, IonCol, IonGrid,
+    IonDatetime, IonDatetimeButton, IonModal
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -30,7 +31,8 @@ import { format, parseISO } from 'date-fns';
         CommonModule, FormsModule, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons,
         IonButton, IonIcon, IonList, IonItem, IonLabel, IonNote, IonSpinner,
         IonSearchbar, IonChip, IonFooter, IonSegment, IonSegmentButton,
-        IonInput, IonSelect, IonSelectOption, IonRow, IonCol, IonGrid
+        IonInput, IonSelect, IonSelectOption, IonRow, IonCol, IonGrid,
+        IonDatetime, IonDatetimeButton, IonModal
     ]
 })
 export class ReconciliationActionModalComponent implements OnInit {
@@ -53,7 +55,8 @@ export class ReconciliationActionModalComponent implements OnInit {
         fornecedorId: '',
         centroCustoId: '',
         valor: 0,
-        dataVencimento: ''
+        dataVencimento: '',
+        dataCompetencia: ''
     };
 
     // State
@@ -86,6 +89,7 @@ export class ReconciliationActionModalComponent implements OnInit {
         this.form.descricao = this.statement.descricao;
         this.form.valor = Math.abs(this.statement.valor);
         this.form.dataVencimento = this.statement.data;
+        this.form.dataCompetencia = this.statement.data;
     }
 
     loadAuxData() {
@@ -144,7 +148,7 @@ export class ReconciliationActionModalComponent implements OnInit {
 
     // Action: Create New Transaction and Link
     async confirmCreation() {
-        if (!this.form.descricao || !this.form.categoriaId) {
+        if (!this.form.descricao || !this.form.categoriaId || !this.form.dataCompetencia) {
             // Simple validation
             return;
         }
@@ -158,6 +162,7 @@ export class ReconciliationActionModalComponent implements OnInit {
             centroCustoId: this.form.centroCustoId,
             valor: this.form.valor,
             dataVencimento: this.form.dataVencimento,
+            dataCompetencia: this.form.dataCompetencia,
             tipo: this.statement.tipo // Add type
         };
 

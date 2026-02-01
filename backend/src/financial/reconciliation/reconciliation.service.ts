@@ -114,6 +114,8 @@ export class ReconciliationService {
             const centroCustoId = sanitize(data.centroCustoId);
             const fornecedorId = sanitize(data.fornecedorId);
             const clienteId = sanitize(data.clienteId);
+            const dataCompetencia = sanitize(data.dataCompetencia);
+            const competenciaDate = dataCompetencia ? new Date(dataCompetencia) : statement.data;
 
             // 1. Create Lancamento
             const lancamento = await tx.lancamentoFinanceiro.create({
@@ -123,6 +125,7 @@ export class ReconciliationService {
                     tipo: statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA',
                     dataVencimento: statement.data,
                     dataPagamento: statement.data,
+                    dataCompetencia: competenciaDate,
                     status: 'CONCILIADO',
                     categoriaId: categoriaId,
                     centroCustoId: centroCustoId,

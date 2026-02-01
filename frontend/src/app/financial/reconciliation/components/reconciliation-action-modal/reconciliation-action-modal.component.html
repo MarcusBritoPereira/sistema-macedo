@@ -73,6 +73,19 @@
                         </div>
 
                         <div class="input-group full-width">
+                            <label>Data de competência *</label>
+                            <div class="date-input-wrapper">
+                                <ion-datetime-button datetime="competenciaDate"></ion-datetime-button>
+                                <ion-modal [keepContentsMounted]="true">
+                                    <ng-template>
+                                        <ion-datetime id="competenciaDate" presentation="date"
+                                            [(ngModel)]="form.dataCompetencia"></ion-datetime>
+                                    </ng-template>
+                                </ion-modal>
+                            </div>
+                        </div>
+
+                        <div class="input-group full-width">
                             <label>Categoria *</label>
                             <ion-select [(ngModel)]="form.categoriaId" mode="md" fill="outline" interface="popover"
                                 placeholder="Selecione">

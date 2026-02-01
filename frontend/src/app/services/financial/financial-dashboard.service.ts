@@ -74,6 +74,28 @@ export interface OperationalDashboardResponse {
     lastUpdate: string;
 }
 
+export interface BalanceSheetResponse {
+    asOf: string;
+    assets: {
+        cashAndBanks: number;
+        accountsReceivable: number;
+        total: number;
+        accounts: {
+            id: string;
+            nome: string;
+            banco: string;
+            saldo: number;
+        }[];
+    };
+    liabilities: {
+        accountsPayable: number;
+        total: number;
+    };
+    equity: {
+        total: number;
+    };
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -91,5 +113,10 @@ export class FinancialDashboardService {
 
     getOperationalDashboard(): Observable<OperationalDashboardResponse> {
         return this.api.get<OperationalDashboardResponse>(`financial/dashboard/operational`);
+    }
+
+    getBalanceSheet(asOf?: string): Observable<BalanceSheetResponse> {
+        const query = asOf ? `?asOf=${asOf}` : '';
+        return this.api.get<BalanceSheetResponse>(`financial/dashboard/balance${query}`);
     }
 }

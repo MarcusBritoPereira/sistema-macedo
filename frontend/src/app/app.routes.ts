@@ -150,5 +150,10 @@ export const routes: Routes = [
     loadComponent: () => import('./financial/audit-log/audit-log.page').then(m => m.AuditLogPage),
     canActivate: [AuthGuard]
   },
+  {
+    path: 'financial/reports',
+    loadComponent: () => import('./financial/reports/reports.page').then(m => m.ReportsPage),
+    canActivate: [AuthGuard]
+  },
 
 ];

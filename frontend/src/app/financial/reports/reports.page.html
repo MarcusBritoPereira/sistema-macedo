@@ -1,0 +1,196 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Relatórios financeiros</ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear">
+        <ion-icon name="download-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <section class="hero">
+    <div class="hero-text">
+      <h2>Relatórios que não podem faltar</h2>
+      <p>
+        Selecione os relatórios essenciais para controlar rentabilidade, liquidez, riscos e compliance.
+        Use os filtros para definir o período, contas e centros de custo antes de gerar o pacote.
+      </p>
+    </div>
+    <div class="hero-badges">
+      <ion-badge color="primary">Essencial</ion-badge>
+      <ion-badge color="tertiary">Operacional</ion-badge>
+      <ion-badge color="success">Gestão</ion-badge>
+      <ion-badge color="medium">Compliance</ion-badge>
+    </div>
+  </section>
+
+  <ion-card class="filters-card">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="filter-outline"></ion-icon>
+        Definir parâmetros
+      </ion-card-title>
+      <ion-card-subtitle>Centralize o recorte antes de gerar os relatórios.</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-grid>
+        <ion-row>
+          <ion-col size="12" size-md="3">
+            <ion-item>
+              <ion-label position="stacked">Período</ion-label>
+              <ion-select [(ngModel)]="selectedPeriod" interface="popover">
+                <ion-select-option value="month">Mês atual</ion-select-option>
+                <ion-select-option value="quarter">Trimestre</ion-select-option>
+                <ion-select-option value="year">Ano corrente</ion-select-option>
+                <ion-select-option value="custom">Personalizado</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </ion-col>
+          <ion-col size="12" size-md="3">
+            <ion-item>
+              <ion-label position="stacked">Conta bancária</ion-label>
+              <ion-select [(ngModel)]="selectedAccount" interface="popover">
+                <ion-select-option value="all">Todas</ion-select-option>
+                <ion-select-option value="main">Conta principal</ion-select-option>
+                <ion-select-option value="invest">Conta investimento</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </ion-col>
+          <ion-col size="12" size-md="3">
+            <ion-item>
+              <ion-label position="stacked">Centro de custo</ion-label>
+              <ion-select [(ngModel)]="selectedCostCenter" interface="popover">
+                <ion-select-option value="all">Todos</ion-select-option>
+                <ion-select-option value="sales">Comercial</ion-select-option>
+                <ion-select-option value="ops">Operações</ion-select-option>
+                <ion-select-option value="admin">Administrativo</ion-select-option>
+              </ion-select>
+            </ion-item>
+          </ion-col>
+          <ion-col size="12" size-md="3">
+            <ion-item lines="none" class="toggle-item">
+              <ion-label>Incluir provisões</ion-label>
+              <ion-toggle [(ngModel)]="includeProvisional"></ion-toggle>
+            </ion-item>
+          </ion-col>
+        </ion-row>
+        <ion-row class="date-row">
+          <ion-col size="12" size-md="4">
+            <ion-item>
+              <ion-label position="stacked">Data inicial</ion-label>
+              <ion-datetime-button datetime="startDatePicker"></ion-datetime-button>
+              <ion-modal keepContentsMounted="true">
+                <ion-datetime
+                  id="startDatePicker"
+                  presentation="date"
+                  [(ngModel)]="startDate">
+                </ion-datetime>
+              </ion-modal>
+            </ion-item>
+          </ion-col>
+          <ion-col size="12" size-md="4">
+            <ion-item>
+              <ion-label position="stacked">Data final</ion-label>
+              <ion-datetime-button datetime="endDatePicker"></ion-datetime-button>
+              <ion-modal keepContentsMounted="true">
+                <ion-datetime
+                  id="endDatePicker"
+                  presentation="date"
+                  [(ngModel)]="endDate">
+                </ion-datetime>
+              </ion-modal>
+            </ion-item>
+          </ion-col>
+          <ion-col size="12" size-md="4" class="actions-col">
+            <ion-button expand="block">
+              <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
+              Aplicar filtros
+            </ion-button>
+            <ion-button expand="block" fill="outline">
+              <ion-icon name="download-outline" slot="start"></ion-icon>
+              Exportar seleção
+            </ion-button>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-card-content>
+  </ion-card>
+
+  <section class="selection-summary">
+    <ion-card>
+      <ion-card-content>
+        <div class="summary-header">
+          <div>
+            <h3>Relatórios selecionados</h3>
+            <p>Monte um pacote com foco em rentabilidade, caixa e riscos.</p>
+          </div>
+          <ion-badge color="primary">{{ selectedReports.size }} selecionados</ion-badge>
+        </div>
+        <ion-list lines="none">
+          <ion-item *ngFor="let label of selectedLabels">
+            <ion-icon name="checkmark-circle-outline" slot="start" color="success"></ion-icon>
+            <ion-label>{{ label }}</ion-label>
+          </ion-item>
+          <ion-item *ngIf="selectedLabels.length === 0">
+            <ion-label color="medium">Selecione pelo menos um relatório para continuar.</ion-label>
+          </ion-item>
+        </ion-list>
+        <ion-button expand="block" class="generate-btn">
+          <ion-icon name="download-outline" slot="start"></ion-icon>
+          Gerar pacote
+        </ion-button>
+      </ion-card-content>
+    </ion-card>
+  </section>
+
+  <section>
+    <h3 class="section-title">Catálogo de relatórios essenciais</h3>
+    <ion-grid>
+      <ion-row>
+        <ion-col size="12" size-md="6" size-lg="4" *ngFor="let report of reports">
+          <ion-card class="report-card" [class.selected]="isSelected(report.id)">
+            <ion-card-header>
+              <div class="card-title">
+                <ion-icon [name]="report.icon" class="report-icon"></ion-icon>
+                <div>
+                  <ion-card-title>{{ report.title }}</ion-card-title>
+                  <ion-card-subtitle>{{ report.description }}</ion-card-subtitle>
+                </div>
+              </div>
+            </ion-card-header>
+            <ion-card-content>
+              <div class="meta">
+                <ion-chip color="primary">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <ion-label>{{ report.cadence }}</ion-label>
+                </ion-chip>
+                <ion-chip color="tertiary">
+                  <ion-icon name="analytics-outline"></ion-icon>
+                  <ion-label>{{ report.category }}</ion-label>
+                </ion-chip>
+              </div>
+              <div class="tags">
+                <ion-badge *ngFor="let tag of report.tags" color="success">{{ tag }}</ion-badge>
+              </div>
+              <ul class="highlights">
+                <li *ngFor="let item of report.highlights">{{ item }}</li>
+              </ul>
+              <ion-button expand="block" fill="outline" (click)="toggleReport(report.id)">
+                <ion-icon
+                  [name]="isSelected(report.id) ? 'checkmark-circle-outline' : 'document-text-outline'"
+                  slot="start">
+                </ion-icon>
+                {{ isSelected(report.id) ? 'Selecionado' : 'Selecionar' }}
+              </ion-button>
+            </ion-card-content>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </section>
+</ion-content>

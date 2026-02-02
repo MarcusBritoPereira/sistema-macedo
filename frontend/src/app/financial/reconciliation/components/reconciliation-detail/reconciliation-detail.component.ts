@@ -58,6 +58,7 @@ export class ReconciliationDetailComponent implements OnInit {
         descricao: '',
         valor: 0,
         dataVencimento: '',
+        dataCompetencia: '',
         categoriaId: '',
         fornecedorId: '', // Used for both supplier and client ID
         centroCustoId: ''
@@ -84,6 +85,7 @@ export class ReconciliationDetailComponent implements OnInit {
             this.form.descricao = this.statement.descricao;
             this.form.valor = Math.abs(Number(this.statement.valor));
             this.form.dataVencimento = this.statement.data;
+            this.form.dataCompetencia = this.statement.data; // Default to statement date
             this.loadAuxData();
 
             // Auto-switch to SEARCH if suggestions exist
@@ -148,6 +150,7 @@ export class ReconciliationDetailComponent implements OnInit {
             centroCustoId: this.form.centroCustoId,
             valor: this.form.valor,
             dataVencimento: this.form.dataVencimento,
+            dataCompetencia: this.form.dataCompetencia,
             tipo: this.statement.tipo
         };
 

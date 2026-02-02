@@ -64,6 +64,21 @@
                     </div>
 
                     <div class="field-item">
+                        <label>Data de Competência</label>
+                        <div class="date-picker-wrapper">
+                            <ion-datetime-button datetime="datetime-competence"></ion-datetime-button>
+                            <ion-modal [keepContentsMounted]="true">
+                                <ng-template>
+                                    <ion-datetime id="datetime-competence" presentation="date"
+                                        [(ngModel)]="form.dataCompetencia" [showDefaultButtons]="true"
+                                        doneText="Confirmar" cancelText="Cancelar">
+                                    </ion-datetime>
+                                </ng-template>
+                            </ion-modal>
+                        </div>
+                    </div>
+
+                    <div class="field-item">
                         <label>Categoria</label>
                         <div class="custom-select-trigger" (click)="openSelection('CATEGORY')">
                             <span [class.placeholder]="!form.categoriaId">{{ getCategoryName() || 'Selecione' }}</span>

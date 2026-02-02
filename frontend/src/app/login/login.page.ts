@@ -20,8 +20,8 @@ export class LoginPage implements OnInit {
 
   constructor(private fb: FormBuilder, private auth: AuthService) {
     this.loginForm = this.fb.group({
-      email: ['admin@erp.com', [Validators.required, Validators.email]],
-      senha: ['admin123', [Validators.required]]
+      email: ['', [Validators.required, Validators.email]],
+      senha: ['', [Validators.required]]
     });
   }
 

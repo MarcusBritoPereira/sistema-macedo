@@ -61,6 +61,13 @@
     gap: 1rem;
   }
 
+  .summary-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 0.75rem 0 0.5rem;
+  }
+
   h3 {
     margin: 0 0 0.35rem;
   }
@@ -73,10 +80,38 @@
   .generate-btn {
     margin-top: 1rem;
   }
+
+  .generation-result {
+    margin-top: 1rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--ion-color-light);
+
+    p {
+      margin: 0 0 0.5rem;
+      color: var(--ion-color-medium);
+    }
+  }
 }
 
-.section-title {
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin: 0 0 1rem;
+
+  h3 {
+    margin: 0;
+  }
+}
+
+.loading-state {
+  text-align: center;
+  color: var(--ion-color-medium);
+  padding: 1.5rem 0;
+
+  ion-spinner {
+    margin-bottom: 0.5rem;
+  }
 }
 
 .report-card {

@@ -3,10 +3,10 @@
     <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
-    <ion-title>Relatórios financeiros</ion-title>
+    <ion-title>Central de relatórios</ion-title>
     <ion-buttons slot="end">
-      <ion-button fill="clear">
-        <ion-icon name="download-outline"></ion-icon>
+      <ion-button fill="clear" (click)="loadReports()">
+        <ion-icon name="refresh-outline"></ion-icon>
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
@@ -15,15 +15,15 @@
 <ion-content class="ion-padding">
   <section class="hero">
     <div class="hero-text">
-      <h2>Relatórios que não podem faltar</h2>
+      <h2>Selecione, configure e gere relatórios</h2>
       <p>
-        Selecione os relatórios essenciais para controlar rentabilidade, liquidez, riscos e compliance.
-        Use os filtros para definir o período, contas e centros de custo antes de gerar o pacote.
+        Escolha os relatórios mais relevantes para o momento, ajuste os filtros e gere um pacote pronto
+        para análise e compartilhamento.
       </p>
     </div>
     <div class="hero-badges">
-      <ion-badge color="primary">Essencial</ion-badge>
-      <ion-badge color="tertiary">Operacional</ion-badge>
+      <ion-badge color="primary">Performance</ion-badge>
+      <ion-badge color="tertiary">Liquidez</ion-badge>
       <ion-badge color="success">Gestão</ion-badge>
       <ion-badge color="medium">Compliance</ion-badge>
     </div>
@@ -33,9 +33,9 @@
     <ion-card-header>
       <ion-card-title>
         <ion-icon name="filter-outline"></ion-icon>
-        Definir parâmetros
+        Parâmetros do relatório
       </ion-card-title>
-      <ion-card-subtitle>Centralize o recorte antes de gerar os relatórios.</ion-card-subtitle>
+      <ion-card-subtitle>Defina o recorte financeiro para todos os relatórios selecionados.</ion-card-subtitle>
     </ion-card-header>
     <ion-card-content>
       <ion-grid>
@@ -43,7 +43,7 @@
           <ion-col size="12" size-md="3">
             <ion-item>
               <ion-label position="stacked">Período</ion-label>
-              <ion-select [(ngModel)]="selectedPeriod" interface="popover">
+              <ion-select [(ngModel)]="selectedPeriod" interface="popover" (ionChange)="updateDatesFromPeriod()">
                 <ion-select-option value="month">Mês atual</ion-select-option>
                 <ion-select-option value="quarter">Trimestre</ion-select-option>
                 <ion-select-option value="year">Ano corrente</ion-select-option>
@@ -54,21 +54,22 @@
           <ion-col size="12" size-md="3">
             <ion-item>
               <ion-label position="stacked">Conta bancária</ion-label>
-              <ion-select [(ngModel)]="selectedAccount" interface="popover">
+              <ion-select [(ngModel)]="selectedAccount" interface="popover" [disabled]="loadingFilters">
                 <ion-select-option value="all">Todas</ion-select-option>
-                <ion-select-option value="main">Conta principal</ion-select-option>
-                <ion-select-option value="invest">Conta investimento</ion-select-option>
+                <ion-select-option *ngFor="let account of bankAccounts" [value]="account.id">
+                  {{ account.nome }} ({{ account.banco }})
+                </ion-select-option>
               </ion-select>
             </ion-item>
           </ion-col>
           <ion-col size="12" size-md="3">
             <ion-item>
               <ion-label position="stacked">Centro de custo</ion-label>
-              <ion-select [(ngModel)]="selectedCostCenter" interface="popover">
+              <ion-select [(ngModel)]="selectedCostCenter" interface="popover" [disabled]="loadingFilters">
                 <ion-select-option value="all">Todos</ion-select-option>
-                <ion-select-option value="sales">Comercial</ion-select-option>
-                <ion-select-option value="ops">Operações</ion-select-option>
-                <ion-select-option value="admin">Administrativo</ion-select-option>
+                <ion-select-option *ngFor="let center of costCenters" [value]="center.id">
+                  {{ center.nome }}
+                </ion-select-option>
               </ion-select>
             </ion-item>
           </ion-col>
@@ -107,13 +108,14 @@
             </ion-item>
           </ion-col>
           <ion-col size="12" size-md="4" class="actions-col">
-            <ion-button expand="block">
+            <ion-button expand="block" (click)="applyFilters()">
               <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
-              Aplicar filtros
+              Atualizar filtros
             </ion-button>
-            <ion-button expand="block" fill="outline">
+            <ion-button expand="block" fill="outline" (click)="generateReports()" [disabled]="generating">
               <ion-icon name="download-outline" slot="start"></ion-icon>
-              Exportar seleção
+              <span *ngIf="!generating">Gerar pacote</span>
+              <ion-spinner *ngIf="generating" name="dots"></ion-spinner>
             </ion-button>
           </ion-col>
         </ion-row>
@@ -126,10 +128,18 @@
       <ion-card-content>
         <div class="summary-header">
           <div>
-            <h3>Relatórios selecionados</h3>
-            <p>Monte um pacote com foco em rentabilidade, caixa e riscos.</p>
+            <h3>Seleção atual</h3>
+            <p>Escolha os relatórios e gere um pacote sob medida.</p>
           </div>
           <ion-badge color="primary">{{ selectedReports.size }} selecionados</ion-badge>
+        </div>
+        <div class="summary-actions">
+          <ion-button fill="clear" size="small" (click)="selectAll()" [disabled]="loadingReports">
+            Selecionar todos
+          </ion-button>
+          <ion-button fill="clear" size="small" (click)="clearSelection()" [disabled]="selectedReports.size === 0">
+            Limpar seleção
+          </ion-button>
         </div>
         <ion-list lines="none">
           <ion-item *ngFor="let label of selectedLabels">
@@ -140,18 +150,40 @@
             <ion-label color="medium">Selecione pelo menos um relatório para continuar.</ion-label>
           </ion-item>
         </ion-list>
-        <ion-button expand="block" class="generate-btn">
+        <ion-button expand="block" class="generate-btn" (click)="generateReports()" [disabled]="generating">
           <ion-icon name="download-outline" slot="start"></ion-icon>
-          Gerar pacote
+          <span *ngIf="!generating">Gerar pacote</span>
+          <ion-spinner *ngIf="generating" name="dots"></ion-spinner>
         </ion-button>
+        <div class="generation-result" *ngIf="lastGeneration">
+          <p>
+            Última geração: {{ lastGeneration.count }} relatório(s) • {{ lastGeneration.generatedAt | date:'short' }}
+          </p>
+          <ion-list lines="none">
+            <ion-item *ngFor="let report of lastGeneration.reports">
+              <ion-icon name="checkmark-circle-outline" slot="start" color="success"></ion-icon>
+              <ion-label>{{ report.title }}</ion-label>
+            </ion-item>
+          </ion-list>
+        </div>
       </ion-card-content>
     </ion-card>
   </section>
 
   <section>
-    <h3 class="section-title">Catálogo de relatórios essenciais</h3>
+    <div class="section-header">
+      <h3>Catálogo de relatórios</h3>
+      <ion-badge color="medium" *ngIf="loadingReports">Carregando</ion-badge>
+    </div>
     <ion-grid>
       <ion-row>
+        <ion-col size="12" *ngIf="loadingReports" class="loading-state">
+          <ion-spinner name="dots"></ion-spinner>
+          <p>Buscando relatórios disponíveis...</p>
+        </ion-col>
+        <ion-col size="12" *ngIf="!loadingReports && reports.length === 0" class="loading-state">
+          <p>Nenhum relatório disponível no momento.</p>
+        </ion-col>
         <ion-col size="12" size-md="6" size-lg="4" *ngFor="let report of reports">
           <ion-card class="report-card" [class.selected]="isSelected(report.id)">
             <ion-card-header>
@@ -185,7 +217,7 @@
                   [name]="isSelected(report.id) ? 'checkmark-circle-outline' : 'document-text-outline'"
                   slot="start">
                 </ion-icon>
-                {{ isSelected(report.id) ? 'Selecionado' : 'Selecionar' }}
+                {{ isSelected(report.id) ? 'Selecionado' : 'Adicionar à seleção' }}
               </ion-button>
             </ion-card-content>
           </ion-card>

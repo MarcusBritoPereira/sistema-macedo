@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -28,8 +28,11 @@ import {
   IonDatetimeButton,
   IonModal,
   IonDatetime,
-  IonToggle
+  IonToggle,
+  IonSpinner,
+  ToastController
 } from '@ionic/angular/standalone';
+import { forkJoin } from 'rxjs';
 import { addIcons } from 'ionicons';
 import {
   documentTextOutline,
@@ -42,19 +45,12 @@ import {
   downloadOutline,
   analyticsOutline,
   checkmarkCircleOutline,
-  layersOutline
+  layersOutline,
+  refreshOutline
 } from 'ionicons/icons';
-
-interface ReportDefinition {
-  id: string;
-  title: string;
-  description: string;
-  cadence: string;
-  category: string;
-  tags: string[];
-  icon: string;
-  highlights: string[];
-}
+import { ReportsService, ReportDefinition, ReportGenerationResponse } from '../../services/financial/reports.service';
+import { FinancialService, BankAccount } from '../../services/financial/financial';
+import { CostCentersService, CostCenter } from '../../services/financial/cost-centers.service';
 
 @Component({
   selector: 'app-reports',
@@ -90,102 +86,32 @@ interface ReportDefinition {
     IonDatetimeButton,
     IonModal,
     IonDatetime,
-    IonToggle
+    IonToggle,
+    IonSpinner
   ]
 })
-export class ReportsPage {
-  reports: ReportDefinition[] = [
-    {
-      id: 'dre',
-      title: 'DRE (Resultado do Exercício)',
-      description: 'Mostra rentabilidade, margem e evolução do resultado no período selecionado.',
-      cadence: 'Mensal',
-      category: 'Performance',
-      tags: ['Essencial', 'Contábil'],
-      icon: 'pie-chart-outline',
-      highlights: ['Receitas vs. despesas', 'Margem bruta e líquida', 'Comparativo mês a mês']
-    },
-    {
-      id: 'cashflow',
-      title: 'Fluxo de Caixa',
-      description: 'Visibilidade do caixa projetado, entradas e saídas por período.',
-      cadence: 'Diário / Semanal',
-      category: 'Liquidez',
-      tags: ['Essencial', 'Operacional'],
-      icon: 'cash-outline',
-      highlights: ['Saldo inicial e final', 'Projeções futuras', 'Alertas de falta de caixa']
-    },
-    {
-      id: 'balance',
-      title: 'Balanço Patrimonial',
-      description: 'Fotografia dos ativos, passivos e patrimônio líquido.',
-      cadence: 'Mensal',
-      category: 'Estrutura',
-      tags: ['Essencial', 'Contábil'],
-      icon: 'layers-outline',
-      highlights: ['Saúde financeira', 'Capital de giro', 'Endividamento']
-    },
-    {
-      id: 'aging',
-      title: 'Aging de Contas (Pagar/Receber)',
-      description: 'Distribuição por vencimento para evitar atrasos e melhorar cobrança.',
-      cadence: 'Semanal',
-      category: 'Risco',
-      tags: ['Essencial', 'Cobrança'],
-      icon: 'calendar-outline',
-      highlights: ['Vencidos', 'A vencer', 'Prioridade de cobrança']
-    },
-    {
-      id: 'bank-position',
-      title: 'Posição Bancária',
-      description: 'Saldos por banco/conta com comparativo diário.',
-      cadence: 'Diário',
-      category: 'Liquidez',
-      tags: ['Operacional'],
-      icon: 'wallet-outline',
-      highlights: ['Saldo disponível', 'Conta principal', 'Conciliação rápida']
-    },
-    {
-      id: 'budget',
-      title: 'Orçado x Realizado',
-      description: 'Acompanha desvios e eficiência das áreas e centros de custo.',
-      cadence: 'Mensal',
-      category: 'Controle',
-      tags: ['Gestão'],
-      icon: 'bar-chart-outline',
-      highlights: ['Variações por categoria', 'Alertas de estouro', 'Evolução orçamentária']
-    },
-    {
-      id: 'cost-centers',
-      title: 'Desempenho por Centro de Custo',
-      description: 'Consolida resultados e despesas por unidades de negócio.',
-      cadence: 'Mensal',
-      category: 'Gestão',
-      tags: ['Gerencial'],
-      icon: 'analytics-outline',
-      highlights: ['Ranking por contribuição', 'Comparativo entre áreas', 'Top despesas']
-    },
-    {
-      id: 'taxes',
-      title: 'Resumo de Impostos',
-      description: 'Mapeia obrigações, pagamentos e provisões fiscais.',
-      cadence: 'Mensal',
-      category: 'Compliance',
-      tags: ['Fiscal'],
-      icon: 'document-text-outline',
-      highlights: ['Impostos a pagar', 'Histórico de recolhimento', 'Alertas de vencimento']
-    }
-  ];
-
-  selectedReports = new Set<string>(['dre', 'cashflow', 'aging']);
+export class ReportsPage implements OnInit {
+  reports: ReportDefinition[] = [];
+  bankAccounts: BankAccount[] = [];
+  costCenters: CostCenter[] = [];
+  selectedReports = new Set<string>();
   selectedPeriod = 'month';
   startDate = '';
   endDate = '';
   selectedAccount = 'all';
   selectedCostCenter = 'all';
   includeProvisional = true;
+  loadingReports = true;
+  loadingFilters = true;
+  generating = false;
+  lastGeneration: ReportGenerationResponse | null = null;
 
-  constructor() {
+  constructor(
+    private reportsService: ReportsService,
+    private financialService: FinancialService,
+    private costCentersService: CostCentersService,
+    private toastCtrl: ToastController
+  ) {
     addIcons({
       documentTextOutline,
       cashOutline,
@@ -197,7 +123,48 @@ export class ReportsPage {
       downloadOutline,
       analyticsOutline,
       checkmarkCircleOutline,
-      layersOutline
+      layersOutline,
+      refreshOutline
+    });
+  }
+
+  ngOnInit() {
+    this.updateDatesFromPeriod();
+    this.loadReports();
+    this.loadFilters();
+  }
+
+  loadReports() {
+    this.loadingReports = true;
+    this.reportsService.getReports().subscribe({
+      next: (reports) => {
+        this.reports = reports;
+        const defaults = reports.filter(report => report.defaultSelected).map(report => report.id);
+        this.selectedReports = new Set(defaults);
+        this.loadingReports = false;
+      },
+      error: () => {
+        this.loadingReports = false;
+        this.showToast('Não foi possível carregar o catálogo de relatórios.', 'danger');
+      }
+    });
+  }
+
+  loadFilters() {
+    this.loadingFilters = true;
+    forkJoin({
+      accounts: this.financialService.getBankAccounts(),
+      costCenters: this.costCentersService.findAll()
+    }).subscribe({
+      next: ({ accounts, costCenters }) => {
+        this.bankAccounts = accounts;
+        this.costCenters = costCenters;
+        this.loadingFilters = false;
+      },
+      error: () => {
+        this.loadingFilters = false;
+        this.showToast('Não foi possível carregar contas e centros de custo.', 'warning');
+      }
     });
   }
 
@@ -217,5 +184,92 @@ export class ReportsPage {
     return this.reports
       .filter(report => this.selectedReports.has(report.id))
       .map(report => report.title);
+  }
+
+  selectAll() {
+    this.selectedReports = new Set(this.reports.map(report => report.id));
+  }
+
+  clearSelection() {
+    this.selectedReports.clear();
+  }
+
+  updateDatesFromPeriod() {
+    if (this.selectedPeriod === 'custom') {
+      return;
+    }
+
+    const today = new Date();
+    let start: Date;
+    let end: Date;
+
+    if (this.selectedPeriod === 'quarter') {
+      const quarter = Math.floor(today.getMonth() / 3);
+      start = new Date(today.getFullYear(), quarter * 3, 1);
+      end = new Date(today.getFullYear(), quarter * 3 + 3, 0);
+    } else if (this.selectedPeriod === 'year') {
+      start = new Date(today.getFullYear(), 0, 1);
+      end = new Date(today.getFullYear(), 11, 31);
+    } else {
+      start = new Date(today.getFullYear(), today.getMonth(), 1);
+      end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    }
+
+    this.startDate = this.formatDate(start);
+    this.endDate = this.formatDate(end);
+  }
+
+  applyFilters() {
+    this.updateDatesFromPeriod();
+    this.showToast('Filtros atualizados.');
+  }
+
+  generateReports() {
+    if (this.selectedReports.size === 0) {
+      this.showToast('Selecione ao menos um relatório para continuar.', 'warning');
+      return;
+    }
+
+    this.generating = true;
+    const payload = {
+      reportIds: Array.from(this.selectedReports),
+      filters: {
+        period: this.selectedPeriod,
+        startDate: this.startDate || null,
+        endDate: this.endDate || null,
+        accountId: this.selectedAccount !== 'all' ? this.selectedAccount : null,
+        costCenterId: this.selectedCostCenter !== 'all' ? this.selectedCostCenter : null,
+        includeProvisional: this.includeProvisional
+      }
+    };
+
+    this.reportsService.generateReports(payload).subscribe({
+      next: (response) => {
+        this.lastGeneration = response;
+        this.generating = false;
+        this.showToast(response.message ?? 'Relatórios gerados com sucesso!', 'success');
+      },
+      error: () => {
+        this.generating = false;
+        this.showToast('Não foi possível gerar os relatórios. Tente novamente.', 'danger');
+      }
+    });
+  }
+
+  async showToast(message: string, color: string = 'success') {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 2500,
+      color,
+      position: 'top'
+    });
+    await toast.present();
+  }
+
+  private formatDate(date: Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

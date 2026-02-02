@@ -17,10 +17,12 @@ import { BankAccountsController } from './bank-accounts.controller';
 import { ReconciliationModule } from './reconciliation/reconciliation.module';
 import { FinancialBudgetModule } from './budget/financial-budget.module';
 import { RecurringModule } from './recurring/recurring.module';
+import { ReportsController } from './reports/reports.controller';
+import { ReportsService } from './reports/reports.service';
 
 @Module({
-  providers: [FinancialService, CashFlowService, FinancialDashboardService],
-  controllers: [FinancialController, BankAccountsController, CashFlowController, FinancialDashboardController],
+  providers: [FinancialService, CashFlowService, FinancialDashboardService, ReportsService],
+  controllers: [FinancialController, BankAccountsController, CashFlowController, FinancialDashboardController, ReportsController],
   imports: [CategoriesModule, CostCentersModule, FinancialTransactionsModule, BankingIntegrationModule, ReconciliationModule, FinancialBudgetModule, RecurringModule]
 })
 export class FinancialModule { }

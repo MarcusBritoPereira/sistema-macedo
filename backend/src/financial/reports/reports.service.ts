@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ReportGenerationRequestDto } from './dto/report-generation-request.dto';
 
 export interface ReportDefinition {
   id: string;
@@ -10,18 +11,6 @@ export interface ReportDefinition {
   icon: string;
   highlights: string[];
   defaultSelected?: boolean;
-}
-
-export interface ReportGenerationRequest {
-  reportIds: string[];
-  filters: {
-    period: string;
-    startDate?: string | null;
-    endDate?: string | null;
-    accountId?: string | null;
-    costCenterId?: string | null;
-    includeProvisional?: boolean;
-  };
 }
 
 export interface ReportGenerationResponse {
@@ -123,7 +112,7 @@ export class ReportsService {
     return this.reports;
   }
 
-  generate(payload: ReportGenerationRequest): ReportGenerationResponse {
+  generate(payload: ReportGenerationRequestDto): ReportGenerationResponse {
     const selected = this.reports.filter(report => payload.reportIds?.includes(report.id));
     const now = new Date().toISOString();
 

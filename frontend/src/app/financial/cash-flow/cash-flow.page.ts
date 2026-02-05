@@ -121,9 +121,32 @@ export class CashFlowPage implements OnInit {
   }
 
   get filteredSummary() {
-    const receivables = this.filteredTransactions.filter(t => t.tipo === 'RECEITA').reduce((acc, t) => acc + Number(t.valor), 0);
-    const payables = this.filteredTransactions.filter(t => t.tipo === 'DESPESA').reduce((acc, t) => acc + Number(t.valor), 0);
-    return { receivables, payables, balance: receivables - payables };
+    // Correct "Pending vs Realized" logic
+    // "A Receber" = Pending Receivables
+    // "A Pagar" = Pending Payables
+    // "Result" = Total In - Total Out (Projected Balance)
+
+    // Status Logic: 'REALIZADO' or 'CONCILIADO' treated as Realized. Others as Pending.
+    const isRealized = (t: any) => t.status?.toUpperCase() === 'REALIZADO' || t.status?.toUpperCase() === 'CONCILIADO';
+
+    const receivables = this.filteredTransactions
+      .filter(t => t.tipo === 'RECEITA' && !isRealized(t))
+      .reduce((acc, t) => acc + Number(t.valor), 0);
+
+    const payables = this.filteredTransactions
+      .filter(t => t.tipo === 'DESPESA' && !isRealized(t))
+      .reduce((acc, t) => acc + Number(t.valor), 0);
+
+    const totalIn = this.filteredTransactions.filter(t => t.tipo === 'RECEITA').reduce((acc, t) => acc + Number(t.valor), 0);
+    const totalOut = this.filteredTransactions.filter(t => t.tipo === 'DESPESA').reduce((acc, t) => acc + Number(t.valor), 0);
+
+    return {
+      pendingReceivables: receivables,
+      pendingPayables: payables,
+      balance: totalIn - totalOut, // Result considers everything (Projected Cash Flow)
+      totalIn,
+      totalOut
+    };
   }
 
   loadData() {

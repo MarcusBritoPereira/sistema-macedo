@@ -21,6 +21,39 @@ export class ReconciliationService {
         if (filters?.status === 'PENDING') where.conciliado = false;
         if (filters?.status === 'CONCILIATED') where.conciliado = true;
 
+        if (filters?.search) {
+            const num = Number(filters.search);
+            where.OR = [
+                { descricao: { contains: filters.search, mode: 'insensitive' } },
+                {
+                    conciliacoes: {
+                        some: {
+                            lancamentoFinanceiro: {
+                                categoria: {
+                                    nome: { contains: filters.search, mode: 'insensitive' }
+                                }
+                            }
+                        }
+                    }
+                }
+            ];
+            if (!isNaN(num)) {
+                where.OR.push({ valor: num });
+            }
+        }
+
+        // Filter by Category (requires joining relations)
+        // Since Category is on LancamentoFinanceiro, which is linked via Conciliacao
+        if (filters?.categoryId) {
+            where.conciliacoes = {
+                some: {
+                    lancamentoFinanceiro: {
+                        categoriaId: filters.categoryId
+                    }
+                }
+            };
+        }
+
         return this.prisma.extratoBancario.findMany({
             where,
             include: {

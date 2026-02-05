@@ -29,6 +29,7 @@ export class QuickCreateModalComponent implements OnInit {
         nome: '',
         descricao: '', // Optional
         tipo: 'DESPESA', // Only for Category
+        classificacaoDRE: '', // New field
         cpfCnpj: '' // Optional for Supplier/Client
     };
 
@@ -84,7 +85,8 @@ export class QuickCreateModalComponent implements OnInit {
         const payload = {
             nome: this.form.nome,
             tipo: this.form.tipo as 'RECEITA' | 'DESPESA',
-            descricao: this.form.descricao
+            descricao: this.form.descricao,
+            classificacaoDRE: this.form.classificacaoDRE
         };
         this.categoriesService.create(payload).subscribe({
             next: (res) => this.modalCtrl.dismiss(res),

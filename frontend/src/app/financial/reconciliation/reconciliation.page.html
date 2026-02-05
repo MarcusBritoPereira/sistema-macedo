@@ -94,7 +94,19 @@
                     <input type="text" placeholder="Pesquise o lançamento bancário" [(ngModel)]="searchTerm"
                         (input)="onSearch($event)">
                 </div>
-                <ion-button fill="clear" class="clear-filters" (click)="searchTerm = ''; applySearch()">
+
+                <div class="category-filter-wrapper" style="margin-left: 16px; min-width: 200px;">
+                    <ion-select placeholder="Todas as Categorias" [(ngModel)]="selectedCategoryId"
+                        (ionChange)="loadStatements()" interface="popover"
+                        style="background: white; border-radius: 8px; border: 1px solid var(--ion-color-medium-shade); padding: 0 10px; height: 40px; --padding-start: 10px;">
+                        <ion-select-option value="">Todas</ion-select-option>
+                        <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome
+                            }}</ion-select-option>
+                    </ion-select>
+                </div>
+
+                <ion-button fill="clear" class="clear-filters"
+                    (click)="searchTerm = ''; selectedCategoryId = ''; loadStatements()">
                     <ion-icon name="trash-outline" slot="start"></ion-icon>
                     Limpar filtros
                 </ion-button>
@@ -123,20 +135,18 @@
         <!-- Bulk Action/Table Operations Bar -->
         <div class="ops-bar">
             <div class="ops-left">
-                <ion-button fill="outline" class="btn-sec">
-                    Selecionar lançamentos
-                    <ion-icon slot="end" name="chevron-down"></ion-icon>
+                <ion-button fill="outline" class="btn-sec" (click)="toggleExpandAll()">
+                    {{ areAllExpanded() ? 'Recolher Tudo' : 'Expandir Tudo' }}
+                    <ion-icon slot="end" [name]="areAllExpanded() ? 'chevron-up' : 'chevron-down'"></ion-icon>
                 </ion-button>
-                <ion-button fill="clear" color="medium" disabled>Conciliar</ion-button>
+                <ion-button fill="clear" color="medium" [disabled]="selectedStatementIds.size === 0"
+                    (click)="reconcileSelected()">Conciliar</ion-button>
                 <ion-button fill="clear" color="medium" disabled>Editar</ion-button>
-                <ion-button fill="clear" color="medium" disabled>Desvincular</ion-button>
-                <ion-button fill="clear" color="medium" disabled>Ignorar</ion-button>
+                <ion-button fill="clear" color="medium" [disabled]="selectedStatementIds.size === 0"
+                    (click)="showToast('Funcionalidade de desvincular em massa em breve', 'warning')">Desvincular</ion-button>
             </div>
             <div class="ops-right">
-                <ion-button fill="clear" class="btn-sec">
-                    Ordenar
-                    <ion-icon slot="end" name="chevron-down"></ion-icon>
-                </ion-button>
+                <!-- Sorting or other actions -->
             </div>
         </div>
 
@@ -149,11 +159,12 @@
 
             <!-- List of Items -->
             <div *ngIf="!loading && filteredStatements.length > 0" class="statements-list">
-                <div *ngFor="let s of filteredStatements" class="statement-wrapper">
-                    <div class="statement-row" [class.active]="expandedStatementId === s.id"
-                        [class.conciliated]="s.conciliado" (click)="toggleExpand(s)">
-                        <div class="row-selection" (click)="$event.stopPropagation()">
-                            <ion-checkbox mode="md"></ion-checkbox>
+                <div *ngFor="let s of filteredStatements; trackBy: trackByFn" class="statement-wrapper">
+                    <div class="statement-row" [class.active]="isExpanded(s.id)" [class.conciliated]="s.conciliado"
+                        (click)="toggleExpand(s)">
+                        <div class="row-selection" (click)="toggleSelection(s, $event)">
+                            <ion-checkbox mode="md" [checked]="isSelected(s.id)"
+                                (ionChange)="toggleSelection(s)"></ion-checkbox>
                         </div>
                         <div class="row-date">
                             {{ formatDate(s.data) }}
@@ -171,13 +182,15 @@
                             </ion-chip>
                         </div>
                         <div class="row-actions">
-                            <ion-icon
-                                [name]="expandedStatementId === s.id ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                            <ion-button fill="clear" size="small" (click)="toggleExpand(s); $event.stopPropagation()">
+                                <ion-icon
+                                    [name]="isExpanded(s.id) ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                            </ion-button>
                         </div>
                     </div>
 
                     <!-- Accordion Content -->
-                    <div class="statement-detail" *ngIf="expandedStatementId === s.id">
+                    <div class="statement-detail" *ngIf="isExpanded(s.id)">
                         <app-reconciliation-detail [statement]="s" (close)="toggleExpand(s)"
                             (complete)="onDetailAction($event)">
                         </app-reconciliation-detail>

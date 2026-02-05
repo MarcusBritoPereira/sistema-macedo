@@ -25,6 +25,17 @@
             </ion-select>
         </ion-item>
 
+        <ion-item class="input-item" *ngIf="entityType === 'CATEGORY'">
+            <ion-label position="stacked">Classificação DRE</ion-label>
+            <ion-select [(ngModel)]="form.classificacaoDRE" name="classificacaoDRE" placeholder="Selecione">
+                <ion-select-option value="VENDAS">Vendas</ion-select-option>
+                <ion-select-option value="CUSTO_VARIAVEL">Custo Variável</ion-select-option>
+                <ion-select-option value="DESPESA_FIXA">Despesa Fixa</ion-select-option>
+                <ion-select-option value="INVESTIMENTO">Investimento</ion-select-option>
+                <ion-select-option value="NAO_OPERACIONAL">Não Operacional</ion-select-option>
+            </ion-select>
+        </ion-item>
+
         <!-- CPF/CNPJ (Supplier/Client Only) -->
         <ion-item class="input-item" *ngIf="entityType === 'SUPPLIER' || entityType === 'CLIENT'">
             <ion-label position="stacked">CPF/CNPJ (Opcional)</ion-label>

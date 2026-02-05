@@ -278,11 +278,36 @@ export class FinancialDashboardService {
 
         // 3. Financial Accounts (Contas Financeiras)
         const accounts = await this.prisma.contaBancaria.findMany();
-        const accountsWithBalance = accounts.map(acc => ({
-            id: acc.id,
-            nome: acc.nome,
-            banco: acc.banco,
-            saldo: Number(acc.saldoInicial || 0)
+        const accountsWithBalance = await Promise.all(accounts.map(async (acc) => {
+            // Compute actual balance: Initial + In (Realized) - Out (Realized)
+            // Ideally this should be cached/stored, but for now we compute.
+            const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    contaBancariaId: acc.id,
+                    tipo: 'RECEITA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] }
+                }
+            });
+            const totalOut = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    contaBancariaId: acc.id,
+                    tipo: 'DESPESA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] }
+                }
+            });
+
+            const currentBalance = Number(acc.saldoInicial || 0)
+                + Number(totalIn._sum.valor || 0)
+                - Number(totalOut._sum.valor || 0);
+
+            return {
+                id: acc.id,
+                nome: acc.nome,
+                banco: acc.banco,
+                saldo: currentBalance
+            };
         }));
         const totalBalance = accountsWithBalance.reduce((sum, acc) => sum + acc.saldo, 0);
 

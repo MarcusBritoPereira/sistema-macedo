@@ -114,36 +114,33 @@
             </div>
 
             <!-- SEARCH VIEW (SUGGESTIONS) -->
-            <div class="search-view" *ngIf="mode === 'SEARCH'">
-                <div class="suggestions-header">
-                    <h3>Sugestões encontradas ({{ suggestions.length }})</h3>
-                </div>
 
-                <div class="suggestions-list" *ngIf="!loadingSuggestions">
-                    <div *ngFor="let match of suggestions" class="suggestion-row" (click)="link(match)">
-                        <div class="s-info">
-                            <span class="s-date">{{ formatDate(match.dataVencimento) }}</span>
-                            <span class="s-desc">{{ match.descricao }}</span>
-                            <span class="s-cat" *ngIf="match.categoria">{{ match.categoria.nome }}</span>
-                        </div>
-                        <div class="s-val">
-                            {{ match.valor | currency:'BRL' }}
-                            <ion-chip color="success" outline="true" *ngIf="(match.confidence || 0) > 80">High
-                                Match</ion-chip>
-                        </div>
-                        <ion-button fill="clear" size="small">
-                            <ion-icon name="link-outline" slot="icon-only"></ion-icon>
-                        </ion-button>
+
+            <div class="suggestions-list" *ngIf="!loadingSuggestions">
+                <div *ngFor="let match of suggestions" class="suggestion-row" (click)="link(match)">
+                    <div class="s-info">
+                        <span class="s-date">{{ formatDate(match.dataVencimento) }}</span>
+                        <span class="s-desc">{{ match.descricao }}</span>
+                        <span class="s-cat" *ngIf="match.categoria">{{ match.categoria.nome }}</span>
                     </div>
-                    <div class="no-results" *ngIf="suggestions.length === 0">
-                        Nenhuma sugestão encontrada para este valor e data.
+                    <div class="s-val">
+                        {{ match.valor | currency:'BRL' }}
+                        <ion-chip color="success" outline="true" *ngIf="(match.confidence || 0) > 80">High
+                            Match</ion-chip>
                     </div>
+                    <ion-button fill="clear" size="small">
+                        <ion-icon name="link-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
                 </div>
-                <div class="form-actions">
-                    <ion-button fill="clear" color="medium" (click)="cancel()">Cancelar</ion-button>
+                <div class="no-results" *ngIf="suggestions.length === 0">
+                    Nenhuma sugestão encontrada para este valor e data.
                 </div>
             </div>
-
+            <div class="form-actions">
+                <ion-button fill="clear" color="medium" (click)="cancel()">Cancelar</ion-button>
+            </div>
         </div>
+
+
     </ng-container>
 </div>

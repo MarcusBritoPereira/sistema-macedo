@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -80,6 +80,8 @@ export class ReconciliationDetailComponent implements OnInit {
         });
     }
 
+    @ViewChild('searchBar') searchBar!: IonSearchbar;
+
     ngOnInit() {
         if (this.statement) {
             this.form.descricao = this.statement.descricao;
@@ -91,12 +93,16 @@ export class ReconciliationDetailComponent implements OnInit {
             // Auto-switch to SEARCH if suggestions exist
             if (this.suggestions && this.suggestions.length > 0) {
                 this.mode = 'SEARCH';
+                setTimeout(() => this.searchBar?.setFocus(), 100);
             }
         }
     }
 
     toggleMode() {
         this.mode = this.mode === 'FORM' ? 'SEARCH' : 'FORM';
+        if (this.mode === 'SEARCH') {
+            setTimeout(() => this.searchBar?.setFocus(), 100);
+        }
     }
 
     formatDate(dateStr: string | Date | undefined) {
@@ -128,6 +134,15 @@ export class ReconciliationDetailComponent implements OnInit {
 
         this.costCentersService.findAll().subscribe(ccs => {
             this.costCenters = ccs;
+
+            // Default to "Geral" if not set
+            if (!this.form.centroCustoId) {
+                const geral = ccs.find(c => c.nome.toLowerCase() === 'geral');
+                if (geral) {
+                    this.form.centroCustoId = geral.id;
+                }
+            }
+
             this.loadingAux = false;
         });
     }
@@ -246,8 +261,7 @@ export class ReconciliationDetailComponent implements OnInit {
                 enableCreate,
                 createLabel
             },
-            breakpoints: [0, 0.7, 0.9],
-            initialBreakpoint: 0.7
+            cssClass: 'centered-selection-modal'
         });
 
         await modal.present();
@@ -306,9 +320,7 @@ export class ReconciliationDetailComponent implements OnInit {
                 entityType: type,
                 parentContext: type === 'CATEGORY' ? targetType : undefined
             },
-            cssClass: 'auto-height-modal',
-            breakpoints: [0, 0.5, 0.8],
-            initialBreakpoint: 0.5
+            cssClass: 'centered-selection-modal'
         });
 
         await modal.present();

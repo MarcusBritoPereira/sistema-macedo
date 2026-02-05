@@ -1,5 +1,5 @@
 
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -42,8 +42,16 @@ export class SearchableSelectionModalComponent implements OnInit {
         addIcons({ closeOutline, addCircleOutline, checkmarkOutline });
     }
 
+    @ViewChild(IonSearchbar) searchbar!: IonSearchbar;
+
     ngOnInit() {
         this.filteredItems = [...this.items];
+    }
+
+    ionViewDidEnter() {
+        setTimeout(() => {
+            this.searchbar?.setFocus();
+        }, 300);
     }
 
     filterItems(event: any) {

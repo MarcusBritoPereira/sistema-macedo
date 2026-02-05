@@ -14,9 +14,10 @@
 </ion-header>
 
 <ion-content>
-    <ion-list lines="full">
+    <ion-list lines="none" class="selection-list">
         <!-- Add New Option -->
-        <ion-item button detail="false" (click)="createNew()" *ngIf="enableCreate" class="create-item">
+        <ion-item button detail="false" (click)="createNew()" *ngIf="enableCreate"
+            class="create-item ion-margin-bottom">
             <ion-icon name="add-circle-outline" slot="start" color="primary"></ion-icon>
             <ion-label color="primary">
                 <h2>{{ createLabel }}</h2>
@@ -24,17 +25,18 @@
         </ion-item>
 
         <!-- Items -->
-        <ion-item *ngFor="let item of filteredItems" button detail="false" (click)="select(item)"
-            [color]="item.id === selectedId ? 'light' : ''">
+        <ion-item *ngFor="let item of filteredItems" button detail="false" (click)="select(item)" class="selection-item"
+            [class.selected]="item.id === selectedId">
             <ion-label>
                 <h2>{{ item.label }}</h2>
                 <p *ngIf="item.subLabel">{{ item.subLabel }}</p>
             </ion-label>
-            <ion-icon name="checkmark-outline" slot="end" color="primary" *ngIf="item.id === selectedId"></ion-icon>
+            <ion-icon name="checkmark-circle" slot="end" color="primary" *ngIf="item.id === selectedId"></ion-icon>
         </ion-item>
 
         <!-- Empty State -->
         <div class="empty-results" *ngIf="filteredItems.length === 0">
+            <ion-icon name="search-outline" size="large"></ion-icon>
             <p>Nenhum item encontrado.</p>
         </div>
     </ion-list>

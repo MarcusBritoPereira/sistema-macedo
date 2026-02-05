@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ReportsService, ReportGenerationRequest } from './reports.service';
+import { ReportsService } from './reports.service';
+import type { ReportGenerationRequest } from './reports.service';
 
 @Controller('financial/reports')
 @UseGuards(AuthGuard('jwt'))

@@ -106,7 +106,11 @@
         <div class="chart-container">
           <div class="custom-chart">
             <div class="chart-y-axis">
-              <span>0</span>
+              <div class="chart-y-axis">
+                <span>{{ maxChartValue | number:'1.0-0' }}</span>
+                <span>{{ maxChartValue / 2 | number:'1.0-0' }}</span>
+                <span>0</span>
+              </div>
             </div>
             <div class="chart-content">
               <!-- Grid line -->
@@ -114,7 +118,15 @@
 
               <div class="data-points">
                 <div *ngFor="let day of operationalData.dailyFlow" class="data-group">
-                  <div class="point-marker shadow" [style.bottom.%]="50"></div> <!-- Placeholder for balance line -->
+                  <!-- Bars -->
+                  <div class="bar-container">
+                    <div class="bar received" [style.height.%]="(day.recebimentos / maxChartValue) * 100"
+                      [title]="'Recebimentos: ' + (day.recebimentos | currency:'BRL')"></div>
+                    <div class="bar paid" [style.height.%]="(day.pagamentos / maxChartValue) * 100"
+                      [title]="'Pagamentos: ' + (day.pagamentos | currency:'BRL')"></div>
+                  </div>
+                  <!-- Balance Point (Optional, maybe just bars for now) -->
+                  <!-- <div class="point-marker shadow" [style.bottom.%]="50"></div> -->
                 </div>
               </div>
             </div>
@@ -139,12 +151,34 @@
         <div class="section-header">
           <h2>Gráfico de vendas</h2>
         </div>
-        <div class="empty-sales">
+        <div class="empty-sales" *ngIf="!operationalData?.dailyFlow || operationalData.dailyFlow.length === 0">
           <div class="sales-illustration">
             <ion-icon name="stats-chart-outline"></ion-icon>
           </div>
           <p>Vamos lançar sua primeira venda?</p>
           <ion-button fill="outline">Lançar primeira venda</ion-button>
+        </div>
+
+        <div class="chart-container" *ngIf="operationalData?.dailyFlow && operationalData.dailyFlow.length > 0">
+          <div class="custom-chart sales-chart">
+            <div class="chart-y-axis">
+              <span>{{ maxChartValue | number:'1.0-0' }}</span>
+              <span>0</span>
+            </div>
+            <div class="chart-content">
+              <div class="data-points">
+                <div *ngFor="let day of operationalData.dailyFlow" class="data-group">
+                  <div class="bar-container">
+                    <div class="bar received" [style.height.%]="(day.recebimentos / maxChartValue) * 100"
+                      [title]="'Vendas: ' + (day.recebimentos | currency:'BRL')"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-x-axis">
+            <span *ngFor="let day of operationalData.dailyFlow">{{ day.label }}</span>
+          </div>
         </div>
       </div>
 

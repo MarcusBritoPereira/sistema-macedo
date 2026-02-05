@@ -17,7 +17,8 @@
                     </ion-button>
                     <div class="current-month">
                         <ion-icon name="calendar-outline"></ion-icon>
-                        <ion-select [value]="selectedMonthStr" (ionChange)="onMonthChange($event)" interface="popover">
+                        <ion-select [(ngModel)]="selectedMonthStr" (ionChange)="onMonthChange($event)"
+                            interface="popover">
                             <ion-select-option *ngFor="let m of months" [value]="m.value">{{ m.label
                                 }}</ion-select-option>
                         </ion-select>
@@ -75,9 +76,10 @@
                         <ion-icon name="trending-up-outline"></ion-icon>
                     </div>
                     <div class="kpi-content">
-                        <span class="kpi-label">A receber ({{ currentFilter === 'today' ? 'Hoje' : (currentFilter ===
-                            'week' ? 'Semana' : 'Mês') }})</span>
-                        <h2 class="kpi-value">{{ filteredSummary.receivables | currency:'BRL' }}</h2>
+                        <span class="kpi-label">A receber (Pendente)</span>
+                        <h2 class="kpi-value">{{ filteredSummary.pendingReceivables | currency:'BRL' }}</h2>
+                        <p class="kpi-sub" style="font-size: 0.8em; opacity: 0.8;">Total: {{ filteredSummary.totalIn |
+                            currency:'BRL' }}</p>
                     </div>
                 </div>
 
@@ -87,9 +89,10 @@
                         <ion-icon name="trending-down-outline"></ion-icon>
                     </div>
                     <div class="kpi-content">
-                        <span class="kpi-label">A pagar ({{ currentFilter === 'today' ? 'Hoje' : (currentFilter ===
-                            'week' ? 'Semana' : 'Mês') }})</span>
-                        <h2 class="kpi-value">{{ filteredSummary.payables | currency:'BRL' }}</h2>
+                        <span class="kpi-label">A pagar (Pendente)</span>
+                        <h2 class="kpi-value">{{ filteredSummary.pendingPayables | currency:'BRL' }}</h2>
+                        <p class="kpi-sub" style="font-size: 0.8em; opacity: 0.8;">Total: {{ filteredSummary.totalOut |
+                            currency:'BRL' }}</p>
                     </div>
                 </div>
 
@@ -99,8 +102,7 @@
                         <ion-icon name="wallet-outline"></ion-icon>
                     </div>
                     <div class="kpi-content">
-                        <span class="kpi-label">Resultado ({{ currentFilter === 'today' ? 'Hoje' : (currentFilter ===
-                            'week' ? 'Semana' : 'Mês') }})</span>
+                        <span class="kpi-label">Resultado Previsto</span>
                         <h2 class="kpi-value" [class.negative]="filteredSummary.balance < 0">{{ filteredSummary.balance
                             | currency:'BRL' }}</h2>
                     </div>
@@ -140,9 +142,9 @@
                         <div *ngFor="let day of dailyData" class="bar-col">
                             <div class="bar-pair">
                                 <div class="bar-fill rev" [style.height.%]="(day.in / maxVal) * 100"
-                                    [title]="day.in | currency:'BRL'"></div>
+                                    [title]="'Entrada: ' + (day.in | currency:'BRL')"></div>
                                 <div class="bar-fill exp" [style.height.%]="(day.out / maxVal) * 100"
-                                    [title]="day.out | currency:'BRL'"></div>
+                                    [title]="'Saída: ' + (day.out | currency:'BRL')"></div>
                             </div>
                             <span class="day-label">{{ day.date | date: 'dd' }}</span>
                         </div>

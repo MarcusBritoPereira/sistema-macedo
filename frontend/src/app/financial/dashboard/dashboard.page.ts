@@ -30,6 +30,7 @@ export class DashboardPage implements OnInit {
     this.dashboardService.getOperationalDashboard().subscribe({
       next: (data) => {
         this.operationalData = data;
+        this.processChartData();
         this.loading = false;
       },
       error: (err) => {
@@ -37,6 +38,18 @@ export class DashboardPage implements OnInit {
         this.loading = false;
       }
     });
+  }
+
+  maxChartValue = 100;
+
+  processChartData() {
+    if (!this.operationalData?.dailyFlow) return;
+    let max = 0;
+    this.operationalData.dailyFlow.forEach(d => {
+      if (d.recebimentos > max) max = d.recebimentos;
+      if (d.pagamentos > max) max = d.pagamentos;
+    });
+    this.maxChartValue = max > 0 ? max * 1.1 : 100; // 10% buffering
   }
 
   formatLastUpdate(isoDate: string): string {

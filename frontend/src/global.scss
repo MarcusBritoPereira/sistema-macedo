@@ -221,3 +221,18 @@ ion-menu {
         --border-radius: 0;
     }
 }
+
+/* Centered Selection Modal */
+.centered-selection-modal {
+    --height: auto;
+    --min-height: 400px;
+    --width: 90%;
+    --max-width: 600px;
+    --border-radius: 16px;
+    --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+
+    /* Ensure ion-content takes available space */
+    ion-content {
+        --padding-bottom: 20px;
+    }
+}

@@ -1,22 +1,72 @@
 ion-searchbar {
     --background: var(--ion-color-light);
-    padding-top: 0;
+    --box-shadow: none;
+    padding-top: 10px;
     padding-bottom: 10px;
 }
 
+.selection-list {
+    padding: 0 16px;
+}
+
 .create-item {
-    --background: var(--ion-color-light-tint);
-    font-weight: 500;
+    --background: var(--ion-color-primary-contrast);
+    --border-radius: 12px;
+    --min-height: 56px;
+    margin-top: 8px;
+    border: 1px dashed var(--ion-color-primary);
+    font-weight: 600;
+}
+
+.selection-item {
+    --background: var(--ion-color-light);
+    --border-radius: 12px;
+    --min-height: 56px;
+    --inner-padding-end: 16px;
+    margin-bottom: 8px;
+    
+    &.selected {
+        --background: var(--ion-color-primary-tint);
+        --color: var(--ion-color-primary-contrast);
+        font-weight: 600;
+        
+        ion-label h2 {
+            color: var(--ion-color-primary-shade);
+        }
+    }
+
+    ion-label {
+        margin: 12px 0;
+        
+        h2 {
+            font-size: 1rem;
+            color: var(--ion-text-color);
+        }
+        
+        p {
+            font-size: 0.85rem;
+            margin-top: 4px;
+        }
+    }
 }
 
 .empty-results {
-    padding: 30px;
+    padding: 60px 20px;
     text-align: center;
     color: var(--ion-color-medium);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+
+    ion-icon {
+        font-size: 48px;
+        opacity: 0.5;
+    }
 
     p {
         margin: 0;
-        font-size: 0.9rem;
+        font-size: 1rem;
     }
 }
 

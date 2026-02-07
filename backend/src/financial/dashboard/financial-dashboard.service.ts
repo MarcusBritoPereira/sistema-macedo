@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ClassificacaoDRE, TipoLancamento, StatusLancamento } from '@prisma/client';
+import { ClassificacaoDRE } from '@prisma/client';
 
 @Injectable()
 export class FinancialDashboardService {
@@ -58,7 +58,8 @@ export class FinancialDashboardService {
         });
 
         // 4. Calculate DRE Lines
-        const receitaBruta = totals.RECEITA_RECORRENTE + totals.RECEITA_NAO_RECORRENTE;
+        const receitasOperacionais = totals.RECEITA_RECORRENTE + totals.RECEITA_NAO_RECORRENTE;
+        const receitaBruta = receitasOperacionais;
         const deducoes = totals.DEDUCOES_RECEITA;
         const receitaLiquida = receitaBruta - deducoes;
 
@@ -81,10 +82,93 @@ export class FinancialDashboardService {
 
         const lucroLiquido = lair - impostosLucro;
 
+        const outrasReceitasDespesasNaoOperacionais = totals.OUTROS;
+        const lucroLiquidoAposNaoOperacional = lucroLiquido + outrasReceitasDespesasNaoOperacionais;
+
+        const despesasInvestimentosEmprestimos = Math.max(0, -outrasReceitasDespesasNaoOperacionais);
+        const lucroPrejuizoFinal = lucroLiquidoAposNaoOperacional - despesasInvestimentosEmprestimos;
+
+        const estruturaGerencial = [
+            {
+                chave: 'receitasOperacionais',
+                titulo: 'Receitas Operacionais',
+                descricao: 'Vendas diretamente ligadas à atividade econômica da empresa.',
+                valor: receitasOperacionais,
+            },
+            {
+                chave: 'deducoesReceitaBruta',
+                titulo: '(-) Deduções da Receita Bruta',
+                descricao: 'Devoluções, descontos concedidos, comissões e impostos incidentes sobre as vendas.',
+                valor: deducoes,
+            },
+            {
+                chave: 'receitaLiquidaVendas',
+                titulo: '(=) Receita Líquida de Vendas',
+                descricao: 'Receitas operacionais descontando deduções e impostos sobre vendas.',
+                valor: receitaLiquida,
+            },
+            {
+                chave: 'custosOperacionais',
+                titulo: '(-) Custos Operacionais',
+                descricao: 'Custos diretamente ligados à geração da receita.',
+                valor: csp,
+            },
+            {
+                chave: 'lucroBruto',
+                titulo: '(=) Lucro Bruto',
+                descricao: 'Resultado antes das despesas operacionais.',
+                valor: lucroBruto,
+            },
+            {
+                chave: 'despesasOperacionais',
+                titulo: '(-) Despesas Operacionais',
+                descricao: 'Gastos administrativos, comerciais, estruturais e com sócios.',
+                valor: despesasOperacionais,
+            },
+            {
+                chave: 'lucroOperacional',
+                titulo: '(=) Lucro/Prejuízo Operacional',
+                descricao: 'Diferença entre receita líquida e gastos da operação.',
+                valor: ebit,
+            },
+            {
+                chave: 'resultadoFinanceiro',
+                titulo: '(+) Resultado Financeiro',
+                descricao: 'Receitas financeiras menos despesas financeiras.',
+                valor: resultadoFinanceiro,
+            },
+            {
+                chave: 'lucroLiquido',
+                titulo: '(=) Lucro/Prejuízo Líquido',
+                descricao: 'Resultado após impostos sobre o lucro.',
+                valor: lucroLiquido,
+            },
+            {
+                chave: 'naoOperacional',
+                titulo: '(±) Outras Receitas e Despesas Não Operacionais',
+                descricao: 'Eventos não recorrentes e não ligados à operação principal.',
+                valor: outrasReceitasDespesasNaoOperacionais,
+            },
+            {
+                chave: 'investimentosEmprestimos',
+                titulo: '(-) Despesas com Investimentos e Empréstimos',
+                descricao: 'Parcelas programadas de financiamentos, empréstimos e aquisições de ativos.',
+                valor: despesasInvestimentosEmprestimos,
+            },
+            {
+                chave: 'lucroFinal',
+                titulo: '(=) Lucro/Prejuízo Final',
+                descricao: 'Resultado final do período após todos os custos e despesas.',
+                valor: lucroPrejuizoFinal,
+            },
+        ];
+
         return {
             period: { start: startDate, end: endDate },
             breakdown: totals,
+            estruturaGerencial,
             summary: {
+                receitasOperacionais,
                 receitaBruta,
                 deducoes,
                 receitaLiquida,
@@ -96,6 +180,9 @@ export class FinancialDashboardService {
                 lair,
                 impostosLucro,
                 lucroLiquido,
+                outrasReceitasDespesasNaoOperacionais,
+                despesasInvestimentosEmprestimos,
+                lucroPrejuizoFinal,
             },
         };
     }

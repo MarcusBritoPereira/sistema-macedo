@@ -51,6 +51,7 @@ import {
 import { ReportsService, ReportDefinition, ReportGenerationResponse } from '../../services/financial/reports.service';
 import { FinancialService, BankAccount } from '../../services/financial/financial';
 import { CostCentersService, CostCenter } from '../../services/financial/cost-centers.service';
+import { ReportViewerComponent, ReportData } from './components/report-viewer/report-viewer.component';
 
 @Component({
   selector: 'app-reports',
@@ -87,7 +88,8 @@ import { CostCentersService, CostCenter } from '../../services/financial/cost-ce
     IonModal,
     IonDatetime,
     IonToggle,
-    IonSpinner
+    IonSpinner,
+    ReportViewerComponent
   ]
 })
 export class ReportsPage implements OnInit {
@@ -105,6 +107,10 @@ export class ReportsPage implements OnInit {
   loadingFilters = true;
   generating = false;
   lastGeneration: ReportGenerationResponse | null = null;
+
+  viewingReport: any = null;
+  reportData: ReportData | null = null;
+  isModalOpen = false;
 
   constructor(
     private reportsService: ReportsService,
@@ -247,13 +253,36 @@ export class ReportsPage implements OnInit {
       next: (response) => {
         this.lastGeneration = response;
         this.generating = false;
-        this.showToast(response.message ?? 'Relatórios gerados com sucesso!', 'success');
+
+        // Auto-open if DRE is present and has data
+        const dre = response.reports.find(r => r.id === 'dre' && r.data);
+        if (dre) {
+          this.viewReport(dre);
+        } else {
+          this.showToast(response.message ?? 'Relatórios gerados com sucesso!', 'success');
+        }
       },
       error: () => {
         this.generating = false;
         this.showToast('Não foi possível gerar os relatórios. Tente novamente.', 'danger');
       }
     });
+  }
+
+  viewReport(report: any) {
+    if (report.data) {
+      this.viewingReport = report;
+      this.reportData = report.data;
+      this.isModalOpen = true;
+    } else {
+      this.showToast('Este relatório não possui visualização disponível.', 'medium');
+    }
+  }
+
+  closeModal() {
+    this.isModalOpen = false;
+    this.viewingReport = null;
+    this.reportData = null;
   }
 
   async showToast(message: string, color: string = 'success') {

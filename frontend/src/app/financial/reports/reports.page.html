@@ -86,10 +86,7 @@
               <ion-label position="stacked">Data inicial</ion-label>
               <ion-datetime-button datetime="startDatePicker"></ion-datetime-button>
               <ion-modal keepContentsMounted="true">
-                <ion-datetime
-                  id="startDatePicker"
-                  presentation="date"
-                  [(ngModel)]="startDate">
+                <ion-datetime id="startDatePicker" presentation="date" [(ngModel)]="startDate">
                 </ion-datetime>
               </ion-modal>
             </ion-item>
@@ -99,10 +96,7 @@
               <ion-label position="stacked">Data final</ion-label>
               <ion-datetime-button datetime="endDatePicker"></ion-datetime-button>
               <ion-modal keepContentsMounted="true">
-                <ion-datetime
-                  id="endDatePicker"
-                  presentation="date"
-                  [(ngModel)]="endDate">
+                <ion-datetime id="endDatePicker" presentation="date" [(ngModel)]="endDate">
                 </ion-datetime>
               </ion-modal>
             </ion-item>
@@ -213,8 +207,7 @@
                 <li *ngFor="let item of report.highlights">{{ item }}</li>
               </ul>
               <ion-button expand="block" fill="outline" (click)="toggleReport(report.id)">
-                <ion-icon
-                  [name]="isSelected(report.id) ? 'checkmark-circle-outline' : 'document-text-outline'"
+                <ion-icon [name]="isSelected(report.id) ? 'checkmark-circle-outline' : 'document-text-outline'"
                   slot="start">
                 </ion-icon>
                 {{ isSelected(report.id) ? 'Selecionado' : 'Adicionar à seleção' }}
@@ -225,4 +218,22 @@
       </ion-row>
     </ion-grid>
   </section>
+
+  <!-- Report Viewer Modal -->
+  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ viewingReport?.title }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="closeModal()">Fechar</ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <app-report-viewer [data]="reportData" [title]="viewingReport?.title" [period]="selectedPeriod">
+        </app-report-viewer>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>

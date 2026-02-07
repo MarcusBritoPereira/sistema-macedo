@@ -30,14 +30,14 @@ export interface ReportGenerationResponse {
   generatedAt: string;
   count: number;
   message?: string;
-  reports: Array<{ id: string; title: string; status: string }>;
+  reports: Array<{ id: string; title: string; status: string; data?: any }>;
 }
 
 @Injectable({
   providedIn: 'root'
 })
 export class ReportsService {
-  constructor(private api: ApiService) {}
+  constructor(private api: ApiService) { }
 
   getReports(): Observable<ReportDefinition[]> {
     return this.api.get<ReportDefinition[]>('financial/reports');

@@ -36,24 +36,58 @@ export class FinancialTransactionsService {
         });
     }
 
-    findAll(type?: TipoLancamento, status?: StatusLancamento, skip = 0, take = 50) {
+    async findAll(params: {
+        type?: TipoLancamento,
+        status?: StatusLancamento,
+        startDate?: string,
+        endDate?: string,
+        categoryId?: string,
+        search?: string,
+        skip?: number,
+        take?: number
+    }) {
+        const { type, status, startDate, endDate, categoryId, search, skip, take } = params;
         const where: Prisma.LancamentoFinanceiroWhereInput = {};
+
         if (type) where.tipo = type;
         if (status) where.status = status;
+        if (categoryId) where.categoriaId = categoryId;
 
-        return this.prisma.lancamentoFinanceiro.findMany({
-            where,
-            include: {
-                categoria: true,
-                centroCusto: true,
-                cliente: true,
-                fornecedor: true,
-                contaBancaria: true,
-            },
-            skip,
-            take,
-            orderBy: { dataVencimento: 'asc' },
-        });
+        if (startDate && endDate) {
+            where.dataVencimento = {
+                gte: new Date(startDate),
+                lte: new Date(endDate),
+            };
+        }
+
+        if (search) {
+            where.OR = [
+                { descricao: { contains: search, mode: 'insensitive' } },
+                { categoria: { nome: { contains: search, mode: 'insensitive' } } },
+                { cliente: { razaoSocial: { contains: search, mode: 'insensitive' } } },
+                { cliente: { nomeFantasia: { contains: search, mode: 'insensitive' } } },
+                { fornecedor: { nomeFantasia: { contains: search, mode: 'insensitive' } } },
+            ];
+        }
+
+        const [total, data] = await this.prisma.$transaction([
+            this.prisma.lancamentoFinanceiro.count({ where }),
+            this.prisma.lancamentoFinanceiro.findMany({
+                where,
+                include: {
+                    categoria: true,
+                    centroCusto: true,
+                    cliente: true,
+                    fornecedor: true,
+                    contaBancaria: true,
+                },
+                skip,
+                take,
+                orderBy: { dataVencimento: 'desc' }, // Changed to desc for better recent view
+            })
+        ]);
+
+        return { total, data };
     }
 
     findOne(id: string) {

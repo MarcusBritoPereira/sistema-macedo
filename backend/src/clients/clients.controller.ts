@@ -14,6 +14,11 @@ export class ClientsController {
         return this.clientsService.create(createClientDto);
     }
 
+    @Post('bulk')
+    createMany(@Body() createClientsDto: Prisma.ClienteCreateInput[]) {
+        return this.clientsService.createMany(createClientsDto);
+    }
+
     @Get()
     findAll() {
         return this.clientsService.findAll();

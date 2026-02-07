@@ -49,9 +49,10 @@ export class SearchableSelectionModalComponent implements OnInit {
     }
 
     ionViewDidEnter() {
+        // Focus info: often needs a small delay after transition
         setTimeout(() => {
             this.searchbar?.setFocus();
-        }, 300);
+        }, 100);
     }
 
     filterItems(event: any) {

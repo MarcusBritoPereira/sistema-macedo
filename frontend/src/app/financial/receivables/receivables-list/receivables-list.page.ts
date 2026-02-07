@@ -52,8 +52,8 @@ export class ReceivablesListPage implements OnInit {
 
     loadData(event?: any) {
         this.financialService.getTransactions({ tipo: 'RECEITA' }).subscribe({
-            next: (data) => {
-                this.allReceivables = data;
+            next: (response: any) => {
+                this.allReceivables = response.data || response;
                 this.updateView();
                 if (event) event.target.complete();
             },

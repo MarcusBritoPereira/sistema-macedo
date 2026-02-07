@@ -70,8 +70,8 @@ export class BankingConfigurationPage implements OnInit {
             conta: acc.conta || '',
             codigoBanco: acc.codigoBanco || '',
             contaBancariaId: acc.id,
-            clientId: '', // Don't show sensitive data by default, or maybe placeholder?
-            clientSecret: ''
+            clientId: '******',
+            clientSecret: '******'
         });
 
         // Load detailed status (including last sync which might not be in the list view)

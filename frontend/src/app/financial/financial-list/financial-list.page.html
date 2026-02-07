@@ -14,11 +14,13 @@
         <ion-button fill="outline" size="small" color="medium" class="action-btn">Exportar</ion-button>
         <ion-button fill="outline" size="small" color="medium" class="action-btn">Imprimir</ion-button>
         <div class="pagination-controls">
-          <ion-button fill="clear" size="small" disabled>
+          <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
             <ion-icon name="chevron-back"></ion-icon>
           </ion-button>
-          <span>1-{{ displayedItems.length }} de {{ displayedItems.length }}</span>
-          <ion-button fill="clear" size="small" disabled>
+          <span>Pág {{ currentPage }} ({{ (currentPage - 1) * pageSize + 1 }} - {{ (currentPage - 1) * pageSize +
+            displayedItems.length }} de {{ totalItems }})</span>
+          <ion-button fill="clear" size="small" [disabled]="(currentPage * pageSize) >= totalItems"
+            (click)="changePage(currentPage + 1)">
             <ion-icon name="chevron-forward"></ion-icon>
           </ion-button>
         </div>
@@ -30,31 +32,32 @@
   <ion-toolbar class="filter-toolbar">
     <div class="filter-row">
       <div class="period-selector">
-        <div class="label-text">Período</div>
-        <div class="selector-box">
-          <ion-button fill="clear" size="small" (click)="changePeriod(-1)">
-            <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
-          </ion-button>
-          <span class="current-period">{{ periodLabel }}</span>
-          <ion-button fill="clear" size="small" (click)="changePeriod(1)">
-            <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
-          </ion-button>
-        </div>
+        <ion-item lines="none" class="date-range-item">
+          <ion-label position="stacked">Início</ion-label>
+          <ion-input type="date" [(ngModel)]="startDate" (ionChange)="onFilterChange()"></ion-input>
+        </ion-item>
+        <ion-item lines="none" class="date-range-item">
+          <ion-label position="stacked">Fim</ion-label>
+          <ion-input type="date" [(ngModel)]="endDate" (ionChange)="onFilterChange()"></ion-input>
+        </ion-item>
+      </div>
+
+      <div class="category-selector">
+        <ion-item lines="none">
+          <ion-select placeholder="Todas Categorias" [(ngModel)]="selectedCategoryId" (ionChange)="onFilterChange()"
+            interface="popover">
+            <ion-select-option value="">Todas</ion-select-option>
+            <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</ion-select-option>
+          </ion-select>
+        </ion-item>
       </div>
 
       <div class="search-box">
-        <div class="label-text">Pesquisar no período selecionado</div>
         <div class="input-wrapper">
-          <input type="text" placeholder="Pesquisar" class="clean-search" [(ngModel)]="searchTerm"
-            (input)="updateView()">
+          <input type="text" placeholder="Buscar..." class="clean-search" [(ngModel)]="searchTerm"
+            (change)="onSearchChange()">
           <ion-icon name="search"></ion-icon>
         </div>
-      </div>
-
-      <div class="more-filters">
-        <ion-button fill="outline" size="default" class="filter-btn">
-          Mais filtros <ion-icon name="chevron-down" slot="end"></ion-icon>
-        </ion-button>
       </div>
     </div>
   </ion-toolbar>

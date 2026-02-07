@@ -17,13 +17,18 @@ interface UploadedFile {
     size: number;
 }
 
+import { OfxService } from './ofx.service';
+
 @Injectable()
 export class BankingIntegrationService {
     private readonly INTER_AUTH_URL = 'https://cdpj.partners.bancointer.com.br/oauth/v2/token';
     private readonly INTER_API_URL = 'https://cdpj.partners.bancointer.com.br/banking/v2/extrato';
     private readonly CERTS_DIR = path.resolve(process.cwd(), 'secure', 'certs');
 
-    constructor(private prisma: PrismaService) {
+    constructor(
+        private prisma: PrismaService,
+        private ofxService: OfxService
+    ) {
         // Ensure secure directory exists
         if (!fs.existsSync(this.CERTS_DIR)) {
             fs.mkdirSync(this.CERTS_DIR, { recursive: true });
@@ -79,11 +84,17 @@ export class BankingIntegrationService {
 
             const updateData: any = {
                 banco: dto.banco,
-                clientId: dto.clientId,
-                clientSecret: dto.clientSecret,
                 status: 'CONNECTED',
                 lastSync: new Date()
             };
+
+            if (dto.clientId && dto.clientId !== '******') {
+                updateData.clientId = dto.clientId;
+            }
+
+            if (dto.clientSecret && dto.clientSecret !== '******') {
+                updateData.clientSecret = dto.clientSecret;
+            }
 
             // Handle File Uploads
             if (files) {
@@ -340,6 +351,60 @@ export class BankingIntegrationService {
             }
             throw new Error(`Falha ao autenticar com Banco Inter: ${msg}`);
         }
+    }
+
+    async importOfx(fileBuffer: Buffer, contaId: string) {
+        const ofxContent = fileBuffer.toString('utf-8');
+        const transactions = this.ofxService.parseOfx(ofxContent);
+
+        const importLog = await this.prisma.importacaoBancaria.create({
+            data: {
+                filename: `Upload OFX ${new Date().toISOString()}`,
+                fileType: 'OFX',
+                contaBancariaId: contaId,
+                status: 'COMPLETED'
+            }
+        });
+
+        let importedCount = 0;
+        let duplicatesCount = 0;
+
+        for (const t of transactions) {
+            // TIMEZONE FIX: Use the date as parsed by OfxService (already noon UTC)
+            const valor = t.amount;
+            const cleanDesc = (t.descricao || '').replace(/\s+/g, ' ').trim();
+
+            const hashDateStr = t.date.toISOString().split('T')[0];
+            const hash = `OFX-${hashDateStr}-${t.type}-${t.id}-${t.amount}-${cleanDesc.substring(0, 50)}`;
+
+            const exists = await this.prisma.extratoBancario.findUnique({
+                where: { hash }
+            });
+
+            if (!exists) {
+                await this.prisma.extratoBancario.create({
+                    data: {
+                        data: t.date,
+                        descricao: cleanDesc,
+                        valor: Math.abs(valor),
+                        tipo: valor < 0 ? 'DEBIT' : 'CREDIT',
+                        hash: hash,
+                        conciliado: false,
+                        importacaoId: importLog.id
+                    }
+                });
+                importedCount++;
+            } else {
+                duplicatesCount++;
+            }
+        }
+
+        return {
+            success: true,
+            imported: importedCount,
+            duplicates: duplicatesCount,
+            message: `Importação concluída: ${importedCount} novos, ${duplicatesCount} duplicados.`
+        };
     }
 
     private async fetchInterStatements(token: string, dataInicio: string, dataFim: string, cert: Buffer, key: Buffer, pagina: number = 0, accountNumber?: string | null) {

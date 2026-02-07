@@ -77,6 +77,10 @@ export class ClientsService {
     return this.api.post<Cliente>('clients', cliente);
   }
 
+  createMany(clientes: Cliente[]): Observable<any> {
+    return this.api.post<any>('clients/bulk', clientes);
+  }
+
   update(id: string, cliente: Cliente): Observable<Cliente> {
     return this.api.patch<Cliente>(`clients/${id}`, cliente);
   }

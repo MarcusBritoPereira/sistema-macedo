@@ -32,6 +32,10 @@
                     <ion-icon slot="start" name="refresh-outline"></ion-icon>
                     Atualizar
                 </ion-button>
+                <ion-button fill="solid" class="action-btn" color="primary" (click)="openTransactionModal()">
+                    <ion-icon slot="start" name="add-outline"></ion-icon>
+                    Nova
+                </ion-button>
             </div>
         </div>
     </ion-toolbar>
@@ -111,6 +115,15 @@
 
             <!-- Filter Controls -->
             <div class="filter-controls">
+                <div class="search-filter-wrapper">
+                    <ion-select placeholder="Todas as Categorias" [(ngModel)]="selectedCategoryId"
+                        (ionChange)="onCategoryChange($event)" interface="popover" class="category-select">
+                        <ion-select-option value="">Todas</ion-select-option>
+                        <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome
+                            }}</ion-select-option>
+                    </ion-select>
+                </div>
+
                 <ion-segment [value]="currentFilter" (ionChange)="setFilter($any($event.detail.value))" mode="ios">
                     <ion-segment-button value="today">
                         <ion-label>Hoje</ion-label>
@@ -141,10 +154,13 @@
                     <div class="bars-container">
                         <div *ngFor="let day of dailyData" class="bar-col">
                             <div class="bar-pair">
-                                <div class="bar-fill rev" [style.height.%]="(day.in / maxVal) * 100"
-                                    [title]="'Entrada: ' + (day.in | currency:'BRL')"></div>
-                                <div class="bar-fill exp" [style.height.%]="(day.out / maxVal) * 100"
-                                    [title]="'Saída: ' + (day.out | currency:'BRL')"></div>
+                                <div class="bar-fill rev" [style.height.%]="(day.in / maxVal) * 100"></div>
+                                <div class="bar-fill exp" [style.height.%]="(day.out / maxVal) * 100"></div>
+
+                                <div class="custom-tooltip">
+                                    <div class="rev-val">Entrada: {{ day.in | currency:'BRL' }}</div>
+                                    <div class="exp-val">Saída: {{ day.out | currency:'BRL' }}</div>
+                                </div>
                             </div>
                             <span class="day-label">{{ day.date | date: 'dd' }}</span>
                         </div>
@@ -159,6 +175,7 @@
                     <div class="col-desc">Descrição</div>
                     <div class="col-type">Tipo</div>
                     <div class="col-value">Valor</div>
+                    <div class="col-actions">Ações</div>
                 </div>
 
                 <div class="table-body">
@@ -178,6 +195,14 @@
                         <div class="col-value" [class.text-danger]="item.tipo === 'DESPESA'"
                             [class.text-success]="item.tipo === 'RECEITA'">
                             {{ item.valor | currency:'BRL' }}
+                        </div>
+                        <div class="col-actions">
+                            <ion-button fill="clear" color="primary" size="small" (click)="openTransactionModal(item)">
+                                <ion-icon name="create-outline"></ion-icon>
+                            </ion-button>
+                            <ion-button fill="clear" color="danger" size="small" (click)="deleteTransaction(item)">
+                                <ion-icon name="trash-outline"></ion-icon>
+                            </ion-button>
                         </div>
                     </div>
 

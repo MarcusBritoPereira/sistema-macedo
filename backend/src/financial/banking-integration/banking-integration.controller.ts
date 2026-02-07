@@ -1,6 +1,6 @@
 
-import { Body, Controller, Get, Param, Post, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { Body, Controller, Get, Param, Post, UploadedFile, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { AuthGuard } from '@nestjs/passport';
 import { BankingIntegrationService } from './banking-integration.service';
 import { ConfigureBankingDto } from './dto/configure-banking.dto';
@@ -9,6 +9,15 @@ import { ConfigureBankingDto } from './dto/configure-banking.dto';
 @UseGuards(AuthGuard('jwt'))
 export class BankingIntegrationController {
     constructor(private readonly service: BankingIntegrationService) { }
+
+    @Post('upload-ofx')
+    @UseInterceptors(FileInterceptor('file'))
+    uploadOfx(
+        @UploadedFile() file: Express.Multer.File,
+        @Body('contaId') contaId: string
+    ) {
+        return this.service.importOfx(file.buffer, contaId);
+    }
 
     @Post('configure')
     @UseInterceptors(FileFieldsInterceptor([

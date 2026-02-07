@@ -68,15 +68,29 @@ export class FinancialService {
     return this.api.post<BankAccount>('financial/bank-accounts', data);
   }
 
-  getTransactions(filters?: { tipo?: 'RECEITA' | 'DESPESA', status?: string, categoryId?: string }): Observable<Transaction[]> {
+  getTransactions(filters?: {
+    tipo?: 'RECEITA' | 'DESPESA',
+    status?: string,
+    categoryId?: string,
+    startDate?: string,
+    endDate?: string,
+    search?: string,
+    skip?: number,
+    take?: number
+  }): Observable<{ data: Transaction[], total: number }> {
     const queryParts: string[] = [];
     if (filters) {
       if (filters.tipo) queryParts.push(`tipo=${filters.tipo}`);
       if (filters.status) queryParts.push(`status=${filters.status}`);
       if (filters.categoryId) queryParts.push(`categoryId=${filters.categoryId}`);
+      if (filters.startDate) queryParts.push(`startDate=${filters.startDate}`);
+      if (filters.endDate) queryParts.push(`endDate=${filters.endDate}`);
+      if (filters.search) queryParts.push(`search=${filters.search}`);
+      if (filters.skip !== undefined) queryParts.push(`skip=${filters.skip}`);
+      if (filters.take !== undefined) queryParts.push(`take=${filters.take}`);
     }
     const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
-    return this.api.get<Transaction[]>(`financial/transactions${queryString}`);
+    return this.api.get<{ data: Transaction[], total: number }>(`financial/transactions${queryString}`);
   }
 
   getTransaction(id: string): Observable<Transaction> {

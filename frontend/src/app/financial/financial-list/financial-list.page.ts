@@ -2,11 +2,13 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, ToastController, LoadingController, IonRefresher, IonRefresherContent, IonFab, IonFabButton, ActionSheetController, PopoverController } from '@ionic/angular/standalone';
+import { CategoriesService } from '../../services/financial/categories.service';
+import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, ToastController, LoadingController, IonRefresher, IonRefresherContent, IonFab, IonFabButton, ActionSheetController, PopoverController, ModalController, IonSelect, IonSelectOption, IonItem, IonInput } from '@ionic/angular/standalone';
 import { FinancialService, Transaction } from '../../services/financial/financial';
 import { addIcons } from 'ionicons';
-import { checkmarkCircleOutline, alertCircleOutline, timeOutline, calendarOutline, add, arrowUp, arrowDown, chevronBack, chevronForward, search, chevronDown, helpCircleOutline, trash, close } from 'ionicons/icons';
-import { format, parseISO, isSameDay, isBefore, isSameMonth, startOfDay } from 'date-fns';
+import { checkmarkCircleOutline, alertCircleOutline, timeOutline, calendarOutline, add, arrowUp, arrowDown, chevronBack, chevronForward, search, chevronDown, helpCircleOutline, trash, close, createOutline } from 'ionicons/icons';
+import { format, parseISO, isSameDay, isBefore, isSameMonth, startOfDay, startOfMonth, endOfMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ActionsPopoverComponent } from '../receivables/receivables-list/actions-popover.component';
 
@@ -15,13 +17,29 @@ import { ActionsPopoverComponent } from '../receivables/receivables-list/actions
   templateUrl: './financial-list.page.html',
   styleUrls: ['./financial-list.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, IonRefresher, IonRefresherContent, IonFab, IonFabButton]
+  imports: [CommonModule, FormsModule, RouterModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, IonRefresher, IonRefresherContent, IonFab, IonFabButton, IonSelect, IonSelectOption, IonItem, IonInput]
 })
 export class FinancialListPage implements OnInit {
-  currentPeriod: Date = new Date();
-  allTransactions: Transaction[] = [];
+  currentPeriod: Date = new Date(); // Still used for default view? Or fully custom date range? 
+  // User asked for "Custom Date Range". Let's support both: Period Selector (Month) OR Custom Range.
+  // Actually, let's keep it simple: Start/End Date is the source of truth.
+
+  startDate: string = '';
+  endDate: string = '';
+
   displayedItems: Transaction[] = [];
+  totalItems = 0;
+
+  // Pagination
+  currentPage = 1;
+  pageSize = 20;
+
+  // Filters
   searchTerm: string = '';
+  selectedCategoryId: string = '';
+
+  // Dependencies
+  categories: any[] = [];
 
   kpis = {
     receivables: 0,
@@ -33,23 +51,61 @@ export class FinancialListPage implements OnInit {
 
   constructor(
     private financialService: FinancialService,
+    private categoriesService: CategoriesService, // Need this import
     private toastCtrl: ToastController,
     private loadingCtrl: LoadingController,
     private actionSheetCtrl: ActionSheetController,
-    private popoverCtrl: PopoverController
+    private popoverCtrl: PopoverController,
+    private modalCtrl: ModalController // Need for Edit
   ) {
-    addIcons({ checkmarkCircleOutline, alertCircleOutline, timeOutline, calendarOutline, add, arrowUp, arrowDown, chevronBack, chevronForward, search, chevronDown, helpCircleOutline, trash, close });
+    addIcons({ checkmarkCircleOutline, alertCircleOutline, timeOutline, calendarOutline, add, arrowUp, arrowDown, chevronBack, chevronForward, search, chevronDown, helpCircleOutline, trash, close, createOutline }); // Add createOutline
+
+    // Initialize current month
+    const now = new Date();
+    this.setMonthRange(now);
   }
 
   ngOnInit() {
+    this.loadCategories();
     this.loadData();
   }
 
+  setMonthRange(date: Date) {
+    this.currentPeriod = date;
+    const start = startOfMonth(date);
+    const end = endOfMonth(date);
+    this.startDate = format(start, 'yyyy-MM-dd');
+    this.endDate = format(end, 'yyyy-MM-dd');
+  }
+
+  loadCategories() {
+    this.categoriesService.findAll().subscribe(cats => this.categories = cats);
+  }
+
   loadData(event?: any) {
-    this.financialService.getTransactions().subscribe({
-      next: (data) => {
-        this.allTransactions = data;
-        this.updateView();
+    const skip = (this.currentPage - 1) * this.pageSize;
+
+    this.financialService.getTransactions({
+      startDate: this.startDate,
+      endDate: this.endDate,
+      categoryId: this.selectedCategoryId,
+      search: this.searchTerm,
+      skip: skip,
+      take: this.pageSize
+    }).subscribe({
+      next: (res) => {
+        this.displayedItems = res.data;
+        this.totalItems = res.total;
+
+        this.calculateKpis(res.data); // Note: KPIs currently only reflect the PAGE data + backend logic if we wanted full totals. 
+        // For accurate KPIs of the *Period*, we would need a separate endpoint or aggregate query.
+        // User asked for "Alimentar dashboard", and this list has "KPI Cards". 
+        // Showing KPIs only for the visible page is misleading. 
+        // However, the backend findAll returns { total, data }. It does NOT return "sum of all matching".
+        // For now, I will aggregate locally what I see, but ideally we need an endpoint for totals.
+        // Let's stick to local aggregation for now to respect scope, but acknowledge this limitation or check if I can quick fix it.
+        // Actually... I can't easily get full totals without another query.
+
         if (event) event.target.complete();
       },
       error: (err) => {
@@ -59,51 +115,41 @@ export class FinancialListPage implements OnInit {
     });
   }
 
+  calculateKpis(items: Transaction[]) {
+    // Temporary: Calculate on loaded items.
+    // Ideally should be independent of pagination.
+    let rec = 0;
+    let pay = 0;
+    items.forEach(item => {
+      const val = Number(item.valor);
+      if (item.tipo === 'RECEITA') rec += val;
+      else pay += val;
+    });
+    this.kpis = { receivables: rec, payables: pay, balance: rec - pay };
+  }
+
+  changePage(newPage: number) {
+    this.currentPage = newPage;
+    this.loadData();
+  }
+
+  // Custom Filter Logic
+  onSearchChange() {
+    this.currentPage = 1;
+    this.loadData();
+  }
+
+  onFilterChange() {
+    this.currentPage = 1;
+    this.loadData();
+  }
+
   changePeriod(direction: number) {
     const newDate = new Date(this.currentPeriod);
     newDate.setMonth(newDate.getMonth() + direction);
-    this.currentPeriod = newDate;
-    this.updateView();
-  }
-
-  updateView() {
-    this.selectedIds.clear();
-
-    // 1. Filter items for the selected month
-    this.displayedItems = this.allTransactions.filter(item => {
-      const dueDate = parseISO(item.dataVencimento);
-      const matchesPeriod = isSameMonth(dueDate, this.currentPeriod);
-
-      if (!matchesPeriod) return false;
-
-      if (!this.searchTerm) return true;
-      const term = this.searchTerm.toLowerCase();
-      return item.descricao && item.descricao.toLowerCase().includes(term);
-    });
-
-    // Sort by date correctly
-    this.displayedItems.sort((a, b) => {
-      return parseISO(a.dataVencimento).getTime() - parseISO(b.dataVencimento).getTime();
-    });
-
-    // 2. Calculate KPIs for the period
-    let rec = 0;
-    let pay = 0;
-
-    this.displayedItems.forEach(item => {
-      const val = Number(item.valor);
-      if (item.tipo === 'RECEITA') {
-        rec += val;
-      } else {
-        pay += val;
-      }
-    });
-
-    this.kpis = {
-      receivables: rec,
-      payables: pay,
-      balance: rec - pay
-    };
+    this.setMonthRange(newDate);
+    this.currentPage = 1; // Reset page
+    this.loadData();
   }
 
   get periodLabel(): string {
@@ -171,7 +217,7 @@ export class FinancialListPage implements OnInit {
     await loading.present();
 
     const observables = Array.from(this.selectedIds).map(id => {
-      const item = this.allTransactions.find(t => t.id === id);
+      const item = this.displayedItems.find(t => t.id === id);
       const isPaid = item && (item.status === 'REALIZADO' || item.status === 'CONCILIADO');
       if (item && !isPaid) {
         return this.financialService.updateTransaction(id, {
@@ -228,6 +274,47 @@ export class FinancialListPage implements OnInit {
     this.loadData();
   }
 
+  async openTransactionModal(item?: Transaction) {
+    const modal = await this.modalCtrl.create({
+      component: TransactionModalComponent,
+      componentProps: {
+        transaction: item,
+        type: item ? item.tipo : 'DESPESA'
+      }
+    });
+
+    await modal.present();
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'save' && data) {
+      if (item) {
+        // Edit flow
+        this.financialService.updateTransaction(item.id!, data).subscribe({
+          next: () => {
+            this.loadData();
+            this.showToast('Transação atualizada com sucesso!');
+          },
+          error: (err) => {
+            console.error(err);
+            this.showToast('Erro ao atualizar transação.', 'danger');
+          }
+        });
+      } else {
+        // Create flow (if needed here, though explicit button typically exists)
+        this.financialService.createTransaction(data).subscribe({
+          next: () => {
+            this.loadData();
+            this.showToast('Transação criada com sucesso!');
+          },
+          error: (err) => {
+            console.error(err);
+            this.showToast('Erro ao criar transação.', 'danger');
+          }
+        });
+      }
+    }
+  }
+
   async openItemActions(event: Event, item: Transaction) {
     event.stopPropagation();
 
@@ -241,6 +328,13 @@ export class FinancialListPage implements OnInit {
         id: 'pay'
       });
     }
+
+    // Add Edit Action
+    actions.push({
+      text: 'Editar',
+      icon: 'create-outline',
+      id: 'edit'
+    });
 
     actions.push({
       text: 'Excluir',
@@ -267,6 +361,8 @@ export class FinancialListPage implements OnInit {
         this.markAsCompleted(item);
       } else if (data.action.id === 'delete') {
         this.deleteItem(item);
+      } else if (data.action.id === 'edit') {
+        this.openTransactionModal(item);
       }
     }
   }

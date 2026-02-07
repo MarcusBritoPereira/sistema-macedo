@@ -1,24 +1,28 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList, IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton, IonDatetimeButton, IonModal, IonDatetime, IonSpinner } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList, IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton, IonDatetimeButton, IonModal, IonDatetime, IonSpinner, ModalController, IonFab, IonFabButton, IonFabList } from '@ionic/angular/standalone';
 import { FinancialDashboardService, DREResponse, OperationalDashboardResponse } from '../../services/financial/financial-dashboard.service';
+import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
 import { addIcons } from 'ionicons';
-import { filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline, arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline, alertCircleOutline } from 'ionicons/icons';
+import { filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline, arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline, alertCircleOutline, add, arrowUp, arrowDown } from 'ionicons/icons';
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList, IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton, IonDatetimeButton, IonModal, IonDatetime, IonSpinner]
+  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList, IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton, IonDatetimeButton, IonModal, IonDatetime, IonSpinner, IonFab, IonFabButton, IonFabList]
 })
 export class DashboardPage implements OnInit {
   operationalData: OperationalDashboardResponse | null = null;
   loading = false;
 
-  constructor(private dashboardService: FinancialDashboardService) {
-    addIcons({ filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline, arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline, alertCircleOutline });
+  constructor(
+    private dashboardService: FinancialDashboardService,
+    private modalCtrl: ModalController
+  ) {
+    addIcons({ filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline, arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline, alertCircleOutline, add, arrowUp, arrowDown });
   }
 
   ngOnInit() {
@@ -55,6 +59,27 @@ export class DashboardPage implements OnInit {
   formatLastUpdate(isoDate: string): string {
     const d = new Date(isoDate);
     return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  async addReceita() {
+    await this.openTransactionModal('RECEITA');
+  }
+
+  async addDespesa() {
+    await this.openTransactionModal('DESPESA');
+  }
+
+  async openTransactionModal(type: 'RECEITA' | 'DESPESA') {
+    const modal = await this.modalCtrl.create({
+      component: TransactionModalComponent,
+      componentProps: { type }
+    });
+
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data) {
+      this.loadData(); // Reload dashboard if data changed
+    }
   }
 
   // Helpers

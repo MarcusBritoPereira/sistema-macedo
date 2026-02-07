@@ -45,7 +45,21 @@
   </div>
 
   <div class="header-section">
-    <h1>Gestão de <strong>Clientes</strong></h1>
+    <div class="header-top-row"
+      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h1>Gestão de <strong>Clientes</strong></h1>
+      <div class="header-actions">
+        <input type="file" #csvInput hidden (change)="onCsvSelected($event)" accept=".csv">
+        <ion-button fill="outline" size="small" (click)="downloadCsvTemplate()">
+          <ion-icon name="download-outline" slot="start"></ion-icon>
+          Modelo CSV
+        </ion-button>
+        <ion-button fill="solid" size="small" (click)="csvInput.click()">
+          <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+          Importar Clientes
+        </ion-button>
+      </div>
+    </div>
 
     <!-- Filter Chips -->
     <div class="filters-scroll">

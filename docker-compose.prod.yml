@@ -36,6 +36,8 @@ services:
     depends_on:
       - postgres
       - redis
+    volumes:
+      - secure_data_prod:/app/secure
     networks:
       - erp_network
     restart: always
@@ -59,3 +61,4 @@ networks:
 
 volumes:
   postgres_data_prod:
+  secure_data_prod:

@@ -5,14 +5,18 @@ import {
   IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton,
   IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle,
   IonItem, IonSelect, IonSelectOption, IonSpinner, IonGrid, IonRow, IonCol,
-  IonIcon, IonBadge, IonButton, IonSegment, IonSegmentButton, IonLabel
+  IonIcon, IonBadge, IonButton, IonSegment, IonSegmentButton, IonLabel,
+  IonModal, ModalController, AlertController, ToastController
 } from '@ionic/angular/standalone';
 import { CashFlowService, CashFlowSummary } from '../../services/financial/cash-flow.service';
+import { FinancialService } from '../../services/financial/financial';
+import { CategoriesService } from '../../services/financial/categories.service';
+import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
 import { addIcons } from 'ionicons';
 import {
   businessOutline, chevronBack, chevronForward, calendarOutline,
   refreshOutline, trendingUpOutline, trendingDownOutline, walletOutline,
-  barChartOutline, informationCircleOutline
+  barChartOutline, informationCircleOutline, createOutline, trashOutline, addOutline
 } from 'ionicons/icons';
 import { parse, addMonths, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
 
@@ -40,20 +44,122 @@ export class CashFlowPage implements OnInit {
   filteredTransactions: any[] = []; // Filtered view
   maxVal = 1000;
   loading = false;
+  categories: any[] = [];
+  selectedCategoryId: string = '';
 
   currentFilter: FilterType = 'month';
 
-  constructor(private cashFlowService: CashFlowService) {
+  constructor(
+    private cashFlowService: CashFlowService,
+    private financialService: FinancialService,
+    private categoriesService: CategoriesService,
+    private modalCtrl: ModalController,
+    private alertCtrl: AlertController,
+    private toastCtrl: ToastController
+  ) {
     addIcons({
       businessOutline, chevronBack, chevronForward, calendarOutline,
       refreshOutline, trendingUpOutline, trendingDownOutline, walletOutline,
-      barChartOutline, informationCircleOutline
+      barChartOutline, informationCircleOutline, createOutline, trashOutline, addOutline
     });
     this.generateMonths();
   }
 
+  async openTransactionModal(transaction?: any) {
+    const modal = await this.modalCtrl.create({
+      component: TransactionModalComponent,
+      componentProps: {
+        transaction: transaction,
+        type: transaction ? transaction.tipo : 'DESPESA'
+      }
+    });
+
+    await modal.present();
+    const { data, role } = await modal.onWillDismiss();
+
+    if (role === 'save' && data) {
+      this.loading = true;
+      if (transaction) {
+        // Edit flow
+        this.financialService.updateTransaction(transaction.id, data).subscribe({
+          next: () => {
+            this.loadData();
+            this.showToast('Transação atualizada com sucesso!');
+          },
+          error: (err) => {
+            console.error(err);
+            this.loading = false;
+            this.showToast('Erro ao atualizar transação.', 'danger');
+          }
+        });
+      } else {
+        // Create flow
+        this.financialService.createTransaction(data).subscribe({
+          next: () => {
+            this.loadData();
+            this.showToast('Transação criada com sucesso!');
+          },
+          error: (err) => {
+            console.error(err);
+            this.loading = false;
+            this.showToast('Erro ao criar transação.', 'danger');
+          }
+        });
+      }
+    }
+  }
+
+  async deleteTransaction(transaction: any) {
+    const alert = await this.alertCtrl.create({
+      header: 'Excluir Transação',
+      message: `Tem certeza que deseja excluir "${transaction.descricao}"?`,
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        {
+          text: 'Excluir',
+          role: 'destructive',
+          handler: () => {
+            this.loading = true;
+            this.financialService.deleteTransaction(transaction.id).subscribe({
+              next: () => {
+                this.loadData();
+                this.showToast('Transação excluída.');
+              },
+              error: (err) => {
+                console.error(err);
+                this.loading = false;
+                this.showToast('Erro ao excluir.', 'danger');
+              }
+            });
+          }
+        }
+      ]
+    });
+    await alert.present();
+  }
+
+  async showToast(msg: string, color: string = 'success') {
+    const toast = await this.toastCtrl.create({
+      message: msg,
+      duration: 2000,
+      color: color,
+      position: 'bottom'
+    });
+    toast.present();
+  }
+
   ngOnInit() {
+    this.loadCategories();
     this.loadData();
+  }
+
+  loadCategories() {
+    this.categoriesService.findAll().subscribe(cats => this.categories = cats);
+  }
+
+  onCategoryChange(event: any) {
+    this.selectedCategoryId = event.detail.value;
+    this.applyLocalFilter(); // Re-apply filters locally
   }
 
   generateMonths() {
@@ -97,21 +203,27 @@ export class CashFlowPage implements OnInit {
     // Adjust to local date string for comparison
     const todayStr = format(now, 'yyyy-MM-dd');
 
+    // 0. Base Filter: Category
+    let baseList = [...this.transactions];
+    if (this.selectedCategoryId) {
+      baseList = baseList.filter(t => t.categoriaId === this.selectedCategoryId);
+    }
+
     if (this.currentFilter === 'today') {
-      this.filteredTransactions = this.transactions.filter(t => t.dataVencimento.startsWith(todayStr));
+      this.filteredTransactions = baseList.filter(t => t.dataVencimento.startsWith(todayStr));
     }
     else if (this.currentFilter === 'week') {
       const start = startOfWeek(now, { weekStartsOn: 0 }); // Sunday
       const end = endOfWeek(now, { weekStartsOn: 0 }); // Saturday
 
-      this.filteredTransactions = this.transactions.filter(t => {
+      this.filteredTransactions = baseList.filter(t => {
         const d = parseISO(t.dataVencimento);
         return isWithinInterval(d, { start, end });
       });
     }
     else {
-      // Month (Default) - Show everything loaded
-      this.filteredTransactions = [...this.transactions];
+      // Month (Default) - Show everything loaded (filtered by category if selected)
+      this.filteredTransactions = baseList;
     }
 
     // Recalculate quick KPIs for the filtered view if needed, or keeping the month view KPIs?
@@ -122,12 +234,15 @@ export class CashFlowPage implements OnInit {
 
   get filteredSummary() {
     // Correct "Pending vs Realized" logic
-    // "A Receber" = Pending Receivables
-    // "A Pagar" = Pending Payables
+    // "A Receber" = Total Pending Receivables
+    // "A Pagar" = Total Pending Payables
     // "Result" = Total In - Total Out (Projected Balance)
 
-    // Status Logic: 'REALIZADO' or 'CONCILIADO' treated as Realized. Others as Pending.
-    const isRealized = (t: any) => t.status?.toUpperCase() === 'REALIZADO' || t.status?.toUpperCase() === 'CONCILIADO';
+    // Status Logic: 'REALIZADO', 'CONCILIADO', 'PAGO', 'EFETIVADO' treated as Realized.
+    const isRealized = (t: any) => {
+      const s = (t.status || '').toUpperCase();
+      return ['REALIZADO', 'CONCILIADO', 'PAGO', 'EFETIVADO'].includes(s);
+    };
 
     const receivables = this.filteredTransactions
       .filter(t => t.tipo === 'RECEITA' && !isRealized(t))

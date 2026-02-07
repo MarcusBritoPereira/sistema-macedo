@@ -224,12 +224,16 @@ ion-menu {
 
 /* Centered Selection Modal */
 .centered-selection-modal {
-    --height: auto;
+    --height: 70vh;
     --min-height: 400px;
     --width: 90%;
     --max-width: 600px;
     --border-radius: 16px;
     --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+
+    /* Enforce centering */
+    align-items: center;
+    justify-content: center;
 
     /* Ensure ion-content takes available space */
     ion-content {

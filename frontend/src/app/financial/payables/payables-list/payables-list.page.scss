@@ -35,8 +35,8 @@ ion-content.light-bg {
                 text-transform: none;
                 font-size: 0.85rem;
                 --border-color: #ddd;
-                --color: #0076a8;
-                /* Link blue */
+                --color: var(--ion-color-secondary);
+                /* Black */
             }
 
             .pagination-controls {
@@ -103,7 +103,7 @@ ion-content.light-bg {
                 .current-period {
                     padding: 0 12px;
                     font-weight: 600;
-                    color: #0076a8;
+                    color: var(--ion-color-secondary);
                     min-width: 140px;
                     text-align: center;
                     text-transform: capitalize;
@@ -136,7 +136,7 @@ ion-content.light-bg {
                 }
 
                 ion-icon {
-                    color: #0076a8;
+                    color: var(--ion-color-secondary);
                     font-size: 1.2rem;
                     cursor: pointer;
                 }
@@ -149,7 +149,7 @@ ion-content.light-bg {
             /* align with inputs */
             .filter-btn {
                 --border-color: #ddd;
-                --color: #0076a8;
+                --color: var(--ion-color-secondary);
                 text-transform: none;
             }
         }
@@ -207,7 +207,7 @@ ion-content.light-bg {
         }
 
         &.blue-text .value {
-            color: #1976d2;
+            color: var(--ion-color-secondary);
         }
 
         &.green-text .value {
@@ -215,36 +215,36 @@ ion-content.light-bg {
         }
 
         &.border-blue {
-            border-top: 3px solid #1976d2;
+            border-top: 3px solid var(--ion-color-secondary);
 
             /* Highlight */
             .value {
-                color: #1976d2;
+                color: var(--ion-color-secondary);
             }
         }
     }
 }
 
 .bulk-actions-bar {
-    background: #e3f2fd;
+    background: #f3f4f6;
     padding: 8px 16px;
     display: flex;
     align-items: center;
     gap: 16px;
     font-size: 0.9rem;
     color: #333;
-    border-bottom: 1px solid #bbdefb;
+    border-bottom: 1px solid #e5e7eb;
 
     .link-btn {
         text-transform: none;
-        --color: #0076a8;
+        --color: var(--ion-color-secondary);
         font-size: 0.85rem;
     }
 
     .dropdown-btn {
         --background: white;
-        --border-color: #0076a8;
-        --color: #0076a8;
+        --border-color: var(--ion-color-secondary);
+        --color: var(--ion-color-secondary);
         text-transform: none;
         height: 30px;
     }
@@ -257,7 +257,7 @@ input {
 }
 
 input[type="checkbox"] {
-    accent-color: #0076a8;
+    accent-color: var(--ion-color-primary);
     width: 16px;
     height: 16px;
     cursor: pointer;
@@ -372,7 +372,7 @@ input[type="checkbox"] {
 .actions-dropdown-btn {
     text-transform: none;
     --border-color: #ddd;
-    --color: #0076a8;
+    --color: var(--ion-color-secondary);
 }
 
 .empty-state {
@@ -464,6 +464,7 @@ input[type="checkbox"] {
 }
 
 @media (max-width: 480px) {
+
     .table-header,
     .table-row {
         min-width: 620px;

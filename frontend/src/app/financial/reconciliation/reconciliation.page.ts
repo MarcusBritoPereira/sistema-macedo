@@ -19,7 +19,7 @@ import {
     calendarOutline, cashOutline, walletOutline, arrowUpOutline, arrowDownOutline,
     trashBinOutline, createOutline, ellipsisVerticalOutline, closeOutline,
     funnelOutline, businessOutline, checkmarkCircle, helpCircleOutline,
-    chevronUpOutline, chevronDownOutline
+    chevronUpOutline, chevronDownOutline, layersOutline, alertCircle, trashOutline
 } from 'ionicons/icons';
 import { ReconciliationService } from '../../services/financial/reconciliation.service';
 import { FinancialService, BankAccount } from '../../services/financial/financial';
@@ -28,6 +28,8 @@ import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths } from
 import { ptBR } from 'date-fns/locale';
 import { ReconciliationDetailComponent } from './components/reconciliation-detail/reconciliation-detail.component';
 import { CategoriesService } from '../../services/financial/categories.service';
+import { BankingIntegrationService } from '../../services/financial/banking-integration.service';
+import { CostCentersService } from '../../services/financial/cost-centers.service';
 import { SearchableSelectionModalComponent } from '../../shared/components/searchable-selection-modal/searchable-selection-modal.component';
 @Component({
     selector: 'app-reconciliation',
@@ -92,7 +94,9 @@ export class ReconciliationPage implements OnInit {
         private loadingCtrl: LoadingController,
         private alertCtrl: AlertController,
         private modalCtrl: ModalController,
-        private categoriesService: CategoriesService
+        private categoriesService: CategoriesService,
+        private bankingIntegrationService: BankingIntegrationService,
+        private costCentersService: CostCentersService
     ) {
         addIcons({
             receiptOutline, syncOutline, checkmarkCircleOutline, alertCircleOutline,
@@ -102,12 +106,13 @@ export class ReconciliationPage implements OnInit {
             calendarOutline, cashOutline, walletOutline, arrowUpOutline, arrowDownOutline,
             trashBinOutline, createOutline, ellipsisVerticalOutline, closeOutline,
             funnelOutline, businessOutline, checkmarkCircle, helpCircleOutline,
-            chevronUpOutline, chevronDownOutline
+            chevronUpOutline, chevronDownOutline, layersOutline, alertCircle, trashOutline
         });
     }
 
     ngOnInit() {
         this.loadCategories();
+        this.loadCostCenters();
         this.route.queryParams.subscribe(params => {
             const accId = params['accountId'];
             this.loadAccounts(accId);
@@ -158,6 +163,7 @@ export class ReconciliationPage implements OnInit {
                 this.statements = data;
                 this.calculateSummary();
                 this.applySearch(); // Apply type filter
+                this.expandAll(); // Default to expanded
                 this.loading = false;
                 if (event) event.target.complete();
                 setTimeout(() => this.restoreScroll(), 100);
@@ -195,6 +201,14 @@ export class ReconciliationPage implements OnInit {
     onSearch(event: any) {
         this.searchTerm = event.target.value;
         this.loadStatements();
+    }
+
+    clearFilters() {
+        this.searchTerm = '';
+        this.selectedCategoryId = '';
+        this.filterType = 'ALL';
+        this.loadStatements();
+        this.showToast('Filtros limpos com sucesso.', 'medium');
     }
 
     nextMonth() {
@@ -241,13 +255,34 @@ export class ReconciliationPage implements OnInit {
         return this.selectedStatementIds.has(id);
     }
 
-    reconcileSelected() {
-        if (this.selectedStatementIds.size === 0) return;
-        this.showToast('Funcionalidade em desenvolvimento', 'primary');
+
+
+    isAllSelected(): boolean {
+        return this.filteredStatements.length > 0 && this.filteredStatements.every(s => this.selectedStatementIds.has(s.id));
     }
 
-    onDetailAction(event: any) {
-        // this.expandedStatementId = null; // No longer collapsing everything
+    toggleSelectAll() {
+        if (this.isAllSelected()) {
+            this.selectedStatementIds.clear();
+        } else {
+            this.filteredStatements.forEach(s => this.selectedStatementIds.add(s.id));
+        }
+    }
+
+    selectSimilar(statement: BankStatement) {
+        const desc = statement.descricao;
+        let count = 0;
+        this.filteredStatements.forEach(s => {
+            if (s.descricao === desc) {
+                this.selectedStatementIds.add(s.id);
+                count++;
+            }
+        });
+        this.showToast(`${count} itens com descrição similar selecionados.`);
+    }
+
+    async onDetailAction(event: any) {
+        await this.saveScroll();
         this.loadStatements();
         if (event && event.action === 'created') this.showToast('Conciliação criada com sucesso!');
         if (event && event.action === 'linked') this.showToast('Conciliação vinculada com sucesso!');
@@ -275,6 +310,42 @@ export class ReconciliationPage implements OnInit {
             error: (err) => {
                 loader.dismiss();
                 this.showToast(err.message || 'Erro na sincronização', 'danger');
+            }
+        });
+    }
+
+
+
+    @ViewChild('ofxInput') ofxInput: any;
+
+    triggerOfxUpload() {
+        if (!this.selectedAccountId) {
+            this.showToast('Selecione uma conta bancária primeiro.', 'warning');
+            return;
+        }
+        this.ofxInput.nativeElement.click();
+    }
+
+    async onOfxFileSelected(event: any) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const loader = await this.loadingCtrl.create({ message: 'Processando arquivo OFX...' });
+        await loader.present();
+
+        this.bankingIntegrationService.uploadOfx(file, this.selectedAccountId).subscribe({
+            next: (res) => {
+                loader.dismiss();
+                this.showToast(res.message || 'Importação OFX concluída!');
+                this.loadStatements();
+                // Clear input
+                event.target.value = null;
+            },
+            error: (err) => {
+                loader.dismiss();
+                console.error(err);
+                this.showToast('Erro ao importar OFX.', 'danger');
+                event.target.value = null;
             }
         });
     }
@@ -331,7 +402,10 @@ export class ReconciliationPage implements OnInit {
 
     async restoreScroll() {
         if (this.lastScrollTop > 0) {
-            this.content.scrollToPoint(0, this.lastScrollTop, 300);
+            // Wait for DOM to render new list
+            setTimeout(() => {
+                this.content.scrollToPoint(0, this.lastScrollTop, 500);
+            }, 300);
         }
     }
 
@@ -425,10 +499,19 @@ export class ReconciliationPage implements OnInit {
     // I will let backend handle default if null, or fetch here.
     // Ideally fetch.
 
+    geralCostCenterId: string | undefined;
+
+    loadCostCenters() {
+        this.costCentersService.findAll().subscribe(ccs => {
+            const geral = ccs.find(c => c.nome.toLowerCase() === 'geral');
+            if (geral) {
+                this.geralCostCenterId = geral.id;
+            }
+        });
+    }
+
     getGeralCostCenterId(): string | undefined {
-        // Implementation depends on loading cost centers.
-        // For now return undefined and let user update/backend handle.
-        return undefined;
+        return this.geralCostCenterId;
     }
 
     async showToast(msg: string, color: string = 'success') {

@@ -101,7 +101,9 @@ export class ReconciliationDetailComponent implements OnInit {
     toggleMode() {
         this.mode = this.mode === 'FORM' ? 'SEARCH' : 'FORM';
         if (this.mode === 'SEARCH') {
-            setTimeout(() => this.searchBar?.setFocus(), 100);
+            setTimeout(() => {
+                this.searchBar?.setFocus();
+            }, 500);
         }
     }
 

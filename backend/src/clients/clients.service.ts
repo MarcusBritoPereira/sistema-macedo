@@ -11,6 +11,15 @@ export class ClientsService {
         return this.prisma.cliente.create({ data });
     }
 
+    createMany(data: Prisma.ClienteCreateInput[]) {
+        // Use transaction to ensure all or nothing, or use createMany if database supports it (Postgres does)
+        // prisma.cliente.createMany is efficient
+        return this.prisma.cliente.createMany({
+            data,
+            skipDuplicates: true // Optional: skip if already exists (by unique field like email/cnpj if defined)
+        });
+    }
+
     findAll() {
         return this.prisma.cliente.findMany({
             orderBy: { razaoSocial: 'asc' },

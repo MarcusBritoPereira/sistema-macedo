@@ -5,7 +5,7 @@ import { RouterModule, RouterLink } from '@angular/router';
 import { ClientsService, Cliente, ClientExecutiveDTO } from '../../services/clients/clients';
 import { IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonList, IonItem, IonLabel, IonFab, IonFabButton, IonIcon, IonSearchbar, IonCard, IonCardContent, IonButton, AlertController, IonRippleEffect, IonChip } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { add, trashOutline, chevronForwardOutline, searchOutline, callOutline, createOutline, documentTextOutline, alertCircleOutline, caretDownOutline, statsChartOutline, heart } from 'ionicons/icons';
+import { add, trashOutline, chevronForwardOutline, searchOutline, callOutline, createOutline, documentTextOutline, alertCircleOutline, caretDownOutline, statsChartOutline, heart, cloudUploadOutline, downloadOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-clients-list',
@@ -39,7 +39,7 @@ export class ClientsListPage implements OnInit {
     private clientsService: ClientsService,
     private alertController: AlertController
   ) {
-    addIcons({ add, trashOutline, chevronForwardOutline, searchOutline, callOutline, createOutline, documentTextOutline, alertCircleOutline, caretDownOutline });
+    addIcons({ add, trashOutline, chevronForwardOutline, searchOutline, callOutline, createOutline, documentTextOutline, alertCircleOutline, caretDownOutline, statsChartOutline, cloudUploadOutline, downloadOutline });
   }
 
   ngOnInit() {
@@ -165,5 +165,127 @@ export class ClientsListPage implements OnInit {
     });
 
     await alert.present();
+  }
+
+  // --- Bulk CSV Upload Logic ---
+
+  downloadCsvTemplate() {
+    const headers = [
+      'Razao Social', 'Nome Fantasia', 'CNPJ', 'CPF', 'Email', 'Telefone',
+      'Endereco', 'Representante Nome', 'Representante CPF', 'Financeiro Nome', 'Financeiro Email'
+    ];
+    const csvContent = headers.join(',') + '\n' +
+      'Empresa Exemplo Ltda,Empresa Ex,12.345.678/0001-99,,contato@empresa.com,11999999999,Rua Exemplo 123,Joao Silva,123.456.789-00,Maria Fin,pagar@empresa.com';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'modelo_importacao_clientes.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
+  triggerCsvUpload(event: Event) {
+    // Hidden input click is handled by UI linking or ViewChild.
+    // Here we assume the method is called by button to click input.
+    // Actually in Angular/Ionic easier to just have the input hidden and click it from template ref
+    // We will use ViewChild approach in bigger apps, but simple (click) on input via template ref is fine.
+    // This method might not be needed if HTML handles the click relay.
+  }
+
+  onCsvSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const text = e.target.result;
+      this.processCsvData(text);
+    };
+    reader.readAsText(file);
+    // Reset input
+    event.target.value = '';
+  }
+
+  processCsvData(csvText: string) {
+    const lines = csvText.split('\n');
+    const clients: Cliente[] = [];
+    // Skip header row
+    const startIndex = 1;
+
+    for (let i = startIndex; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      // Simple CSV split (note: breaks on commas inside quotes)
+      // For a robust solution, use a regex or lib. For MVP: simple split.
+      const cols = line.split(',');
+
+      // Mapping based on headers index
+      // 'Razao Social', 'Nome Fantasia', 'CNPJ', 'CPF', 'Email', 'Telefone',
+      // 'Endereco', 'Representante Nome', 'Representante CPF', 'Financeiro Nome', 'Financeiro Email'
+
+      if (cols.length < 1) continue;
+
+      const client: Cliente = {
+        razaoSocial: cols[0]?.trim() || 'Sem Razão Social',
+        nomeFantasia: cols[1]?.trim(),
+        cnpj: cols[2]?.trim(),
+        cpf: cols[3]?.trim(),
+        email: cols[4]?.trim(),
+        telefone: cols[5]?.trim(),
+        endereco: cols[6]?.trim(),
+        representanteNome: cols[7]?.trim(),
+        representanteCpf: cols[8]?.trim(),
+        financeiroNome: cols[9]?.trim(),
+        financeiroEmail: cols[10]?.trim(),
+        ativo: true
+      };
+
+      // Validate basic requirement
+      if (client.razaoSocial) {
+        clients.push(client);
+      }
+    }
+
+    if (clients.length > 0) {
+      this.uploadClients(clients);
+    } else {
+      this.alertController.create({
+        header: 'Erro',
+        message: 'Nenhum cliente válido encontrado no arquivo.',
+        buttons: ['OK']
+      }).then(a => a.present());
+    }
+  }
+
+  async uploadClients(clients: Cliente[]) {
+    // Show loading?
+    console.log('Uploading', clients.length, 'clients');
+    this.clientsService.createMany(clients).subscribe({
+      next: async (res) => {
+        const alert = await this.alertController.create({
+          header: 'Sucesso',
+          message: `${clients.length} clientes importados com sucesso!`,
+          buttons: ['OK']
+        });
+        await alert.present();
+        this.loadData();
+      },
+      error: async (err) => {
+        console.error(err);
+        const alert = await this.alertController.create({
+          header: 'Erro',
+          message: 'Falha ao importar clientes. Verifique o formato do arquivo.',
+          buttons: ['OK']
+        });
+        await alert.present();
+      }
+    });
   }
 }

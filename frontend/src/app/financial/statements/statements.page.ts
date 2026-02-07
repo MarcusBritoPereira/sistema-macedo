@@ -4,11 +4,14 @@ import { CommonModule, CurrencyPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { FinancialService, Transaction, BankAccount } from '../../services/financial/financial';
+import { CategoriesService } from '../../services/financial/categories.service';
+import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
 import {
     IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent,
     IonList, IonItem, IonLabel, IonIcon, IonRefresher,
     IonRefresherContent, IonButton, IonInput, IonPopover,
-    IonCheckbox, IonNote, IonChip, ToastController, LoadingController, AlertController
+    IonCheckbox, IonNote, IonChip, ToastController, LoadingController, AlertController,
+    ModalController, IonSelect, IonSelectOption
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -44,7 +47,8 @@ interface ColumnSettings {
         IonMenuButton, IonTitle, IonContent, IonList, IonItem, IonLabel,
         IonIcon, IonRefresher, IonRefresherContent,
         IonButton, IonInput,
-        IonPopover, IonCheckbox, IonNote, IonChip
+        IonPopover, IonCheckbox, IonNote, IonChip,
+        IonSelect, IonSelectOption
     ],
     providers: [CurrencyPipe]
 })
@@ -63,6 +67,16 @@ export class StatementsPage implements OnInit {
     selectedAccountIds: string[] = [];
     selectedIds: Set<string> = new Set<string>();
     isMoreFiltersActive: boolean = false;
+
+    // Pagination
+    currentPage = 1;
+    pageSize = 20;
+    totalPages = 1;
+    paginatedTransactions: Transaction[] = [];
+
+    // Category Filter
+    categories: any[] = [];
+    selectedCategoryId: string = '';
 
     // KPIs
     receiptsOpen = 0;
@@ -84,6 +98,8 @@ export class StatementsPage implements OnInit {
 
     constructor(
         private financialService: FinancialService,
+        private categoriesService: CategoriesService,
+        private modalCtrl: ModalController,
         private toastCtrl: ToastController,
         private loadingCtrl: LoadingController,
         private alertCtrl: AlertController,
@@ -101,6 +117,11 @@ export class StatementsPage implements OnInit {
 
     ngOnInit() {
         this.loadInitialData();
+        this.loadCategories();
+    }
+
+    loadCategories() {
+        this.categoriesService.findAll().subscribe(cats => this.categories = cats);
     }
 
     // ... (rest of methods)
@@ -136,8 +157,8 @@ export class StatementsPage implements OnInit {
     loadTransactions(event?: any) {
         // Fetch all for local filtering based on the complex rules provided
         this.financialService.getTransactions().subscribe({
-            next: (data) => {
-                this.transactions = data;
+            next: (response: any) => {
+                this.transactions = response.data || response; // Handle both formats if transitional
                 this.applyFilters();
                 if (event) event.target.complete();
                 this.loading = false;
@@ -203,21 +224,104 @@ export class StatementsPage implements OnInit {
             const tDate = parseISO(t.dataVencimento);
             const inPeriod = isWithinInterval(tDate, { start, end });
 
+            // Search logic enhanced
+            let catName = '';
+            if (t.categoriaId) {
+                const c = this.categories.find(c => c.id === t.categoriaId);
+                if (c) catName = c.nome.toLowerCase();
+            }
+
+            const query = this.searchQuery.toLowerCase();
             const matchesSearch = !this.searchQuery ||
-                t.descricao.toLowerCase().includes(this.searchQuery.toLowerCase());
+                t.descricao.toLowerCase().includes(query) ||
+                (t.fornecedor && t.fornecedor.toLowerCase().includes(query)) ||
+                catName.includes(query);
 
             const matchesAccount = this.selectedAccountIds.length === 0 ||
-                (t.clienteId && this.selectedAccountIds.includes(t.clienteId)); // Using client as proxy if specific account not in transaction
+                (t.clienteId && this.selectedAccountIds.includes(t.clienteId));
 
-            return inPeriod && matchesSearch && matchesAccount;
+            const matchesCategory = !this.selectedCategoryId || t.categoriaId === this.selectedCategoryId;
+
+            return inPeriod && matchesSearch && matchesAccount && matchesCategory;
         });
 
         // Check if more filters are active (besides basic period)
-        this.isMoreFiltersActive = this.searchQuery.length > 0 || this.selectedAccountIds.length > 0;
+        this.isMoreFiltersActive = this.searchQuery.length > 0 || this.selectedAccountIds.length > 0 || this.selectedCategoryId !== '';
 
         this.calculateKPIs();
         this.sortTransactions();
         this.calculateBalances();
+
+        // Update Pagination
+        this.currentPage = 1;
+        this.updatePagination();
+    }
+
+    updatePagination() {
+        this.totalPages = Math.ceil(this.filteredTransactions.length / this.pageSize) || 1;
+        const start = (this.currentPage - 1) * this.pageSize;
+        const end = start + this.pageSize;
+        this.paginatedTransactions = this.filteredTransactions.slice(start, end);
+    }
+
+    nextPage() {
+        if (this.currentPage < this.totalPages) {
+            this.currentPage++;
+            this.updatePagination();
+        }
+    }
+
+    prevPage() {
+        if (this.currentPage > 1) {
+            this.currentPage--;
+            this.updatePagination();
+        }
+    }
+
+    // New Action Methods
+    async editTransaction(t: Transaction) {
+        const modal = await this.modalCtrl.create({
+            component: TransactionModalComponent,
+            componentProps: {
+                transaction: t,
+                type: t.tipo
+            }
+        });
+
+        await modal.present();
+        const { role } = await modal.onWillDismiss();
+        if (role === 'save') {
+            this.loadTransactions();
+            this.showToast('Lançamento atualizado!');
+        }
+    }
+
+    async deleteTransaction(t: Transaction) {
+        const alert = await this.alertCtrl.create({
+            header: 'Excluir Lançamento',
+            message: `Deseja excluir "${t.descricao}"?`,
+            buttons: [
+                { text: 'Cancelar', role: 'cancel' },
+                {
+                    text: 'Excluir',
+                    role: 'destructive',
+                    handler: () => {
+                        this.loading = true;
+                        this.financialService.deleteTransaction(t.id!).subscribe({
+                            next: () => {
+                                this.showToast('Lançamento excluído.');
+                                this.loadTransactions();
+                            },
+                            error: () => {
+                                this.loading = false;
+                                this.showToast('Erro ao excluir.', 'danger');
+                            }
+                        });
+                    }
+                }
+            ]
+        });
+        await alert.present();
     }
 
     calculateKPIs() {

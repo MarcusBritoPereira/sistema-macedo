@@ -72,81 +72,100 @@
 
 <ion-content class="light-bg">
     <div class="main-workspace">
-        <!-- Pending Alert Banner -->
-        <div class="alert-banner" *ngIf="summary.totalCount > 0 && viewMode === 'PENDING'">
-            <div class="alert-content">
-                <ion-icon name="alert-circle" color="warning"></ion-icon>
-                <span>Existem <strong>{{ summary.totalCount }} lançamentos bancários</strong> que não foram conciliados
-                    em {{ getPeriodLabel().toLowerCase() }}.</span>
+
+        <!-- Page Title & Highlight -->
+        <div class="page-intro">
+            <div class="intro-left">
+                <h1 class="page-title">Conciliações Bancárias</h1>
+                <p class="page-subtitle">Gerencie e concilie seus lançamentos pendentes.</p>
             </div>
-            <ion-button fill="outline" size="small" (click)="showToast('Filtrando...', 'primary')">Ver conciliações
-                pendentes</ion-button>
-            <ion-button fill="clear" color="medium" class="close-alert">
-                <ion-icon name="close"></ion-icon>
-            </ion-button>
+            <div class="intro-right">
+                <div class="highlight-count" *ngIf="summary.totalCount > 0">
+                    <span class="count-value">{{ summary.totalCount }}</span>
+                    <span class="count-label">Lançamentos</span>
+                </div>
+            </div>
         </div>
 
-        <!-- Search and Global Actions -->
-        <div class="search-filter-bar">
-            <div class="search-section">
+        <!-- Pending Alert Banner (Redesigned) -->
+        <div class="alert-banner-modern" *ngIf="summary.totalCount > 0 && viewMode === 'PENDING'">
+            <div class="alert-icon">
+                <ion-icon name="alert-circle" color="warning"></ion-icon>
+            </div>
+            <div class="alert-info">
+                <strong>Atenção Necessária</strong>
+                <p>Existem {{ summary.totalCount }} lançamentos bancários pendentes em {{ getPeriodLabel().toLowerCase()
+                    }}.</p>
+            </div>
+            <div class="alert-action">
+                <ion-button fill="solid" color="primary" size="small"
+                    (click)="showToast('Visualizando pendentes...', 'primary')">
+                    Ver conciliações pendentes
+                </ion-button>
+            </div>
+        </div>
+
+        <!-- Filters & Tools Section -->
+        <div class="tools-section">
+            <!-- Search & Category -->
+            <div class="filters-row">
                 <div class="search-input-wrapper">
                     <ion-icon name="search-outline"></ion-icon>
-                    <input type="text" placeholder="Pesquise o lançamento bancário" [(ngModel)]="searchTerm"
+                    <input type="text" placeholder="Pesquise por descrição ou valor..." [(ngModel)]="searchTerm"
                         (input)="onSearch($event)">
                 </div>
 
-                <div class="category-filter-wrapper" style="margin-left: 16px; min-width: 200px;">
-                    <ion-select placeholder="Todas as Categorias" [(ngModel)]="selectedCategoryId"
-                        (ionChange)="loadStatements()" interface="popover"
-                        style="background: white; border-radius: 8px; border: 1px solid var(--ion-color-medium-shade); padding: 0 10px; height: 40px; --padding-start: 10px;">
-                        <ion-select-option value="">Todas</ion-select-option>
-                        <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome
-                            }}</ion-select-option>
+                <div class="category-filter-wrapper">
+                    <ion-select placeholder="Categoria" [(ngModel)]="selectedCategoryId" (ionChange)="loadStatements()"
+                        interface="popover" class="custom-select">
+                        <ion-select-option value="">Todas as Categorias</ion-select-option>
+                        <ion-select-option *ngFor="let cat of categories" [value]="cat.id">
+                            {{ cat.nome }}
+                        </ion-select-option>
                     </ion-select>
                 </div>
+            </div>
 
-                <ion-button fill="clear" class="clear-filters"
-                    (click)="searchTerm = ''; selectedCategoryId = ''; loadStatements()">
+            <!-- Stats/Tabs Filter (Vertical/Pills) -->
+            <div class="status-pills">
+                <div class="pill" [class.active]="filterType === 'ALL'" (click)="setFilterType('ALL')">
+                    Todos
+                </div>
+                <div class="pill" [class.active]="filterType === 'CREDIT'" (click)="setFilterType('CREDIT')">
+                    Recebimentos <span class="badge success">{{ summary.receivablesCount }}</span>
+                </div>
+                <div class="pill" [class.active]="filterType === 'DEBIT'" (click)="setFilterType('DEBIT')">
+                    Pagamentos <span class="badge danger">{{ summary.payablesCount }}</span>
+                </div>
+                <ion-button fill="clear" class="btn-clear" size="small"
+                    *ngIf="searchTerm || selectedCategoryId || filterType !== 'ALL'" (click)="clearFilters()">
                     <ion-icon name="trash-outline" slot="start"></ion-icon>
-                    Limpar filtros
+                    Limpar Filtros
                 </ion-button>
-            </div>
-            <div class="view-actions">
-                <ion-button fill="outline" class="btn-sec">Ver lançamentos ignorados</ion-button>
-            </div>
-        </div>
-
-        <!-- Summary Statistics Bar -->
-        <div class="stats-bar">
-            <div class="stat-tab" [class.active]="filterType === 'ALL'" (click)="setFilterType('ALL')">
-                <span class="label">Todos</span>
-                <span class="count">{{ summary.totalCount }}</span>
-            </div>
-            <div class="stat-tab" [class.active]="filterType === 'CREDIT'" (click)="setFilterType('CREDIT')">
-                <span class="label">Recebimentos</span>
-                <span class="count text-success">{{ summary.receivablesCount }}</span>
-            </div>
-            <div class="stat-tab" [class.active]="filterType === 'DEBIT'" (click)="setFilterType('DEBIT')">
-                <span class="label">Pagamentos</span>
-                <span class="count text-danger">{{ summary.payablesCount }}</span>
             </div>
         </div>
 
         <!-- Bulk Action/Table Operations Bar -->
         <div class="ops-bar">
             <div class="ops-left">
-                <ion-button fill="outline" class="btn-sec" (click)="toggleExpandAll()">
-                    {{ areAllExpanded() ? 'Recolher Tudo' : 'Expandir Tudo' }}
-                    <ion-icon slot="end" [name]="areAllExpanded() ? 'chevron-up' : 'chevron-down'"></ion-icon>
-                </ion-button>
-                <ion-button fill="clear" color="medium" [disabled]="selectedStatementIds.size === 0"
-                    (click)="reconcileSelected()">Conciliar</ion-button>
-                <ion-button fill="clear" color="medium" disabled>Editar</ion-button>
-                <ion-button fill="clear" color="medium" [disabled]="selectedStatementIds.size === 0"
-                    (click)="showToast('Funcionalidade de desvincular em massa em breve', 'warning')">Desvincular</ion-button>
+                <ion-checkbox mode="md" [checked]="isAllSelected()" (ionChange)="toggleSelectAll()"
+                    class="select-all-checkbox" title="Selecionar Todos"></ion-checkbox>
+                <span class="selection-label" *ngIf="selectedStatementIds.size > 0">{{ selectedStatementIds.size }}
+                    selecionados</span>
+
+                <div class="bulk-actions" *ngIf="selectedStatementIds.size > 0">
+                    <ion-button fill="solid" color="primary" size="small" (click)="reconcileSelected()">
+                        Conciliar Selecionados
+                    </ion-button>
+                    <!-- <ion-button fill="outline" color="danger" size="small" (click)="showToast('Em breve', 'warning')"> Ignorar </ion-button> -->
+                </div>
             </div>
             <div class="ops-right">
-                <!-- Sorting or other actions -->
+                <ion-button fill="clear" size="small" (click)="toggleExpandAll()">
+                    {{ areAllExpanded() ? 'Recolher Tudo' : 'Expandir Tudo' }}
+                    <ion-icon slot="end"
+                        [name]="areAllExpanded() ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                </ion-button>
             </div>
         </div>
 
@@ -159,33 +178,47 @@
 
             <!-- List of Items -->
             <div *ngIf="!loading && filteredStatements.length > 0" class="statements-list">
-                <div *ngFor="let s of filteredStatements; trackBy: trackByFn" class="statement-wrapper">
+                <!-- Header Row for Table-like look -->
+                <div class="list-header-row desktop-only">
+                    <div class="col-check"></div> <!-- Checkbox -->
+                    <div class="col-date">Data</div>
+                    <div class="col-desc">Descrição</div>
+                    <div class="col-status">Status</div>
+                    <div class="col-value">Valor</div>
+                    <div class="col-actions"></div>
+                </div>
+
+                <div *ngFor="let s of filteredStatements; trackBy: trackByFn; let i = index" class="statement-wrapper">
+                    <!-- Added 'even' class for striping manually or via nth-child css -->
                     <div class="statement-row" [class.active]="isExpanded(s.id)" [class.conciliated]="s.conciliado"
-                        (click)="toggleExpand(s)">
-                        <div class="row-selection" (click)="toggleSelection(s, $event)">
+                        [class.striped]="i % 2 !== 0" (click)="toggleExpand(s)">
+
+                        <div class="col-check" (click)="toggleSelection(s, $event)">
                             <ion-checkbox mode="md" [checked]="isSelected(s.id)"
                                 (ionChange)="toggleSelection(s)"></ion-checkbox>
                         </div>
-                        <div class="row-date">
-                            {{ formatDate(s.data) }}
+                        <div class="col-date">
+                            <span class="date-text">{{ formatDate(s.data) }}</span>
                         </div>
-                        <div class="row-desc">
-                            {{ s.descricao }}
+                        <div class="col-desc">
+                            <span class="desc-text">{{ s.descricao }}</span>
                         </div>
-                        <div class="row-value" [class.credit]="s.tipo === 'CREDIT'" [class.debit]="s.tipo === 'DEBIT'">
+                        <div class="col-status">
+                            <div class="status-indicator" [class.done]="s.conciliado" [class.pending]="!s.conciliado">
+                                <ion-icon [name]="s.conciliado ? 'checkmark-circle' : 'alert-circle'"></ion-icon>
+                                <span>{{ s.conciliado ? 'Conciliado' : 'Pendente' }}</span>
+                            </div>
+                        </div>
+                        <div class="col-value" [class.credit]="s.tipo === 'CREDIT'" [class.debit]="s.tipo === 'DEBIT'">
                             {{ s.valor | currency:'BRL' }}
                         </div>
-                        <div class="row-status">
-                            <ion-chip [color]="s.conciliado ? 'success' : 'warning'" mode="ios">
-                                <ion-icon name="checkmark-circle" *ngIf="s.conciliado"></ion-icon>
-                                {{ s.conciliado ? 'Conciliado' : 'Pendente' }}
-                            </ion-chip>
-                        </div>
-                        <div class="row-actions">
-                            <ion-button fill="clear" size="small" (click)="toggleExpand(s); $event.stopPropagation()">
-                                <ion-icon
-                                    [name]="isExpanded(s.id) ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                        <div class="col-actions">
+                            <ion-button fill="clear" size="small" class="action-btn"
+                                (click)="selectSimilar(s); $event.stopPropagation()" title="Selecionar similares">
+                                <ion-icon name="layers-outline"></ion-icon>
                             </ion-button>
+                            <ion-icon class="expand-icon"
+                                [name]="isExpanded(s.id) ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
                         </div>
                     </div>
 
@@ -204,12 +237,15 @@
                     <img src="assets/imgs/reconciliation-empty.svg" alt="Sem dados" (error)="showDefaultIcon($event)">
                     <ion-icon name="receipt-outline" *ngIf="!illustrationLoaded"></ion-icon>
                 </div>
-                <h2>Não existem conciliações pendentes no mês.</h2>
+                <h2>Não existem conciliações pendentes no ms.</h2>
                 <div class="empty-actions">
                     <ion-button fill="solid" class="btn-primary" (click)="syncBank()">
                         Importar lançamentos automaticamente
                     </ion-button>
-                    <ion-button fill="clear" class="btn-link" (click)="showToast('Em desenvolvimento', 'primary')">
+                    <!-- Hidden File Input -->
+                    <input type="file" #ofxInput hidden (change)="onOfxFileSelected($event)" accept=".ofx,.OFX">
+
+                    <ion-button fill="clear" class="btn-link" (click)="triggerOfxUpload()">
                         Importar lançamentos via OFX
                     </ion-button>
                 </div>

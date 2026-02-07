@@ -35,4 +35,11 @@ export class BankingIntegrationService {
     sync(contaBancariaId: string): Observable<any> {
         return this.api.post(`financial/banking/sync/${contaBancariaId}`, {});
     }
+
+    uploadOfx(file: File, contaBancariaId: string): Observable<any> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('contaId', contaBancariaId);
+        return this.api.post('financial/banking/upload-ofx', formData);
+    }
 }

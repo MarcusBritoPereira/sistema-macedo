@@ -1,5 +1,5 @@
 
-import { Controller, Get, Post, Body, Query, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, Param, Delete, UseGuards, Req } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ReconciliationService } from './reconciliation.service';
 
@@ -22,18 +22,18 @@ export class ReconciliationController {
     }
 
     @Post('link')
-    linkManual(@Body() data: { statementId: string; lancamentoId: string }) {
-        return this.service.linkManual(data.statementId, data.lancamentoId);
+    linkManual(@Body() data: { statementId: string; lancamentoId: string }, @Req() req: any) {
+        return this.service.linkManual(data.statementId, data.lancamentoId, req.user?.id);
     }
 
     @Post('create-and-link')
-    createAndLink(@Body() data: { statementId: string; lancamentoId?: string;[key: string]: any }) {
+    createAndLink(@Body() data: { statementId: string; lancamentoId?: string;[key: string]: any }, @Req() req: any) {
         const { statementId, ...rest } = data;
-        return this.service.createAndLink(statementId, rest);
+        return this.service.createAndLink(statementId, rest, req.user?.id);
     }
 
     @Delete('unlink/:conciliacaoId')
-    unlink(@Param('conciliacaoId') conciliacaoId: string) {
-        return this.service.unlink(conciliacaoId);
+    unlink(@Param('conciliacaoId') conciliacaoId: string, @Req() req: any) {
+        return this.service.unlink(conciliacaoId, req.user?.id);
     }
 }

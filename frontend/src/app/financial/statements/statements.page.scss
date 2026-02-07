@@ -45,8 +45,8 @@ ion-content.light-bg {
                 text-transform: none;
                 font-size: 0.85rem;
                 --border-color: #ddd;
-                --color: #0076a8;
-                /* Link blue */
+                --color: var(--ion-color-secondary);
+                /* Black */
             }
 
             .pagination-controls {
@@ -120,7 +120,7 @@ ion-content.light-bg {
                 .current-period {
                     padding: 0 12px;
                     font-weight: 600;
-                    color: #0076a8;
+                    color: var(--ion-color-secondary);
                     min-width: 140px;
                     text-align: center;
                     text-transform: capitalize;
@@ -154,7 +154,7 @@ ion-content.light-bg {
                 }
 
                 ion-icon {
-                    color: #0076a8;
+                    color: var(--ion-color-secondary);
                     font-size: 1.2rem;
                     cursor: pointer;
                 }
@@ -167,7 +167,7 @@ ion-content.light-bg {
             /* align with inputs */
             .filter-btn {
                 --border-color: #ddd;
-                --color: #0076a8;
+                --color: var(--ion-color-secondary);
                 text-transform: none;
             }
         }
@@ -224,7 +224,7 @@ ion-content.light-bg {
         }
 
         &.blue-text .value {
-            color: #1976d2;
+            color: var(--ion-color-secondary);
         }
 
         &.green-text .value {
@@ -232,11 +232,11 @@ ion-content.light-bg {
         }
 
         &.border-blue {
-            border-top: 3px solid #1976d2;
+            border-top: 3px solid var(--ion-color-secondary);
 
             /* Highlight */
             .value {
-                color: #1976d2;
+                color: var(--ion-color-secondary);
             }
         }
     }
@@ -254,8 +254,8 @@ ion-content.light-bg {
 
     .dropdown-btn {
         --background: white;
-        --border-color: #0076a8;
-        --color: #0076a8;
+        --border-color: var(--ion-color-secondary);
+        --color: var(--ion-color-secondary);
         text-transform: none;
         height: 30px;
     }
@@ -341,7 +341,7 @@ ion-content.light-bg {
     font-weight: 600;
 
     &.income {
-        color: #0EA5E9;
+        color: var(--ion-color-success);
     }
 
     &.expense {
@@ -541,6 +541,7 @@ ion-content.light-bg {
 }
 
 @media (max-width: 480px) {
+
     .table-header,
     .table-row {
         min-width: 620px;

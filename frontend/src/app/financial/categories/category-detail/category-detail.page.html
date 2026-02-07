@@ -46,6 +46,17 @@
 
                             <ion-col size="12">
                                 <div class="input-group">
+                                    <ion-label position="stacked">Alocação DRE</ion-label>
+                                    <ion-select [(ngModel)]="category.classificacao" name="classificacao"
+                                        interface="popover" placeholder="Selecione a classificação">
+                                        <ion-select-option *ngFor="let opt of dreOptions" [value]="opt.value">{{
+                                            opt.label }}</ion-select-option>
+                                    </ion-select>
+                                </div>
+                            </ion-col>
+
+                            <ion-col size="12">
+                                <div class="input-group">
                                     <ion-label position="stacked">Descrição (Opcional)</ion-label>
                                     <ion-textarea [(ngModel)]="category.descricao" name="descricao" rows="4"
                                         placeholder="Detalhes adicionais..."></ion-textarea>

@@ -2,10 +2,14 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StatusLancamento } from '@prisma/client';
+import { AuditLogService } from '../../audit-log/audit-log.service';
 
 @Injectable()
 export class ReconciliationService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private auditLogService: AuditLogService
+    ) { }
 
     async getBankStatements(contaBancariaId: string, filters?: any) {
         const where: any = {
@@ -99,7 +103,7 @@ export class ReconciliationService {
         });
     }
 
-    async linkManual(statementId: string, lancamentoId: string) {
+    async linkManual(statementId: string, lancamentoId: string, userId?: string) {
         return this.prisma.$transaction(async (tx) => {
             const statement = await tx.extratoBancario.findUnique({ where: { id: statementId } });
             const lancamento = await tx.lancamentoFinanceiro.findUnique({ where: { id: lancamentoId } });
@@ -130,11 +134,24 @@ export class ReconciliationService {
                 }
             });
 
+            // Audit Log
+            if (userId) {
+                await this.auditLogService.createLog({
+                    acao: 'CONCILIACAO_MANUAL',
+                    tabela: 'conciliacoes_bancarias',
+                    registroId: lancamentoId, // Tracking the financial record
+                    motivo: `Conciliação manual com extrato ${statementId}`,
+                    usuarioId: userId,
+                    valorAntigo: 'PREVISTO/REALIZADO',
+                    valorNovo: 'CONCILIADO'
+                });
+            }
+
             return { success: true };
         });
     }
 
-    async createAndLink(statementId: string, data: any) {
+    async createAndLink(statementId: string, data: any, userId?: string) {
         return this.prisma.$transaction(async (tx) => {
             const statement = await tx.extratoBancario.findUnique({
                 where: { id: statementId },
@@ -154,6 +171,8 @@ export class ReconciliationService {
             const competenciaDate = dataCompetencia ? new Date(dataCompetencia) : statement.data;
             const isTransfer = data?.isTransfer === true || data?.isTransfer === 'true';
             const contaDestinoId = sanitize(data.contaDestinoId);
+
+            let createdLancamentoId: string;
 
             if (isTransfer) {
                 if (!contaDestinoId) {
@@ -210,47 +229,62 @@ export class ReconciliationService {
                     data: { conciliado: true }
                 });
 
-                return lancamentoOrigem;
+                createdLancamentoId = lancamentoOrigem.id;
+            } else {
+                // 1. Create Lancamento
+                const lancamento = await tx.lancamentoFinanceiro.create({
+                    data: {
+                        descricao: data.descricao || statement.descricao,
+                        valor: statement.valor,
+                        tipo: statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA',
+                        dataVencimento: statement.data,
+                        dataPagamento: statement.data,
+                        dataCompetencia: competenciaDate,
+                        status: 'CONCILIADO',
+                        categoriaId: categoriaId,
+                        centroCustoId: centroCustoId,
+                        clienteId: clienteId,
+                        fornecedorId: fornecedorId, // Added missing mapping
+                        observacoes: `Criado via conciliação bancária: ${statement.descricao}`
+                    }
+                });
+
+                // 2. Create link
+                await tx.conciliacaoBancaria.create({
+                    data: {
+                        extratoBancarioId: statementId,
+                        lancamentoFinanceiroId: lancamento.id,
+                        type: 'MANUAL_CREATE'
+                    }
+                });
+
+                // 3. Update statement
+                await tx.extratoBancario.update({
+                    where: { id: statementId },
+                    data: { conciliado: true }
+                });
+
+                createdLancamentoId = lancamento.id;
             }
 
-            // 1. Create Lancamento
-            const lancamento = await tx.lancamentoFinanceiro.create({
-                data: {
-                    descricao: data.descricao || statement.descricao,
-                    valor: statement.valor,
-                    tipo: statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA',
-                    dataVencimento: statement.data,
-                    dataPagamento: statement.data,
-                    dataCompetencia: competenciaDate,
-                    status: 'CONCILIADO',
-                    categoriaId: categoriaId,
-                    centroCustoId: centroCustoId,
-                    clienteId: clienteId,
-                    fornecedorId: fornecedorId, // Added missing mapping
-                    observacoes: `Criado via conciliação bancária: ${statement.descricao}`
-                }
-            });
+            // Audit Log
+            if (userId && createdLancamentoId) {
+                await this.auditLogService.createLog({
+                    acao: 'CRIACAO_E_CONCILIACAO',
+                    tabela: 'lancamentos_financeiros',
+                    registroId: createdLancamentoId,
+                    motivo: `Criação e conciliação via extrato ${statementId}`,
+                    usuarioId: userId,
+                    valorAntigo: undefined,
+                    valorNovo: 'CONCILIADO'
+                });
+            }
 
-            // 2. Create link
-            await tx.conciliacaoBancaria.create({
-                data: {
-                    extratoBancarioId: statementId,
-                    lancamentoFinanceiroId: lancamento.id,
-                    type: 'MANUAL_CREATE'
-                }
-            });
-
-            // 3. Update statement
-            await tx.extratoBancario.update({
-                where: { id: statementId },
-                data: { conciliado: true }
-            });
-
-            return lancamento;
+            return { id: createdLancamentoId };
         });
     }
 
-    async unlink(conciliacaoId: string) {
+    async unlink(conciliacaoId: string, userId?: string) {
         return this.prisma.$transaction(async (tx) => {
             const link = await tx.conciliacaoBancaria.findUnique({
                 where: { id: conciliacaoId }
@@ -269,6 +303,19 @@ export class ReconciliationService {
                 where: { id: link.lancamentoFinanceiroId },
                 data: { status: 'REALIZADO' } // Revert to Paid
             });
+
+            // Audit Log
+            if (userId) {
+                await this.auditLogService.createLog({
+                    acao: 'DESCONCILIACAO',
+                    tabela: 'conciliacoes_bancarias',
+                    registroId: link.lancamentoFinanceiroId,
+                    motivo: `Desconciliação manual da conciliação ${conciliacaoId}`,
+                    usuarioId: userId,
+                    valorAntigo: 'CONCILIADO',
+                    valorNovo: 'REALIZADO'
+                });
+            }
 
             return { success: true };
         });

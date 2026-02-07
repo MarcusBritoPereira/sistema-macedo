@@ -51,8 +51,8 @@ export class PayablesListPage implements OnInit {
 
     loadData(event?: any) {
         this.financialService.getTransactions({ tipo: 'DESPESA' }).subscribe({
-            next: (data) => {
-                this.allPayables = data;
+            next: (response: any) => {
+                this.allPayables = response.data || response;
                 this.updateView();
                 if (event) event.target.complete();
             },

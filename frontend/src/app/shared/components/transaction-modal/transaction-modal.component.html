@@ -1,0 +1,86 @@
+<ion-header>
+    <ion-toolbar>
+        <ion-title>{{ title }}</ion-title>
+        <ion-buttons slot="end">
+            <ion-button (click)="cancel()">
+                <ion-icon name="close-outline"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+    <div class="form-container">
+
+        <!-- Descrição -->
+        <ion-item fill="outline" class="input-item">
+            <ion-label position="stacked">Descrição *</ion-label>
+            <ion-input [(ngModel)]="formData.descricao" placeholder="Ex: Pagamento Fornecedor X"></ion-input>
+        </ion-item>
+
+        <div class="row-duo">
+            <!-- Valor -->
+            <ion-item fill="outline" class="input-item">
+                <ion-label position="stacked">Valor (R$) *</ion-label>
+                <ion-input type="number" [(ngModel)]="formData.valor" placeholder="0,00"></ion-input>
+            </ion-item>
+
+            <!-- Tipo -->
+            <ion-item fill="outline" class="input-item">
+                <ion-label position="stacked">Tipo</ion-label>
+                <ion-select [(ngModel)]="formData.tipo" interface="popover">
+                    <ion-select-option value="RECEITA">Receita</ion-select-option>
+                    <ion-select-option value="DESPESA">Despesa</ion-select-option>
+                </ion-select>
+            </ion-item>
+        </div>
+
+        <div class="row-duo">
+            <!-- Data Vencimento -->
+            <ion-item fill="outline" class="input-item">
+                <ion-label position="stacked">Vencimento *</ion-label>
+                <ion-input type="date" [(ngModel)]="formData.dataVencimento"></ion-input>
+                <!-- Fallback to simple date input for simplicity if ion-datetime is complex in modal -->
+            </ion-item>
+
+            <!-- Status -->
+            <ion-item fill="outline" class="input-item">
+                <ion-label position="stacked">Status</ion-label>
+                <ion-select [(ngModel)]="formData.status" interface="popover">
+                    <ion-select-option value="PREVISTO">Previsto</ion-select-option>
+                    <ion-select-option value="REALIZADO">Realizado</ion-select-option>
+                    <ion-select-option value="CONCILIADO" disabled>Conciliado (Auto)</ion-select-option>
+                </ion-select>
+            </ion-item>
+        </div>
+
+        <!-- Categoria -->
+        <ion-item fill="outline" class="input-item">
+            <ion-label position="stacked">Categoria</ion-label>
+            <ion-select [(ngModel)]="formData.categoriaId" interface="action-sheet" placeholder="Selecione">
+                <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</ion-select-option>
+            </ion-select>
+        </ion-item>
+
+        <!-- Centro de Custo -->
+        <ion-item fill="outline" class="input-item">
+            <ion-label position="stacked">Centro de Custo</ion-label>
+            <ion-select [(ngModel)]="formData.centroCustoId" interface="action-sheet" placeholder="Selecione">
+                <ion-select-option *ngFor="let cc of costCenters" [value]="cc.id">{{ cc.nome }}</ion-select-option>
+            </ion-select>
+        </ion-item>
+
+        <!-- Observações -->
+        <ion-item fill="outline" class="input-item">
+            <ion-label position="stacked">Observações</ion-label>
+            <ion-textarea [(ngModel)]="formData.observacoes" rows="3"></ion-textarea>
+        </ion-item>
+
+        <div class="actions">
+            <ion-button expand="block" (click)="save()" [disabled]="!isValid()">
+                Salvar
+            </ion-button>
+        </div>
+
+    </div>
+</ion-content>

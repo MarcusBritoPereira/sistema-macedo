@@ -16,6 +16,7 @@ export interface Category {
     nome: string;
     tipo: 'RECEITA' | 'DESPESA';
     descricao?: string;
+    classificacao?: string; // DRE Classification
     subcategorias?: Subcategory[];
 }
 

@@ -37,14 +37,15 @@
                 <ion-button fill="outline" size="small" color="medium" class="action-btn">Importar planilha</ion-button>
                 <ion-button fill="outline" size="small" color="medium" class="action-btn"
                     (click)="exportCSV()">Exportar</ion-button>
-                <ion-button fill="outline" size="small" color="medium" class="action-btn">Imprimir</ion-button>
+                <ion-button fill="outline" size="small" color="medium" class="action-btn"
+                    (click)="showToast('Impressão em desenvolvimento', 'medium')">Imprimir</ion-button>
 
                 <div class="pagination-controls">
-                    <ion-button fill="clear" size="small">
+                    <ion-button fill="clear" size="small" (click)="prevPage()" [disabled]="currentPage === 1">
                         <ion-icon name="chevron-back"></ion-icon>
                     </ion-button>
-                    <span>Página 1</span>
-                    <ion-button fill="clear" size="small">
+                    <span>Página {{ currentPage }} de {{ totalPages }}</span>
+                    <ion-button fill="clear" size="small" (click)="nextPage()" [disabled]="currentPage === totalPages">
                         <ion-icon name="chevron-forward"></ion-icon>
                     </ion-button>
                 </div>
@@ -109,9 +110,21 @@
             <div class="search-box">
                 <div class="label-text">Pesquisar no período selecionado</div>
                 <div class="input-wrapper">
-                    <input type="text" placeholder="Pesquisar" class="clean-search" [(ngModel)]="searchQuery"
+                    <input type="text" placeholder="Pesquisar..." class="clean-search" [(ngModel)]="searchQuery"
                         (input)="applyFilters()">
                     <ion-icon name="search"></ion-icon>
+                </div>
+            </div>
+
+            <div class="filter-category" style="margin-left: 16px;">
+                <div class="label-text">Categoria</div>
+                <div class="input-wrapper" style="width: 200px;">
+                    <ion-select placeholder="Todas" [(ngModel)]="selectedCategoryId" (ionChange)="applyFilters()"
+                        interface="popover" style="width: 100%;">
+                        <ion-select-option value="">Todas</ion-select-option>
+                        <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome
+                            }}</ion-select-option>
+                    </ion-select>
                 </div>
             </div>
 
@@ -174,15 +187,19 @@
         </div>
 
         <div class="table-body">
-            <div class="table-row" *ngFor="let t of filteredTransactions">
+            <div class="table-row" *ngFor="let t of paginatedTransactions">
                 <div class="col-check">
                     <input type="checkbox" [checked]="isSelected(t.id!)" (change)="toggleSelection(t.id!)">
                 </div>
                 <div class="col-date" *ngIf="columns.date">{{ formatDate(t.dataVencimento) }}</div>
                 <div class="col-desc" *ngIf="columns.description">
                     <span class="desc-main">{{ t.descricao }}</span>
-                    <span class="desc-sub" *ngIf="t.fornecedor">{{ t.fornecedor }}</span>
-                    <span class="desc-sub" *ngIf="!t.fornecedor">Sem categoria</span>
+                    <div class="desc-sub-row">
+                        <span class="desc-sub" *ngIf="t.categoriaId">{{ t.categoriaId | json }}</span>
+                        <!-- Temporary debug or mapping needed if I can't map id to name efficiently here without pipe -->
+                        <!-- Let's relying on 'Sem categoria' logic or improve it -->
+                        <span class="desc-sub" *ngIf="t.fornecedor">{{ t.fornecedor }}</span>
+                    </div>
                 </div>
                 <div class="col-value text-right" *ngIf="columns.value"
                     [ngClass]="t.tipo === 'RECEITA' ? 'income' : 'expense'">
@@ -197,14 +214,30 @@
                     </span>
                 </div>
                 <div class="col-actions">
-                    <ion-button fill="outline" size="small" class="actions-dropdown-btn">
-                        Ações <ion-icon name="chevron-down" slot="end"></ion-icon>
+                    <ion-button fill="clear" size="small" [id]="'action-btn-' + t.id">
+                        <ion-icon name="ellipsis-vertical"></ion-icon>
                     </ion-button>
+                    <ion-popover [trigger]="'action-btn-' + t.id" dismissOnSelect="true" mode="ios">
+                        <ng-template>
+                            <ion-content class="ion-no-padding">
+                                <ion-list lines="none">
+                                    <ion-item button (click)="editTransaction(t)">
+                                        <ion-icon name="create-outline" slot="start"></ion-icon>
+                                        <ion-label>Editar</ion-label>
+                                    </ion-item>
+                                    <ion-item button (click)="deleteTransaction(t)" lines="none" color="danger">
+                                        <ion-icon name="trash-outline" slot="start"></ion-icon>
+                                        <ion-label>Excluir</ion-label>
+                                    </ion-item>
+                                </ion-list>
+                            </ion-content>
+                        </ng-template>
+                    </ion-popover>
                 </div>
             </div>
 
-            <div class="empty-state" *ngIf="filteredTransactions.length === 0">
-                <p>Nenhum lançamento neste período.</p>
+            <div class="empty-state" *ngIf="paginatedTransactions.length === 0">
+                <p>Nenhum lançamento encontrado.</p>
             </div>
         </div>
     </div>

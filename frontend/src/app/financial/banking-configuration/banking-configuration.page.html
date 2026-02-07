@@ -154,7 +154,8 @@
             <div class="action-footer">
                 <ion-button type="submit" expand="block" size="large" class="connect-btn"
                     [disabled]="integrationForm.invalid || loadingStatus">
-                    {{ loadingStatus ? 'Conectando...' : 'Conectar ao Banco' }}
+                    {{ loadingStatus ? 'Processando...' : (selectedAccountId ? 'Atualizar Conexão' : 'Conectar ao
+                    Banco') }}
                 </ion-button>
                 <p class="footer-note">Após a configuração, a sincronização será automática.</p>
             </div>

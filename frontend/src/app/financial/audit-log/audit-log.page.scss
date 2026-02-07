@@ -4,7 +4,7 @@
 $border-color: #E2E8F0;
 $text-dark: #1E293B;
 $text-muted: #64748B;
-$primary-blue: #2563EB;
+$primary-blue: #FEBE10;
 $bg-light: #F8FAFC;
 
 :host {
@@ -29,7 +29,7 @@ ion-title {
     --border-radius: 8px;
     font-weight: 600;
     height: 36px;
-    --background: #2563EB;
+    --background: var(--ion-color-primary);
     text-transform: none;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
@@ -94,7 +94,7 @@ ion-title {
     }
 
     ion-icon {
-        color: $primary-blue;
+        color: $text-muted;
         font-size: 18px;
     }
 }

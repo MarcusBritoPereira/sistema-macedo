@@ -1,4 +1,5 @@
 <ion-header class="ion-no-border">
+    <title>Cadastrar conta financeira</title>
     <ion-toolbar>
         <ion-title>Cadastrar conta financeira</ion-title>
         <ion-buttons slot="end">
@@ -88,7 +89,7 @@
                 </header>
 
                 <div class="form-grid">
-                    <div class="form-field col-6">
+                    <div class="form-field col-6" *ngIf="selectedType !== 'CAIXINHA'">
                         <label>Banco *</label>
                         <ion-select [(ngModel)]="formData.banco" interface="popover" placeholder="Selecione o banco"
                             class="custom-select">
@@ -97,13 +98,13 @@
                         </ion-select>
                     </div>
 
-                    <div class="form-field col-3">
+                    <div class="form-field col-3" *ngIf="selectedType !== 'CAIXINHA'">
                         <label>Agência (sem dígito) *</label>
                         <ion-input [(ngModel)]="formData.agencia" type="text" placeholder="12345"
                             class="custom-input"></ion-input>
                     </div>
 
-                    <div class="form-field col-3">
+                    <div class="form-field col-3" *ngIf="selectedType !== 'CAIXINHA'">
                         <label>Conta (com dígito) *</label>
                         <ion-input [(ngModel)]="formData.conta" type="text" placeholder="123456-7"
                             class="custom-input"></ion-input>

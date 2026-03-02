@@ -27,6 +27,13 @@ export class FinancialDashboardController {
         return this.dashboardService.getOperationalDashboard();
     }
 
+    @Get('cash-flow')
+    getCashFlowDashboard(@Query('month') month?: string, @Query('year') year?: string) {
+        const m = month ? parseInt(month) : undefined;
+        const y = year ? parseInt(year) : undefined;
+        return this.dashboardService.getCashFlowDashboard(m, y);
+    }
+
     @Get('balance')
     getBalanceSheet(@Query('asOf') asOf: string) {
         const referenceDate = asOf ? new Date(asOf) : new Date();

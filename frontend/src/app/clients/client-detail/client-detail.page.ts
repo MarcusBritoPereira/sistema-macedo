@@ -36,8 +36,6 @@ export class ClientDetailPage implements OnInit {
       razaoSocial: ['', [Validators.required]],
       nomeFantasia: [''],
       cnpj: ['', [Validators.required]],
-
-
       email: ['', [Validators.email]],
       telefone: [''],
       endereco: [''],
@@ -55,13 +53,15 @@ export class ClientDetailPage implements OnInit {
       financeiroWhatsapp: [''],
       financeiroPreferenciaContato: [''],
 
-      // 4. Dados Operacionais - REMOVED
       // 5. Dados Fiscais
       emissaoNf: [false],
       emailNf: [''],
       obsFiscais: [''],
 
-      // 6. Dados Jurídicos - REMOVED
+      // 6. Dados Jurídicos
+      foro: [''],
+      lgpdAceito: [false],
+      aceiteEletronico: [false],
     });
   }
 

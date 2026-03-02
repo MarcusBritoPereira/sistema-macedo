@@ -21,7 +21,8 @@ export class ClientsListPage implements OnInit {
 
   // Sort & Filter state
   activeFilter: 'ALL' | 'RISK' | 'TOP_REVENUE' | 'OLD' | 'DEFAULTERS' = 'ALL';
-  sortBy: 'REVENUE' | 'HEALTH' | 'OLD' | 'NEW' = 'REVENUE'; // Default is now Revenue
+  sortBy: 'REVENUE' | 'HEALTH' | 'OLD' | 'NEW' = 'REVENUE';
+  searchTerm: string = '';
 
   kpis = {
     activeClients: 0,
@@ -76,17 +77,28 @@ export class ClientsListPage implements OnInit {
   }
 
   calculateInsights() {
-    // 1. Risk Count
     this.insights.riskCount = this.clients.filter(c => c.healthScore === 'RISK').length;
-
-    // 2. Revenue Concentration (Top 3 %)
     const totalRevenue = this.clients.reduce((sum, c) => sum + c.revenue, 0);
     const top3Revenue = this.clients.slice(0, 3).reduce((sum, c) => sum + c.revenue, 0);
     this.insights.topConcentration = totalRevenue > 0 ? (top3Revenue / totalRevenue) * 100 : 0;
   }
 
-  applyFilters() {
+  applyFilters(event?: any) {
+    if (event !== undefined) {
+      this.searchTerm = event.target.value.toLowerCase();
+    }
+
     let result = [...this.clients];
+
+    // Search
+    if (this.searchTerm) {
+      result = result.filter(c =>
+        c.razaoSocial.toLowerCase().includes(this.searchTerm) ||
+        (c.cnpj && c.cnpj.includes(this.searchTerm)) ||
+        (c.cpf && c.cpf.includes(this.searchTerm)) ||
+        (c.financeiroNome && c.financeiroNome.toLowerCase().includes(this.searchTerm))
+      );
+    }
 
     // Filter
     switch (this.activeFilter) {
@@ -127,18 +139,6 @@ export class ClientsListPage implements OnInit {
   setFilter(filter: any) {
     this.activeFilter = filter;
     this.applyFilters();
-  }
-
-  // Helper actions
-  openFinancial(client: ClientExecutiveDTO, event: Event) {
-    event.stopPropagation();
-    console.log('Open financial for', client.razaoSocial);
-    // Router navigate to financial details
-  }
-
-  openContract(client: ClientExecutiveDTO, event: Event) {
-    event.stopPropagation();
-    console.log('Open contract for', client.razaoSocial);
   }
 
   async deleteClient(id: string, event: Event) {

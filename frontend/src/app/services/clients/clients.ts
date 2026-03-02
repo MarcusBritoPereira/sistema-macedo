@@ -42,7 +42,6 @@ export interface Cliente {
   foro?: string;
   lgpdAceito?: boolean;
   aceiteEletronico?: boolean;
-  contratoArquivoUrl?: string;
 
   ativo?: boolean;
 }
@@ -52,6 +51,10 @@ export interface ClientExecutiveDTO extends Cliente {
   durationMonths: number;
   healthScore: 'GOOD' | 'ATTENTION' | 'RISK';
   planType: string;
+  dataInicio: Date;
+  dataTermino: Date | null;
+  tempoRestanteDias: number | null;
+  statusDisplay: string;
 }
 
 @Injectable({

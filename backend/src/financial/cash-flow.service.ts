@@ -36,6 +36,12 @@ export class CashFlowService {
         const totalOut = payables.reduce((sum, item) => sum + Number(item.valor), 0);
         const balance = totalIn - totalOut;
 
+        const received = receivables.filter(t => t.status === 'REALIZADO' || t.status === 'CONCILIADO').reduce((sum, item) => sum + Number(item.valor), 0);
+        const pendingIn = receivables.filter(t => t.status === 'PREVISTO').reduce((sum, item) => sum + Number(item.valor), 0);
+
+        const paid = payables.filter(t => t.status === 'REALIZADO' || t.status === 'CONCILIADO').reduce((sum, item) => sum + Number(item.valor), 0);
+        const pendingOut = payables.filter(t => t.status === 'PREVISTO').reduce((sum, item) => sum + Number(item.valor), 0);
+
         // Sort by date
         const sortedTransactions = periodTransactions.sort((a, b) => new Date(a.dataVencimento).getTime() - new Date(b.dataVencimento).getTime());
 
@@ -51,6 +57,8 @@ export class CashFlowService {
             }
         });
 
+        let totalCurrentBalance = 0;
+
         const accounts = allAccounts.map(acc => {
             const accIn = acc.lancamentos
                 .filter(l => l.tipo === 'RECEITA')
@@ -61,6 +69,7 @@ export class CashFlowService {
                 .reduce((sum, l) => sum + Number(l.valor), 0);
 
             const currentBalance = Number(acc.saldoInicial) + accIn - accOut;
+            totalCurrentBalance += currentBalance;
 
             return {
                 id: acc.id,
@@ -99,9 +108,47 @@ export class CashFlowService {
             .filter(t => t.tipo === 'DESPESA')
             .reduce((sum, t) => sum + Number(t.valor), 0);
 
+        // Generate Chart Data (Daily Flow)
+        const chartData: any[] = [];
+        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        let runningBalance = totalCurrentBalance; // Should historically track, but simplified for now
+
+        for (let i = 1; i <= daysInMonth; i++) {
+            const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+            const dayTransactions = periodTransactions.filter(t => t.dataVencimento.toISOString().startsWith(dateStr));
+
+            const dayIn = dayTransactions.filter(t => t.tipo === 'RECEITA').reduce((sum, t) => sum + Number(t.valor), 0);
+            const dayOut = dayTransactions.filter(t => t.tipo === 'DESPESA').reduce((sum, t) => sum + Number(t.valor), 0);
+
+            // Note: True running balance needs historical data prior to month start. 
+            // We use simple approximation here based on period totals for chart shape.
+            runningBalance += (dayIn - dayOut);
+
+            chartData.push({
+                label: i.toString(),
+                entradas: dayIn,
+                saidas: dayOut,
+                saldoAcumulado: runningBalance
+            });
+        }
+
 
         return {
             period: { start, end },
+            kpis: {
+                saldoAtual: totalCurrentBalance,
+                aReceber: {
+                    total: totalIn,
+                    recebido: received,
+                    pendente: pendingIn
+                },
+                aPagar: {
+                    total: totalOut,
+                    pago: paid,
+                    pendente: pendingOut
+                },
+                saldoProjetado: totalCurrentBalance + pendingIn - pendingOut
+            },
             summary: {
                 totalIn,
                 totalOut,
@@ -116,6 +163,7 @@ export class CashFlowService {
                 in: remainingIn,
                 out: remainingOut
             },
+            chart: chartData,
             transactions: sortedTransactions,
         };
     }

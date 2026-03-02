@@ -46,31 +46,37 @@ export interface ExecutiveDashboardResponse {
     }[];
 }
 
+
 export interface OperationalDashboardResponse {
-    receivables: {
-        overdue: number;
-        today: number;
-        remainingMonth: number;
-    };
-    payables: {
-        overdue: number;
-        today: number;
-        remainingMonth: number;
-    };
-    accounts: {
-        id: string;
-        nome: string;
-        banco: string;
-        saldo: number;
-    }[];
+    receivables: { overdue: number; today: number; remainingMonth: number };
+    payables: { overdue: number; today: number; remainingMonth: number };
+    accounts: { id: string; nome: string; banco: string; saldo: number }[];
     totalBalance: number;
-    dailyFlow: {
-        date: string;
-        label: string;
-        recebimentos: number;
-        pagamentos: number;
-        saldo: number;
+    dailyFlow: { date: string; label: string; recebimentos: number; pagamentos: number; saldo: number }[];
+    monthlyHistory: { label: string; valor: number }[];
+    lastUpdate: string;
+}
+
+export interface CashFlowDashboardResponse {
+    period: { month: number; year: number };
+    kpis: {
+        saldoAtual: number;
+        aReceber: { total: number; recebido: number; pendente: number };
+        aPagar: { total: number; pago: number; pendente: number };
+        saldoProjetado: number;
+    };
+    chart: { date: string; label: string; entradas: number; saidas: number; saldoAcumulado: number }[];
+    transactions: {
+        id: string;
+        data: string;
+        descricao: string;
+        conta: string;
+        categoria: string;
+        tipo: 'RECEITA' | 'DESPESA';
+        valor: number;
+        status: string;
     }[];
+    accounts: { id: string; nome: string; banco: string; saldo: number }[];
     lastUpdate: string;
 }
 
@@ -113,6 +119,10 @@ export class FinancialDashboardService {
 
     getOperationalDashboard(): Observable<OperationalDashboardResponse> {
         return this.api.get<OperationalDashboardResponse>(`financial/dashboard/operational`);
+    }
+
+    getCashFlowDashboard(month: number, year: number): Observable<CashFlowDashboardResponse> {
+        return this.api.get<CashFlowDashboardResponse>(`financial/dashboard/cash-flow?month=${month}&year=${year}`);
     }
 
     getBalanceSheet(asOf?: string): Observable<BalanceSheetResponse> {

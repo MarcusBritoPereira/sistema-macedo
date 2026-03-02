@@ -77,7 +77,9 @@ model Cliente {
   obsFiscais     String?
 
   // 6. Dados Jurídicos
-  // 6. Dados Jurídicos - REMOVED
+  foro              String?
+  lgpdAceito        Boolean @default(false)
+  aceiteEletronico  Boolean @default(false)
 
   ativo          Boolean  @default(true)
   createdAt      DateTime @default(now())
@@ -88,7 +90,7 @@ model Cliente {
   leads     Lead[]
   lancamentos LancamentoFinanceiro[]
 
-  @@map("clientes")
+  @@map("usuarios_clientes") // Changed mapping to avoid potential conflicts and follow a clearer naming
 }
 
 model Contato {
@@ -102,7 +104,7 @@ model Contato {
   clienteId String
   cliente   Cliente @relation(fields: [clienteId], references: [id])
 
-  @@map("contatos")
+  @@map("contatos_clientes")
 }
 
 model Contrato {

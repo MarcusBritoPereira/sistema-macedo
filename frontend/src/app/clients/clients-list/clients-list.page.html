@@ -1,133 +1,134 @@
 <ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-buttons slot="start">
-      <ion-menu-button color="primary"></ion-menu-button>
+      <ion-menuButton color="primary"></ion-menuButton>
     </ion-buttons>
     <ion-title>Gestão de Clientes</ion-title>
     <ion-buttons slot="end">
-      <ion-button>
-        <ion-icon name="search-outline" slot="icon-only" color="primary"></ion-icon>
+      <ion-button (click)="downloadCsvTemplate()" title="Baixar Modelo CSV">
+        <ion-icon name="download-outline"></ion-icon>
       </ion-button>
+      <ion-button (click)="csvInput.click()" title="Importar CSV">
+        <ion-icon name="cloudUploadOutline"></ion-icon>
+      </ion-button>
+      <input #csvInput type="file" (change)="onCsvSelected($event)" accept=".csv" style="display: none;">
     </ion-buttons>
   </ion-toolbar>
+
+  <ion-toolbar class="search-toolbar">
+    <ion-searchbar placeholder="Buscar empresa, CNPJ ou responsável..." (ionInput)="applyFilters()"
+      animated="true" class="custom-search"></ion-searchbar>
+  </ion-toolbar>
+
+  <div class="filter-strip ion-padding-horizontal">
+    <ion-chip [outline]="activeFilter !== 'ALL'" (click)="setFilter('ALL')" color="dark">Todos</ion-chip>
+    <ion-chip [outline]="activeFilter !== 'RISK'" (click)="setFilter('RISK')" color="danger">Risco/Inadimplentes</ion-chip>
+    <ion-chip [outline]="activeFilter !== 'TOP_REVENUE'" (click)="setFilter('TOP_REVENUE')" color="success">Top Receita</ion-chip>
+    <ion-chip [outline]="activeFilter !== 'OLD'" (click)="setFilter('OLD')" color="medium">Antigos</ion-chip>
+  </div>
 </ion-header>
 
-<ion-content class="light-bg">
-  <div class="kpi-container">
-    <div class="kpi-card blue-text">
-      <span class="label">Clientes Ativos</span>
-      <span class="value">{{ kpis.activeClients }}</span>
-    </div>
-    <div class="kpi-card red-text">
-      <span class="label">Churn (Mês)</span>
-      <span class="value">{{ kpis.churnCount }}</span>
-    </div>
-    <div class="kpi-card green-text">
-      <span class="label">LTV Médio (R$)</span>
-      <span class="value">{{ kpis.avgLtv | number:'1.2-2' }}</span>
-    </div>
-    <div class="kpi-card purple-text">
-      <span class="label">Tempo Médio (Meses)</span>
-      <span class="value">{{ kpis.avgLifetimeMonths | number:'1.1-1' }}</span>
-    </div>
-  </div>
-
+<ion-content>
   <ion-refresher slot="fixed" (ionRefresh)="loadData($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <!-- Insights Section -->
-  <div class="insights-banner" *ngIf="insights.riskCount > 0 || insights.topConcentration > 0">
-    <p *ngIf="insights.riskCount > 0">⚠️ <strong>{{ insights.riskCount }} clientes</strong> requerem atenção imediata.
-    </p>
-    <p *ngIf="insights.topConcentration > 0">📊 Top 3 clientes representam <strong>{{ insights.topConcentration |
-        number:'1.0-0' }}%</strong> da receita.</p>
-  </div>
-
-  <div class="header-section">
-    <div class="header-top-row"
-      style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-      <h1>Gestão de <strong>Clientes</strong></h1>
-      <div class="header-actions">
-        <input type="file" #csvInput hidden (change)="onCsvSelected($event)" accept=".csv">
-        <ion-button fill="outline" size="small" (click)="downloadCsvTemplate()">
-          <ion-icon name="download-outline" slot="start"></ion-icon>
-          Modelo CSV
-        </ion-button>
-        <ion-button fill="solid" size="small" (click)="csvInput.click()">
-          <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
-          Importar Clientes
-        </ion-button>
-      </div>
+  <div class="kpi-grid ion-padding">
+    <div class="kpi-card">
+      <label>Clientes Ativos</label>
+      <div class="value">{{ kpis.activeClients }}</div>
     </div>
-
-    <!-- Filter Chips -->
-    <div class="filters-scroll">
-      <ion-chip [outline]="activeFilter !== 'RISK'" color="danger" (click)="setFilter('RISK')">
-        <ion-label>Em Risco</ion-label>
-      </ion-chip>
-      <ion-chip [outline]="activeFilter !== 'TOP_REVENUE'" color="success" (click)="setFilter('TOP_REVENUE')">
-        <ion-label>Top Faturamento</ion-label>
-      </ion-chip>
-      <ion-chip [outline]="activeFilter !== 'OLD'" color="secondary" (click)="setFilter('OLD')">
-        <ion-label>Antigos (+12m)</ion-label>
-      </ion-chip>
-      <ion-chip [outline]="activeFilter !== 'ALL'" color="dark" (click)="setFilter('ALL')">
-        <ion-label>Todos</ion-label>
-      </ion-chip>
+    <div class="kpi-card">
+      <label>Average LTV</label>
+      <div class="value">{{ kpis.avgLtv | currency:'BRL' }}</div>
+    </div>
+    <div class="kpi-card">
+      <label>Churn (Mês)</label>
+      <div class="value danger">{{ kpis.churnCount }}</div>
+    </div>
+    <div class="kpi-card">
+      <label>Av. Lifetime</label>
+      <div class="value">{{ kpis.avgLifetimeMonths }}m</div>
     </div>
   </div>
 
-  <div *ngIf="errorMessage" class="error-message" style="color: red; padding: 20px; text-align: center;">
-    {{ errorMessage }}
-  </div>
+  <div class="list-container">
+    <div class="table-header hide-on-mobile">
+      <div class="col-empresa" style="flex: 2;">Empresa / CNPJ</div>
+      <div class="col-financeiro" style="flex: 1.5;">Financeiro / Contato</div>
+      <div class="col-valores" style="flex: 1.2; text-align: right;">Valor Acordado</div>
+      <div class="col-datas" style="flex: 1.2; text-align: center;">Datas (Início/Fim)</div>
+      <div class="col-tempo" style="flex: 1.2; text-align: center;">Tempo / LT</div>
+      <div class="col-status" style="flex: 1; text-align: center;">Status</div>
+      <div class="col-actions" style="flex: 0.5;"></div>
+    </div>
 
-  <div class="client-list">
-    <div *ngFor="let client of filteredClients" class="client-exec-card">
-      <!-- Header -->
-      <div class="card-header" [routerLink]="['/clients', client.id]">
-        <div class="client-identity">
-          <div class="avatar">{{ client.razaoSocial.charAt(0) }}</div>
-          <div class="names">
-            <h3>{{ client.razaoSocial }}</h3>
-            <span class="plan-badge">{{ client.planType }}</span>
-          </div>
-        </div>
-        <div class="health-indicator" [ngClass]="client.healthScore">
-          <ion-icon [name]="client.healthScore === 'GOOD' ? 'heart' : 'alert-circle'"></ion-icon>
+    <div *ngFor="let client of filteredClients" class="client-row ripple-parent" [routerLink]="['/clients', client.id]">
+      <ion-ripple-effect></ion-ripple-effect>
+      
+      <!-- Empresa Wrapper -->
+      <div class="col-empresa" style="flex: 2;">
+        <div class="main-text">{{ client.razaoSocial }}</div>
+        <div class="sub-text">{{ client.cnpj || client.cpf || 'Sem documento' }}</div>
+      </div>
+
+      <!-- Financeiro -->
+      <div class="col-financeiro" style="flex: 1.5;">
+        <div class="main-text">{{ client.financeiroNome || 'Não inf.' }}</div>
+        <div class="sub-text">{{ client.financeiroEmail || client.email || '-' }}</div>
+      </div>
+
+      <!-- Valores -->
+      <div class="col-valores" style="flex: 1.2; text-align: right;">
+        <div class="main-text">{{ client.revenue | currency:'BRL' }}</div>
+        <div class="sub-text">{{ client.planType }}</div>
+      </div>
+
+      <!-- Datas -->
+      <div class="col-datas" style="flex: 1.2; text-align: center;">
+        <div class="main-text">{{ client.dataInicio | date:'dd/MM/yyyy' }}</div>
+        <div class="sub-text" [class.danger]="client.tempoRestanteDias !== null && client.tempoRestanteDias < 0">
+          {{ client.dataTermino ? (client.dataTermino | date:'dd/MM/yyyy') : 'Indeterminado' }}
         </div>
       </div>
 
-      <!-- Body: Revenue Highlight -->
-      <div class="card-body" [routerLink]="['/clients', client.id]">
-        <div class="revenue-highlight">
-          <span class="currency">R$</span>
-          <span class="amount">{{ client.revenue | number:'1.2-2' }}</span>
-          <span class="period">/mês</span>
+      <!-- Tempo -->
+      <div class="col-tempo" style="flex: 1.2; text-align: center;">
+        <div class="main-text" [class.danger]="client.tempoRestanteDias !== null && client.tempoRestanteDias < 30">
+          {{ client.tempoRestanteDias !== null ? client.tempoRestanteDias + 'd' : '-' }}
         </div>
-        <div class="meta-row">
-          <span class="duration">⏳ Cliente há {{ client.durationMonths }} meses</span>
-        </div>
+        <div class="sub-text">LT: {{ client.durationMonths }}m</div>
       </div>
 
-      <!-- Footer: Actions -->
-      <div class="card-footer">
-        <ion-button fill="clear" size="small" (click)="openFinancial(client, $event)">
-          <ion-icon name="stats-chart-outline" slot="start"></ion-icon>
-          Financeiro
+      <!-- Status -->
+      <div class="col-status" style="flex: 1; text-align: center;">
+        <span class="badge" [ngClass]="{
+          'status-good': client.healthScore === 'GOOD',
+          'status-attention': client.healthScore === 'ATTENTION',
+          'status-risk': client.healthScore === 'RISK'
+        }">
+          {{ client.statusDisplay }}
+        </span>
+      </div>
+
+      <!-- Actions -->
+      <div class="col-actions" style="flex: 0.5; text-align: right;">
+        <ion-button fill="clear" color="medium" (click)="deleteClient(client.id!, $event)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
         </ion-button>
-        <div class="separator"></div>
-        <ion-button fill="clear" size="small" (click)="openContract(client, $event)">
-          <ion-icon name="document-text-outline" slot="start"></ion-icon>
-          Contrato
-        </ion-button>
+        <ion-icon name="chevron-forward-outline" class="mobile-only"></ion-icon>
       </div>
+    </div>
+
+    <div *ngIf="filteredClients.length === 0" class="empty-state ion-padding">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <p>Nenhum cliente encontrado.</p>
     </div>
   </div>
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button routerLink="/clients/new" color="primary" class="custom-fab">
+    <ion-fabButton [routerLink]="['/clients/new']" color="primary">
       <ion-icon name="add"></ion-icon>
-    </ion-fab-button>
+    </ion-fabButton>
   </ion-fab>
 </ion-content>

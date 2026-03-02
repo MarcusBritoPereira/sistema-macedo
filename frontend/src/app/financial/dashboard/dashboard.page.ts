@@ -1,28 +1,78 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList, IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton, IonDatetimeButton, IonModal, IonDatetime, IonSpinner, ModalController, IonFab, IonFabButton, IonFabList } from '@ionic/angular/standalone';
-import { FinancialDashboardService, DREResponse, OperationalDashboardResponse } from '../../services/financial/financial-dashboard.service';
-import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
+import {
+  IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol,
+  IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList,
+  IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton,
+  IonDatetimeButton, IonModal, IonDatetime, IonSpinner, ModalController, IonFab, IonFabButton, IonFabList
+} from '@ionic/angular/standalone';
+import { FinancialDashboardService, OperationalDashboardResponse } from '../../services/financial/financial-dashboard.service';
 import { addIcons } from 'ionicons';
-import { filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline, arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline, alertCircleOutline, add, arrowUp, arrowDown } from 'ionicons/icons';
+import {
+  business, ellipsisHorizontal
+} from 'ionicons/icons';
+import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
+
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-dashboard',
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol, IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList, IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton, IonDatetimeButton, IonModal, IonDatetime, IonSpinner, IonFab, IonFabButton, IonFabList]
+  imports: [
+    CommonModule, FormsModule, BaseChartDirective,
+    IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol,
+    IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList,
+    IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton,
+    IonDatetimeButton, IonModal, IonDatetime, IonSpinner, IonFab, IonFabButton, IonFabList
+  ]
 })
 export class DashboardPage implements OnInit {
   operationalData: OperationalDashboardResponse | null = null;
   loading = false;
 
+  // Chart 1: Daily Flow (Mixed)
+  public dailyFlowChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: { mode: 'index', intersect: false }
+    }
+  };
+  public dailyFlowChartData: ChartData<'bar' | 'line'> = {
+    labels: [],
+    datasets: []
+  };
+
+  // Chart 2: Sales (Bar)
+  public salesChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: { grid: { display: false } },
+      y: { beginAtZero: true }
+    },
+    plugins: {
+      legend: { display: false }
+    }
+  };
+  public salesChartData: ChartData<'bar'> = {
+    labels: [],
+    datasets: []
+  };
+
   constructor(
-    private dashboardService: FinancialDashboardService,
-    private modalCtrl: ModalController
+    private dashboardService: FinancialDashboardService
   ) {
-    addIcons({ filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline, arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline, alertCircleOutline, add, arrowUp, arrowDown });
+    addIcons({ business, ellipsisHorizontal });
   }
 
   ngOnInit() {
@@ -34,60 +84,89 @@ export class DashboardPage implements OnInit {
     this.dashboardService.getOperationalDashboard().subscribe({
       next: (data) => {
         this.operationalData = data;
-        this.processChartData();
+        this.setupCharts(data);
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error loading operational dashboard', err);
+        console.error('Error loading dashboard', err);
         this.loading = false;
       }
     });
   }
 
-  maxChartValue = 100;
+  setupCharts(data: OperationalDashboardResponse) {
+    // 1. Daily Flow Chart
+    if (data.dailyFlow) {
+      const labels = data.dailyFlow.map(d => d.label);
+      const recebs = data.dailyFlow.map(d => d.recebimentos);
+      const pags = data.dailyFlow.map(d => d.pagamentos);
+      const saldo = data.dailyFlow.map(d => d.saldo);
 
-  processChartData() {
-    if (!this.operationalData?.dailyFlow) return;
-    let max = 0;
-    this.operationalData.dailyFlow.forEach(d => {
-      if (d.recebimentos > max) max = d.recebimentos;
-      if (d.pagamentos > max) max = d.pagamentos;
-    });
-    this.maxChartValue = max > 0 ? max * 1.1 : 100; // 10% buffering
-  }
+      this.dailyFlowChartData = {
+        labels: labels,
+        datasets: [
+          {
+            type: 'line',
+            label: 'Saldo',
+            data: saldo,
+            borderColor: '#1E3A8A', // Blue Royal
+            backgroundColor: '#1E3A8A',
+            pointBackgroundColor: '#fff',
+            pointBorderColor: '#1E3A8A',
+            borderWidth: 2,
+            tension: 0.4,
+            order: 1
+          },
+          {
+            type: 'bar',
+            label: 'Recebimentos',
+            data: recebs,
+            backgroundColor: '#60A5FA', // Blue Light
+            borderRadius: 4,
+            barPercentage: 0.6,
+            order: 2
+          },
+          {
+            type: 'bar',
+            label: 'Pagamentos',
+            data: pags,
+            backgroundColor: '#2563EB', // Blue Dark (Using darker blue for Payments as per image palette hint, usually red but image shows blue/purple shades or maybe my analysis is off. The image legend says "Recebimentos, Pagamentos, Saldo". The bars are Light Blue and Dark Blue. Let's stick to Blues as requested by image style.)
+            // Wait, standard finance is Green/Red. But the image is VERY blue/cyan.
+            // Let's use the colors from SCSS.
+            borderRadius: 4,
+            barPercentage: 0.6,
+            order: 3
+          }
+        ]
+      };
+    }
 
-  formatLastUpdate(isoDate: string): string {
-    const d = new Date(isoDate);
-    return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-  }
+    // 2. Sales Chart
+    if (data.monthlyHistory) {
+      // Re-sort if needed, but backend sends last 6 months descending in creation, 
+      // check backend logic: "for i=5; i>=0" -> d is months ago. So it pushes oldest first?
+      // "d = new Date(now... - i)". i=5 (5 months ago).. i=0 (current). 
+      // Yes, pushes oldest first.
 
-  async addReceita() {
-    await this.openTransactionModal('RECEITA');
-  }
+      const salesLabels = data.monthlyHistory.map(h => h.label);
+      const salesValues = data.monthlyHistory.map(h => h.valor);
 
-  async addDespesa() {
-    await this.openTransactionModal('DESPESA');
-  }
-
-  async openTransactionModal(type: 'RECEITA' | 'DESPESA') {
-    const modal = await this.modalCtrl.create({
-      component: TransactionModalComponent,
-      componentProps: { type }
-    });
-
-    await modal.present();
-    const { data } = await modal.onWillDismiss();
-    if (data) {
-      this.loadData(); // Reload dashboard if data changed
+      this.salesChartData = {
+        labels: salesLabels,
+        datasets: [
+          {
+            label: 'Faturamento',
+            data: salesValues,
+            backgroundColor: '#0EA5E9', // Blue Sky
+            borderRadius: 4,
+            barPercentage: 0.6
+          }
+        ]
+      };
     }
   }
 
-  // Helpers
-  getRotation(pct: number): string {
-    // 0% = -90deg, 100% = 90deg (Half circle gauge) OR Full circle? 
-    // User image shows Full Circle.
-    // Let's assume full circle logic for CSS SVG.
-    const deg = (pct / 100) * 360;
-    return `${deg}deg`;
+  formatCurrency(val: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   }
 }

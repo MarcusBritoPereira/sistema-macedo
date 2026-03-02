@@ -25,7 +25,7 @@ export class FinancialTransactionsController {
         @Query('take') take?: string,
     ) {
         const normalizedSkip = Math.max(0, Number(skip) || 0);
-        const normalizedTake = Math.min(Math.max(1, Number(take) || 50), 200);
+        const normalizedTake = Math.min(Math.max(1, Number(take) || 50), 10000);
         return this.transactionsService.findAll({
             type, status, startDate, endDate, categoryId, search,
             skip: normalizedSkip, take: normalizedTake

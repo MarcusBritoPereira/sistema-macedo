@@ -1,202 +1,132 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Visão Geral</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="loadData()">
-        <ion-icon slot="icon-only" name="sync-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
-  </ion-toolbar>
-</ion-header>
-
-<ion-content [fullscreen]="true" class="dashboard-content">
+<ion-content class="dashboard-bg">
+  <title>Dashboard</title>
   <div *ngIf="loading" class="loading-overlay">
     <ion-spinner name="crescent"></ion-spinner>
   </div>
 
-  <div *ngIf="operationalData && !loading" class="dashboard-wrapper">
+  <div class="dashboard-container" *ngIf="operationalData && !loading">
+    <h1 class="page-title">Visão Geral</h1>
 
-    <!-- Top KPI Grid -->
-    <div class="kpi-grid">
+    <!-- KPI ROW -->
+    <div class="kpi-row">
       <!-- Receivables Group -->
       <div class="kpi-group">
-        <ion-card class="kpi-card receivable-overdue">
-          <ion-card-content>
-            <div class="kpi-header">
-              <ion-icon name="alert-circle-outline" class="text-success"></ion-icon>
-              <div class="kpi-label">Vencidos</div>
-            </div>
-            <div class="kpi-value text-success">{{ operationalData.receivables.overdue | currency:'BRL' }}</div>
-          </ion-card-content>
-        </ion-card>
-
-        <ion-card class="kpi-card receivable-today">
-          <ion-card-content>
-            <div class="kpi-header">
-              <ion-icon name="trending-up-outline" class="text-success"></ion-icon>
-              <div class="kpi-label">Vencem hoje</div>
-            </div>
-            <div class="kpi-value text-success">{{ operationalData.receivables.today | currency:'BRL' }}</div>
-            <div class="kpi-sublabel">Restante do mês: {{ operationalData.receivables.remainingMonth | currency:'BRL' }}
-            </div>
-          </ion-card-content>
-        </ion-card>
+        <div class="group-label">A receber</div>
+        <div class="cards-wrapper">
+          <ion-card class="kpi-card">
+            <ion-card-content>
+              <div class="value text-blue">{{ formatCurrency(operationalData.receivables.overdue) }}</div>
+              <div class="label">Vencidos</div>
+            </ion-card-content>
+          </ion-card>
+          <ion-card class="kpi-card">
+            <ion-card-content>
+              <div class="value text-blue">{{ formatCurrency(operationalData.receivables.today) }}</div>
+              <div class="label">Vencem hoje</div>
+            </ion-card-content>
+          </ion-card>
+        </div>
       </div>
 
       <!-- Payables Group -->
       <div class="kpi-group">
-        <ion-card class="kpi-card payable-overdue">
-          <ion-card-content>
-            <div class="kpi-header">
-              <ion-icon name="alert-circle-outline" class="text-danger"></ion-icon>
-              <div class="kpi-label">Vencidos</div>
-            </div>
-            <div class="kpi-value text-danger">{{ operationalData.payables.overdue | currency:'BRL' }}</div>
-          </ion-card-content>
-        </ion-card>
-
-        <ion-card class="kpi-card payable-today">
-          <ion-card-content>
-            <div class="kpi-header">
-              <ion-icon name="trending-down-outline" class="text-danger"></ion-icon>
-              <div class="kpi-label">Vencem hoje</div>
-            </div>
-            <div class="kpi-value text-danger">{{ operationalData.payables.today | currency:'BRL' }}</div>
-            <div class="kpi-sublabel">Restante do mês: {{ operationalData.payables.remainingMonth | currency:'BRL' }}
-            </div>
-          </ion-card-content>
-        </ion-card>
+        <div class="group-label">A pagar</div>
+        <div class="cards-wrapper">
+          <ion-card class="kpi-card">
+            <ion-card-content>
+              <div class="value text-teal">{{ formatCurrency(operationalData.payables.overdue) }}</div>
+              <div class="label">Vencidos</div>
+            </ion-card-content>
+          </ion-card>
+          <ion-card class="kpi-card">
+            <ion-card-content>
+              <div class="value text-teal">{{ formatCurrency(operationalData.payables.today) }}</div>
+              <div class="label">Vencem hoje</div>
+            </ion-card-content>
+          </ion-card>
+        </div>
       </div>
     </div>
 
-    <!-- Main Grid (Accounts, Cash Flow, Sales) -->
-    <div class="main-sections">
+    <!-- WIDGETS ROW -->
+    <div class="widgets-row">
 
-      <!-- Financial Accounts -->
-      <div class="section-card accounts-section">
-        <div class="section-header">
-          <h2>Contas financeiras</h2>
+      <!-- 1. Contas Financeiras -->
+      <div class="widget-col">
+        <div class="widget-header">
+          <h3>Contas financeiras</h3>
         </div>
-        <div class="accounts-summary">
-          <div class="total-val">{{ operationalData.totalBalance | currency:'BRL' }}</div>
-          <div class="total-label">Valor total</div>
-        </div>
-        <ion-list lines="none">
-          <ion-item *ngFor="let acc of operationalData.accounts" class="account-item">
-            <div slot="start" class="account-icon">
-              <ion-icon name="wallet-outline"></ion-icon>
+        <ion-card class="widget-card accounts-card">
+          <ion-card-content>
+            <div class="total-balance">
+              <span class="value">{{ formatCurrency(operationalData.totalBalance) }}</span>
+              <span class="label">Valor total</span>
             </div>
-            <ion-label>
-              <h3>{{ acc.nome }}</h3>
-              <p>{{ acc.banco }}</p>
-              <p class="acc-val">Valor {{ acc.saldo | currency:'BRL' }}</p>
-            </ion-label>
-          </ion-item>
-        </ion-list>
-      </div>
 
-      <!-- Daily Cash Flow -->
-      <div class="section-card flow-section">
-        <div class="section-header">
-          <h2>Fluxo de caixa diário</h2>
-        </div>
-        <div class="chart-container">
-          <div class="custom-chart">
-            <div class="chart-y-axis">
-              <div class="chart-y-axis">
-                <span>{{ maxChartValue | number:'1.0-0' }}</span>
-                <span>{{ maxChartValue / 2 | number:'1.0-0' }}</span>
-                <span>0</span>
-              </div>
-            </div>
-            <div class="chart-content">
-              <!-- Grid line -->
-              <div class="grid-line zero"></div>
-
-              <div class="data-points">
-                <div *ngFor="let day of operationalData.dailyFlow" class="data-group">
-                  <!-- Bars -->
-                  <div class="bar-container">
-                    <div class="bar received" [style.height.%]="(day.recebimentos / maxChartValue) * 100"
-                      [title]="'Recebimentos: ' + (day.recebimentos | currency:'BRL')"></div>
-                    <div class="bar paid" [style.height.%]="(day.pagamentos / maxChartValue) * 100"
-                      [title]="'Pagamentos: ' + (day.pagamentos | currency:'BRL')"></div>
-                  </div>
-                  <!-- Balance Point (Optional, maybe just bars for now) -->
-                  <!-- <div class="point-marker shadow" [style.bottom.%]="50"></div> -->
+            <div class="accounts-list">
+              <div class="account-item" *ngFor="let acc of operationalData.accounts">
+                <div class="icon-box">
+                  <ion-icon name="business"></ion-icon>
+                </div>
+                <div class="acc-details">
+                  <div class="acc-type">Conta corrente</div>
+                  <div class="acc-name">{{ acc.banco }} ({{acc.nome}})</div>
+                  <div class="acc-val">Valor: {{ formatCurrency(acc.saldo) }}</div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="chart-legend">
-            <div class="legend-item"><span class="dot received"></span> Recebimentos</div>
-            <div class="legend-item"><span class="dot paid"></span> Pagamentos</div>
-            <div class="legend-item"><span class="dot balance"></span> Saldo</div>
-          </div>
-          <div class="chart-x-axis">
-            <span *ngFor="let day of operationalData.dailyFlow">{{ day.label }}</span>
-          </div>
-        </div>
-        <div class="chart-footer">
-          <ion-button fill="outline" size="small" (click)="loadData()">Atualizar gráfico</ion-button>
-          <p class="update-info">Última atualização: {{ formatLastUpdate(operationalData.lastUpdate) }}</p>
-        </div>
+          </ion-card-content>
+        </ion-card>
       </div>
 
-      <!-- Sales Chart Placeholder -->
-      <div class="section-card sales-section">
-        <div class="section-header">
-          <h2>Gráfico de vendas</h2>
+      <!-- 2. Fluxo de Caixa Diário -->
+      <div class="widget-col">
+        <div class="widget-header">
+          <h3>Fluxo de caixa diário</h3>
+          <ion-icon name="ellipsis-horizontal"></ion-icon>
         </div>
-        <div class="empty-sales" *ngIf="!operationalData?.dailyFlow || operationalData.dailyFlow.length === 0">
-          <div class="sales-illustration">
-            <ion-icon name="stats-chart-outline"></ion-icon>
-          </div>
-          <p>Vamos lançar sua primeira venda?</p>
-          <ion-button fill="outline">Lançar primeira venda</ion-button>
-        </div>
-
-        <div class="chart-container" *ngIf="operationalData?.dailyFlow && operationalData.dailyFlow.length > 0">
-          <div class="custom-chart sales-chart">
-            <div class="chart-y-axis">
-              <span>{{ maxChartValue | number:'1.0-0' }}</span>
-              <span>0</span>
+        <ion-card class="widget-card chart-card">
+          <ion-card-content>
+            <div class="chart-wrapper">
+              <canvas baseChart [data]="dailyFlowChartData" [options]="dailyFlowChartOptions" [type]="'bar'">
+              </canvas>
             </div>
-            <div class="chart-content">
-              <div class="data-points">
-                <div *ngFor="let day of operationalData.dailyFlow" class="data-group">
-                  <div class="bar-container">
-                    <div class="bar received" [style.height.%]="(day.recebimentos / maxChartValue) * 100"
-                      [title]="'Vendas: ' + (day.recebimentos | currency:'BRL')"></div>
-                  </div>
-                </div>
+            <div class="chart-legend-custom">
+              <div class="legend-item">
+                <span class="dot blue-light"></span> Recebimentos
+              </div>
+              <div class="legend-item">
+                <span class="dot blue-dark"></span> Pagamentos
+              </div>
+              <div class="legend-item">
+                <span class="dot blue-royal"></span> Saldo
               </div>
             </div>
-          </div>
-          <div class="chart-x-axis">
-            <span *ngFor="let day of operationalData.dailyFlow">{{ day.label }}</span>
-          </div>
+          </ion-card-content>
+        </ion-card>
+      </div>
+
+      <!-- 3. Gráfico de Vendas -->
+      <div class="widget-col">
+        <div class="widget-header">
+          <h3>Gráfico de vendas</h3>
+          <ion-icon name="ellipsis-horizontal"></ion-icon>
         </div>
+        <ion-card class="widget-card chart-card">
+          <ion-card-content>
+            <div class="chart-wrapper">
+              <canvas baseChart [data]="salesChartData" [options]="salesChartOptions" [type]="'bar'">
+              </canvas>
+            </div>
+            <div class="chart-legend-custom">
+              <div class="legend-item">
+                <span class="dot blue-sky"></span> Faturamento
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
       </div>
 
     </div>
-
   </div>
-
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="dashboard-fab">
-    <ion-fab-button>
-      <ion-icon name="add"></ion-icon>
-    </ion-fab-button>
-    <ion-fab-list side="top">
-      <ion-fab-button color="danger" (click)="addDespesa()" title="Nova Despesa">
-        <ion-icon name="arrow-down"></ion-icon>
-      </ion-fab-button>
-      <ion-fab-button color="success" (click)="addReceita()" title="Nova Receita">
-        <ion-icon name="arrow-up"></ion-icon>
-      </ion-fab-button>
-    </ion-fab-list>
-  </ion-fab>
 </ion-content>

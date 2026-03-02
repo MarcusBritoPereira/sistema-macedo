@@ -46,7 +46,9 @@ import {
   analyticsOutline,
   checkmarkCircleOutline,
   layersOutline,
-  refreshOutline
+  refreshOutline,
+  eyeOutline,
+  printOutline
 } from 'ionicons/icons';
 import { ReportsService, ReportDefinition, ReportGenerationResponse } from '../../services/financial/reports.service';
 import { FinancialService, BankAccount } from '../../services/financial/financial';
@@ -130,7 +132,9 @@ export class ReportsPage implements OnInit {
       analyticsOutline,
       checkmarkCircleOutline,
       layersOutline,
-      refreshOutline
+      refreshOutline,
+      eyeOutline,
+      printOutline
     });
   }
 

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ReportGenerationRequestDto } from './dto/report-generation-request.dto';
 
 export interface ReportDefinition {
   id: string;
@@ -11,18 +12,6 @@ export interface ReportDefinition {
   icon: string;
   highlights: string[];
   defaultSelected?: boolean;
-}
-
-export interface ReportGenerationRequest {
-  reportIds: string[];
-  filters: {
-    period: string;
-    startDate?: string | null;
-    endDate?: string | null;
-    accountId?: string | null;
-    costCenterId?: string | null;
-    includeProvisional?: boolean;
-  };
 }
 
 export interface ReportGenerationResponse {
@@ -132,7 +121,7 @@ export class ReportsService {
   }
 
 
-  async generate(payload: ReportGenerationRequest): Promise<ReportGenerationResponse> {
+  async generate(payload: ReportGenerationRequestDto): Promise<ReportGenerationResponse> {
     const selected = this.reports.filter(report => payload.reportIds?.includes(report.id));
     const now = new Date().toISOString();
 

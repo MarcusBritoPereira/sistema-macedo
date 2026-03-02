@@ -48,6 +48,7 @@ export class BankAccountWizardComponent {
     };
 
     banks = [
+        { name: 'Caixinha (Dinheiro Físico)', code: 'CAIXA' },
         { name: 'Banco Inter', code: '077' },
         { name: 'Nubank', code: '260' },
         { name: 'Itaú', code: '341' },
@@ -222,6 +223,11 @@ export class BankAccountWizardComponent {
 
     selectType(typeId: string) {
         this.selectedType = typeId;
+        if (typeId === 'CAIXINHA') {
+            this.formData.banco = 'Caixinha (Dinheiro Físico)';
+            this.formData.agencia = '0000';
+            this.formData.conta = '0000-0';
+        }
     }
 
     isArray(val: any): boolean {

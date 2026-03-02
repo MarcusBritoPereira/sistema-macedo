@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ClassificacaoDRE, TipoLancamento, StatusLancamento } from '@prisma/client';
+import { ClassificacaoDRE } from '@prisma/client';
 
 @Injectable()
 export class FinancialDashboardService {
@@ -58,7 +58,8 @@ export class FinancialDashboardService {
         });
 
         // 4. Calculate DRE Lines
-        const receitaBruta = totals.RECEITA_RECORRENTE + totals.RECEITA_NAO_RECORRENTE;
+        const receitasOperacionais = totals.RECEITA_RECORRENTE + totals.RECEITA_NAO_RECORRENTE;
+        const receitaBruta = receitasOperacionais;
         const deducoes = totals.DEDUCOES_RECEITA;
         const receitaLiquida = receitaBruta - deducoes;
 
@@ -81,10 +82,93 @@ export class FinancialDashboardService {
 
         const lucroLiquido = lair - impostosLucro;
 
+        const outrasReceitasDespesasNaoOperacionais = totals.OUTROS;
+        const lucroLiquidoAposNaoOperacional = lucroLiquido + outrasReceitasDespesasNaoOperacionais;
+
+        const despesasInvestimentosEmprestimos = Math.max(0, -outrasReceitasDespesasNaoOperacionais);
+        const lucroPrejuizoFinal = lucroLiquidoAposNaoOperacional - despesasInvestimentosEmprestimos;
+
+        const estruturaGerencial = [
+            {
+                chave: 'receitasOperacionais',
+                titulo: 'Receitas Operacionais',
+                descricao: 'Vendas diretamente ligadas à atividade econômica da empresa.',
+                valor: receitasOperacionais,
+            },
+            {
+                chave: 'deducoesReceitaBruta',
+                titulo: '(-) Deduções da Receita Bruta',
+                descricao: 'Devoluções, descontos concedidos, comissões e impostos incidentes sobre as vendas.',
+                valor: deducoes,
+            },
+            {
+                chave: 'receitaLiquidaVendas',
+                titulo: '(=) Receita Líquida de Vendas',
+                descricao: 'Receitas operacionais descontando deduções e impostos sobre vendas.',
+                valor: receitaLiquida,
+            },
+            {
+                chave: 'custosOperacionais',
+                titulo: '(-) Custos Operacionais',
+                descricao: 'Custos diretamente ligados à geração da receita.',
+                valor: csp,
+            },
+            {
+                chave: 'lucroBruto',
+                titulo: '(=) Lucro Bruto',
+                descricao: 'Resultado antes das despesas operacionais.',
+                valor: lucroBruto,
+            },
+            {
+                chave: 'despesasOperacionais',
+                titulo: '(-) Despesas Operacionais',
+                descricao: 'Gastos administrativos, comerciais, estruturais e com sócios.',
+                valor: despesasOperacionais,
+            },
+            {
+                chave: 'lucroOperacional',
+                titulo: '(=) Lucro/Prejuízo Operacional',
+                descricao: 'Diferença entre receita líquida e gastos da operação.',
+                valor: ebit,
+            },
+            {
+                chave: 'resultadoFinanceiro',
+                titulo: '(+) Resultado Financeiro',
+                descricao: 'Receitas financeiras menos despesas financeiras.',
+                valor: resultadoFinanceiro,
+            },
+            {
+                chave: 'lucroLiquido',
+                titulo: '(=) Lucro/Prejuízo Líquido',
+                descricao: 'Resultado após impostos sobre o lucro.',
+                valor: lucroLiquido,
+            },
+            {
+                chave: 'naoOperacional',
+                titulo: '(±) Outras Receitas e Despesas Não Operacionais',
+                descricao: 'Eventos não recorrentes e não ligados à operação principal.',
+                valor: outrasReceitasDespesasNaoOperacionais,
+            },
+            {
+                chave: 'investimentosEmprestimos',
+                titulo: '(-) Despesas com Investimentos e Empréstimos',
+                descricao: 'Parcelas programadas de financiamentos, empréstimos e aquisições de ativos.',
+                valor: despesasInvestimentosEmprestimos,
+            },
+            {
+                chave: 'lucroFinal',
+                titulo: '(=) Lucro/Prejuízo Final',
+                descricao: 'Resultado final do período após todos os custos e despesas.',
+                valor: lucroPrejuizoFinal,
+            },
+        ];
+
         return {
             period: { start: startDate, end: endDate },
             breakdown: totals,
+            estruturaGerencial,
             summary: {
+                receitasOperacionais,
                 receitaBruta,
                 deducoes,
                 receitaLiquida,
@@ -96,6 +180,9 @@ export class FinancialDashboardService {
                 lair,
                 impostosLucro,
                 lucroLiquido,
+                outrasReceitasDespesasNaoOperacionais,
+                despesasInvestimentosEmprestimos,
+                lucroPrejuizoFinal,
             },
         };
     }
@@ -243,50 +330,132 @@ export class FinancialDashboardService {
 
     async getOperationalDashboard() {
         const now = new Date();
-        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-        // 1. KPIs for Receivables (Entradas)
-        const recOverdue = await this.prisma.lancamentoFinanceiro.aggregate({
-            _sum: { valor: true },
-            where: { tipo: 'RECEITA', status: 'PREVISTO', dataVencimento: { lt: startOfToday } }
-        });
-        const recToday = await this.prisma.lancamentoFinanceiro.aggregate({
-            _sum: { valor: true },
-            where: { tipo: 'RECEITA', status: 'PREVISTO', dataVencimento: { gte: startOfToday, lte: endOfToday } }
-        });
-        const recRemaining = await this.prisma.lancamentoFinanceiro.aggregate({
-            _sum: { valor: true },
-            where: { tipo: 'RECEITA', status: 'PREVISTO', dataVencimento: { gt: endOfToday, lte: endOfMonth } }
-        });
-
-        // 2. KPIs for Payables (Saídas)
-        const payOverdue = await this.prisma.lancamentoFinanceiro.aggregate({
-            _sum: { valor: true },
-            where: { tipo: 'DESPESA', status: 'PREVISTO', dataVencimento: { lt: startOfToday } }
-        });
-        const payToday = await this.prisma.lancamentoFinanceiro.aggregate({
-            _sum: { valor: true },
-            where: { tipo: 'DESPESA', status: 'PREVISTO', dataVencimento: { gte: startOfToday, lte: endOfToday } }
-        });
-        const payRemaining = await this.prisma.lancamentoFinanceiro.aggregate({
-            _sum: { valor: true },
-            where: { tipo: 'DESPESA', status: 'PREVISTO', dataVencimento: { gt: endOfToday, lte: endOfMonth } }
-        });
-
-        // 3. Financial Accounts (Contas Financeiras)
+        // 1. Accounts & Total Balance
         const accounts = await this.prisma.contaBancaria.findMany();
         const accountsWithBalance = await Promise.all(accounts.map(async (acc) => {
-            // Compute actual balance: Initial + In (Realized) - Out (Realized)
-            // Ideally this should be cached/stored, but for now we compute.
+            const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: { contaBancariaId: acc.id, tipo: 'RECEITA', status: { in: ['REALIZADO', 'CONCILIADO'] } }
+            });
+            const totalOut = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: { contaBancariaId: acc.id, tipo: 'DESPESA', status: { in: ['REALIZADO', 'CONCILIADO'] } }
+            });
+            const bal = Number(acc.saldoInicial || 0) + Number(totalIn._sum.valor || 0) - Number(totalOut._sum.valor || 0);
+            return { ...acc, saldo: bal };
+        }));
+        const totalBalance = accountsWithBalance.reduce((acc, curr) => acc + curr.saldo, 0);
+
+        // 2. Receivables Info
+        const receivables = await this.prisma.lancamentoFinanceiro.findMany({
+            where: { tipo: 'RECEITA', status: 'PREVISTO' }
+        });
+        const recOverdue = receivables.filter(t => t.dataVencimento < todayStart).reduce((s, t) => s + Number(t.valor), 0);
+        const recToday = receivables.filter(t => t.dataVencimento >= todayStart && t.dataVencimento <= todayEnd).reduce((s, t) => s + Number(t.valor), 0);
+        const recRemaining = receivables.filter(t => t.dataVencimento > todayEnd && t.dataVencimento <= endOfMonth).reduce((s, t) => s + Number(t.valor), 0);
+
+        // 3. Payables Info
+        const payables = await this.prisma.lancamentoFinanceiro.findMany({
+            where: { tipo: 'DESPESA', status: 'PREVISTO' }
+        });
+        const payOverdue = payables.filter(t => t.dataVencimento < todayStart).reduce((s, t) => s + Number(t.valor), 0);
+        const payToday = payables.filter(t => t.dataVencimento >= todayStart && t.dataVencimento <= todayEnd).reduce((s, t) => s + Number(t.valor), 0);
+        const payRemaining = payables.filter(t => t.dataVencimento > todayEnd && t.dataVencimento <= endOfMonth).reduce((s, t) => s + Number(t.valor), 0);
+
+        // 4. Daily Flow (Last 14 Days)
+        const dailyFlow: any[] = [];
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+            const dEnd = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59, 999);
+
+            const inVal = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    tipo: 'RECEITA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: dStart, lte: dEnd }
+                }
+            });
+            const outVal = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    tipo: 'DESPESA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: dStart, lte: dEnd }
+                }
+            });
+
+            dailyFlow.push({
+                date: d.toISOString(),
+                label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+                recebimentos: Number(inVal._sum.valor || 0),
+                pagamentos: Number(outVal._sum.valor || 0),
+                saldo: Number(inVal._sum.valor || 0) - Number(outVal._sum.valor || 0)
+            });
+        }
+
+        // 5. Monthly History (Last 6 Months)
+        const monthlyHistory: any[] = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const m = d.getMonth() + 1;
+            const y = d.getFullYear();
+            const startM = new Date(y, m - 1, 1);
+            const endM = new Date(y, m, 0, 23, 59, 59, 999);
+
+            const rev = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    tipo: 'RECEITA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: startM, lte: endM }
+                }
+            });
+
+            monthlyHistory.push({
+                label: d.toLocaleDateString('pt-BR', { month: 'short' }),
+                valor: Number(rev._sum.valor || 0)
+            });
+        }
+
+        return {
+            receivables: { overdue: recOverdue, today: recToday, remainingMonth: recRemaining },
+            payables: { overdue: payOverdue, today: payToday, remainingMonth: payRemaining },
+            accounts: accountsWithBalance,
+            totalBalance,
+            dailyFlow,
+            monthlyHistory,
+            lastUpdate: now.toISOString()
+        };
+    }
+
+    async getCashFlowDashboard(month?: number, year?: number) {
+        const now = new Date();
+        const m = month || now.getMonth() + 1;
+        const y = year || now.getFullYear();
+
+        const startOfMonth = new Date(y, m - 1, 1);
+        const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
+
+        // 1. Current Balance (Saldo Atual) - Realized only
+        // Calculated from Accounts sum
+        const accounts = await this.prisma.contaBancaria.findMany();
+
+        const accountsWithBalance = await Promise.all(accounts.map(async (acc) => {
             const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
                 _sum: { valor: true },
                 where: {
                     contaBancariaId: acc.id,
                     tipo: 'RECEITA',
-                    status: { in: ['REALIZADO', 'CONCILIADO'] }
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { lte: endOfMonth }
                 }
             });
             const totalOut = await this.prisma.lancamentoFinanceiro.aggregate({
@@ -294,64 +463,147 @@ export class FinancialDashboardService {
                 where: {
                     contaBancariaId: acc.id,
                     tipo: 'DESPESA',
-                    status: { in: ['REALIZADO', 'CONCILIADO'] }
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { lte: endOfMonth }
                 }
             });
 
-            const currentBalance = Number(acc.saldoInicial || 0)
-                + Number(totalIn._sum.valor || 0)
-                - Number(totalOut._sum.valor || 0);
-
-            return {
-                id: acc.id,
-                nome: acc.nome,
-                banco: acc.banco,
-                saldo: currentBalance
-            };
+            const bal = Number(acc.saldoInicial || 0) + Number(totalIn._sum.valor || 0) - Number(totalOut._sum.valor || 0);
+            return { ...acc, saldo: bal };
         }));
-        const totalBalance = accountsWithBalance.reduce((sum, acc) => sum + acc.saldo, 0);
 
-        // 4. Daily Cash Flow (Fluxo de Caixa Diário) - Last 7 days + next 7 days (or just 7 previous)
-        // Image shows a timeline. Let's do last 7 days.
+        const currentBalance = accountsWithBalance.reduce((acc, curr) => acc + curr.saldo, 0);
+
+        // 2. Receivables (A Receber) for the Period
+        const receivables = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                tipo: 'RECEITA',
+                OR: [
+                    { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
+                    { dataPagamento: { gte: startOfMonth, lte: endOfMonth } }
+                ]
+            }
+        });
+
+        const recReceived = receivables.filter(t => ['REALIZADO', 'CONCILIADO'].includes(t.status) && t.dataPagamento && t.dataPagamento >= startOfMonth && t.dataPagamento <= endOfMonth)
+            .reduce((sum, t) => sum + Number(t.valor), 0);
+
+        const recPending = receivables.filter(t => t.status === 'PREVISTO' && t.dataVencimento >= startOfMonth && t.dataVencimento <= endOfMonth)
+            .reduce((sum, t) => sum + Number(t.valor), 0);
+
+        const recTotal = recReceived + recPending;
+
+        // 3. Payables (A Pagar) for the Period
+        const payables = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                tipo: 'DESPESA',
+                OR: [
+                    { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
+                    { dataPagamento: { gte: startOfMonth, lte: endOfMonth } }
+                ]
+            }
+        });
+
+        const payPaid = payables.filter(t => ['REALIZADO', 'CONCILIADO'].includes(t.status) && t.dataPagamento && t.dataPagamento >= startOfMonth && t.dataPagamento <= endOfMonth)
+            .reduce((sum, t) => sum + Number(t.valor), 0);
+
+        const payPending = payables.filter(t => t.status === 'PREVISTO' && t.dataVencimento >= startOfMonth && t.dataVencimento <= endOfMonth)
+            .reduce((sum, t) => sum + Number(t.valor), 0);
+
+        const payTotal = payPaid + payPending;
+
+        // 4. Projected Result (Saldo Projetado / Resultado do Mês)
+        const projectedBalance = currentBalance + recPending - payPending;
+
+        // 5. Smart Chart (Daily Flow)
+        const preBalanceAccounts = await Promise.all(accounts.map(async (acc) => {
+            const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    contaBancariaId: acc.id,
+                    tipo: 'RECEITA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { lt: startOfMonth }
+                }
+            });
+            const totalOut = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    contaBancariaId: acc.id,
+                    tipo: 'DESPESA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { lt: startOfMonth }
+                }
+            });
+            return Number(acc.saldoInicial || 0) + Number(totalIn._sum.valor || 0) - Number(totalOut._sum.valor || 0);
+        }));
+        let runningBalance = preBalanceAccounts.reduce((sum, val) => sum + val, 0);
+
+        const daysInMonth = new Date(y, m, 0).getDate();
         const dailyFlow: any[] = [];
-        for (let i = 6; i >= 0; i--) {
-            const d = new Date(now);
-            d.setDate(d.getDate() - i);
-            const s = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-            const e = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
 
-            const received = await this.prisma.lancamentoFinanceiro.aggregate({
-                _sum: { valor: true },
-                where: { tipo: 'RECEITA', status: { in: ['REALIZADO', 'CONCILIADO'] }, dataPagamento: { gte: s, lte: e } }
-            });
-            const paid = await this.prisma.lancamentoFinanceiro.aggregate({
-                _sum: { valor: true },
-                where: { tipo: 'DESPESA', status: { in: ['REALIZADO', 'CONCILIADO'] }, dataPagamento: { gte: s, lte: e } }
-            });
+        for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(y, m - 1, d);
+            const dateStr = date.toDateString();
+
+            const dayInRealized = receivables.filter(t => ['REALIZADO', 'CONCILIADO'].includes(t.status) && t.dataPagamento && t.dataPagamento.toDateString() === dateStr);
+            const dayInProjected = receivables.filter(t => t.status === 'PREVISTO' && t.dataVencimento.toDateString() === dateStr);
+
+            const dayInVal = dayInRealized.reduce((s, t) => s + Number(t.valor), 0) + dayInProjected.reduce((s, t) => s + Number(t.valor), 0);
+
+            const dayOutRealized = payables.filter(t => ['REALIZADO', 'CONCILIADO'].includes(t.status) && t.dataPagamento && t.dataPagamento.toDateString() === dateStr);
+            const dayOutProjected = payables.filter(t => t.status === 'PREVISTO' && t.dataVencimento.toDateString() === dateStr);
+
+            const dayOutVal = dayOutRealized.reduce((s, t) => s + Number(t.valor), 0) + dayOutProjected.reduce((s, t) => s + Number(t.valor), 0);
+
+            runningBalance += (dayInVal - dayOutVal);
 
             dailyFlow.push({
-                date: s.toISOString(),
-                label: d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
-                recebimentos: Number(received._sum.valor || 0),
-                pagamentos: Number(paid._sum.valor || 0),
-                saldo: Number(received._sum.valor || 0) - Number(paid._sum.valor || 0)
+                date: date.toISOString(),
+                label: d.toString(),
+                entradas: dayInVal,
+                saidas: dayOutVal,
+                saldoAcumulado: runningBalance
             });
         }
 
+        // 6. Transactions List
+        const transactionsList = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                OR: [
+                    { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
+                    { dataPagamento: { gte: startOfMonth, lte: endOfMonth } }
+                ]
+            },
+            include: {
+                categoria: true,
+                contaBancaria: true
+            },
+            orderBy: { dataVencimento: 'asc' }
+        });
+
+        const formattedTransactions = transactionsList.map(t => ({
+            id: t.id,
+            data: t.status === 'PREVISTO' ? t.dataVencimento : t.dataPagamento,
+            descricao: t.descricao,
+            conta: t.contaBancaria?.nome,
+            categoria: t.categoria?.nome,
+            tipo: t.tipo,
+            valor: Number(t.valor),
+            status: t.status
+        }));
+
         return {
-            receivables: {
-                overdue: Number(recOverdue._sum.valor || 0),
-                today: Number(recToday._sum.valor || 0),
-                remainingMonth: Number(recRemaining._sum.valor || 0)
+            period: { month: m, year: y },
+            kpis: {
+                saldoAtual: currentBalance,
+                aReceber: { total: recTotal, recebido: recReceived, pendente: recPending },
+                aPagar: { total: payTotal, pago: payPaid, pendente: payPending },
+                saldoProjetado: projectedBalance
             },
-            payables: {
-                overdue: Number(payOverdue._sum.valor || 0),
-                today: Number(payToday._sum.valor || 0),
-                remainingMonth: Number(payRemaining._sum.valor || 0)
-            },
+            chart: dailyFlow,
+            transactions: formattedTransactions,
             accounts: accountsWithBalance,
-            totalBalance,
-            dailyFlow,
             lastUpdate: now.toISOString()
         };
     }

@@ -107,7 +107,8 @@ export class ClientsService {
             where: { ativo: true },
             include: {
                 contratos: {
-                    where: { ativo: true }
+                    where: { ativo: true },
+                    orderBy: { dataInicio: 'asc' }
                 },
                 contatos: {
                     where: { principal: true }
@@ -115,21 +116,38 @@ export class ClientsService {
             }
         });
 
+        const now = new Date();
+
         // Enrich data
         const enrichedClients = await Promise.all(clients.map(async (client) => {
-            // 1. Revenue (Sum of active contracts)
+            // 1. Revenue (Sum of active contracts) - "Valor acordado"
             const revenue = client.contratos.reduce((sum, contract) => {
                 return sum + Number(contract.valorMensal);
             }, 0);
 
-            // 2. Duration (Months)
-            const now = new Date();
+            // 2. Dates
+            const dataInicio = client.contratos.length > 0 ? client.contratos[0].dataInicio : client.createdAt;
+            // Get latest dataFim
+            const sortedByEnd = [...client.contratos].sort((a, b) => {
+                if (!a.dataFim) return 1;
+                if (!b.dataFim) return -1;
+                return new Date(b.dataFim).getTime() - new Date(a.dataFim).getTime();
+            });
+            const dataTermino = sortedByEnd.length > 0 ? sortedByEnd[0].dataFim : null;
+
+            // 3. Remaining Days - "Tempo restante (dias)"
+            let tempoRestanteDias = null;
+            if (dataTermino) {
+                const diffTime = new Date(dataTermino).getTime() - now.getTime();
+                tempoRestanteDias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            }
+
+            // 4. Lifetime Months - "LT (Meses)"
             const createdAt = new Date(client.createdAt);
             const durationMs = now.getTime() - createdAt.getTime();
-            const durationMonths = Math.floor(durationMs / (1000 * 60 * 60 * 24 * 30.44));
+            const durationMonths = Number((durationMs / (1000 * 60 * 60 * 24 * 30.44)).toFixed(1));
 
-            // 3. Health Score
-            // Check for overdue payments (PREVISTO items with vencimento < now)
+            // 5. Status & Health
             const overdueBills = await this.prisma.lancamentoFinanceiro.count({
                 where: {
                     clienteId: client.id,
@@ -139,22 +157,26 @@ export class ClientsService {
                 }
             });
 
-            // Also check items near due date if needed, but for "Health Score" usually overdue is critical.
-
             let healthScore: 'GOOD' | 'ATTENTION' | 'RISK' = 'GOOD';
             if (overdueBills > 0) {
-                if (overdueBills > 1) {
-                    healthScore = 'RISK';
-                } else {
-                    healthScore = 'ATTENTION';
-                }
+                healthScore = overdueBills > 1 ? 'RISK' : 'ATTENTION';
             }
+
+            // Status string for UI display
+            let statusDisplay = 'Ativo';
+            if (client.contratos.length === 0) statusDisplay = 'Sem Contrato';
+            else if (overdueBills > 0) statusDisplay = 'Inadimplente';
+            else if (tempoRestanteDias !== null && tempoRestanteDias < 0) statusDisplay = 'Contrato Vencido';
 
             return {
                 ...client,
                 revenue,
+                dataInicio,
+                dataTermino,
+                tempoRestanteDias,
                 durationMonths,
                 healthScore,
+                statusDisplay,
                 planType: client.contratos.length > 0 ? client.contratos[0].tipo : 'N/A'
             };
         }));

@@ -68,10 +68,10 @@ async function runVerification() {
         const users = await request('GET', 'users');
         if (users.length > 0 && users[0].perfil) {
             // Update payload to use connect for relation
-            const profileId = users[0].perfil.id;
+            const profileName = users[0].perfil.nome;
             const finalUserPayload = {
                 ...userPayload,
-                perfil: { connect: { id: profileId } }
+                perfil: profileName
             };
 
             // Create
@@ -127,23 +127,24 @@ async function runVerification() {
             const finPayload = {
                 descricao: 'Test Financial Record',
                 valor: 100.50,
-                vencimento: new Date().toISOString(),
-                status: 'ABERTO',
+                dataVencimento: new Date().toISOString(),
+                status: 'PREVISTO',
+                tipo: 'RECEITA', // Added type
                 categoriaId: cats[0].id,
                 centroCustoId: ccs[0].id
             };
 
-            // Create Receivable
-            const newRec = await request('POST', 'financial/receivables', finPayload);
-            logger.log('  ✅ Create Receivable: Success');
+            // Create Transaction
+            const newRec = await request('POST', 'financial/transactions', finPayload);
+            logger.log('  ✅ Create Transaction: Success');
 
             // Update
-            await request('PATCH', `financial/receivables/${newRec.id}`, { valor: 200.00 });
-            logger.log('  ✅ Update Receivable: Success');
+            await request('PATCH', `financial/transactions/${newRec.id}`, { valor: 200.00 });
+            logger.log('  ✅ Update Transaction: Success');
 
             // Delete
-            await request('DELETE', `financial/receivables/${newRec.id}`);
-            logger.log('  ✅ Delete Receivable: Success');
+            await request('DELETE', `financial/transactions/${newRec.id}`);
+            logger.log('  ✅ Delete Transaction: Success');
 
         } else {
             logger.warn('  ⚠️ Skipping Financial CRUD - Missing Categories or Cost Centers');

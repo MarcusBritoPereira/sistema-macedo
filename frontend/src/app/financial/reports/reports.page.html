@@ -154,9 +154,15 @@
             Última geração: {{ lastGeneration.count }} relatório(s) • {{ lastGeneration.generatedAt | date:'short' }}
           </p>
           <ion-list lines="none">
-            <ion-item *ngFor="let report of lastGeneration.reports">
-              <ion-icon name="checkmark-circle-outline" slot="start" color="success"></ion-icon>
-              <ion-label>{{ report.title }}</ion-label>
+            <ion-item *ngFor="let report of lastGeneration.reports" button (click)="viewReport(report)" [detail]="true">
+              <ion-icon name="document-text-outline" slot="start" color="primary"></ion-icon>
+              <ion-label>
+                <h2>{{ report.title }}</h2>
+                <p>{{ report.status === 'ready' ? 'Pronto para visualizar' : 'Processando...' }}</p>
+              </ion-label>
+              <ion-button fill="clear" slot="end" (click)="$event.stopPropagation(); viewReport(report)">
+                <ion-icon name="eye-outline" slot="icon-only"></ion-icon>
+              </ion-button>
             </ion-item>
           </ion-list>
         </div>

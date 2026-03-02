@@ -156,7 +156,8 @@ export class StatementsPage implements OnInit {
 
     loadTransactions(event?: any) {
         // Fetch all for local filtering based on the complex rules provided
-        this.financialService.getTransactions().subscribe({
+        // We request a larger chunk because the backend defaults to 50 and we do the date filtering locally on the frontend here.
+        this.financialService.getTransactions({ take: 10000 } as any).subscribe({
             next: (response: any) => {
                 this.transactions = response.data || response; // Handle both formats if transitional
                 this.applyFilters();
@@ -331,7 +332,7 @@ export class StatementsPage implements OnInit {
         this.expensesRealized = 0;
 
         this.filteredTransactions.forEach(t => {
-            const valor = Number(t.valor);
+            const valor = Math.abs(Number(t.valor)); // Use absolute value for calculation to avoid double negative issues
             if (t.tipo === 'RECEITA') {
                 if (t.status === 'PREVISTO') this.receiptsOpen += valor;
                 else this.receiptsRealized += valor;
@@ -341,8 +342,8 @@ export class StatementsPage implements OnInit {
             }
         });
 
-        // The period total in the mockup is receipts realized - expenses realized
-        this.periodTotal = this.receiptsRealized - Number(this.expensesRealized);
+        // USER Fix: Total do Período = Receitas Realizadas - Despesas Realizadas
+        this.periodTotal = this.receiptsRealized - this.expensesRealized;
     }
 
     getPeriodLabel() {

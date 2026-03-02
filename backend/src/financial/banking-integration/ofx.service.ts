@@ -35,6 +35,8 @@ export class OfxService {
                 this.extractField(trimmed, 'CHECKNUM', currentTx, 'checkNum');
                 this.extractField(trimmed, 'MEMO', currentTx, 'memo');
                 this.extractField(trimmed, 'NAME', currentTx, 'name');
+                this.extractField(trimmed, 'PAYEE', currentTx, 'payee');
+                this.extractField(trimmed, 'PAYEEID', currentTx, 'payeeid');
             }
         }
 
@@ -52,7 +54,7 @@ export class OfxService {
                 date = new Date(Date.UTC(y, m, d, 12, 0, 0));
             }
 
-            const cleanDesc = this.cleanupDescription(t.name, t.memo);
+            const cleanDesc = this.cleanupDescription(t.name, t.memo, t.payee, t.payeeid);
 
             return {
                 id: t.id,
@@ -60,22 +62,23 @@ export class OfxService {
                 amount: amount,
                 type: (t.type || '').toUpperCase(),
                 descricao: cleanDesc,
-                rawMemo: t.memo,
-                rawName: t.name
+                rawMemo: t.memo || t.payee || '',
+                rawName: t.name || t.payeeid || ''
             };
         });
     }
 
-    private cleanupDescription(name: string | undefined, memo: string | undefined): string {
+    private cleanupDescription(name: string | undefined, memo: string | undefined, payee: string | undefined, payeeid: string | undefined): string {
         const n = (name || '').trim();
         const m = (memo || '').trim();
+        const p = (payee || payeeid || '').trim(); // Fallback cascade
         const nUpper = n.toUpperCase();
 
         // 1. Identify if Name is too generic
         const genericPrefixes = [
             'PAGAMENTO', 'PAGTO', 'PGTO', 'PAG ', 'ENVIO', 'TED', 'DOC', 'TRANSF',
             'COMPRA', 'DEBITO', 'SAQUE', 'EXTRATO', 'SALDO', 'LANCAMENTO', 'RESGATE', 'APLICACAO',
-            'LIQUIDACAO', 'TITULO', 'COBRANCA', 'CREDITO', 'DEP', 'DEPOSITO'
+            'LIQUIDACAO', 'TITULO', 'COBRANCA', 'CREDITO', 'DEP', 'DEPOSITO', 'PIX', 'TARIFA'
         ];
 
         // Specific noise to strip to find the real entity
@@ -86,20 +89,26 @@ export class OfxService {
             'COMPRA CARTAO', 'COMPRA ELO', 'COMPRA VISA', 'COMPRA MC', 'DEB VISA', 'DEB MASTER',
             'DEBITO AUTOMATICO', 'DEB AUT',
             'TRANSFERENCIA PARA', 'TRANSF. PARA',
-            'LIQUIDACAO COBRANCA', 'LIQ COBRANCA', 'TITULO BAIXADO', 'PAGAMENTO DE TITULO'
+            'LIQUIDACAO COBRANCA', 'LIQ COBRANCA', 'TITULO BAIXADO', 'PAGAMENTO DE TITULO',
+            'PIX ENVIADO', 'PIX RECEBIDO', 'PIX QRD', 'PIX TRANSF', 'PIX - '
         ];
 
         let candidate = n;
 
-        // Strategy: If name starts with generic term (or is very short), and memo exists and is different, 
-        // check if Memo is likely the Better Name.
-        // Often Memo contains the Beneficiary Name for boletos.
-        const nameIsGeneric = genericPrefixes.some(p => nUpper.startsWith(p)) || n.length < 5;
+        // Strategy: If name starts with generic term (or is very short), try Payee first, then Memo.
+        const nameIsGeneric = genericPrefixes.some(pref => nUpper.includes(pref)) || n.length < 5;
 
-        if (nameIsGeneric && m.length > 2 && m.toUpperCase() !== nUpper) {
-            // If Memo is not just a code (has letters)
-            if (/[a-zA-Z]/.test(m)) {
-                candidate = m;
+        if (nameIsGeneric) {
+            if (p.length > 2 && /[a-zA-Z]/.test(p)) {
+                candidate = p; // Prefer PAYEE tag if it exists and has letters
+            } else if (m.length > 2 && m.toUpperCase() !== nUpper && /[a-zA-Z]/.test(m)) {
+                // For some banks (like Inter), they append the beneficiary name to the memo after a specific keyword or dash.
+                const memoParts = m.split(/ - | PARA |:/);
+                if (memoParts.length > 1) {
+                    candidate = memoParts[memoParts.length - 1].trim(); // Get the last part typically the name
+                } else {
+                    candidate = m; // Fallback to full memo
+                }
             }
         }
 
@@ -115,12 +124,10 @@ export class OfxService {
         }
 
         // Remove leading non-alphanumeric chars (e.g. "- ", ": ", "000123 ")
-        // Also remove purely numeric prefixes often found in bank statements "123456 PAG BOLETO"
         cleaned = cleaned.replace(/^[\d\-\.:\s]+/, '');
 
         // 3. Fallback: If we stripped perfectly good info or it became empty, combine
         if (cleaned.length < 3) {
-            // Try to combine if the result is poor
             const combined = `${n} ${m}`.trim();
             if (combined.length > cleaned.length) return combined;
         }

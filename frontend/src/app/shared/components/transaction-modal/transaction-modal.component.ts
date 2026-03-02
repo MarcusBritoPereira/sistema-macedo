@@ -40,16 +40,19 @@ export class TransactionModalComponent implements OnInit {
         status: 'PREVISTO',
         categoriaId: undefined,
         centroCustoId: undefined,
+        contaBancariaId: undefined,
         observacoes: ''
     };
 
     categories: any[] = [];
     costCenters: any[] = [];
+    bankAccounts: any[] = [];
 
     constructor(
         private modalCtrl: ModalController,
         private categoriesService: CategoriesService,
-        private costCentersService: CostCentersService
+        private costCentersService: CostCentersService,
+        private financialService: FinancialService
     ) {
         addIcons({ closeOutline, calendarOutline, cashOutline });
     }
@@ -74,6 +77,10 @@ export class TransactionModalComponent implements OnInit {
     loadOptions() {
         this.categoriesService.findAll().subscribe(cats => this.categories = cats);
         this.costCentersService.findAll().subscribe(ccs => this.costCenters = ccs);
+        this.financialService.getBankAccounts().subscribe({
+            next: (accounts) => this.bankAccounts = accounts,
+            error: (err) => console.error('Error loading accounts in modal', err)
+        });
     }
 
     isValid() {

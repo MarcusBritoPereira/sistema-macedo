@@ -1,24 +1,37 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { printOutline, downloadOutline } from 'ionicons/icons';
 
 export interface ReportRow {
-    label: string;
-    value: number;
-    level: number; // 0=Total/Main, 1=Group, 2=Detail
-    type?: 'total' | 'header' | 'data';
-    highlight?: boolean;
+  label: string;
+  value: number;
+  level: number; // 0=Total/Main, 1=Group, 2=Detail
+  type?: 'total' | 'header' | 'data';
+  highlight?: boolean;
 }
 
 export interface ReportData {
-    summary: any;
-    details: ReportRow[];
+  summary: any;
+  details: ReportRow[];
 }
 
 @Component({
-    selector: 'app-report-viewer',
-    template: `
+  selector: 'app-report-viewer',
+  template: `
     <div class="report-container" *ngIf="data">
+      <div class="actions-toolbar no-print">
+        <ion-button fill="outline" size="small" (click)="printReport()">
+          <ion-icon name="print-outline" slot="start"></ion-icon>
+          Imprimir
+        </ion-button>
+        <ion-button fill="solid" size="small" (click)="downloadCSV()">
+          <ion-icon name="download-outline" slot="start"></ion-icon>
+          Baixar CSV
+        </ion-button>
+      </div>
+
       <div class="report-header">
         <h2>{{ title }}</h2>
         <p *ngIf="period">{{ period }}</p>
@@ -41,11 +54,20 @@ export interface ReportData {
       </div>
     </div>
   `,
-    styles: [`
+  styles: [`
     .report-container {
       background: var(--ion-background-color);
       border-radius: 8px;
       padding: 16px;
+    }
+
+    .actions-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--ion-color-light);
     }
     
     .report-header {
@@ -119,16 +141,59 @@ export interface ReportData {
         color: inherit;
       }
     }
+
+    @media print {
+      .no-print {
+        display: none !important;
+      }
+      .report-container {
+        padding: 0;
+        border: none;
+      }
+    }
   `],
-    standalone: true,
-    imports: [CommonModule, IonicModule]
+  standalone: true,
+  imports: [CommonModule, IonicModule]
 })
 export class ReportViewerComponent implements OnInit {
-    @Input() data: ReportData | null = null;
-    @Input() title: string = '';
-    @Input() period: string = '';
+  @Input() data: ReportData | null = null;
+  @Input() title: string = '';
+  @Input() period: string = '';
 
-    constructor() { }
+  constructor() {
+    addIcons({ printOutline, downloadOutline });
+  }
 
-    ngOnInit() { }
+  ngOnInit() { }
+
+  printReport() {
+    window.print();
+  }
+
+  downloadCSV() {
+    if (!this.data || !this.data.details) return;
+
+    const headers = ['Descrição', 'Valor'];
+    const rows = this.data.details.map(row => {
+      const indent = '  '.repeat(row.level || 0);
+      return [`"${indent}${row.label}"`, row.value.toFixed(2)];
+    });
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(r => r.join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${this.title.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
 }

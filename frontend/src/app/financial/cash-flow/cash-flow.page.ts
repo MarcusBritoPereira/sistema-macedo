@@ -1,314 +1,197 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
-  IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton,
-  IonCard, IonCardContent, IonCardHeader, IonCardTitle, IonCardSubtitle,
-  IonItem, IonSelect, IonSelectOption, IonSpinner, IonGrid, IonRow, IonCol,
-  IonIcon, IonBadge, IonButton, IonSegment, IonSegmentButton, IonLabel,
-  IonModal, ModalController, AlertController, ToastController
+  IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol,
+  IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList,
+  IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton,
+  IonDatetimeButton, IonModal, IonDatetime, IonSpinner, ModalController, IonFab, IonFabButton, IonFabList,
+  IonNote, IonBadge, IonSearchbar, IonText
 } from '@ionic/angular/standalone';
-import { CashFlowService, CashFlowSummary } from '../../services/financial/cash-flow.service';
-import { FinancialService } from '../../services/financial/financial';
-import { CategoriesService } from '../../services/financial/categories.service';
+import { FinancialDashboardService, OperationalDashboardResponse } from '../../services/financial/financial-dashboard.service';
 import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
 import { addIcons } from 'ionicons';
 import {
-  businessOutline, chevronBack, chevronForward, calendarOutline,
-  refreshOutline, trendingUpOutline, trendingDownOutline, walletOutline,
-  barChartOutline, informationCircleOutline, createOutline, trashOutline, addOutline
+  filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline,
+  arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline,
+  alertCircleOutline, add, arrowUp, arrowDown, chevronBack, chevronForward, calendarOutline,
+  ellipsisVertical, pencilOutline, trashOutline, checkmarkCircleOutline, searchOutline,
+  chevronDownOutline, chevronUpOutline
 } from 'ionicons/icons';
-import { parse, addMonths, format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval, parseISO } from 'date-fns';
+import { Chart, ChartConfiguration, ChartData, ChartEvent, ChartType, registerables } from 'chart.js';
+import { BaseChartDirective } from 'ng2-charts';
 
-type FilterType = 'today' | 'week' | 'month';
+Chart.register(...registerables);
 
 @Component({
   selector: 'app-cash-flow',
   templateUrl: './cash-flow.page.html',
-  styleUrl: './cash-flow.page.scss',
+  styleUrls: ['./cash-flow.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule, IonContent, IonHeader, IonTitle, IonToolbar,
-    IonButtons, IonMenuButton, IonCard, IonCardContent, IonCardHeader,
-    IonCardTitle, IonCardSubtitle, IonItem, IonSelect, IonSelectOption,
-    IonSpinner, IonGrid, IonRow, IonCol, IonIcon, IonBadge, IonButton,
-    IonSegment, IonSegmentButton, IonLabel
+    CommonModule, FormsModule, BaseChartDirective,
+    IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol,
+    IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList,
+    IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton,
+    IonDatetimeButton, IonModal, IonDatetime, IonSpinner, IonFab, IonFabButton, IonFabList,
+    IonNote, IonBadge, IonSearchbar, IonText
   ]
 })
 export class CashFlowPage implements OnInit {
-  selectedMonthStr = format(new Date(), 'yyyy-MM');
-  months: { value: string, label: string }[] = [];
-  data: CashFlowSummary | null = null;
-  dailyData: any[] = [];
-  transactions: any[] = []; // Full list for current month
-  filteredTransactions: any[] = []; // Filtered view
-  maxVal = 1000;
+  operationalData: any | null = null; // Use specific type if updated
   loading = false;
-  categories: any[] = [];
-  selectedCategoryId: string = '';
 
-  currentFilter: FilterType = 'month';
+  // Date State
+  currDate = new Date();
 
-  constructor(
-    private cashFlowService: CashFlowService,
-    private financialService: FinancialService,
-    private categoriesService: CategoriesService,
-    private modalCtrl: ModalController,
-    private alertCtrl: AlertController,
-    private toastCtrl: ToastController
-  ) {
-    addIcons({
-      businessOutline, chevronBack, chevronForward, calendarOutline,
-      refreshOutline, trendingUpOutline, trendingDownOutline, walletOutline,
-      barChartOutline, informationCircleOutline, createOutline, trashOutline, addOutline
-    });
-    this.generateMonths();
-  }
+  // Chart State
+  @ViewChild(BaseChartDirective) chart: BaseChartDirective | undefined;
 
-  async openTransactionModal(transaction?: any) {
-    const modal = await this.modalCtrl.create({
-      component: TransactionModalComponent,
-      componentProps: {
-        transaction: transaction,
-        type: transaction ? transaction.tipo : 'DESPESA'
+  public barChartOptions: ChartConfiguration['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      x: {},
+      y: {
+        beginAtZero: true,
+        grid: { color: '#e5e7eb' }
+      },
+      y1: {
+        position: 'right',
+        grid: { drawOnChartArea: false } // Independent axis for balance? Or shared?
+        // User requested: "Linha azul = saldo acumulado". Usually balance is much larger or can be negative.
+        // Best to use same axis if numbers are comparable, or separate if different scales.
+        // Let's use same axis for now as balance is usually in same magnitude as accumulated flows over time? 
+        // Actually, balance is stock, flow is flow. But users often want to see them together.
       }
-    });
-
-    await modal.present();
-    const { data, role } = await modal.onWillDismiss();
-
-    if (role === 'save' && data) {
-      this.loading = true;
-      if (transaction) {
-        // Edit flow
-        this.financialService.updateTransaction(transaction.id, data).subscribe({
-          next: () => {
-            this.loadData();
-            this.showToast('Transação atualizada com sucesso!');
-          },
-          error: (err) => {
-            console.error(err);
-            this.loading = false;
-            this.showToast('Erro ao atualizar transação.', 'danger');
-          }
-        });
-      } else {
-        // Create flow
-        this.financialService.createTransaction(data).subscribe({
-          next: () => {
-            this.loadData();
-            this.showToast('Transação criada com sucesso!');
-          },
-          error: (err) => {
-            console.error(err);
-            this.loading = false;
-            this.showToast('Erro ao criar transação.', 'danger');
-          }
-        });
-      }
-    }
-  }
-
-  async deleteTransaction(transaction: any) {
-    const alert = await this.alertCtrl.create({
-      header: 'Excluir Transação',
-      message: `Tem certeza que deseja excluir "${transaction.descricao}"?`,
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Excluir',
-          role: 'destructive',
-          handler: () => {
-            this.loading = true;
-            this.financialService.deleteTransaction(transaction.id).subscribe({
-              next: () => {
-                this.loadData();
-                this.showToast('Transação excluída.');
-              },
-              error: (err) => {
-                console.error(err);
-                this.loading = false;
-                this.showToast('Erro ao excluir.', 'danger');
-              }
-            });
+    },
+    plugins: {
+      legend: { display: true, position: 'bottom' },
+      tooltip: {
+        callbacks: {
+          label: (context) => {
+            let label = context.dataset.label || '';
+            if (label) label += ': ';
+            if (context.parsed.y !== null) {
+              label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+            }
+            return label;
           }
         }
-      ]
-    });
-    await alert.present();
-  }
+      }
+    }
+  };
 
-  async showToast(msg: string, color: string = 'success') {
-    const toast = await this.toastCtrl.create({
-      message: msg,
-      duration: 2000,
-      color: color,
-      position: 'bottom'
+  public barChartType: ChartType = 'bar';
+  public barChartData: ChartData<'bar' | 'line'> = {
+    labels: [],
+    datasets: [
+      { data: [], label: 'Entradas', backgroundColor: '#16A34A', borderRadius: 4, order: 2 },
+      { data: [], label: 'Saídas', backgroundColor: '#DC2626', borderRadius: 4, order: 3 },
+      {
+        data: [],
+        label: 'Saldo Acumulado',
+        type: 'line',
+        borderColor: '#2563EB',
+        pointBackgroundColor: '#2563EB',
+        borderWidth: 2,
+        tension: 0.4,
+        fill: false,
+        order: 1 // Top layer
+      }
+    ]
+  };
+
+  // Transaction Filters
+  filterPeriod: 'today' | 'week' | 'month' = 'month';
+  showAccounts = false; // Collapsible
+
+  constructor(
+    private dashboardService: FinancialDashboardService,
+    private modalCtrl: ModalController
+  ) {
+    addIcons({
+      filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline,
+      arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline,
+      alertCircleOutline, add, arrowUp, arrowDown, chevronBack, chevronForward, calendarOutline,
+      ellipsisVertical, pencilOutline, trashOutline, checkmarkCircleOutline, searchOutline,
+      chevronDownOutline, chevronUpOutline
     });
-    toast.present();
   }
 
   ngOnInit() {
-    this.loadCategories();
     this.loadData();
-  }
-
-  loadCategories() {
-    this.categoriesService.findAll().subscribe(cats => this.categories = cats);
-  }
-
-  onCategoryChange(event: any) {
-    this.selectedCategoryId = event.detail.value;
-    this.applyLocalFilter(); // Re-apply filters locally
-  }
-
-  generateMonths() {
-    const monthsArr = [];
-    const today = new Date();
-    // Generate 6 months before and 6 months after today
-    for (let i = -6; i <= 6; i++) {
-      const d = addMonths(today, i);
-      monthsArr.push({
-        value: format(d, 'yyyy-MM'),
-        label: format(d, 'MMMM yyyy')
-      });
-    }
-    this.months = monthsArr;
-  }
-
-  changeMonth(direction: number) {
-    const currentDate = parse(this.selectedMonthStr, 'yyyy-MM', new Date());
-    const nextDate = addMonths(currentDate, direction);
-    this.selectedMonthStr = format(nextDate, 'yyyy-MM');
-    this.currentFilter = 'month'; // Reset to month view when changing months
-    this.loadData();
-  }
-
-  onMonthChange(event: any) {
-    if (event.detail.value === this.selectedMonthStr) return;
-    this.selectedMonthStr = event.detail.value;
-    this.currentFilter = 'month';
-    this.loadData();
-  }
-
-  setFilter(filter: FilterType) {
-    this.currentFilter = filter;
-    this.applyLocalFilter();
-  }
-
-  applyLocalFilter() {
-    if (!this.data || !this.transactions) return;
-
-    const now = new Date();
-    // Adjust to local date string for comparison
-    const todayStr = format(now, 'yyyy-MM-dd');
-
-    // 0. Base Filter: Category
-    let baseList = [...this.transactions];
-    if (this.selectedCategoryId) {
-      baseList = baseList.filter(t => t.categoriaId === this.selectedCategoryId);
-    }
-
-    if (this.currentFilter === 'today') {
-      this.filteredTransactions = baseList.filter(t => t.dataVencimento.startsWith(todayStr));
-    }
-    else if (this.currentFilter === 'week') {
-      const start = startOfWeek(now, { weekStartsOn: 0 }); // Sunday
-      const end = endOfWeek(now, { weekStartsOn: 0 }); // Saturday
-
-      this.filteredTransactions = baseList.filter(t => {
-        const d = parseISO(t.dataVencimento);
-        return isWithinInterval(d, { start, end });
-      });
-    }
-    else {
-      // Month (Default) - Show everything loaded (filtered by category if selected)
-      this.filteredTransactions = baseList;
-    }
-
-    // Recalculate quick KPIs for the filtered view if needed, or keeping the month view KPIs?
-    // User request implies they want to filter "what to pay/receive".
-    // Let's rely on the list for specific details, but the main KPIs stay monthly as per "Fluxo de Caixa".
-    // Alternatively, we could compute "Filtered Totals". let's compute them for display.
-  }
-
-  get filteredSummary() {
-    // Correct "Pending vs Realized" logic
-    // "A Receber" = Total Pending Receivables
-    // "A Pagar" = Total Pending Payables
-    // "Result" = Total In - Total Out (Projected Balance)
-
-    // Status Logic: 'REALIZADO', 'CONCILIADO', 'PAGO', 'EFETIVADO' treated as Realized.
-    const isRealized = (t: any) => {
-      const s = (t.status || '').toUpperCase();
-      return ['REALIZADO', 'CONCILIADO', 'PAGO', 'EFETIVADO'].includes(s);
-    };
-
-    const receivables = this.filteredTransactions
-      .filter(t => t.tipo === 'RECEITA' && !isRealized(t))
-      .reduce((acc, t) => acc + Number(t.valor), 0);
-
-    const payables = this.filteredTransactions
-      .filter(t => t.tipo === 'DESPESA' && !isRealized(t))
-      .reduce((acc, t) => acc + Number(t.valor), 0);
-
-    const totalIn = this.filteredTransactions.filter(t => t.tipo === 'RECEITA').reduce((acc, t) => acc + Number(t.valor), 0);
-    const totalOut = this.filteredTransactions.filter(t => t.tipo === 'DESPESA').reduce((acc, t) => acc + Number(t.valor), 0);
-
-    return {
-      pendingReceivables: receivables,
-      pendingPayables: payables,
-      balance: totalIn - totalOut, // Result considers everything (Projected Cash Flow)
-      totalIn,
-      totalOut
-    };
   }
 
   loadData() {
     this.loading = true;
-    const [year, month] = this.selectedMonthStr.split('-');
-    const startDate = `${year}-${month}-01`;
-    const lastDay = new Date(Number(year), Number(month), 0).getDate();
-    const endDate = `${year}-${month}-${lastDay}`;
+    const m = this.currDate.getMonth() + 1;
+    const y = this.currDate.getFullYear();
 
-    this.cashFlowService.getCashFlow(startDate, endDate).subscribe({
-      next: (res) => {
-        this.data = res;
-        this.transactions = res.transactions || [];
-        this.applyLocalFilter(); // Apply current filter (likely 'month')
-        this.processDailyData(res.transactions, Number(year), Number(month), lastDay);
+    // Using getCashFlowDashboard instead of getOperationalDashboard
+    this.dashboardService.getCashFlowDashboard(m, y).subscribe({
+      next: (data) => {
+        this.operationalData = data;
+        this.updateChart(data.chart);
         this.loading = false;
       },
       error: (err) => {
-        console.error(err);
+        console.error('Error loading dashboard', err);
         this.loading = false;
       }
     });
   }
 
-  processDailyData(transactions: any[], year: number, month: number, daysInMonth: number) {
-    const days = [];
-    let max = 0;
+  updateChart(dailyFlow: any[]) {
+    if (!dailyFlow) return;
 
-    for (let d = 1; d <= daysInMonth; d++) {
-      const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    this.barChartData.labels = dailyFlow.map(d => d.label); // Day numbers
 
-      const dayTrans = transactions.filter(t => t.dataVencimento && t.dataVencimento.startsWith(dateStr));
+    this.barChartData.datasets[0].data = dailyFlow.map(d => d.entradas);
+    this.barChartData.datasets[1].data = dailyFlow.map(d => d.saidas);
+    this.barChartData.datasets[2].data = dailyFlow.map(d => d.saldoAcumulado);
 
-      const dayIn = dayTrans.filter(t => t.tipo === 'RECEITA').reduce((s, t) => s + Number(t.valor), 0);
-      const dayOut = dayTrans.filter(t => t.tipo === 'DESPESA').reduce((s, t) => s + Number(t.valor), 0);
+    this.chart?.update();
+  }
 
-      if (dayIn > max) max = dayIn;
-      if (dayOut > max) max = dayOut;
+  changeMonth(delta: number) {
+    this.currDate = new Date(this.currDate.getFullYear(), this.currDate.getMonth() + delta, 1);
+    this.loadData();
+  }
 
-      days.push({
-        date: new Date(year, month - 1, d),
-        in: dayIn,
-        out: dayOut
-      });
+  get currentPeriodLabel(): string {
+    return this.currDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+  }
+
+  toggleAccounts() {
+    this.showAccounts = !this.showAccounts;
+  }
+
+  get filteredTransactions() {
+    if (!this.operationalData?.transactions) return [];
+
+    const now = new Date();
+    // Normalize now to start of day? No, keep it simple.
+
+    // ... filtering logic later ...
+    return this.operationalData.transactions;
+  }
+
+  // Actions
+  async openTransactionModal(type: 'RECEITA' | 'DESPESA' = 'RECEITA') {
+    const modal = await this.modalCtrl.create({
+      component: TransactionModalComponent,
+      componentProps: { type }
+    });
+
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data) {
+      this.loadData();
     }
+  }
 
-    this.dailyData = days;
-    this.maxVal = max > 0 ? max : 1000;
+  formatCurrency(val: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
   }
 }

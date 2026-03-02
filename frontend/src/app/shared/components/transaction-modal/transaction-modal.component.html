@@ -54,6 +54,14 @@
             </ion-item>
         </div>
 
+        <!-- Conta Bancária (Destino) -->
+        <ion-item fill="outline" class="input-item">
+            <ion-label position="stacked">Conta Bancária</ion-label>
+            <ion-select [(ngModel)]="formData.contaBancariaId" interface="action-sheet" placeholder="Selecione a Conta">
+                <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">{{ acc.nome }}</ion-select-option>
+            </ion-select>
+        </ion-item>
+
         <!-- Categoria -->
         <ion-item fill="outline" class="input-item">
             <ion-label position="stacked">Categoria</ion-label>

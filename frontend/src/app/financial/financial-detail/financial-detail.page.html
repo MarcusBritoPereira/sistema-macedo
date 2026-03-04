@@ -1,311 +1,277 @@
 <ion-header class="ion-no-border">
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-back-button defaultHref="/financial" color="primary"></ion-back-button>
-    </ion-buttons>
-    <ion-title color="primary">{{ isEditMode ? 'Editar' : 'Nova' }} {{ type === 'receivables' ? 'Receita' : 'Despesa'
-      }}</ion-title>
+  <ion-toolbar class="top-toolbar">
+    <div class="header-content">
+      <div class="left-actions">
+        <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
+          <ion-back-button defaultHref="/financial" color="primary"></ion-back-button>
+        </ion-buttons>
+        <div style="display: inline-block; vertical-align: middle; margin-left: 8px;">
+          <h1 style="margin: 0; font-size: 1.1rem; font-weight: 600;">{{ isEditMode ? 'Editar' : 'Nova' }} {{ type ===
+            'receivables' ? 'Receita' : 'Despesa' }}</h1>
+          <p style="margin: 0; font-size: 0.8rem; color: #666;">Preencha os dados abaixo</p>
+        </div>
+      </div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding bg-light">
-
+<ion-content class="bg-light">
   <div class="form-wrapper">
     <form [formGroup]="financialForm" (ngSubmit)="onSubmit()">
 
       <!-- Section 1: Launch Info -->
-      <div class="section-container">
-        <div class="section-header">
-          <h3>Informações do lançamento</h3>
+      <div class="form-block">
+        <h2 class="block-title">Informações do lançamento</h2>
+        <p class="block-desc">Detalhes principais do registro financeiro.</p>
+
+        <!-- Fornecedor / Data / Valor -->
+        <div class="input-row">
+          <div class="input-group flex-2">
+            <label>{{ type === 'receivables' ? 'Cliente' : 'Fornecedor' }}</label>
+            <!-- Cliente Select -->
+            <select *ngIf="type === 'receivables'" formControlName="clienteId" class="clean-input">
+              <option value="" disabled selected>Selecione</option>
+              <option *ngFor="let client of clients" [value]="client.id">{{ client.razaoSocial }}</option>
+            </select>
+            <!-- Fornecedor Select -->
+            <select *ngIf="type === 'payables'" formControlName="fornecedorId" class="clean-input">
+              <option value="" disabled selected>Selecione</option>
+              <option *ngFor="let supplier of suppliers" [value]="supplier.id">{{ supplier.nomeFantasia }}</option>
+            </select>
+          </div>
+
+          <div class="input-group flex-1">
+            <label>Data de competência *</label>
+            <div class="date-input-wrapper clean-input-container">
+              <ion-datetime-button datetime="competenciaDate"></ion-datetime-button>
+              <ion-modal [keepContentsMounted]="true">
+                <ng-template>
+                  <ion-datetime id="competenciaDate" presentation="date"
+                    formControlName="dataCompetencia"></ion-datetime>
+                </ng-template>
+              </ion-modal>
+            </div>
+          </div>
+
+          <div class="input-group flex-1">
+            <label>Valor (R$) *</label>
+            <input type="number" formControlName="valor" class="clean-input" placeholder="0.00" step="0.01">
+          </div>
         </div>
 
-        <ion-card class="form-card">
-          <ion-grid>
-            <!-- Row 1: Client, Date, Description, Value -->
-            <ion-row>
-              <ion-col size="12" size-md="3">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">{{ type === 'receivables' ? 'Cliente' : 'Fornecedor' }}</ion-label>
+        <!-- Descrição / Código Ref -->
+        <div class="input-row">
+          <div class="input-group flex-2">
+            <label>Descrição *</label>
+            <input type="text" formControlName="descricao" class="clean-input" placeholder="Ex: Compra de materiais">
+          </div>
+          <div class="input-group flex-1">
+            <label>Código de referência</label>
+            <input type="text" formControlName="codigoReferencia" class="clean-input" placeholder="Opcional">
+          </div>
+        </div>
 
-                  <!-- Cliente Select -->
-                  <ion-select *ngIf="type === 'receivables'" formControlName="clienteId" placeholder="Selecione"
-                    interface="popover">
-                    <ion-select-option *ngFor="let client of clients" [value]="client.id">{{ client.razaoSocial
-                      }}</ion-select-option>
-                  </ion-select>
+        <!-- Categoria / CC -->
+        <div class="input-row">
+          <div class="input-group flex-1">
+            <label>Categoria *</label>
+            <select formControlName="categoriaId" (change)="onCategoryChange($event)" class="clean-input">
+              <option value="" disabled selected>Selecione</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</option>
+            </select>
+          </div>
 
-                  <!-- Fornecedor Select -->
-                  <ion-select *ngIf="type === 'payables'" formControlName="fornecedorId" placeholder="Selecione"
-                    interface="popover">
-                    <ion-select-option *ngFor="let supplier of suppliers" [value]="supplier.id">{{ supplier.nomeFantasia
-                      }}</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </ion-col>
+          <div class="input-group flex-1" *ngIf="filteredSubcategories.length > 0">
+            <label>Subcategoria</label>
+            <select formControlName="subcategoriaId" class="clean-input">
+              <option value="" disabled selected>Selecione</option>
+              <option *ngFor="let sub of filteredSubcategories" [value]="sub.id">{{ sub.nome }}</option>
+            </select>
+          </div>
 
-              <ion-col size="12" size-md="2">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Data de competência *</ion-label>
-                  <div class="date-input-wrapper">
-                    <ion-datetime-button datetime="competenciaDate"></ion-datetime-button>
-                    <ion-modal [keepContentsMounted]="true">
-                      <ng-template>
-                        <ion-datetime id="competenciaDate" presentation="date"
-                          formControlName="dataCompetencia"></ion-datetime>
-                      </ng-template>
-                    </ion-modal>
-                  </div>
-                </ion-item>
-              </ion-col>
+          <div class="input-group flex-1">
+            <label>Centro de custo</label>
+            <select formControlName="centroCustoId" class="clean-input">
+              <option value="" disabled selected>Selecione</option>
+              <option *ngFor="let cc of costCenters" [value]="cc.id">{{ cc.nome }}</option>
+            </select>
+          </div>
+        </div>
 
-              <ion-col size="12" size-md="5">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Descrição *</ion-label>
-                  <ion-input formControlName="descricao" placeholder="Ex: Venda de Produto"></ion-input>
-                </ion-item>
-              </ion-col>
-
-              <ion-col size="12" size-md="2">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Valor *</ion-label>
-                  <div class="money-wrapper">
-                    <span class="currency-symbol">R$</span>
-                    <ion-input type="number" formControlName="valor" placeholder="0,00"></ion-input>
-                  </div>
-                </ion-item>
-              </ion-col>
-            </ion-row>
-
-            <!-- Row 2: Rateio (Toggle), Category, Cost Center, Ref -->
-            <ion-row class="row-spacing">
-              <ion-col size="12" size-md="1" class="flex-center">
-                <div class="rateio-wrapper">
-                  <ion-label class="small-label">Habilitar rateio</ion-label>
-                  <ion-toggle formControlName="habilitarRateio" color="primary"></ion-toggle>
-                </div>
-              </ion-col>
-
-              <ion-col size="12" size-md="3">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Categoria *</ion-label>
-                  <ion-select formControlName="categoriaId" (ionChange)="onCategoryChange($event)" interface="popover"
-                    placeholder="Selecione">
-                    <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome
-                      }}</ion-select-option>
-                  </ion-select>
-                </ion-item>
-                <!-- Subcategory Input (Optional/Conditional) -->
-                <ion-item class="custom-input mt-2" *ngIf="filteredSubcategories.length > 0">
-                  <ion-select formControlName="subcategoriaId" interface="popover" placeholder="Subcategoria">
-                    <ion-select-option *ngFor="let sub of filteredSubcategories" [value]="sub.id">{{ sub.nome
-                      }}</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </ion-col>
-
-              <ion-col size="12" size-md="5">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Centro de custo</ion-label>
-                  <ion-select formControlName="centroCustoId" interface="popover" placeholder="Selecione">
-                    <ion-select-option *ngFor="let cc of costCenters" [value]="cc.id">{{ cc.nome }}</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </ion-col>
-
-              <ion-col size="12" size-md="3">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Código de referência</ion-label>
-                  <ion-input formControlName="codigoReferencia"></ion-input>
-                </ion-item>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-        </ion-card>
+        <!-- Toggles Section 1 -->
+        <div class="info-alert" style="background: #f8f9fa; border: 1px solid #eee; margin-top: 8px;">
+          <div class="toggle-group" style="width: 100%; justify-content: space-between;">
+            <div>
+              <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #333;">Rateio de Custo</h4>
+              <p style="margin: 2px 0 0; font-size: 0.8rem; color: #666;">Dividir valor em múltiplos centros/categorias.
+              </p>
+            </div>
+            <ion-toggle formControlName="habilitarRateio" color="primary"></ion-toggle>
+          </div>
+        </div>
       </div>
 
       <!-- Section 2: Payment Condition -->
-      <div class="section-container mt-4">
-        <div class="section-header">
-          <h3>Condição de pagamento</h3>
+      <div class="form-block">
+        <h2 class="block-title">Condição de pagamento</h2>
+        <p class="block-desc">Defina como e quando o montante será liquidado.</p>
+
+        <div class="input-row">
+          <div class="input-group flex-1">
+            <label>Parcelamento *</label>
+            <select formControlName="condicaoPagamento" class="clean-input">
+              <option value="A_VISTA">À vista</option>
+              <option value="PARCELADO">Parcelado</option>
+            </select>
+          </div>
+
+          <div class="input-group flex-1">
+            <label>Vencimento *</label>
+            <div class="date-input-wrapper clean-input-container">
+              <ion-datetime-button datetime="vencimentoDate"></ion-datetime-button>
+              <ion-modal [keepContentsMounted]="true">
+                <ng-template>
+                  <ion-datetime id="vencimentoDate" presentation="date" formControlName="vencimento"></ion-datetime>
+                </ng-template>
+              </ion-modal>
+            </div>
+          </div>
+
+          <div class="input-group flex-1">
+            <label>Forma de Pag.</label>
+            <select formControlName="formaPagamento" class="clean-input">
+              <option value="" disabled selected>Selecione</option>
+              <option value="PIX">Pix</option>
+              <option value="BOLETO">Boleto</option>
+              <option value="CARTAO_CREDITO">Cartão de Crédito</option>
+              <option value="DINHEIRO">Dinheiro</option>
+              <option value="TED">TED/DOC</option>
+            </select>
+          </div>
+
+          <div class="input-group flex-2">
+            <label>Conta Bancária</label>
+            <select formControlName="contaBancariaId" class="clean-input">
+              <option value="" disabled selected>Selecione a conta de origem/destino</option>
+              <option *ngFor="let acc of bankAccounts" [value]="acc.id">{{ acc.nome }}</option>
+            </select>
+          </div>
         </div>
 
-        <ion-card class="form-card">
-          <ion-grid>
-            <ion-row>
-              <ion-col size="12" size-md="2">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Parcelamento *</ion-label>
-                  <ion-select formControlName="condicaoPagamento" interface="popover">
-                    <ion-select-option value="A_VISTA">À vista</ion-select-option>
-                    <ion-select-option value="PARCELADO">Parcelado</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </ion-col>
+        <!-- NSU Conditional Row -->
+        <div class="input-row" *ngIf="financialForm.get('informarNsu')?.value">
+          <div class="input-group flex-1" style="max-width: 300px;">
+            <label>Código NSU</label>
+            <input type="text" formControlName="nsu" class="clean-input" placeholder="NSU da transação">
+          </div>
+        </div>
 
-              <ion-col size="12" size-md="2">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Vencimento *</ion-label>
-                  <div class="date-input-wrapper">
-                    <ion-datetime-button datetime="vencimentoDate"></ion-datetime-button>
-                    <ion-modal [keepContentsMounted]="true">
-                      <ng-template>
-                        <ion-datetime id="vencimentoDate" presentation="date"
-                          formControlName="vencimento"></ion-datetime>
-                      </ng-template>
-                    </ion-modal>
-                  </div>
-                </ion-item>
-              </ion-col>
+        <!-- Toggles Section 2 -->
+        <div class="info-alert"
+          style="background: #f8f9fa; border: 1px solid #eee; margin-top: 8px; flex-direction: column; gap: 16px; align-items: stretch;">
 
-              <ion-col size="12" size-md="3">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Forma de pagamento</ion-label>
-                  <ion-select formControlName="formaPagamento" interface="popover">
-                    <ion-select-option value="PIX">Pix</ion-select-option>
-                    <ion-select-option value="BOLETO">Boleto</ion-select-option>
-                    <ion-select-option value="CARTAO_CREDITO">Cartão de Crédito</ion-select-option>
-                    <ion-select-option value="DINHEIRO">Dinheiro</ion-select-option>
-                    <ion-select-option value="TED">TED/DOC</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </ion-col>
+          <div class="toggle-group" style="width: 100%; justify-content: space-between;">
+            <div>
+              <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #333;">Status do Pagamento</h4>
+              <p style="margin: 2px 0 0; font-size: 0.8rem; color: #666;">Marque se esta transação já foi {{ type ===
+                'receivables' ? 'recebida' : 'paga' }}.</p>
+            </div>
+            <!-- Binding to 'recebido' controller form name -->
+            <ion-toggle formControlName="recebido" color="success"></ion-toggle>
+          </div>
 
-              <ion-col size="12" size-md="3">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Conta de recebimento</ion-label>
-                  <ion-select formControlName="contaBancariaId" interface="popover" placeholder="Selecione">
-                    <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">{{ acc.nome
-                      }}</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </ion-col>
+          <div style="height: 1px; width: 100%; background: #ddd;"></div>
 
-              <ion-col size="12" size-md="2" class="flex-center-row">
-                <div class="toggle-group">
-                  <ion-label class="small-label">Informar NSU?</ion-label>
-                  <ion-toggle formControlName="informarNsu"></ion-toggle>
-                </div>
-                <div class="toggle-group">
-                  <ion-label class="small-label">Recebido</ion-label>
-                  <ion-toggle formControlName="recebido" color="success"></ion-toggle>
-                </div>
-              </ion-col>
-            </ion-row>
-
-            <!-- NSU Input (Conditional) -->
-            <ion-row *ngIf="financialForm.get('informarNsu')?.value">
-              <ion-col size="12" size-md="3">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">NSU</ion-label>
-                  <ion-input formControlName="nsu"></ion-input>
-                </ion-item>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-        </ion-card>
+          <div class="toggle-group" style="width: 100%; justify-content: space-between;">
+            <div>
+              <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #333;">Informar NSU</h4>
+              <p style="margin: 2px 0 0; font-size: 0.8rem; color: #666;">Ative para preencher o código da transação.
+              </p>
+            </div>
+            <ion-toggle formControlName="informarNsu" color="primary"></ion-toggle>
+          </div>
+        </div>
       </div>
 
       <!-- Section 3: Recurrence -->
-      <div class="section-container mt-4">
-        <div class="section-header">
-          <div class="flex items-center gap-2">
-            <h3>Recorrência</h3>
-            <ion-toggle formControlName="habilitarRecurrencia" style="margin-left: 10px;"></ion-toggle>
-            <ion-label *ngIf="financialForm.get('habilitarRecurrencia')?.value" color="primary"
-              class="text-sm font-bold">Ativado</ion-label>
+      <div class="form-block">
+        <div class="flex-center-row" style="justify-content: space-between; margin-bottom: 20px;">
+          <div>
+            <h2 class="block-title" style="margin-bottom: 4px;">Recorrência</h2>
+            <p class="block-desc" style="margin-bottom: 0;">Lançamento que se repete ao longo do tempo.</p>
           </div>
+          <ion-toggle formControlName="habilitarRecurrencia" color="primary"></ion-toggle>
         </div>
 
-        <ion-card class="form-card" *ngIf="financialForm.get('habilitarRecurrencia')?.value">
-          <ion-grid>
-            <ion-row>
-              <ion-col size="12" size-md="4">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Frequência</ion-label>
-                  <ion-select formControlName="frequencia" interface="popover">
-                    <ion-select-option value="MENSAL">Mensal</ion-select-option>
-                    <ion-select-option value="SEMANAL">Semanal</ion-select-option>
-                    <ion-select-option value="ANUAL">Anual</ion-select-option>
-                    <ion-select-option value="DIARIO">Diário</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </ion-col>
+        <div *ngIf="financialForm.get('habilitarRecurrencia')?.value"
+          style="border-top: 1px solid #eee; padding-top: 20px;">
+          <div class="input-row">
+            <div class="input-group flex-1">
+              <label>Frequência</label>
+              <select formControlName="frequencia" class="clean-input">
+                <option value="MENSAL">Mensal</option>
+                <option value="SEMANAL">Semanal</option>
+                <option value="ANUAL">Anual</option>
+                <option value="DIARIO">Diário</option>
+              </select>
+            </div>
 
-              <ion-col size="12" size-md="4">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Terminar em</ion-label>
-                  <ion-select formControlName="tipoFimRecurrencia" interface="popover">
-                    <ion-select-option value="UNDEFINED">Indefinidamente</ion-select-option>
-                    <ion-select-option value="DATE">Data específica</ion-select-option>
-                  </ion-select>
-                </ion-item>
-              </ion-col>
+            <div class="input-group flex-1">
+              <label>Terminar em</label>
+              <select formControlName="tipoFimRecurrencia" class="clean-input">
+                <option value="UNDEFINED">Indefinidamente</option>
+                <option value="DATE">Data específica</option>
+              </select>
+            </div>
 
-              <ion-col size="12" size-md="4" *ngIf="financialForm.get('tipoFimRecurrencia')?.value === 'DATE'">
-                <ion-item class="custom-input">
-                  <ion-label position="stacked">Data Final</ion-label>
-                  <div class="date-input-wrapper">
-                    <ion-datetime-button datetime="recurrenceEndDate"></ion-datetime-button>
-                    <ion-modal [keepContentsMounted]="true">
-                      <ng-template>
-                        <ion-datetime id="recurrenceEndDate" presentation="date"
-                          formControlName="dataFimRecurrencia"></ion-datetime>
-                      </ng-template>
-                    </ion-modal>
-                  </div>
-                </ion-item>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-        </ion-card>
-      </div>
-
-      <!-- Section 4: Tabs (Observations / Attachments) -->
-      <div class="section-container mt-4">
-        <div class="custom-segment">
-          <ion-segment [(ngModel)]="activeTab" [ngModelOptions]="{standalone: true}" mode="md">
-            <ion-segment-button value="observacoes">
-              <ion-label>Observações</ion-label>
-            </ion-segment-button>
-            <ion-segment-button value="anexo">
-              <ion-label>Anexo</ion-label>
-            </ion-segment-button>
-          </ion-segment>
-        </div>
-
-        <div class="tab-content" [ngSwitch]="activeTab">
-          <!-- Observations -->
-          <div *ngSwitchCase="'observacoes'">
-            <ion-list lines="none" class="bg-transparent">
-              <ion-item class="custom-input textarea-item">
-                <ion-label position="stacked">Observações</ion-label>
-                <ion-textarea formControlName="observacoes" rows="4"
-                  placeholder="Descreva observações relevantes sobre esse lançamento financeiro"></ion-textarea>
-              </ion-item>
-            </ion-list>
-          </div>
-
-          <!-- Attachments -->
-          <div *ngSwitchCase="'anexo'" class="attachment-area">
-            <div class="upload-box">
-              <ion-icon name="cloud-upload-outline"></ion-icon>
-              <p>Arraste e solte o arquivo aqui ou clique para selecionar</p>
-              <ion-button fill="outline" size="small">Selecionar Arquivo</ion-button>
+            <div class="input-group flex-1" *ngIf="financialForm.get('tipoFimRecurrencia')?.value === 'DATE'">
+              <label>Data Final</label>
+              <div class="date-input-wrapper clean-input-container">
+                <ion-datetime-button datetime="recurrenceEndDate"></ion-datetime-button>
+                <ion-modal [keepContentsMounted]="true">
+                  <ng-template>
+                    <ion-datetime id="recurrenceEndDate" presentation="date"
+                      formControlName="dataFimRecurrencia"></ion-datetime>
+                  </ng-template>
+                </ion-modal>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
+      <!-- Section 4: Obs -->
+      <div class="form-block">
+        <h2 class="block-title">Observações e Anexos</h2>
+
+        <div class="input-group" style="margin-top: 16px;">
+          <label>Detalhes adicionais</label>
+          <textarea formControlName="observacoes" class="clean-input" rows="4"
+            placeholder="Descreva observações relevantes sobre esse lançamento financeiro"></textarea>
+        </div>
+
+        <div class="attachment-area" style="margin-top: 16px;">
+          <div class="upload-box">
+            <ion-icon name="cloud-upload-outline"></ion-icon>
+            <p>Arraste e solte o arquivo aqui ou clique para selecionar</p>
+            <ion-button fill="outline" size="small"
+              style="text-transform: none; --border-radius: 4px; color: #555; --border-color: #ccc;">Selecionar
+              Arquivo</ion-button>
+          </div>
+        </div>
+      </div>
 
       <div class="form-actions">
-        <ion-button type="submit" [disabled]="!financialForm.valid" class="save-btn" shape="round"
-          [color]="type === 'receivables' ? 'primary' : 'danger'">
-          {{ isEditMode ? 'Salvar Alterações' : 'Salvar' }}
-        </ion-button>
-
-        <ion-button *ngIf="isEditMode" fill="clear" color="medium" class="delete-btn" (click)="onDelete()">
+        <!-- Push delete to extreme left if edit mode -->
+        <ion-button *ngIf="isEditMode" fill="clear" color="danger" class="delete-btn" (click)="onDelete()">
           <ion-icon name="trash-outline" slot="start"></ion-icon>
           Excluir Lançamento
+        </ion-button>
+
+        <ion-button type="submit" [disabled]="!financialForm.valid" class="add-btn"
+          style="--border-radius: 6px; font-weight: 600; text-transform: none; min-width: 180px;"
+          [color]="type === 'receivables' ? 'success' : 'danger'">
+          {{ isEditMode ? 'Salvar Alterações' : 'Criar Lançamento' }}
         </ion-button>
       </div>
     </form>

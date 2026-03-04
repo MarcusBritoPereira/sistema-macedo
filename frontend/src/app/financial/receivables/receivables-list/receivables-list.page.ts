@@ -74,10 +74,6 @@ export class ReceivablesListPage implements OnInit {
     updateView() {
         this.selectedIds.clear();
 
-        const startOfMonthDate = startOfDay(new Date(this.currentPeriod.getFullYear(), this.currentPeriod.getMonth(), 1));
-        const endOfMonthDate = new Date(this.currentPeriod.getFullYear(), this.currentPeriod.getMonth() + 1, 0, 23, 59, 59);
-        const today = startOfDay(new Date());
-
         // 1. Filter items for the selected month (for the list view)
         this.displayedItems = this.allReceivables.filter(item => {
             const dueDate = parseISO(item.dataVencimento);
@@ -96,6 +92,8 @@ export class ReceivablesListPage implements OnInit {
         let toReceive = 0; // A receber (Future in this month)
         let received = 0;
         let total = 0;
+
+        const today = startOfDay(new Date());
 
         this.displayedItems.forEach(item => {
             const val = Number(item.valor);

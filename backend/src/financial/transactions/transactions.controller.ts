@@ -16,6 +16,7 @@ export class FinancialTransactionsController {
     @Get()
     findAll(
         @Query('type') type?: TipoLancamento,
+        @Query('tipo') tipo?: TipoLancamento,
         @Query('status') status?: StatusLancamento,
         @Query('startDate') startDate?: string,
         @Query('endDate') endDate?: string,
@@ -26,8 +27,12 @@ export class FinancialTransactionsController {
     ) {
         const normalizedSkip = Math.max(0, Number(skip) || 0);
         const normalizedTake = Math.min(Math.max(1, Number(take) || 50), 10000);
+        
+        // Handle both 'tipo' (from frontend) and 'type' (REST convention)
+        const finalType = tipo || type;
+
         return this.transactionsService.findAll({
-            type, status, startDate, endDate, categoryId, search,
+            type: finalType, status, startDate, endDate, categoryId, search,
             skip: normalizedSkip, take: normalizedTake
         });
     }

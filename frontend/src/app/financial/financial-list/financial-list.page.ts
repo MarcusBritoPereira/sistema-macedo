@@ -37,6 +37,7 @@ export class FinancialListPage implements OnInit {
   // Filters
   searchTerm: string = '';
   selectedCategoryId: string = '';
+  selectedType: 'RECEITA' | 'DESPESA' | '' = '';
 
   // Dependencies
   categories: any[] = [];
@@ -89,6 +90,7 @@ export class FinancialListPage implements OnInit {
       startDate: this.startDate,
       endDate: this.endDate,
       categoryId: this.selectedCategoryId,
+      tipo: this.selectedType || undefined,
       search: this.searchTerm,
       skip: skip,
       take: this.pageSize
@@ -140,6 +142,16 @@ export class FinancialListPage implements OnInit {
   }
 
   onFilterChange() {
+    this.currentPage = 1;
+    this.loadData();
+  }
+
+  toggleTypeFilter(type: 'RECEITA' | 'DESPESA') {
+    if (this.selectedType === type) {
+      this.selectedType = '';
+    } else {
+      this.selectedType = type;
+    }
     this.currentPage = 1;
     this.loadData();
   }

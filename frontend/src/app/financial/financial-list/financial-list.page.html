@@ -64,11 +64,13 @@
 
   <!-- KPI Cards -->
   <div class="kpi-container">
-    <div class="kpi-card blue-text">
+    <div class="kpi-card blue-text clickable" [class.active]="selectedType === 'RECEITA'"
+      (click)="toggleTypeFilter('RECEITA')">
       <span class="label">Receitas (R$)</span>
       <span class="value">{{ kpis.receivables | number:'1.2-2' }}</span>
     </div>
-    <div class="kpi-card red-text">
+    <div class="kpi-card red-text clickable" [class.active]="selectedType === 'DESPESA'"
+      (click)="toggleTypeFilter('DESPESA')">
       <span class="label">Despesas (R$)</span>
       <span class="value">-{{ kpis.payables | number:'1.2-2' }}</span>
     </div>

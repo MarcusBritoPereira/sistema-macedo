@@ -340,20 +340,8 @@ export class FinancialDashboardService {
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
-        // 1. Accounts & Total Balance
-        const accounts = await this.prisma.contaBancaria.findMany();
-        const accountsWithBalance = await Promise.all(accounts.map(async (acc) => {
-            const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
-                _sum: { valor: true },
-                where: { contaBancariaId: acc.id, tipo: 'RECEITA', status: { in: ['REALIZADO', 'CONCILIADO'] } }
-            });
-            const totalOut = await this.prisma.lancamentoFinanceiro.aggregate({
-                _sum: { valor: true },
-                where: { contaBancariaId: acc.id, tipo: 'DESPESA', status: { in: ['REALIZADO', 'CONCILIADO'] } }
-            });
-            const bal = Number(acc.saldoInicial || 0) + Number(totalIn._sum.valor || 0) - Number(totalOut._sum.valor || 0);
-            return { ...acc, saldo: bal };
-        }));
+        // 1. Current Balance (Calculated + Real-time)
+        const accountsWithBalance = await this.getAccountsWithRealTimeBalance();
         const totalBalance = accountsWithBalance.reduce((acc, curr) => acc + curr.saldo, 0);
 
         // 2. Receivables Info
@@ -450,48 +438,7 @@ export class FinancialDashboardService {
         const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
 
         // 1. Current Balance (Saldo Atual) - Realized only
-        const accounts = await this.prisma.contaBancaria.findMany();
-
-        const accountsWithBalance = await Promise.all(accounts.map(async (acc) => {
-            const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
-                _sum: { valor: true },
-                where: {
-                    contaBancariaId: acc.id,
-                    tipo: 'RECEITA',
-                    status: { in: ['REALIZADO', 'CONCILIADO'] },
-                    dataPagamento: { lte: endOfMonth }
-                }
-            });
-            const totalOut = await this.prisma.lancamentoFinanceiro.aggregate({
-                _sum: { valor: true },
-                where: {
-                    contaBancariaId: acc.id,
-                    tipo: 'DESPESA',
-                    status: { in: ['REALIZADO', 'CONCILIADO'] },
-                    dataPagamento: { lte: endOfMonth }
-                }
-            });
-
-            let bal = Number(acc.saldoInicial || 0) + Number(totalIn._sum.valor || 0) - Number(totalOut._sum.valor || 0);
-
-            // TRY REAL-TIME BALANCE from API if integrated
-            try {
-                const integration = await this.prisma.integracaoBancaria.findUnique({
-                    where: { contaBancariaId: acc.id }
-                });
-                if (integration && integration.status === 'CONNECTED') {
-                    console.log(`[Dashboard] Fetching real-time balance for ${acc.nome}...`);
-                    const realTimeBal = await this.bankingService.getAccountBalance(acc.id);
-                    bal = realTimeBal;
-                }
-            } catch (e) {
-                console.error(`[Dashboard] Failed to fetch real-time balance for ${acc.nome}:`, e.message);
-                // Fallback to calculated balance (already set in 'bal')
-            }
-
-            return { ...acc, saldo: bal };
-        }));
-
+        const accountsWithBalance = await this.getAccountsWithRealTimeBalance(endOfMonth);
         const currentBalance = accountsWithBalance.reduce((acc, curr) => acc + curr.saldo, 0);
 
         // 2. Receivables (A Receber) for the Period - Including OVERDUE
@@ -536,6 +483,7 @@ export class FinancialDashboardService {
         const projectedBalance = currentBalance + recPending - payPending;
 
         // 5. Smart Chart (Daily Flow)
+        const accounts = await this.prisma.contaBancaria.findMany();
         const preBalanceAccounts = await Promise.all(accounts.map(async (acc) => {
             const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
                 _sum: { valor: true },
@@ -717,5 +665,47 @@ export class FinancialDashboardService {
                 total: patrimonioLiquido
             }
         };
+    }
+    private async getAccountsWithRealTimeBalance(lteDate?: Date) {
+        const accounts = await this.prisma.contaBancaria.findMany();
+
+        return Promise.all(accounts.map(async (acc) => {
+            const whereClause: any = {
+                contaBancariaId: acc.id,
+                status: { in: ['REALIZADO', 'CONCILIADO'] }
+            };
+
+            if (lteDate) {
+                whereClause.dataPagamento = { lte: lteDate };
+            }
+
+            const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: { ...whereClause, tipo: 'RECEITA' }
+            });
+            const totalOut = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: { ...whereClause, tipo: 'DESPESA' }
+            });
+
+            let bal = Number(acc.saldoInicial || 0) + Number(totalIn._sum.valor || 0) - Number(totalOut._sum.valor || 0);
+
+            // TRY REAL-TIME BALANCE from API if integrated
+            try {
+                const integration = await this.prisma.integracaoBancaria.findUnique({
+                    where: { contaBancariaId: acc.id }
+                });
+
+                if (integration && integration.status === 'CONNECTED') {
+                    const realTimeBal = await this.bankingService.getAccountBalance(acc.id);
+                    bal = realTimeBal;
+                }
+            } catch (e) {
+                console.error(`[Dashboard] Failed to fetch real-time balance for ${acc.nome}:`, e.message);
+                // Fallback to calculated balance (already set in 'bal')
+            }
+
+            return { ...acc, saldo: bal };
+        }));
     }
 }

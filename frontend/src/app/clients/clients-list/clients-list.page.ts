@@ -227,30 +227,34 @@ export class ClientsListPage implements OnInit {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Simple CSV split handling both comma and semicolon (Excel Brazil default)
-      const delimiter = line.indexOf(';') !== -1 ? ';' : ',';
+      // A robust approach to detect the primary delimiter
+      // If the line has semicolons, it's highly likely an Excel exported CSV (Brazilian format).
+      const delimiter = line.includes(';') ? ';' : ',';
 
-      // Parse columns, treating potential quotes
-      const cols = line.split(delimiter).map(col => col.replace(/^"(.*)"$/, '$1').trim());
+      // Split strings accurately ignoring delimiters inside quotes.
+      // This regex handles `delimiter` inside double quotes:
+      // e.g. Regex for comma: /,(?=(?:(?:[^"]*"){2})*[^"]*$)/
+      const regex = new RegExp(`${delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
+      const cols = line.split(regex).map(col => col.replace(/^"(.*)"$/, '$1').trim());
 
       // Mapping based on headers index
-      // 'Razao Social', 'Nome Fantasia', 'CNPJ', 'CPF', 'Email', 'Telefone',
-      // 'Endereco', 'Representante Nome', 'Representante CPF', 'Financeiro Nome', 'Financeiro Email'
+      // 0: 'Razao Social', 1: 'Nome Fantasia', 2: 'CNPJ', 3: 'CPF', 4: 'Email', 5: 'Telefone',
+      // 6: 'Endereco', 7: 'Representante Nome', 8: 'Representante CPF', 9: 'Financeiro Nome', 10: 'Financeiro Email'
 
       if (cols.length < 1) continue;
 
       const client: Cliente = {
         razaoSocial: cols[0] || 'Sem Razão Social',
-        nomeFantasia: cols[1],
-        cnpj: cols[2],
-        cpf: cols[3],
-        email: cols[4],
-        telefone: cols[5],
-        endereco: cols[6],
-        representanteNome: cols[7],
-        representanteCpf: cols[8],
-        financeiroNome: cols[9],
-        financeiroEmail: cols[10],
+        nomeFantasia: cols[1] || undefined,
+        cnpj: cols[2] || undefined,
+        cpf: cols[3] || undefined,
+        email: cols[4] || undefined,
+        telefone: cols[5] || undefined,
+        endereco: cols[6] || undefined,
+        representanteNome: cols[7] || undefined,
+        representanteCpf: cols[8] || undefined,
+        financeiroNome: cols[9] || undefined,
+        financeiroEmail: cols[10] || undefined,
         ativo: true
       };
 

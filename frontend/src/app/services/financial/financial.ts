@@ -25,6 +25,7 @@ export interface Transaction {
   habilitarRateio?: boolean;
   observacoes?: string;
   anexoUrl?: string; // Placeholder for attachment
+  cliente?: any; // Included relation
   fornecedor?: any; // Can be string (legacy) or Supplier object
   fornecedorId?: string; // New relation
   fornecedorObj?: { nomeFantasia: string }; // Optional included relation
@@ -44,6 +45,7 @@ export interface BankAccount {
   lastImported?: string | Date;
   saldoInicial?: number;
   saldoAtual?: number;
+  statusIntegracao?: string;
   integracao?: {
     status: 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
   };
@@ -99,6 +101,10 @@ export class FinancialService {
 
   createTransaction(data: Transaction): Observable<Transaction> {
     return this.api.post<Transaction>('financial/transactions', data);
+  }
+
+  createManyTransactions(data: any[]): Observable<any> {
+    return this.api.post<any>('financial/transactions/bulk', data);
   }
 
   updateTransaction(id: string, data: Partial<Transaction>): Observable<Transaction> {

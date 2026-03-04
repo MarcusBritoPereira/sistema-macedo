@@ -48,7 +48,8 @@
                     <div class="meta-row">
                         <span class="label">Última atualização:</span>
                         <span class="value">{{ formatDateTime(selectedAccount?.lastSync) }}</span>
-                        <ion-icon name="sync-outline" color="primary" (click)="syncBank()"></ion-icon>
+                        <ion-icon name="sync-outline" color="primary" (click)="syncBank()"
+                            *ngIf="selectedAccount?.statusIntegracao === 'CONNECTED'"></ion-icon>
                     </div>
                     <div class="meta-row">
                         <span class="label">Último lançamento:</span>
@@ -239,7 +240,8 @@
                 </div>
                 <h2>Não existem conciliações pendentes no ms.</h2>
                 <div class="empty-actions">
-                    <ion-button fill="solid" class="btn-primary" (click)="syncBank()">
+                    <ion-button fill="solid" class="btn-primary" (click)="syncBank()"
+                        *ngIf="selectedAccount?.statusIntegracao === 'CONNECTED'">
                         Importar lançamentos automaticamente
                     </ion-button>
                     <!-- Hidden File Input -->

@@ -47,4 +47,29 @@ export class SuppliersListPage implements OnInit {
             (s.cnpj && s.cnpj.includes(term))
         );
     }
+
+    exportCSV() {
+        const headers = ['Fornecedor', 'Razão Social', 'CNPJ', 'Email', 'Telefone'];
+
+        const rows = this.filteredSuppliers.map(s => {
+            return [
+                `"${s.nomeFantasia || ''}"`,
+                `"${s.razaoSocial || ''}"`,
+                `"${s.cnpj || ''}"`,
+                `"${s.email || ''}"`,
+                `"${s.telefone || ''}"`
+            ].join(',');
+        });
+
+        const csvContent = headers.join(',') + '\n' + rows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `fornecedores_${new Date().getTime()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }

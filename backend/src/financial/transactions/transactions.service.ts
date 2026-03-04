@@ -36,6 +36,31 @@ export class FinancialTransactionsService {
         });
     }
 
+    async createMany(data: Prisma.LancamentoFinanceiroCreateManyInput[], usuarioId: string) {
+        return this.prisma.$transaction(async (tx) => {
+            const result = await tx.lancamentoFinanceiro.createMany({
+                data,
+                skipDuplicates: true,
+            });
+
+            await tx.logAuditoria.create({
+                data: {
+                    acao: `Importou em massa ${result.count} lançamentos financeiros`,
+                    tabela: 'lancamentos_financeiros',
+                    registroId: 'BULK_IMPORT',
+                    valorNovo: `Foram importados ${result.count} registros`,
+                    motivo: 'Importação via CSV',
+                    usuarioId,
+                },
+            });
+
+            return {
+                created: result.count,
+                skipped: data.length - result.count
+            };
+        });
+    }
+
     async findAll(params: {
         type?: TipoLancamento,
         status?: StatusLancamento,

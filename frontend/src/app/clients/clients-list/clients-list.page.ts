@@ -294,4 +294,37 @@ export class ClientsListPage implements OnInit {
       }
     });
   }
+
+  exportCSV() {
+    const headers = [
+      'Razão Social', 'Documento', 'Financeiro Contato', 'Email Financeiro',
+      'Valor Acordado', 'Plano', 'Data Início', 'Data Fim', 'Health Score', 'Status'
+    ];
+
+    const rows = this.filteredClients.map(c => {
+      return [
+        `"${c.razaoSocial || ''}"`,
+        `"${c.cnpj || c.cpf || ''}"`,
+        `"${c.financeiroNome || ''}"`,
+        `"${c.financeiroEmail || ''}"`,
+        c.revenue || 0,
+        c.planType ? `"${c.planType}"` : '""',
+        c.dataInicio ? `"${new Date(c.dataInicio).toISOString().split('T')[0]}"` : '',
+        c.dataTermino ? `"${new Date(c.dataTermino).toISOString().split('T')[0]}"` : '',
+        `"${c.healthScore || ''}"`,
+        `"${c.statusDisplay || ''}"`
+      ].join(',');
+    });
+
+    const csvContent = headers.join(',') + '\n' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `clientes_${new Date().getTime()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 }

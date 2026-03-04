@@ -160,7 +160,7 @@ export class BankingIntegrationService {
         });
 
         if (!integration || integration.status !== 'CONNECTED') {
-            throw new Error('Integração não configurada ou desconectada');
+            throw new BadRequestException('Integração não configurada ou desconectada');
         }
 
         const logFile = path.join(this.CERTS_DIR, 'banking_debug.log');
@@ -178,7 +178,7 @@ export class BankingIntegrationService {
             log(`[Sync] Starting sync for account ${contaBancariaId}...`);
 
             if (!fs.existsSync(integration.crtFile!) || !fs.existsSync(integration.keyFile!)) {
-                throw new Error('Certificados não encontrados no servidor.');
+                throw new BadRequestException('Certificados não encontrados no servidor.');
             }
 
             const certContent = fs.readFileSync(integration.crtFile!);
@@ -321,7 +321,7 @@ export class BankingIntegrationService {
                     data: { status: 'ERROR' }
                 });
             }
-            throw new Error(`Erro na sincronização: ${error.message}`);
+            throw new BadRequestException(`Erro na sincronização: ${error.message}`);
         }
     }
 
@@ -332,11 +332,11 @@ export class BankingIntegrationService {
         });
 
         if (!integration || integration.status !== 'CONNECTED') {
-            throw new Error('Integração não configurada ou desconectada');
+            throw new BadRequestException('Integração não configurada ou desconectada');
         }
 
         if (!fs.existsSync(integration.crtFile!) || !fs.existsSync(integration.keyFile!)) {
-            throw new Error('Certificados não encontrados no servidor.');
+            throw new BadRequestException('Certificados não encontrados no servidor.');
         }
 
         const certContent = fs.readFileSync(integration.crtFile!);
@@ -382,9 +382,9 @@ export class BankingIntegrationService {
             // console.error('Auth Inter Error:', error.response?.data || error.message);
             const msg = error.response?.data?.error_description || error.message;
             if (msg.includes('key values mismatch')) {
-                throw new Error('A Chave Privada enviada não corresponde ao Certificado. Verifique se os arquivos formam um par válido.');
+                throw new BadRequestException('A Chave Privada enviada não corresponde ao Certificado. Verifique se os arquivos formam um par válido.');
             }
-            throw new Error(`Falha ao autenticar com Banco Inter: ${msg}`);
+            throw new BadRequestException(`Falha ao autenticar com Banco Inter: ${msg}`);
         }
     }
 

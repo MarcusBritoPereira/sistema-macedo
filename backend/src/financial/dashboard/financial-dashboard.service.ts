@@ -700,8 +700,9 @@ export class FinancialDashboardService {
                     const realTimeBal = await this.bankingService.getAccountBalance(acc.id);
                     bal = realTimeBal;
                 }
-            } catch (e) {
-                console.error(`[Dashboard] Failed to fetch real-time balance for ${acc.nome}:`, e.message);
+            } catch (e: any) {
+                // If the integration is bad or disconnected, do not fail.
+                console.error(`[Dashboard] Failed to fetch real-time balance for ${acc.nome} (${acc.id}):`, e.message);
                 // Fallback to calculated balance (already set in 'bal')
             }
 

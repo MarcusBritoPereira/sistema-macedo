@@ -10,8 +10,13 @@
             </div>
 
             <div class="right-actions">
-                <ion-button fill="outline" size="small" color="medium" class="action-btn">Importar planilha</ion-button>
-                <ion-button fill="outline" size="small" color="medium" class="action-btn">Exportar</ion-button>
+                <ion-button fill="outline" size="small" color="medium" class="action-btn"
+                    (click)="downloadCsvTemplate()" [disabled]="isImporting">Modelo CSV</ion-button>
+                <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="csvInput.click()"
+                    [disabled]="isImporting">Importar planilha</ion-button>
+                <input #csvInput type="file" (change)="onCsvSelected($event)" accept=".csv" style="display: none;">
+                <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="exportCSV()"
+                    [disabled]="isImporting">Exportar</ion-button>
                 <ion-button fill="outline" size="small" color="medium" class="action-btn">Imprimir</ion-button>
                 <div class="pagination-controls">
                     <ion-button fill="clear" size="small" disabled>

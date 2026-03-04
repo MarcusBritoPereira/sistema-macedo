@@ -309,7 +309,8 @@ export class ReconciliationPage implements OnInit {
             },
             error: (err) => {
                 loader.dismiss();
-                this.showToast(err.message || 'Erro na sincronização', 'danger');
+                const msg = err.error?.message || err.message || 'Erro na sincronização';
+                this.showToast(msg, 'danger');
             }
         });
     }

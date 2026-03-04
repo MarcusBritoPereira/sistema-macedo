@@ -6,7 +6,8 @@
         <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
           <ion-menu-button color="primary"></ion-menu-button>
         </ion-buttons>
-        <span style="font-weight: 600; font-size: 1.1rem; margin-right: 16px; margin-left: 8px;">Gestão de Clientes</span>
+        <span style="font-weight: 600; font-size: 1.1rem; margin-right: 16px; margin-left: 8px;">Gestão de
+          Clientes</span>
         <ion-button color="primary" class="add-btn" routerLink="/clients/new">
           <ion-icon name="add" slot="start"></ion-icon>
           Adicionar
@@ -15,18 +16,24 @@
 
       <div class="right-actions">
         <!-- Import / Export Actions -->
-        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="downloadCsvTemplate()" [disabled]="isImporting">
-          <ion-icon name="download-outline" slot="start"></ion-icon> Modelo CSV
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="exportCSV()"
+          [disabled]="isImporting">
+          <ion-icon name="download-outline" slot="start"></ion-icon> Exportar
         </ion-button>
-        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="csvInput.click()" [disabled]="isImporting">
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="downloadCsvTemplate()"
+          [disabled]="isImporting">
+          <ion-icon name="document-text-outline" slot="start"></ion-icon> Modelo CSV
+        </ion-button>
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="csvInput.click()"
+          [disabled]="isImporting">
           <ion-icon name="cloud-upload-outline" slot="start"></ion-icon> Importar
         </ion-button>
         <input #csvInput type="file" (change)="onCsvSelected($event)" accept=".csv" style="display: none;">
-        
+
         <div class="pagination-controls">
-           <ion-button fill="clear" size="small" disabled><ion-icon name="chevron-back"></ion-icon></ion-button>
-           <span>{{ filteredClients.length }} registros</span>
-           <ion-button fill="clear" size="small" disabled><ion-icon name="chevron-forward"></ion-icon></ion-button>
+          <ion-button fill="clear" size="small" disabled><ion-icon name="chevron-back"></ion-icon></ion-button>
+          <span>{{ filteredClients.length }} registros</span>
+          <ion-button fill="clear" size="small" disabled><ion-icon name="chevron-forward"></ion-icon></ion-button>
         </div>
       </div>
     </div>
@@ -38,17 +45,28 @@
       <div class="search-box" style="flex: 1.5">
         <div class="label-text">Pesquisar cliente</div>
         <div class="input-wrapper">
-          <input type="text" placeholder="Buscar empresa, CNPJ ou responsável..." class="clean-search" (input)="applyFilters($event)" />
+          <input type="text" placeholder="Buscar empresa, CNPJ ou responsável..." class="clean-search"
+            (input)="applyFilters($event)" />
           <ion-icon name="search"></ion-icon>
         </div>
       </div>
 
       <div class="more-filters" style="flex: 2; margin-top: 0; display: flex; align-items: flex-end; gap: 8px;">
-         <ion-button [fill]="activeFilter === 'ALL' ? 'solid' : 'outline'" size="small" [color]="activeFilter === 'ALL' ? 'dark' : 'medium'" (click)="setFilter('ALL')" class="filter-chip-btn">Todos</ion-button>
-         <ion-button [fill]="activeFilter === 'RISK' ? 'solid' : 'outline'" size="small" [color]="activeFilter === 'RISK' ? 'danger' : 'medium'" (click)="setFilter('RISK')" class="filter-chip-btn">Risco/Inadimplentes</ion-button>
-         <ion-button [fill]="activeFilter === 'TOP_REVENUE' ? 'solid' : 'outline'" size="small" [color]="activeFilter === 'TOP_REVENUE' ? 'success' : 'medium'" (click)="setFilter('TOP_REVENUE')" class="filter-chip-btn">Top Receita</ion-button>
-         <ion-button [fill]="activeFilter === 'OLD' ? 'solid' : 'outline'" size="small" [color]="activeFilter === 'OLD' ? 'primary' : 'medium'" (click)="setFilter('OLD')" class="filter-chip-btn">Antigos</ion-button>
-         <ion-button [fill]="activeFilter === 'ARCHIVED' ? 'solid' : 'outline'" size="small" [color]="activeFilter === 'ARCHIVED' ? 'dark' : 'medium'" (click)="setFilter('ARCHIVED')" class="filter-chip-btn">Arquivados</ion-button>
+        <ion-button [fill]="activeFilter === 'ALL' ? 'solid' : 'outline'" size="small"
+          [color]="activeFilter === 'ALL' ? 'dark' : 'medium'" (click)="setFilter('ALL')"
+          class="filter-chip-btn">Todos</ion-button>
+        <ion-button [fill]="activeFilter === 'RISK' ? 'solid' : 'outline'" size="small"
+          [color]="activeFilter === 'RISK' ? 'danger' : 'medium'" (click)="setFilter('RISK')"
+          class="filter-chip-btn">Risco/Inadimplentes</ion-button>
+        <ion-button [fill]="activeFilter === 'TOP_REVENUE' ? 'solid' : 'outline'" size="small"
+          [color]="activeFilter === 'TOP_REVENUE' ? 'success' : 'medium'" (click)="setFilter('TOP_REVENUE')"
+          class="filter-chip-btn">Top Receita</ion-button>
+        <ion-button [fill]="activeFilter === 'OLD' ? 'solid' : 'outline'" size="small"
+          [color]="activeFilter === 'OLD' ? 'primary' : 'medium'" (click)="setFilter('OLD')"
+          class="filter-chip-btn">Antigos</ion-button>
+        <ion-button [fill]="activeFilter === 'ARCHIVED' ? 'solid' : 'outline'" size="small"
+          [color]="activeFilter === 'ARCHIVED' ? 'dark' : 'medium'" (click)="setFilter('ARCHIVED')"
+          class="filter-chip-btn">Arquivados</ion-button>
       </div>
     </div>
   </ion-toolbar>
@@ -56,86 +74,87 @@
   <!-- KPI Cards -->
   <div class="kpi-container">
     <div class="kpi-card blue-text">
-        <span class="label">Clientes Ativos</span>
-        <span class="value">{{ kpis.activeClients }}</span>
+      <span class="label">Clientes Ativos</span>
+      <span class="value">{{ kpis.activeClients }}</span>
     </div>
     <div class="kpi-card border-blue">
-        <span class="label">Average LTV</span>
-        <span class="value">{{ kpis.avgLtv | currency:'BRL' }}</span>
+      <span class="label">Average LTV</span>
+      <span class="value">{{ kpis.avgLtv | currency:'BRL' }}</span>
     </div>
     <div class="kpi-card red-text">
-        <span class="label">Churn (Mês)</span>
-        <span class="value">{{ kpis.churnCount }}</span>
+      <span class="label">Churn (Mês)</span>
+      <span class="value">{{ kpis.churnCount }}</span>
     </div>
     <div class="kpi-card green-text">
-        <span class="label">Av. Lifetime</span>
-        <span class="value">{{ kpis.avgLifetimeMonths }}m</span>
+      <span class="label">Av. Lifetime</span>
+      <span class="value">{{ kpis.avgLifetimeMonths }}m</span>
     </div>
   </div>
 </ion-header>
 
 <ion-content class="light-bg">
-    <ion-refresher slot="fixed" (ionRefresh)="loadData($event)">
-        <ion-refresher-content></ion-refresher-content>
-    </ion-refresher>
+  <ion-refresher slot="fixed" (ionRefresh)="loadData($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
 
-    <!-- Data Table -->
-    <div class="data-table-container">
-        <div class="table-header">
-            <div class="col-empresa">Empresa / CNPJ</div>
-            <div class="col-financeiro">Financeiro / Contato</div>
-            <div class="col-valores">Valor Acordado</div>
-            <div class="col-datas">Datas (Início/Fim)</div>
-            <div class="col-tempo">Tempo / LT</div>
-            <div class="col-status">Status</div>
-            <div class="col-actions"></div>
+  <!-- Data Table -->
+  <div class="data-table-container">
+    <div class="table-header">
+      <div class="col-empresa">Empresa / CNPJ</div>
+      <div class="col-financeiro">Financeiro / Contato</div>
+      <div class="col-valores">Valor Acordado</div>
+      <div class="col-datas">Datas (Início/Fim)</div>
+      <div class="col-tempo">Tempo / LT</div>
+      <div class="col-status">Status</div>
+      <div class="col-actions"></div>
+    </div>
+
+    <div class="table-body">
+      <div class="table-row" *ngFor="let client of filteredClients" [routerLink]="['/clients', client.id]"
+        style="cursor: pointer;">
+        <div class="col-empresa">
+          <span class="desc-main">{{ client.razaoSocial }}</span>
+          <span class="desc-sub">{{ client.cnpj || client.cpf || 'Sem documento' }}</span>
         </div>
-
-        <div class="table-body">
-            <div class="table-row" *ngFor="let client of filteredClients" [routerLink]="['/clients', client.id]" style="cursor: pointer;">
-                <div class="col-empresa">
-                    <span class="desc-main">{{ client.razaoSocial }}</span>
-                    <span class="desc-sub">{{ client.cnpj || client.cpf || 'Sem documento' }}</span>
-                </div>
-                <div class="col-financeiro">
-                    <span class="desc-main">{{ client.financeiroNome || 'Não inf.' }}</span>
-                    <span class="desc-sub">{{ client.financeiroEmail || client.email || '-' }}</span>
-                </div>
-                <div class="col-valores">
-                    <span class="desc-main">{{ client.revenue | currency:'BRL' }}</span>
-                    <span class="desc-sub">{{ client.planType }}</span>
-                </div>
-                <div class="col-datas">
-                    <span class="desc-main">{{ client.dataInicio | date:'dd/MM/yyyy' }}</span>
-                    <span class="desc-sub" [class.danger]="client.tempoRestanteDias !== null && client.tempoRestanteDias < 0">
-                        {{ client.dataTermino ? (client.dataTermino | date:'dd/MM/yyyy') : 'Indeterminado' }}
-                    </span>
-                </div>
-                <div class="col-tempo">
-                    <span class="desc-main" [class.danger]="client.tempoRestanteDias !== null && client.tempoRestanteDias < 30">
-                        {{ client.tempoRestanteDias !== null ? client.tempoRestanteDias + 'd' : '-' }}
-                    </span>
-                    <span class="desc-sub">LT: {{ client.durationMonths }}m</span>
-                </div>
-                <div class="col-status">
-                    <span class="status-badge" [ngClass]="{
+        <div class="col-financeiro">
+          <span class="desc-main">{{ client.financeiroNome || 'Não inf.' }}</span>
+          <span class="desc-sub">{{ client.financeiroEmail || client.email || '-' }}</span>
+        </div>
+        <div class="col-valores">
+          <span class="desc-main">{{ client.revenue | currency:'BRL' }}</span>
+          <span class="desc-sub">{{ client.planType }}</span>
+        </div>
+        <div class="col-datas">
+          <span class="desc-main">{{ client.dataInicio | date:'dd/MM/yyyy' }}</span>
+          <span class="desc-sub" [class.danger]="client.tempoRestanteDias !== null && client.tempoRestanteDias < 0">
+            {{ client.dataTermino ? (client.dataTermino | date:'dd/MM/yyyy') : 'Indeterminado' }}
+          </span>
+        </div>
+        <div class="col-tempo">
+          <span class="desc-main" [class.danger]="client.tempoRestanteDias !== null && client.tempoRestanteDias < 30">
+            {{ client.tempoRestanteDias !== null ? client.tempoRestanteDias + 'd' : '-' }}
+          </span>
+          <span class="desc-sub">LT: {{ client.durationMonths }}m</span>
+        </div>
+        <div class="col-status">
+          <span class="status-badge" [ngClass]="{
                         'good': client.healthScore === 'GOOD',
                         'attention': client.healthScore === 'ATTENTION',
                         'risk': client.healthScore === 'RISK'
                     }">
-                        {{ client.statusDisplay }}
-                    </span>
-                </div>
-                <div class="col-actions">
-                    <ion-button fill="clear" color="medium" (click)="deleteClient(client.id!, $event); $event.stopPropagation();">
-                        <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-                    </ion-button>
-                </div>
-            </div>
-
-            <div class="empty-state" *ngIf="filteredClients.length === 0">
-                <p>Nenhum cliente encontrado.</p>
-            </div>
+            {{ client.statusDisplay }}
+          </span>
         </div>
+        <div class="col-actions">
+          <ion-button fill="clear" color="medium" (click)="deleteClient(client.id!, $event); $event.stopPropagation();">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="filteredClients.length === 0">
+        <p>Nenhum cliente encontrado.</p>
+      </div>
     </div>
+  </div>
 </ion-content>

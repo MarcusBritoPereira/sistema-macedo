@@ -139,4 +139,35 @@ export class BudgetPage implements OnInit {
         });
         toast.present();
     }
+
+    exportCSV() {
+        const headers = ['Mês', 'Ano', 'Meta Receita', 'Meta Despesa', 'Resultado'];
+
+        const rows = this.months.map((_, i) => {
+            const mesName = this.getMonthName(i + 1);
+            const budget = this.getBudget(i + 1);
+            const receita = budget?.receitaMeta || 0;
+            const despesa = budget?.despesaMeta || 0;
+            const resultado = receita - despesa;
+
+            return [
+                `"${mesName}"`,
+                this.currentYear,
+                receita,
+                despesa,
+                resultado
+            ].join(',');
+        });
+
+        const csvContent = headers.join(',') + '\n' + rows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `orcamento_${this.currentYear}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
 }

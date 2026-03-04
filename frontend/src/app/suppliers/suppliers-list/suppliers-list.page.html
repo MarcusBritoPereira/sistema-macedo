@@ -12,7 +12,7 @@
             </div>
 
             <div class="right-actions">
-                <ion-button fill="outline" size="small" color="medium" class="action-btn" disabled>
+                <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="exportCSV()">
                     <ion-icon name="download-outline" slot="start"></ion-icon> Exportar
                 </ion-button>
                 <ion-button color="primary" class="add-btn" routerLink="/suppliers/new">

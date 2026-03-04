@@ -25,6 +25,7 @@ export class ReceivablesListPage implements OnInit {
     allReceivables: Transaction[] = [];
     displayedItems: Transaction[] = [];
     searchTerm: string = '';
+    isImporting: boolean = false;
 
     kpis = {
         overdue: 0,
@@ -336,5 +337,121 @@ export class ReceivablesListPage implements OnInit {
             position: 'bottom'
         });
         toast.present();
+    }
+
+    // --- Bulk CSV Export ---
+    exportCSV() {
+        const headers = ['Vencimento', 'Recebimento', 'Descrição', 'Cliente', 'Valor Total', 'Valor Recebido', 'Situação'];
+
+        const rows = this.displayedItems.map(item => {
+            const isReceived = item.status === 'REALIZADO' || item.status === 'CONCILIADO';
+            return [
+                `"${item.dataVencimento ? new Date(item.dataVencimento).toISOString().split('T')[0] : ''}"`,
+                `"${isReceived && item.dataPagamento ? new Date(item.dataPagamento).toISOString().split('T')[0] : ''}"`,
+                `"${item.descricao || ''}"`,
+                `"${item.cliente?.nomeFantasia || item.cliente?.razaoSocial || ''}"`,
+                item.valor || 0,
+                isReceived ? (item.valor || 0) : 0,
+                `"${isReceived ? 'Recebido' : 'Em aberto'}"`
+            ].join(',');
+        });
+
+        const csvContent = headers.join(',') + '\n' + rows.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `contas_a_receber_${new Date().getTime()}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // --- Bulk CSV Import ---
+    downloadCsvTemplate() {
+        const headers = ['Vencimento (YYYY-MM-DD)', 'Descricao', 'Valor', 'Status (PREVISTO/REALIZADO)', 'Pagamento (YYYY-MM-DD)'];
+        const csvContent = headers.join(',') + '\n2025-12-31,Projeto Alpha,150.50,PREVISTO,';
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        if (link.download !== undefined) {
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'modelo_importacao_receber.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    }
+
+    onCsvSelected(event: any) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e: any) => {
+            const text = e.target.result;
+            this.processCsvData(text);
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    }
+
+    processCsvData(csvText: string) {
+        const lines = csvText.split('\n');
+        const transactions: any[] = [];
+
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+
+            const cols = line.split(',');
+            if (cols.length < 3) continue;
+
+            const t: any = {
+                tipo: 'RECEITA',
+                dataVencimento: cols[0]?.trim() ? new Date(cols[0].trim()).toISOString() : new Date().toISOString(),
+                descricao: cols[1]?.trim() || 'Receita Importada',
+                valor: parseFloat(cols[2]?.trim() || '0'),
+                status: (cols[3]?.trim().toUpperCase() === 'REALIZADO') ? 'REALIZADO' : 'PREVISTO',
+            };
+
+            if (cols[4]?.trim() && t.status === 'REALIZADO') {
+                t.dataPagamento = new Date(cols[4].trim()).toISOString();
+            }
+
+            if (t.descricao && t.valor > 0) {
+                transactions.push(t);
+            }
+        }
+
+        if (transactions.length > 0) {
+            this.uploadTransactions(transactions);
+        } else {
+            this.showToast('Nenhum dado válido encontrado no arquivo.', 'danger');
+        }
+    }
+
+    async uploadTransactions(transactions: any[]) {
+        this.isImporting = true;
+        const loading = await this.loadingCtrl.create({ message: 'Importando...' });
+        await loading.present();
+
+        this.financialService.createManyTransactions(transactions).subscribe({
+            next: async (res: any) => {
+                this.isImporting = false;
+                await loading.dismiss();
+                this.showToast(`${res.created} lançamentos importados com sucesso!`);
+                this.loadData();
+            },
+            error: async (err) => {
+                this.isImporting = false;
+                await loading.dismiss();
+                console.error(err);
+                this.showToast('Falha ao importar lançamentos. Verifique o padrão do arquivo.', 'danger');
+            }
+        });
     }
 }

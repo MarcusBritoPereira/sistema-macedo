@@ -38,6 +38,7 @@ export class FinancialListPage implements OnInit {
   searchTerm: string = '';
   selectedCategoryId: string = '';
   selectedType: 'RECEITA' | 'DESPESA' | '' = '';
+  isImporting: boolean = false;
 
   // Dependencies
   categories: any[] = [];
@@ -425,5 +426,122 @@ export class FinancialListPage implements OnInit {
       position: 'bottom'
     });
     toast.present();
+  }
+
+  // --- Bulk CSV Export ---
+  exportCSV() {
+    const headers = ['Competência', 'Tipo', 'Descrição', 'Cliente/Fornecedor', 'Cond. Pagto', 'Valor', 'Situação'];
+
+    const rows = this.displayedItems.map(item => {
+      return [
+        `"${item.dataVencimento ? new Date(item.dataVencimento).toISOString().split('T')[0] : ''}"`,
+        `"${item.tipo === 'RECEITA' ? 'Receita' : 'Despesa'}"`,
+        `"${item.descricao || ''}"`,
+        `"${item.clienteId ? 'Cliente' : (item.fornecedor || '-')}"`,
+        `"${item.formaPagamento || 'À vista'}"`,
+        item.valor || 0,
+        `"${item.status}"`
+      ].join(',');
+    });
+
+    const csvContent = headers.join(',') + '\n' + rows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `lancamentos_${new Date().getTime()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // --- Bulk CSV Import ---
+  downloadCsvTemplate() {
+    const headers = ['Vencimento (YYYY-MM-DD)', 'Tipo (RECEITA/DESPESA)', 'Descricao', 'Valor', 'Status (PREVISTO/REALIZADO)'];
+    const csvContent = headers.join(',') + '\n2025-12-31,RECEITA,Servico X,150.50,PREVISTO\n2025-12-31,DESPESA,Material Y,50.00,REALIZADO';
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'modelo_importacao_lancamentos.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+  }
+
+  onCsvSelected(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      const text = e.target.result;
+      this.processCsvData(text);
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
+
+  processCsvData(csvText: string) {
+    const lines = csvText.split('\n');
+    const transactions: any[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+
+      const cols = line.split(',');
+      if (cols.length < 4) continue;
+
+      const rawTipo = (cols[1]?.trim().toUpperCase() === 'DESPESA') ? 'DESPESA' : 'RECEITA';
+
+      const t: any = {
+        tipo: rawTipo,
+        dataVencimento: cols[0]?.trim() ? new Date(cols[0].trim()).toISOString() : new Date().toISOString(),
+        descricao: cols[2]?.trim() || 'Lançamento Importado',
+        valor: parseFloat(cols[3]?.trim() || '0'),
+        status: (cols[4]?.trim().toUpperCase() === 'REALIZADO') ? 'REALIZADO' : 'PREVISTO',
+      };
+
+      if (t.status === 'REALIZADO') {
+        t.dataPagamento = new Date().toISOString(); // Simple default
+      }
+
+      if (t.descricao && t.valor > 0) {
+        transactions.push(t);
+      }
+    }
+
+    if (transactions.length > 0) {
+      this.uploadTransactions(transactions);
+    } else {
+      this.showToast('Nenhum dado válido encontrado no arquivo.', 'danger');
+    }
+  }
+
+  async uploadTransactions(transactions: any[]) {
+    this.isImporting = true;
+    const loading = await this.loadingCtrl.create({ message: 'Importando...' });
+    await loading.present();
+
+    this.financialService.createManyTransactions(transactions).subscribe({
+      next: async (res: any) => {
+        this.isImporting = false;
+        await loading.dismiss();
+        this.showToast(`${res.created} lançamentos importados com sucesso!`);
+        this.loadData();
+      },
+      error: async (err) => {
+        this.isImporting = false;
+        await loading.dismiss();
+        console.error(err);
+        this.showToast('Falha ao importar lançamentos. Verifique o padrão do arquivo.', 'danger');
+      }
+    });
   }
 }

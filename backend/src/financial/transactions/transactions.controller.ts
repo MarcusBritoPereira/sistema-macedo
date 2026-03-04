@@ -13,6 +13,11 @@ export class FinancialTransactionsController {
         return this.transactionsService.create(createDto, req.user.id);
     }
 
+    @Post('bulk')
+    createMany(@Body() createDto: Prisma.LancamentoFinanceiroCreateManyInput[], @Req() req: any) {
+        return this.transactionsService.createMany(createDto, req.user.id);
+    }
+
     @Get()
     findAll(
         @Query('type') type?: TipoLancamento,
@@ -27,7 +32,7 @@ export class FinancialTransactionsController {
     ) {
         const normalizedSkip = Math.max(0, Number(skip) || 0);
         const normalizedTake = Math.min(Math.max(1, Number(take) || 50), 10000);
-        
+
         // Handle both 'tipo' (from frontend) and 'type' (REST convention)
         const finalType = tipo || type;
 

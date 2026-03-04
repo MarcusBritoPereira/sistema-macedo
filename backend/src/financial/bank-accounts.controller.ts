@@ -60,8 +60,9 @@ export class BankAccountsController {
             return {
                 ...acc,
                 pendingReconciliations: pendingCount,
-                lastSync: acc.integracao?.lastSync,
-                lastImported: lastStatement?.data,
+                lastSync: acc.integracao ? acc.integracao.lastSync : null,
+                statusIntegracao: acc.integracao ? acc.integracao.status : 'NOT_CONFIGURED',
+                lastImported: lastStatement?.data || null,
                 saldoAtual: currentBalance
             };
         }));

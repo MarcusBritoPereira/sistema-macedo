@@ -1,7 +1,8 @@
 
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { ClientsService } from './clients.service';
-import { Prisma } from '@prisma/client';
+import { CreateClientDto } from './dto/create-client.dto';
+import { UpdateClientDto } from './dto/update-client.dto';
 import { AuthGuard } from '@nestjs/passport';
 
 @Controller('clients')
@@ -10,18 +11,18 @@ export class ClientsController {
     constructor(private readonly clientsService: ClientsService) { }
 
     @Post()
-    create(@Body() createClientDto: Prisma.ClienteCreateInput) {
+    create(@Body() createClientDto: CreateClientDto) {
         return this.clientsService.create(createClientDto);
     }
 
     @Post('bulk')
-    createMany(@Body() createClientsDto: Prisma.ClienteCreateInput[]) {
+    createMany(@Body() createClientsDto: CreateClientDto[]) {
         return this.clientsService.createMany(createClientsDto);
     }
 
     @Get()
-    findAll() {
-        return this.clientsService.findAll();
+    findAll(@Query('includeInactive') includeInactive?: string) {
+        return this.clientsService.findAll(includeInactive === 'true');
     }
 
     @Get('kpis')
@@ -30,8 +31,8 @@ export class ClientsController {
     }
 
     @Get('executive')
-    getExecutiveData() {
-        return this.clientsService.getExecutiveData();
+    getExecutiveData(@Query('includeInactive') includeInactive?: string) {
+        return this.clientsService.getExecutiveData(includeInactive === 'true');
     }
 
     @Get(':id')
@@ -40,7 +41,7 @@ export class ClientsController {
     }
 
     @Patch(':id')
-    update(@Param('id') id: string, @Body() updateClientDto: Prisma.ClienteUpdateInput) {
+    update(@Param('id') id: string, @Body() updateClientDto: UpdateClientDto) {
         return this.clientsService.update(id, updateClientDto);
     }
 

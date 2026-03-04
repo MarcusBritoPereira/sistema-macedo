@@ -5,26 +5,30 @@
     </ion-buttons>
     <ion-title>Gestão de Clientes</ion-title>
     <ion-buttons slot="end">
-      <ion-button (click)="downloadCsvTemplate()" title="Baixar Modelo CSV">
+      <ion-button (click)="downloadCsvTemplate()" title="Baixar Modelo CSV" [disabled]="isImporting">
         <ion-icon name="download-outline"></ion-icon>
       </ion-button>
-      <ion-button (click)="csvInput.click()" title="Importar CSV">
-        <ion-icon name="cloudUploadOutline"></ion-icon>
+      <ion-button (click)="csvInput.click()" title="Importar CSV" [disabled]="isImporting">
+        <ion-icon name="cloud-upload-outline"></ion-icon>
       </ion-button>
       <input #csvInput type="file" (change)="onCsvSelected($event)" accept=".csv" style="display: none;">
     </ion-buttons>
   </ion-toolbar>
 
   <ion-toolbar class="search-toolbar">
-    <ion-searchbar placeholder="Buscar empresa, CNPJ ou responsável..." (ionInput)="applyFilters()"
+    <ion-searchbar placeholder="Buscar empresa, CNPJ ou responsável..." (ionInput)="applyFilters($event)"
       animated="true" class="custom-search"></ion-searchbar>
   </ion-toolbar>
 
   <div class="filter-strip ion-padding-horizontal">
     <ion-chip [outline]="activeFilter !== 'ALL'" (click)="setFilter('ALL')" color="dark">Todos</ion-chip>
-    <ion-chip [outline]="activeFilter !== 'RISK'" (click)="setFilter('RISK')" color="danger">Risco/Inadimplentes</ion-chip>
-    <ion-chip [outline]="activeFilter !== 'TOP_REVENUE'" (click)="setFilter('TOP_REVENUE')" color="success">Top Receita</ion-chip>
+    <ion-chip [outline]="activeFilter !== 'RISK'" (click)="setFilter('RISK')"
+      color="danger">Risco/Inadimplentes</ion-chip>
+    <ion-chip [outline]="activeFilter !== 'TOP_REVENUE'" (click)="setFilter('TOP_REVENUE')" color="success">Top
+      Receita</ion-chip>
     <ion-chip [outline]="activeFilter !== 'OLD'" (click)="setFilter('OLD')" color="medium">Antigos</ion-chip>
+    <ion-chip [outline]="activeFilter !== 'ARCHIVED'" (click)="setFilter('ARCHIVED')"
+      color="medium">Arquivados</ion-chip>
   </div>
 </ion-header>
 
@@ -65,7 +69,7 @@
 
     <div *ngFor="let client of filteredClients" class="client-row ripple-parent" [routerLink]="['/clients', client.id]">
       <ion-ripple-effect></ion-ripple-effect>
-      
+
       <!-- Empresa Wrapper -->
       <div class="col-empresa" style="flex: 2;">
         <div class="main-text">{{ client.razaoSocial }}</div>

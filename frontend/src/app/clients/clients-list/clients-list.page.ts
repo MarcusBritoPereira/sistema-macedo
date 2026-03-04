@@ -18,11 +18,10 @@ export class ClientsListPage implements OnInit {
   clients: ClientExecutiveDTO[] = [];
   filteredClients: ClientExecutiveDTO[] = [];
   errorMessage: string | null = null;
-
-  // Sort & Filter state
-  activeFilter: 'ALL' | 'RISK' | 'TOP_REVENUE' | 'OLD' | 'DEFAULTERS' = 'ALL';
+  activeFilter: 'ALL' | 'RISK' | 'TOP_REVENUE' | 'OLD' | 'DEFAULTERS' | 'ARCHIVED' = 'ALL';
   sortBy: 'REVENUE' | 'HEALTH' | 'OLD' | 'NEW' = 'REVENUE';
   searchTerm: string = '';
+  isImporting: boolean = false;
 
   kpis = {
     activeClients: 0,
@@ -84,7 +83,7 @@ export class ClientsListPage implements OnInit {
   }
 
   applyFilters(event?: any) {
-    if (event !== undefined) {
+    if (event?.target?.value !== undefined) {
       this.searchTerm = event.target.value.toLowerCase();
     }
 
@@ -113,7 +112,13 @@ export class ClientsListPage implements OnInit {
       case 'OLD':
         result = result.filter(c => c.durationMonths >= 12);
         break;
-      // DEFAULTERS is same as RISK in our logic for now
+      case 'ARCHIVED':
+        result = result.filter(c => c.ativo === false);
+        break;
+      default:
+        // By default, only show active clients for any other filter (ALL, RISK, etc.)
+        result = result.filter(c => c.ativo !== false);
+        break;
     }
 
     // Sort
@@ -265,23 +270,24 @@ export class ClientsListPage implements OnInit {
   }
 
   async uploadClients(clients: Cliente[]) {
-    // Show loading?
-    console.log('Uploading', clients.length, 'clients');
+    this.isImporting = true;
     this.clientsService.createMany(clients).subscribe({
-      next: async (res) => {
+      next: async (res: any) => {
+        this.isImporting = false;
         const alert = await this.alertController.create({
           header: 'Sucesso',
-          message: `${clients.length} clientes importados com sucesso!`,
+          message: `${res.created} clientes importados. ${res.skipped ? res.skipped + ' duplicados ignorados.' : ''}`,
           buttons: ['OK']
         });
         await alert.present();
         this.loadData();
       },
       error: async (err) => {
+        this.isImporting = false;
         console.error(err);
         const alert = await this.alertController.create({
           header: 'Erro',
-          message: 'Falha ao importar clientes. Verifique o formato do arquivo.',
+          message: 'Falha ao importar clientes. Verifique se há campos obrigatórios faltando ou duplicados.',
           buttons: ['OK']
         });
         await alert.present();

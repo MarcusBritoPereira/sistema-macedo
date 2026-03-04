@@ -2,6 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import { CreateClientDto } from './dto/create-client.dto';
 
 @Injectable()
 export class ClientsService {
@@ -11,17 +12,22 @@ export class ClientsService {
         return this.prisma.cliente.create({ data });
     }
 
-    createMany(data: Prisma.ClienteCreateInput[]) {
-        // Use transaction to ensure all or nothing, or use createMany if database supports it (Postgres does)
-        // prisma.cliente.createMany is efficient
-        return this.prisma.cliente.createMany({
+    async createMany(data: CreateClientDto[]) {
+        const result = await this.prisma.cliente.createMany({
             data,
-            skipDuplicates: true // Optional: skip if already exists (by unique field like email/cnpj if defined)
+            skipDuplicates: true
         });
+
+        return {
+            total: data.length,
+            created: result.count,
+            skipped: data.length - result.count
+        };
     }
 
-    findAll() {
+    findAll(includeInactive = false) {
         return this.prisma.cliente.findMany({
+            where: includeInactive ? {} : { ativo: true },
             orderBy: { razaoSocial: 'asc' },
         });
     }
@@ -102,9 +108,9 @@ export class ClientsService {
         };
     }
 
-    async getExecutiveData() {
+    async getExecutiveData(includeInactive = false) {
         const clients = await this.prisma.cliente.findMany({
-            where: { ativo: true },
+            where: includeInactive ? {} : { ativo: true },
             include: {
                 contratos: {
                     where: { ativo: true },
@@ -118,8 +124,26 @@ export class ClientsService {
 
         const now = new Date();
 
+        // N+1 Optimization: Fetch all overdue bills for relevant clients in a single query
+        const clientIds = clients.map(c => c.id);
+        const allOverdueBills = await this.prisma.lancamentoFinanceiro.groupBy({
+            by: ['clienteId'],
+            where: {
+                clienteId: { in: clientIds },
+                tipo: 'RECEITA',
+                status: 'PREVISTO',
+                dataVencimento: { lt: now }
+            },
+            _count: {
+                id: true
+            }
+        });
+
+        // Map id to count for O(1) lookup
+        const overdueMap = new Map(allOverdueBills.map(b => [b.clienteId, b._count.id]));
+
         // Enrich data
-        const enrichedClients = await Promise.all(clients.map(async (client) => {
+        const enrichedClients = clients.map((client) => {
             // 1. Revenue (Sum of active contracts) - "Valor acordado"
             const revenue = client.contratos.reduce((sum, contract) => {
                 return sum + Number(contract.valorMensal);
@@ -147,25 +171,18 @@ export class ClientsService {
             const durationMs = now.getTime() - createdAt.getTime();
             const durationMonths = Number((durationMs / (1000 * 60 * 60 * 24 * 30.44)).toFixed(1));
 
-            // 5. Status & Health
-            const overdueBills = await this.prisma.lancamentoFinanceiro.count({
-                where: {
-                    clienteId: client.id,
-                    tipo: 'RECEITA',
-                    status: 'PREVISTO',
-                    dataVencimento: { lt: now }
-                }
-            });
+            // 5. Status & Health (Using optimized map)
+            const overdueBillsCount = overdueMap.get(client.id) || 0;
 
             let healthScore: 'GOOD' | 'ATTENTION' | 'RISK' = 'GOOD';
-            if (overdueBills > 0) {
-                healthScore = overdueBills > 1 ? 'RISK' : 'ATTENTION';
+            if (overdueBillsCount > 0) {
+                healthScore = overdueBillsCount > 1 ? 'RISK' : 'ATTENTION';
             }
 
             // Status string for UI display
             let statusDisplay = 'Ativo';
             if (client.contratos.length === 0) statusDisplay = 'Sem Contrato';
-            else if (overdueBills > 0) statusDisplay = 'Inadimplente';
+            else if (overdueBillsCount > 0) statusDisplay = 'Inadimplente';
             else if (tempoRestanteDias !== null && tempoRestanteDias < 0) statusDisplay = 'Contrato Vencido';
 
             return {
@@ -179,7 +196,7 @@ export class ClientsService {
                 statusDisplay,
                 planType: client.contratos.length > 0 ? client.contratos[0].tipo : 'N/A'
             };
-        }));
+        });
 
         // Default sort by Revenue DESC
         return enrichedClients.sort((a, b) => b.revenue - a.revenue);

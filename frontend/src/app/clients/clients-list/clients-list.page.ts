@@ -227,9 +227,11 @@ export class ClientsListPage implements OnInit {
       const line = lines[i].trim();
       if (!line) continue;
 
-      // Simple CSV split (note: breaks on commas inside quotes)
-      // For a robust solution, use a regex or lib. For MVP: simple split.
-      const cols = line.split(',');
+      // Simple CSV split handling both comma and semicolon (Excel Brazil default)
+      const delimiter = line.indexOf(';') !== -1 ? ';' : ',';
+
+      // Parse columns, treating potential quotes
+      const cols = line.split(delimiter).map(col => col.replace(/^"(.*)"$/, '$1').trim());
 
       // Mapping based on headers index
       // 'Razao Social', 'Nome Fantasia', 'CNPJ', 'CPF', 'Email', 'Telefone',
@@ -238,17 +240,17 @@ export class ClientsListPage implements OnInit {
       if (cols.length < 1) continue;
 
       const client: Cliente = {
-        razaoSocial: cols[0]?.trim() || 'Sem Razão Social',
-        nomeFantasia: cols[1]?.trim(),
-        cnpj: cols[2]?.trim(),
-        cpf: cols[3]?.trim(),
-        email: cols[4]?.trim(),
-        telefone: cols[5]?.trim(),
-        endereco: cols[6]?.trim(),
-        representanteNome: cols[7]?.trim(),
-        representanteCpf: cols[8]?.trim(),
-        financeiroNome: cols[9]?.trim(),
-        financeiroEmail: cols[10]?.trim(),
+        razaoSocial: cols[0] || 'Sem Razão Social',
+        nomeFantasia: cols[1],
+        cnpj: cols[2],
+        cpf: cols[3],
+        email: cols[4],
+        telefone: cols[5],
+        endereco: cols[6],
+        representanteNome: cols[7],
+        representanteCpf: cols[8],
+        financeiroNome: cols[9],
+        financeiroEmail: cols[10],
         ativo: true
       };
 

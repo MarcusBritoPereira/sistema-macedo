@@ -100,12 +100,13 @@
   <!-- Data Table -->
   <div class="data-table-container">
     <div class="table-header">
-      <div class="col-empresa">Empresa / CNPJ</div>
-      <div class="col-financeiro">Financeiro / Contato</div>
-      <div class="col-valores">Valor Acordado</div>
-      <div class="col-datas">Datas (Início/Fim)</div>
-      <div class="col-tempo">Tempo / LT</div>
-      <div class="col-status">Status</div>
+      <div class="col-empresa">Razão Social / Fantasia</div>
+      <div class="col-docs">CNPJ / CPF</div>
+      <div class="col-contato">E-mail / Telefone</div>
+      <div class="col-endereco">Endereço</div>
+      <div class="col-representante">Representante (Nome/CPF)</div>
+      <div class="col-financeiro">Financeiro (Nome/Email)</div>
+      <div class="col-kpis">Ind.</div>
       <div class="col-actions"></div>
     </div>
 
@@ -113,30 +114,30 @@
       <div class="table-row" *ngFor="let client of filteredClients" [routerLink]="['/clients', client.id]"
         style="cursor: pointer;">
         <div class="col-empresa">
-          <span class="desc-main">{{ client.razaoSocial }}</span>
-          <span class="desc-sub">{{ client.cnpj || client.cpf || 'Sem documento' }}</span>
+          <span class="desc-main" title="{{ client.razaoSocial }}">{{ client.razaoSocial }}</span>
+          <span class="desc-sub" title="{{ client.nomeFantasia }}">{{ client.nomeFantasia || '-' }}</span>
+        </div>
+        <div class="col-docs">
+          <span class="desc-main" title="{{ client.cnpj }}">{{ client.cnpj || '-' }}</span>
+          <span class="desc-sub" title="{{ client.cpf }}">{{ client.cpf || '-' }}</span>
+        </div>
+        <div class="col-contato">
+          <span class="desc-main" title="{{ client.email }}">{{ client.email || '-' }}</span>
+          <span class="desc-sub" title="{{ client.telefone }}">{{ client.telefone || '-' }}</span>
+        </div>
+        <div class="col-endereco">
+          <span class="desc-main" title="{{ client.endereco }}">{{ client.endereco || '-' }}</span>
+        </div>
+        <div class="col-representante">
+          <span class="desc-main" title="{{ client.representanteNome }}">{{ client.representanteNome || '-' }}</span>
+          <span class="desc-sub" title="{{ client.representanteCpf }}">{{ client.representanteCpf || '-' }}</span>
         </div>
         <div class="col-financeiro">
-          <span class="desc-main">{{ client.financeiroNome || 'Não inf.' }}</span>
-          <span class="desc-sub">{{ client.financeiroEmail || client.email || '-' }}</span>
+          <span class="desc-main" title="{{ client.financeiroNome }}">{{ client.financeiroNome || '-' }}</span>
+          <span class="desc-sub" title="{{ client.financeiroEmail }}">{{ client.financeiroEmail || '-' }}</span>
         </div>
-        <div class="col-valores">
+        <div class="col-kpis">
           <span class="desc-main">{{ client.revenue | currency:'BRL' }}</span>
-          <span class="desc-sub">{{ client.planType }}</span>
-        </div>
-        <div class="col-datas">
-          <span class="desc-main">{{ client.dataInicio | date:'dd/MM/yyyy' }}</span>
-          <span class="desc-sub" [class.danger]="client.tempoRestanteDias !== null && client.tempoRestanteDias < 0">
-            {{ client.dataTermino ? (client.dataTermino | date:'dd/MM/yyyy') : 'Indeterminado' }}
-          </span>
-        </div>
-        <div class="col-tempo">
-          <span class="desc-main" [class.danger]="client.tempoRestanteDias !== null && client.tempoRestanteDias < 30">
-            {{ client.tempoRestanteDias !== null ? client.tempoRestanteDias + 'd' : '-' }}
-          </span>
-          <span class="desc-sub">LT: {{ client.durationMonths }}m</span>
-        </div>
-        <div class="col-status">
           <span class="status-badge" [ngClass]="{
                         'good': client.healthScore === 'GOOD',
                         'attention': client.healthScore === 'ATTENTION',

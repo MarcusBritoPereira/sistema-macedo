@@ -18,9 +18,9 @@ ion-content.light-bg {
         width: 100%;
         padding: 8px 0;
 
-        .left-actions { 
-            display: flex; 
-            align-items: center; 
+        .left-actions {
+            display: flex;
+            align-items: center;
         }
 
         .left-actions .add-btn {
@@ -115,7 +115,7 @@ ion-content.light-bg {
                 }
             }
         }
-        
+
         .filter-chip-btn {
             text-transform: none;
             --border-radius: 4px;
@@ -155,13 +155,24 @@ ion-content.light-bg {
             font-weight: 700;
         }
 
-        &.red-text .value { color: #d32f2f; }
-        &.blue-text .value { color: var(--ion-color-secondary); }
-        &.green-text .value { color: #388e3c; }
+        &.red-text .value {
+            color: #d32f2f;
+        }
+
+        &.blue-text .value {
+            color: var(--ion-color-secondary);
+        }
+
+        &.green-text .value {
+            color: #388e3c;
+        }
 
         &.border-blue {
             border-top: 3px solid var(--ion-color-secondary);
-            .value { color: var(--ion-color-secondary); }
+
+            .value {
+                color: var(--ion-color-secondary);
+            }
         }
     }
 }
@@ -183,7 +194,7 @@ ion-content.light-bg {
     font-weight: 700;
     color: #444;
     font-size: 0.85rem;
-    min-width: 800px;
+    min-width: 1000px;
 }
 
 .table-row {
@@ -194,10 +205,12 @@ ion-content.light-bg {
     background: white;
     font-size: 0.9rem;
     color: #333;
-    min-width: 800px;
+    min-width: 1000px;
     transition: background 0.1s;
 
-    &:hover { background: #fcfcfc; }
+    &:hover {
+        background: #fcfcfc;
+    }
 }
 
 /* Columns for Clients */
@@ -207,38 +220,50 @@ ion-content.light-bg {
     flex-direction: column;
     gap: 2px;
 }
+
+.col-docs {
+    flex: 1.2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.col-contato {
+    flex: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.col-endereco {
+    flex: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.col-representante {
+    flex: 1.5;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
 .col-financeiro {
     flex: 1.5;
     display: flex;
     flex-direction: column;
     gap: 2px;
 }
-.col-valores {
-    flex: 1.2;
-    text-align: right;
-    padding-right: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.col-datas {
-    flex: 1.2;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.col-tempo {
-    flex: 1.2;
-    text-align: center;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-.col-status {
+
+.col-kpis {
     flex: 1;
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    align-items: flex-end;
 }
+
 .col-actions {
     width: 60px;
     text-align: right;
@@ -252,15 +277,21 @@ ion-content.light-bg {
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
-    
-    &.danger { color: #d32f2f; }
+
+    &.danger {
+        color: #d32f2f;
+    }
 }
+
 .desc-sub {
     font-size: 0.75rem;
     color: #888;
     display: block;
-    
-    &.danger { color: #d32f2f; font-weight: 600; }
+
+    &.danger {
+        color: #d32f2f;
+        font-weight: 600;
+    }
 }
 
 /* Status Badges */
@@ -270,9 +301,20 @@ ion-content.light-bg {
     font-size: 0.75rem;
     font-weight: 600;
 
-    &.good { background: #e8f5e9; color: #2e7d32; }
-    &.attention { background: #fff3e0; color: #ef6c00; }
-    &.risk { background: #ffebee; color: #c62828; }
+    &.good {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    &.attention {
+        background: #fff3e0;
+        color: #ef6c00;
+    }
+
+    &.risk {
+        background: #ffebee;
+        color: #c62828;
+    }
 }
 
 .empty-state {
@@ -288,27 +330,32 @@ ion-content.light-bg {
         align-items: flex-start;
         gap: 12px;
     }
+
     .filter-row {
         flex-direction: column;
         align-items: flex-start;
         gap: 12px;
     }
+
     .kpi-container {
         flex-direction: column;
     }
 }
 
 @media (max-width: 768px) {
-    .data-table-container { 
-        margin: 12px; 
+    .data-table-container {
+        margin: 12px;
     }
-    
-    .table-header, .table-row { 
-        min-width: 720px; 
+
+    .table-header,
+    .table-row {
+        min-width: 600px;
     }
-    
+
     /* Optional content hiding for mobile as done previously */
-    .col-financeiro, .col-datas, .col-tempo { 
-        display: none !important; 
+    .col-endereco,
+    .col-representante,
+    .col-contato {
+        display: none !important;
     }
 }

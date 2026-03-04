@@ -146,7 +146,7 @@ async function main() {
     // 5.1. Bank Accounts
     console.log('Generating Bank Accounts...');
     const bankAccountsData = [
-        { nome: 'Conta Corrente Principal', banco: 'Itaú', saldoInicial: 5000 },
+        { nome: 'Banco Inter', banco: 'Banco Inter', saldoInicial: 5000 },
         { nome: 'Caixinha Reserva', banco: 'NuBank', saldoInicial: 1500 },
     ];
 

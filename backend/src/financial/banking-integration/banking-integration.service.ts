@@ -23,6 +23,7 @@ import { OfxService } from './ofx.service';
 export class BankingIntegrationService {
     private readonly INTER_AUTH_URL = 'https://cdpj.partners.bancointer.com.br/oauth/v2/token';
     private readonly INTER_API_URL = 'https://cdpj.partners.bancointer.com.br/banking/v2/extrato';
+    private readonly INTER_SALDO_URL = 'https://cdpj.partners.bancointer.com.br/banking/v2/saldo';
     private readonly CERTS_DIR = path.resolve(process.cwd(), 'secure', 'certs');
 
     constructor(
@@ -324,6 +325,40 @@ export class BankingIntegrationService {
         }
     }
 
+    async getAccountBalance(contaBancariaId: string): Promise<number> {
+        const integration = await this.prisma.integracaoBancaria.findUnique({
+            where: { contaBancariaId },
+            include: { contaBancaria: true }
+        });
+
+        if (!integration || integration.status !== 'CONNECTED') {
+            throw new Error('Integração não configurada ou desconectada');
+        }
+
+        if (!fs.existsSync(integration.crtFile!) || !fs.existsSync(integration.keyFile!)) {
+            throw new Error('Certificados não encontrados no servidor.');
+        }
+
+        const certContent = fs.readFileSync(integration.crtFile!);
+        const keyContent = fs.readFileSync(integration.keyFile!);
+
+        const accessToken = await this.getAccessToken(
+            integration.clientId!,
+            integration.clientSecret!,
+            certContent,
+            keyContent
+        );
+
+        const responseData = await this.fetchInterBalance(
+            accessToken,
+            certContent,
+            keyContent,
+            integration.contaBancaria?.conta
+        );
+
+        return parseFloat(responseData.disponivel || '0');
+    }
+
     private async getAccessToken(clientId: string, clientSecret: string, cert: Buffer, key: Buffer): Promise<string> {
         const agent = new https.Agent({
             cert: cert,
@@ -412,6 +447,26 @@ export class BankingIntegrationService {
 
         // Inter V2 API Pagination: pagina (starting at 0) and tamanhoPagina (max 1000)
         const url = `${this.INTER_API_URL}?dataInicio=${dataInicio}&dataFim=${dataFim}&pagina=${pagina}&tamanhoPagina=1000`;
+
+        const headers: any = {
+            'Authorization': `Bearer ${token}`
+        };
+
+        if (accountNumber) {
+            headers['x-inter-conta-corrente'] = accountNumber;
+        }
+
+        const response = await axios.get(url, {
+            httpsAgent: agent,
+            headers: headers
+        });
+
+        return response.data;
+    }
+
+    private async fetchInterBalance(token: string, cert: Buffer, key: Buffer, accountNumber?: string | null) {
+        const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+        const url = this.INTER_SALDO_URL;
 
         const headers: any = {
             'Authorization': `Bearer ${token}`

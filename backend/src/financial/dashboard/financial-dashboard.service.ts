@@ -1,10 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ClassificacaoDRE } from '@prisma/client';
+import { BankingIntegrationService } from '../banking-integration/banking-integration.service';
+import * as fs from 'fs';
 
 @Injectable()
 export class FinancialDashboardService {
-    constructor(private prisma: PrismaService) { }
+    constructor(
+        private prisma: PrismaService,
+        private bankingService: BankingIntegrationService
+    ) { }
 
     async getDRE(startDate: Date, endDate: Date) {
         // 1. Fetch Records (Unified)
@@ -445,7 +450,6 @@ export class FinancialDashboardService {
         const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
 
         // 1. Current Balance (Saldo Atual) - Realized only
-        // Calculated from Accounts sum
         const accounts = await this.prisma.contaBancaria.findMany();
 
         const accountsWithBalance = await Promise.all(accounts.map(async (acc) => {
@@ -468,7 +472,23 @@ export class FinancialDashboardService {
                 }
             });
 
-            const bal = Number(acc.saldoInicial || 0) + Number(totalIn._sum.valor || 0) - Number(totalOut._sum.valor || 0);
+            let bal = Number(acc.saldoInicial || 0) + Number(totalIn._sum.valor || 0) - Number(totalOut._sum.valor || 0);
+
+            // TRY REAL-TIME BALANCE from API if integrated
+            try {
+                const integration = await this.prisma.integracaoBancaria.findUnique({
+                    where: { contaBancariaId: acc.id }
+                });
+                if (integration && integration.status === 'CONNECTED') {
+                    console.log(`[Dashboard] Fetching real-time balance for ${acc.nome}...`);
+                    const realTimeBal = await this.bankingService.getAccountBalance(acc.id);
+                    bal = realTimeBal;
+                }
+            } catch (e) {
+                console.error(`[Dashboard] Failed to fetch real-time balance for ${acc.nome}:`, e.message);
+                // Fallback to calculated balance (already set in 'bal')
+            }
+
             return { ...acc, saldo: bal };
         }));
 

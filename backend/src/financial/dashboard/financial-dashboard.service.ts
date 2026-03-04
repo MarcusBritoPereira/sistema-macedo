@@ -474,12 +474,12 @@ export class FinancialDashboardService {
 
         const currentBalance = accountsWithBalance.reduce((acc, curr) => acc + curr.saldo, 0);
 
-        // 2. Receivables (A Receber) for the Period
+        // 2. Receivables (A Receber) for the Period - Including OVERDUE
         const receivables = await this.prisma.lancamentoFinanceiro.findMany({
             where: {
                 tipo: 'RECEITA',
                 OR: [
-                    { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
+                    { dataVencimento: { lte: endOfMonth } }, // Includes overdue
                     { dataPagamento: { gte: startOfMonth, lte: endOfMonth } }
                 ]
             }
@@ -488,17 +488,17 @@ export class FinancialDashboardService {
         const recReceived = receivables.filter(t => ['REALIZADO', 'CONCILIADO'].includes(t.status) && t.dataPagamento && t.dataPagamento >= startOfMonth && t.dataPagamento <= endOfMonth)
             .reduce((sum, t) => sum + Number(t.valor), 0);
 
-        const recPending = receivables.filter(t => t.status === 'PREVISTO' && t.dataVencimento >= startOfMonth && t.dataVencimento <= endOfMonth)
+        const recPending = receivables.filter(t => t.status === 'PREVISTO' && t.dataVencimento <= endOfMonth)
             .reduce((sum, t) => sum + Number(t.valor), 0);
 
         const recTotal = recReceived + recPending;
 
-        // 3. Payables (A Pagar) for the Period
+        // 3. Payables (A Pagar) for the Period - Including OVERDUE
         const payables = await this.prisma.lancamentoFinanceiro.findMany({
             where: {
                 tipo: 'DESPESA',
                 OR: [
-                    { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
+                    { dataVencimento: { lte: endOfMonth } }, // Includes overdue
                     { dataPagamento: { gte: startOfMonth, lte: endOfMonth } }
                 ]
             }
@@ -507,7 +507,7 @@ export class FinancialDashboardService {
         const payPaid = payables.filter(t => ['REALIZADO', 'CONCILIADO'].includes(t.status) && t.dataPagamento && t.dataPagamento >= startOfMonth && t.dataPagamento <= endOfMonth)
             .reduce((sum, t) => sum + Number(t.valor), 0);
 
-        const payPending = payables.filter(t => t.status === 'PREVISTO' && t.dataVencimento >= startOfMonth && t.dataVencimento <= endOfMonth)
+        const payPending = payables.filter(t => t.status === 'PREVISTO' && t.dataVencimento <= endOfMonth)
             .reduce((sum, t) => sum + Number(t.valor), 0);
 
         const payTotal = payPaid + payPending;

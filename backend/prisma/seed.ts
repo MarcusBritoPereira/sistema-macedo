@@ -143,6 +143,22 @@ async function main() {
         clients.push(c);
     }
 
+    // 5.1. Bank Accounts
+    console.log('Generating Bank Accounts...');
+    const bankAccountsData = [
+        { nome: 'Conta Corrente Principal', banco: 'Itaú', saldoInicial: 5000 },
+        { nome: 'Caixinha Reserva', banco: 'NuBank', saldoInicial: 1500 },
+    ];
+
+    const bankAccounts: any[] = [];
+    for (const acc of bankAccountsData) {
+        let a = await prisma.contaBancaria.findFirst({ where: { nome: acc.nome } });
+        if (!a) {
+            a = await prisma.contaBancaria.create({ data: acc });
+        }
+        bankAccounts.push(a);
+    }
+
     // 6. Contracts
     console.log('Generating Contracts...');
     for (const client of clients) {
@@ -205,7 +221,8 @@ async function main() {
                 tipo,
                 categoriaId: catId,
                 centroCustoId: costCenters[0].id,
-                clienteId: tipo === 'RECEITA' ? client.id : undefined
+                clienteId: tipo === 'RECEITA' ? client.id : undefined,
+                contaBancariaId: bankAccounts[0].id
             }
         });
     }

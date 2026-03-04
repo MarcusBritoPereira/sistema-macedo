@@ -179,8 +179,8 @@ export class ClientsListPage implements OnInit {
       'Razao Social', 'Nome Fantasia', 'CNPJ', 'CPF', 'Email', 'Telefone',
       'Endereco', 'Representante Nome', 'Representante CPF', 'Financeiro Nome', 'Financeiro Email'
     ];
-    const csvContent = headers.join(',') + '\n' +
-      'Empresa Exemplo Ltda,Empresa Ex,12.345.678/0001-99,,contato@empresa.com,11999999999,Rua Exemplo 123,Joao Silva,123.456.789-00,Maria Fin,pagar@empresa.com';
+    const csvContent = headers.join(';') + '\n' +
+      'Empresa Exemplo Ltda;Empresa Ex;12.345.678/0001-99;;contato@empresa.com;11999999999;Rua Exemplo 123;Joao Silva;123.456.789-00;Maria Fin;pagar@empresa.com';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -232,10 +232,18 @@ export class ClientsListPage implements OnInit {
       const delimiter = line.includes(';') ? ';' : ',';
 
       // Split strings accurately ignoring delimiters inside quotes.
-      // This regex handles `delimiter` inside double quotes:
-      // e.g. Regex for comma: /,(?=(?:(?:[^"]*"){2})*[^"]*$)/
       const regex = new RegExp(`${delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
-      const cols = line.split(regex).map(col => col.replace(/^"(.*)"$/, '$1').trim());
+      let cols = line.split(regex).map(col => col.replace(/^"(.*)"$/, '$1').trim());
+
+      // Fallback: If Excel placed everything into Column A and wrapped it in quotes,
+      // cols will have length 1 but contain the delimiter inside.
+      if (cols.length === 1) {
+        if (cols[0].includes(';')) {
+          cols = cols[0].split(';').map(col => col.trim());
+        } else if (cols[0].includes(',')) {
+          cols = cols[0].split(',').map(col => col.trim());
+        }
+      }
 
       // Mapping based on headers index
       // 0: 'Razao Social', 1: 'Nome Fantasia', 2: 'CNPJ', 3: 'CPF', 4: 'Email', 5: 'Telefone',

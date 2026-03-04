@@ -1,112 +1,165 @@
-/* Modern Cost Centers List Styles */
-
-ion-content {
-    --background: var(--ion-background-color);
+/* Global Page Style */
+ion-content.light-bg {
+    --background: #f4f6f8;
 }
 
-.header-section {
-    padding: 20px 0 10px 0;
+/* Top Toolbar */
+.top-toolbar {
+    --background: white;
+    --border-color: #eee;
+    --min-height: 60px;
+    padding: 0 16px;
+    border-bottom: 1px solid #eee;
 
-    h1 {
-        font-size: 1.75rem;
-        font-weight: 400;
-        margin: 0 0 20px 8px;
-        line-height: 1.2;
-        color: var(--ion-color-dark);
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        padding: 8px 0;
 
-        strong {
-            font-weight: 700;
-            color: var(--ion-color-primary);
+        .left-actions {
+            display: flex;
+            align-items: center;
+        }
+
+        .right-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+
+            .add-btn {
+                --border-radius: 4px;
+                font-weight: 600;
+                text-transform: none;
+                letter-spacing: 0;
+                height: 36px;
+            }
         }
     }
 }
 
-.custom-search {
-    --background: #ffffff;
-    --box-shadow: none !important;
-    --border-radius: 12px;
-    padding: 0;
-    margin-bottom: 20px;
+/* Filter Toolbar */
+.filter-toolbar {
+    --background: white;
+    --border-color: #eee;
+    border-bottom: 1px solid #eee;
+    --min-height: 70px;
+    padding: 0 16px;
+
+    .filter-row {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 12px 0;
+
+        .label-text {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .search-box {
+            .input-wrapper {
+                display: flex;
+                align-items: center;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                padding: 0 12px;
+                height: 38px;
+                background: white;
+
+                input {
+                    border: none;
+                    outline: none;
+                    flex: 1;
+                    font-size: 0.9rem;
+                    color: #333;
+                    background: transparent !important;
+                }
+
+                ion-icon {
+                    color: var(--ion-color-secondary);
+                    font-size: 1.2rem;
+                    cursor: pointer;
+                }
+            }
+        }
+    }
 }
 
-.list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding-bottom: 80px;
-}
-
-.standard-card {
-    margin: 0;
-    border-radius: 16px;
+/* Data Table */
+.data-table-container {
     background: white;
-    box-shadow: none !important;
-    transition: transform 0.2s ease;
+    margin: 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow-x: auto;
+}
 
-    &:active {
-        transform: scale(0.98);
+.table-header {
+    display: flex;
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-bottom: 1px solid #ddd;
+    font-weight: 700;
+    color: #444;
+    font-size: 0.85rem;
+    min-width: 600px;
+}
+
+.table-row {
+    display: flex;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+    background: white;
+    font-size: 0.9rem;
+    color: #333;
+    min-width: 600px;
+    transition: background 0.1s;
+
+    &:hover {
+        background: #fcfcfc;
     }
+}
 
-    .card-content-wrapper {
-        padding: 16px;
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
+/* Columns */
+.col-nome {
+    flex: 2;
+}
 
-    .icon-box {
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: rgba(var(--ion-color-tertiary-rgb), 0.1);
-        color: var(--ion-color-tertiary);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-    }
+.col-codigo {
+    flex: 2;
+    color: #666;
+}
 
-    .info-content {
-        flex: 1;
+.col-actions {
+    width: 60px;
+    text-align: right;
+}
 
-        h3 {
-            margin: 0 0 4px 0;
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--ion-color-dark);
-        }
-
-        p {
-            margin: 0;
-            font-size: 0.85rem;
-            color: var(--ion-color-medium);
-        }
-    }
-
-    .arrow-action {
-        color: var(--ion-color-medium-tint);
-        font-size: 20px;
-    }
+/* Desc text */
+.desc-main {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: #333;
 }
 
 .empty-state {
+    padding: 40px;
     text-align: center;
-    padding: 40px 20px;
-    color: var(--ion-color-medium);
-    margin-top: 20px;
-
-    ion-icon {
-        font-size: 48px;
-        margin-bottom: 12px;
-        opacity: 0.5;
-    }
-
-    p {
-        margin: 0;
-        font-size: 1rem;
-    }
+    color: #999;
 }
 
-.custom-fab {
-    --box-shadow: none !important;
+/* Responsive */
+@media (max-width: 768px) {
+    .data-table-container {
+        margin: 12px;
+    }
+
+    .table-header,
+    .table-row {
+        min-width: 500px;
+    }
 }

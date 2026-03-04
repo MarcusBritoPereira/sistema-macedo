@@ -1,184 +1,199 @@
-// Colors
-$bg-color: #F5F7FA;
-$primary-blue: #4D8DFF;
-$success-green: #34D399;
-$error-red: #F87171;
-$text-dark: #1F2937;
-$text-gray: #6B7280;
-
-ion-content.bg-light {
-    --background: #{$bg-color};
+/* Global Page Style */
+ion-content.light-bg {
+    --background: #f4f6f8;
 }
 
-.container {
-    max-width: 600px;
-    margin: 0 auto;
-    padding: 20px 16px;
-}
+/* Top Toolbar */
+.top-toolbar {
+    --background: white;
+    --border-color: #eee;
+    --min-height: 60px;
+    padding: 0 16px;
+    border-bottom: 1px solid #eee;
 
-// Status Card
-.status-card {
-    border-radius: 12px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    margin-bottom: 24px;
-    border-left: 6px solid #ccc;
-    background: white;
-
-    &.status-connected {
-        border-left-color: $success-green;
-
-        .status-icon ion-icon {
-            color: $success-green;
-        }
-    }
-
-    &.status-error {
-        border-left-color: $error-red;
-
-        .status-icon ion-icon {
-            color: $error-red;
-        }
-    }
-
-    .flex-row {
+    .header-content {
         display: flex;
+        justify-content: space-between;
         align-items: center;
-        gap: 16px;
-    }
+        width: 100%;
+        padding: 8px 0;
 
-    .flex-1 {
-        flex: 1;
-    }
-
-    .flex-2 {
-        flex: 2;
-    }
-
-    .status-icon {
-        font-size: 32px;
-    }
-
-    .status-info {
-        flex: 1;
-
-        h3 {
-            margin: 0;
-            font-size: 16px;
-            font-weight: 600;
-            color: $text-dark;
-        }
-
-        p {
-            margin: 4px 0 0;
-            font-size: 14px;
-            color: $text-gray;
+        .left-actions {
+            display: flex;
+            align-items: center;
         }
     }
 }
 
-// Form Blocks
+/* Data Table */
+.data-table-container {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    overflow-x: auto;
+}
+
+.table-header {
+    display: flex;
+    background: #f8f9fa;
+    padding: 12px 16px;
+    border-bottom: 1px solid #ddd;
+    font-weight: 700;
+    color: #444;
+    font-size: 0.85rem;
+    min-width: 600px;
+}
+
+.table-row {
+    display: flex;
+    padding: 12px 16px;
+    border-bottom: 1px solid #eee;
+    align-items: center;
+    background: white;
+    font-size: 0.9rem;
+    color: #333;
+    min-width: 600px;
+    transition: background 0.1s;
+
+    &:hover {
+        background: #fcfcfc;
+    }
+
+    &.active-row {
+        background: #f0fdf4;
+    }
+}
+
+/* Columns */
+.col-bank {
+    flex: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.col-status {
+    flex: 1;
+}
+
+.col-actions {
+    width: 60px;
+    text-align: right;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+
+    &.good {
+        background: #e8f5e9;
+        color: #2e7d32;
+    }
+
+    &.risk {
+        background: #ffebee;
+        color: #c62828;
+    }
+
+    &.attention {
+        background: #fff3e0;
+        color: #ef6c00;
+    }
+}
+
+.desc-main {
+    font-weight: 500;
+    font-size: 0.95rem;
+    color: #333;
+}
+
+.desc-sub {
+    font-size: 0.75rem;
+    color: #888;
+}
+
+/* Form inputs styling */
 .form-block {
     background: white;
-    border-radius: 16px;
-    padding: 20px;
+    padding: 24px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
     margin-bottom: 24px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
     .block-title {
-        font-size: 18px;
+        font-size: 1.05rem;
         font-weight: 700;
-        color: $text-dark;
-        margin-top: 0;
-        margin-bottom: 8px;
+        margin: 0 0 8px 0;
+        color: #333;
     }
 
     .block-desc {
-        font-size: 14px;
-        color: $text-gray;
+        font-size: 0.85rem;
+        color: #666;
         margin-bottom: 20px;
     }
-}
 
-// Custom Inputs
-.custom-input {
-    --padding-start: 0;
-    --inner-padding-end: 0;
-    --background: transparent;
-    margin-bottom: 16px;
-
-    ion-label {
-        font-weight: 600;
-        color: $text-dark !important;
-        font-size: 14px !important;
-        margin-bottom: 8px !important;
+    .input-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 16px;
     }
 
-    ion-input,
-    ion-textarea,
-    ion-select {
-        --background: #F9FAFB;
-        --padding-start: 12px;
-        --padding-end: 12px;
-        --padding-top: 12px;
-        --padding-bottom: 12px;
-        border: 1px solid #E5E7EB;
-        border-radius: 8px;
-        margin-top: 4px;
-    }
+    .input-group {
+        display: flex;
+        flex-direction: column;
+        margin-bottom: 16px;
 
-    ion-note {
-        font-size: 12px;
-        color: $text-gray;
-        margin-top: 4px;
-    }
-}
+        &.flex-1 {
+            flex: 1;
+        }
 
-.field-helper {
-    display: flex;
-    gap: 8px;
-    font-size: 13px;
-    color: $primary-blue;
-    background: #EFF6FF;
-    padding: 12px;
-    border-radius: 8px;
-    align-items: center;
-}
+        &.flex-2 {
+            flex: 2;
+        }
 
-.spacer {
-    height: 16px;
-}
-
-// File Upload
-.file-upload-row {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-
-    .file-field {
         label {
-            display: block;
-            font-size: 14px;
+            font-size: 0.85rem;
             font-weight: 600;
-            color: $text-dark;
+            color: #444;
             margin-bottom: 8px;
         }
+
+        .clean-input {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px 12px;
+            font-size: 0.9rem;
+            color: #333;
+            background: #f9f9f9;
+            transition: border-color 0.2s;
+
+            &:focus {
+                outline: none;
+                border-color: var(--ion-color-primary);
+                background: white;
+            }
+        }
+
+        .input-helper {
+            font-size: 0.75rem;
+            color: #888;
+            margin-top: 4px;
+        }
     }
-}
 
-// Action Footer
-.action-footer {
-    margin-top: 32px;
-    text-align: center;
-
-    .connect-btn {
-        --background: #{$primary-blue};
-        --border-radius: 12px;
-        font-weight: 600;
-        margin-bottom: 12px;
-    }
-
-    .footer-note {
-        font-size: 13px;
-        color: $text-gray;
+    .info-alert {
+        display: flex;
+        align-items: center;
+        background: #e3f2fd;
+        color: #1565c0;
+        padding: 12px;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        gap: 8px;
+        margin-top: 16px;
     }
 }

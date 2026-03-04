@@ -1,53 +1,84 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button color="primary"></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Gestão de Usuários</ion-title>
-    <ion-buttons slot="end">
-      <ion-button>
-        <ion-icon name="search-outline" slot="icon-only" color="primary"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+  <ion-toolbar class="top-toolbar">
+    <div class="header-content">
+      <div class="left-actions">
+        <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
+          <ion-menu-button color="primary"></ion-menu-button>
+        </ion-buttons>
+        <div style="display: inline-block; vertical-align: middle; margin-left: 8px;">
+          <h1 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Gestão de Usuários</h1>
+        </div>
+      </div>
+
+      <div class="right-actions">
+        <ion-button color="primary" class="add-btn" routerLink="/users/new">
+          <ion-icon name="add" slot="start"></ion-icon>
+          Novo Usuário
+        </ion-button>
+      </div>
+    </div>
+  </ion-toolbar>
+
+  <ion-toolbar class="filter-toolbar">
+    <div class="filter-row">
+      <div class="search-box" style="flex: 1">
+        <div class="label-text">Pesquisar</div>
+        <div class="input-wrapper">
+          <input type="text" placeholder="Buscar usuários..." class="clean-search" />
+          <ion-icon name="search"></ion-icon>
+        </div>
+      </div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding-horizontal">
+<ion-content class="light-bg">
   <ion-refresher slot="fixed" (ionRefresh)="loadUsers($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <div class="header-section">
-    <h1>Gestão de <strong>Usuários</strong></h1>
-    <ion-searchbar placeholder="Buscar usuários..." mode="ios" class="custom-search"></ion-searchbar>
-  </div>
+  <div class="data-table-container">
+    <div class="table-header">
+      <div class="col-nome">Usuário</div>
+      <div class="col-email">E-mail</div>
+      <div class="col-perfil">Perfil</div>
+      <div class="col-status">Status</div>
+      <div class="col-actions"></div>
+    </div>
 
-  <div class="user-list">
-    <ion-card *ngFor="let user of users" [routerLink]="['/users', user.id]" class="user-card" button
-      [class.inactive]="!user.ativo">
-      <div class="card-content-wrapper">
-        <div class="user-avatar" [class.admin]="getProfileName(user) === 'ADMINISTRADOR'"
-          [class.manager]="getProfileName(user) === 'GERENTE'">
-          {{ user.nome.charAt(0) }}
+    <div class="table-body">
+      <div class="table-row" *ngFor="let user of users" [routerLink]="['/users', user.id]" style="cursor: pointer;">
+        <div class="col-nome">
+          <span class="user-avatar" [class.admin]="getProfileName(user) === 'ADMINISTRADOR'"
+            [class.manager]="getProfileName(user) === 'GERENTE'">
+            {{ user.nome.charAt(0).toUpperCase() }}
+          </span>
+          <span class="desc-main">{{ user.nome }}</span>
         </div>
-        <div class="user-info">
-          <h3>{{ user.nome }} <span *ngIf="!user.ativo">(Inativo)</span></h3>
-          <p>{{ user.email }}</p>
-          <div class="role-badge" [class.admin]="getProfileName(user) === 'ADMINISTRADOR'"
+        <div class="col-email desc-main">
+          {{ user.email }}
+        </div>
+        <div class="col-perfil">
+          <span class="role-badge" [class.admin]="getProfileName(user) === 'ADMINISTRADOR'"
             [class.manager]="getProfileName(user) === 'GERENTE'">
             {{ getProfileName(user) }}
-          </div>
+          </span>
         </div>
-        <div class="arrow-action">
-          <ion-icon name="chevron-forward-outline"></ion-icon>
+        <div class="col-status">
+          <span class="status-badge" [ngClass]="user.ativo ? 'good' : 'risk'">
+            {{ user.ativo ? 'Ativo' : 'Inativo' }}
+          </span>
+        </div>
+        <div class="col-actions">
+          <ion-button fill="clear" color="medium">
+            <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+          </ion-button>
         </div>
       </div>
-    </ion-card>
-  </div>
 
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button routerLink="/users/new" color="primary" class="custom-fab">
-      <ion-icon name="add"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
+      <div class="empty-state" *ngIf="users.length === 0">
+        <p>Nenhum usuário encontrado.</p>
+      </div>
+    </div>
+  </div>
 </ion-content>

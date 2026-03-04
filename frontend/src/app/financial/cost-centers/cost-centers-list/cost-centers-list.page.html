@@ -1,53 +1,70 @@
 <ion-header>
-  <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button color="primary"></ion-menu-button>
-    </ion-buttons>
-    <ion-title>Centros de Custo</ion-title>
-    <ion-buttons slot="end">
-      <ion-button>
-        <ion-icon name="search-outline" slot="icon-only" color="primary"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+  <ion-toolbar class="top-toolbar">
+    <div class="header-content">
+      <div class="left-actions">
+        <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
+          <ion-menu-button color="primary"></ion-menu-button>
+        </ion-buttons>
+        <div style="display: inline-block; vertical-align: middle; margin-left: 8px;">
+          <h1 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Centros de Custo</h1>
+          <p style="margin: 0; font-size: 0.8rem; color: #666;">Gestão de Áreas e Departamentos</p>
+        </div>
+      </div>
+
+      <div class="right-actions">
+        <ion-button color="primary" class="add-btn" routerLink="/financial/cost-centers/new">
+          <ion-icon name="add" slot="start"></ion-icon>
+          Novo Centro de Custo
+        </ion-button>
+      </div>
+    </div>
+  </ion-toolbar>
+
+  <ion-toolbar class="filter-toolbar">
+    <div class="filter-row">
+      <div class="search-box" style="flex: 1">
+        <div class="label-text">Pesquisar</div>
+        <div class="input-wrapper">
+          <input type="text" placeholder="Buscar centros de custo..." class="clean-search" />
+          <ion-icon name="search"></ion-icon>
+        </div>
+      </div>
+    </div>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding-horizontal">
-  <div class="header-section">
-    <h1>Centros de <strong>Custo</strong></h1>
-    <ion-searchbar placeholder="Buscar centros de custo..." mode="ios" class="custom-search"></ion-searchbar>
-  </div>
-
+<ion-content class="light-bg">
   <ion-refresher slot="fixed" (ionRefresh)="loadCostCenters($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <div class="list-container">
-    <ion-card *ngFor="let cc of costCenters" [routerLink]="['/financial/cost-centers', cc.id]" class="standard-card"
-      button>
-      <div class="card-content-wrapper">
-        <div class="icon-box">
-          <ion-icon name="business-outline"></ion-icon>
+  <div class="data-table-container">
+    <div class="table-header">
+      <div class="col-nome">Nome do Centro</div>
+      <div class="col-codigo">Código</div>
+      <div class="col-actions"></div>
+    </div>
+
+    <div class="table-body">
+      <div class="table-row" *ngFor="let cc of costCenters" [routerLink]="['/financial/cost-centers', cc.id]"
+        style="cursor: pointer;">
+        <div class="col-nome">
+          <ion-icon name="business-outline" style="vertical-align: middle; margin-right: 8px; color: #888;"></ion-icon>
+          <span class="desc-main" style="vertical-align: middle;">{{ cc.nome }}</span>
         </div>
-        <div class="info-content">
-          <h3>{{ cc.nome }}</h3>
-          <p>{{ cc.codigo || 'Sem código' }}</p>
+        <div class="col-codigo desc-main">
+          {{ cc.codigo || 'Sem código' }}
         </div>
-        <div class="arrow-action">
-          <ion-icon name="chevron-forward-outline"></ion-icon>
+        <div class="col-actions">
+          <ion-button fill="clear" color="medium">
+            <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+          </ion-button>
         </div>
       </div>
-    </ion-card>
 
-    <div *ngIf="costCenters.length === 0" class="empty-state">
-      <ion-icon name="business-outline"></ion-icon>
-      <p>Nenhum centro de custo encontrado.</p>
+      <div class="empty-state" *ngIf="costCenters.length === 0">
+        <p>Nenhum centro de custo encontrado.</p>
+      </div>
     </div>
   </div>
-
-  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
-    <ion-fab-button routerLink="/financial/cost-centers/new" color="primary" class="custom-fab">
-      <ion-icon name="add"></ion-icon>
-    </ion-fab-button>
-  </ion-fab>
 </ion-content>

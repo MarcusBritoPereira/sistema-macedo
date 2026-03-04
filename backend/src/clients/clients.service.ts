@@ -160,7 +160,7 @@ export class ClientsService {
             const dataTermino = sortedByEnd.length > 0 ? sortedByEnd[0].dataFim : null;
 
             // 3. Remaining Days - "Tempo restante (dias)"
-            let tempoRestanteDias = null;
+            let tempoRestanteDias: number | null = null;
             if (dataTermino) {
                 const diffTime = new Date(dataTermino).getTime() - now.getTime();
                 tempoRestanteDias = Math.ceil(diffTime / (1000 * 60 * 60 * 24));

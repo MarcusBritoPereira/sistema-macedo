@@ -444,8 +444,27 @@ export class ReconciliationPage implements OnInit {
                 return;
             }
 
+            const confirmed = await this.requestManualConfirmationBulk();
+            if (!confirmed) return;
+
             this.applyBulkReconciliation(categoryId);
         }
+    }
+
+
+    private async requestManualConfirmationBulk(): Promise<boolean> {
+        const alert = await this.alertCtrl.create({
+            header: 'Confirmação manual obrigatória',
+            message: `Você está prestes a conciliar manualmente ${this.selectedStatementIds.size} lançamento(s). Deseja continuar?`,
+            buttons: [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Confirmar', role: 'confirm' }
+            ]
+        });
+
+        await alert.present();
+        const { role } = await alert.onDidDismiss();
+        return role === 'confirm';
     }
 
     async applyBulkReconciliation(categoryId: string) {
@@ -475,7 +494,7 @@ export class ReconciliationPage implements OnInit {
                     // Default Cost Center "Geral"
                     centroCustoId: this.getGeralCostCenterId()
                 };
-                return this.reconciliationService.createAndLink(id, payload).toPromise();
+                return this.reconciliationService.createAndLink(id, payload, true).toPromise();
             });
 
             await Promise.all(promises);

@@ -22,14 +22,14 @@ export class ReconciliationController {
     }
 
     @Post('link')
-    linkManual(@Body() data: { statementId: string; lancamentoId: string }, @Req() req: any) {
-        return this.service.linkManual(data.statementId, data.lancamentoId, req.user?.id);
+    linkManual(@Body() data: { statementId: string; lancamentoId: string; confirmacaoManual?: boolean }, @Req() req: any) {
+        return this.service.linkManual(data.statementId, data.lancamentoId, data.confirmacaoManual, req.user?.id);
     }
 
     @Post('create-and-link')
-    createAndLink(@Body() data: { statementId: string; lancamentoId?: string;[key: string]: any }, @Req() req: any) {
-        const { statementId, ...rest } = data;
-        return this.service.createAndLink(statementId, rest, req.user?.id);
+    createAndLink(@Body() data: { statementId: string; lancamentoId?: string; confirmacaoManual?: boolean; [key: string]: any }, @Req() req: any) {
+        const { statementId, confirmacaoManual, ...rest } = data;
+        return this.service.createAndLink(statementId, rest, confirmacaoManual, req.user?.id);
     }
 
     @Delete('unlink/:conciliacaoId')

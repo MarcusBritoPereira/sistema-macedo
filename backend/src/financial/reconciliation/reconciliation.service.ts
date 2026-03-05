@@ -4,12 +4,111 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { StatusLancamento } from '@prisma/client';
 import { AuditLogService } from '../../audit-log/audit-log.service';
 
+type EntitySuggestion = {
+    id: string;
+    nome: string;
+    confidence: number;
+};
+
 @Injectable()
 export class ReconciliationService {
     constructor(
         private prisma: PrismaService,
         private auditLogService: AuditLogService
     ) { }
+
+    private normalizeText(value?: string | null): string {
+        return (value || '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9\s]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    private extractDigits(value?: string | null): string {
+        return (value || '').replace(/\D/g, '');
+    }
+
+    private scoreMatch(description: string, names: string[], documents: string[]): number {
+        let score = 0;
+        const normalizedDescription = this.normalizeText(description);
+        const descriptionDigits = this.extractDigits(description);
+
+        for (const name of names) {
+            const normalizedName = this.normalizeText(name);
+            if (!normalizedName || normalizedName.length < 3) continue;
+
+            if (normalizedDescription === normalizedName) {
+                score += 120;
+            }
+
+            if (normalizedDescription.includes(normalizedName)) {
+                score += 100;
+            }
+
+            const nameTokens = normalizedName.split(' ').filter((token) => token.length >= 4);
+            for (const token of nameTokens) {
+                if (normalizedDescription.includes(token)) {
+                    score += 14;
+                }
+            }
+        }
+
+        for (const document of documents) {
+            const digits = this.extractDigits(document);
+            if (digits.length >= 11 && descriptionDigits.includes(digits)) {
+                score += 120;
+            }
+        }
+
+        return score;
+    }
+
+    private async suggestEntityForStatement(statement: { tipo: 'CREDIT' | 'DEBIT'; descricao: string }): Promise<{ cliente?: EntitySuggestion; fornecedor?: EntitySuggestion }> {
+        if (statement.tipo === 'CREDIT') {
+            const clients = await this.prisma.cliente.findMany({
+                where: { ativo: true },
+                select: { id: true, nomeFantasia: true, razaoSocial: true, cnpj: true, cpf: true }
+            });
+
+            const ranked = clients
+                .map((client) => ({
+                    id: client.id,
+                    nome: client.nomeFantasia || client.razaoSocial,
+                    confidence: this.scoreMatch(statement.descricao, [client.nomeFantasia || '', client.razaoSocial || ''], [client.cnpj || '', client.cpf || ''])
+                }))
+                .filter((client) => client.confidence >= 40)
+                .sort((a, b) => b.confidence - a.confidence);
+
+            if (ranked.length > 0) {
+                return { cliente: ranked[0] };
+            }
+
+            return {};
+        }
+
+        const suppliers = await this.prisma.fornecedor.findMany({
+            where: { ativo: true },
+            select: { id: true, nomeFantasia: true, razaoSocial: true, cnpj: true }
+        });
+
+        const ranked = suppliers
+            .map((supplier) => ({
+                id: supplier.id,
+                nome: supplier.nomeFantasia,
+                confidence: this.scoreMatch(statement.descricao, [supplier.nomeFantasia || '', supplier.razaoSocial || ''], [supplier.cnpj || ''])
+            }))
+            .filter((supplier) => supplier.confidence >= 40)
+            .sort((a, b) => b.confidence - a.confidence);
+
+        if (ranked.length > 0) {
+            return { fornecedor: ranked[0] };
+        }
+
+        return {};
+    }
 
     async getBankStatements(contaBancariaId: string, filters?: any) {
         const where: any = {
@@ -58,7 +157,7 @@ export class ReconciliationService {
             };
         }
 
-        return this.prisma.extratoBancario.findMany({
+        const statements = await this.prisma.extratoBancario.findMany({
             where,
             include: {
                 conciliacoes: {
@@ -70,6 +169,22 @@ export class ReconciliationService {
             },
             orderBy: { data: 'desc' }
         });
+
+        const enrichedStatements = await Promise.all(
+            statements.map(async (statement) => {
+                const suggestion = await this.suggestEntityForStatement({
+                    tipo: statement.tipo,
+                    descricao: statement.descricao
+                });
+
+                return {
+                    ...statement,
+                    suggestedEntity: suggestion
+                };
+            })
+        );
+
+        return enrichedStatements;
     }
 
     async findSuggestedMatches(statementId: string) {
@@ -103,12 +218,13 @@ export class ReconciliationService {
         });
     }
 
-    async linkManual(statementId: string, lancamentoId: string, userId?: string) {
+    async linkManual(statementId: string, lancamentoId: string, confirmacaoManual?: boolean, userId?: string) {
         return this.prisma.$transaction(async (tx) => {
             const statement = await tx.extratoBancario.findUnique({ where: { id: statementId } });
             const lancamento = await tx.lancamentoFinanceiro.findUnique({ where: { id: lancamentoId } });
 
             if (!statement || !lancamento) throw new NotFoundException('Extrato ou Lançamento não encontrado');
+            if (!confirmacaoManual) throw new BadRequestException('Confirmação manual obrigatória para conciliar');
             if (statement.conciliado) throw new BadRequestException('Extrato já conciliado');
 
             // Create link
@@ -151,13 +267,14 @@ export class ReconciliationService {
         });
     }
 
-    async createAndLink(statementId: string, data: any, userId?: string) {
+    async createAndLink(statementId: string, data: any, confirmacaoManual?: boolean, userId?: string) {
         return this.prisma.$transaction(async (tx) => {
             const statement = await tx.extratoBancario.findUnique({
                 where: { id: statementId },
                 include: { importacao: true }
             });
             if (!statement) throw new NotFoundException('Extrato não encontrado');
+            if (!confirmacaoManual) throw new BadRequestException('Confirmação manual obrigatória para conciliar');
             if (statement.conciliado) throw new BadRequestException('Extrato já conciliado');
 
             // Sanitize optional fields ('' -> null)
@@ -165,12 +282,25 @@ export class ReconciliationService {
 
             const categoriaId = sanitize(data.categoriaId);
             const centroCustoId = sanitize(data.centroCustoId);
-            const fornecedorId = sanitize(data.fornecedorId);
-            const clienteId = sanitize(data.clienteId);
+            let fornecedorId = sanitize(data.fornecedorId);
+            let clienteId = sanitize(data.clienteId);
             const dataCompetencia = sanitize(data.dataCompetencia);
             const competenciaDate = dataCompetencia ? new Date(dataCompetencia) : statement.data;
             const isTransfer = data?.isTransfer === true || data?.isTransfer === 'true';
             const contaDestinoId = sanitize(data.contaDestinoId);
+
+            if (!isTransfer && !fornecedorId && !clienteId) {
+                const suggestion = await this.suggestEntityForStatement({
+                    tipo: statement.tipo,
+                    descricao: data.descricao || statement.descricao
+                });
+
+                if (statement.tipo === 'CREDIT') {
+                    clienteId = suggestion.cliente?.id || null;
+                } else {
+                    fornecedorId = suggestion.fornecedor?.id || null;
+                }
+            }
 
             let createdLancamentoId: string;
 

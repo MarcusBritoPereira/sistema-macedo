@@ -26,12 +26,12 @@ export class ReconciliationService {
         return this.api.get<SuggestedMatch[]>(`financial/reconciliation/suggested-matches/${statementId}`);
     }
 
-    linkManual(statementId: string, lancamentoId: string): Observable<any> {
-        return this.api.post('financial/reconciliation/link', { statementId, lancamentoId });
+    linkManual(statementId: string, lancamentoId: string, confirmacaoManual: boolean = false): Observable<any> {
+        return this.api.post('financial/reconciliation/link', { statementId, lancamentoId, confirmacaoManual });
     }
 
-    createAndLink(statementId: string, data: any): Observable<any> {
-        return this.api.post('financial/reconciliation/create-and-link', { statementId, ...data });
+    createAndLink(statementId: string, data: any, confirmacaoManual: boolean = false): Observable<any> {
+        return this.api.post('financial/reconciliation/create-and-link', { statementId, confirmacaoManual, ...data });
     }
 
     unlink(conciliacaoId: string): Observable<any> {

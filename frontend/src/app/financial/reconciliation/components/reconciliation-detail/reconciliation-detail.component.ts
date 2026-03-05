@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import {
     IonButton, IonIcon, IonSpinner, IonSearchbar, IonChip,
     IonInput, IonSelect, IonSelectOption, IonDatetime, IonModal, IonContent, IonDatetimeButton,
-    ModalController
+    ModalController, AlertController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -70,7 +70,8 @@ export class ReconciliationDetailComponent implements OnInit {
         private suppliersService: SuppliersService,
         private clientsService: ClientsService,
         private costCentersService: CostCentersService,
-        private modalCtrl: ModalController
+        private modalCtrl: ModalController,
+        private alertCtrl: AlertController
     ) {
         addIcons({
             closeOutline, checkmarkCircleOutline, searchOutline, addOutline,
@@ -88,6 +89,14 @@ export class ReconciliationDetailComponent implements OnInit {
             this.form.valor = Math.abs(Number(this.statement.valor));
             this.form.dataVencimento = this.statement.data;
             this.form.dataCompetencia = this.statement.data; // Default to statement date
+
+            if (this.statement.tipo === 'CREDIT' && this.statement.suggestedEntity?.cliente?.id) {
+                this.form.fornecedorId = this.statement.suggestedEntity.cliente.id;
+            }
+            if (this.statement.tipo === 'DEBIT' && this.statement.suggestedEntity?.fornecedor?.id) {
+                this.form.fornecedorId = this.statement.suggestedEntity.fornecedor.id;
+            }
+
             this.loadAuxData();
 
             // Auto-switch to SEARCH if suggestions exist
@@ -154,6 +163,11 @@ export class ReconciliationDetailComponent implements OnInit {
             return;
         }
 
+        const confirmed = await this.requestManualConfirmation('Confirmar conciliação', 'Deseja confirmar manualmente esta conciliação?');
+        if (!confirmed) {
+            return;
+        }
+
         this.loadingAction = true;
 
         const entityId = this.form.fornecedorId;
@@ -171,7 +185,7 @@ export class ReconciliationDetailComponent implements OnInit {
             tipo: this.statement.tipo
         };
 
-        this.reconciliationService.createAndLink(this.statement.id, payload).subscribe({
+        this.reconciliationService.createAndLink(this.statement.id, payload, true).subscribe({
             next: () => {
                 this.loadingAction = false;
                 this.complete.emit();
@@ -184,8 +198,13 @@ export class ReconciliationDetailComponent implements OnInit {
     }
 
     async link(match: SuggestedMatch) {
+        const confirmed = await this.requestManualConfirmation('Confirmar vínculo', 'Deseja confirmar manualmente este vínculo de conciliação?');
+        if (!confirmed) {
+            return;
+        }
+
         this.loadingAction = true;
-        this.reconciliationService.linkManual(this.statement.id, match.id).subscribe({
+        this.reconciliationService.linkManual(this.statement.id, match.id, true).subscribe({
             next: () => {
                 this.loadingAction = false;
                 this.complete.emit();
@@ -199,6 +218,23 @@ export class ReconciliationDetailComponent implements OnInit {
 
     cancel() {
         this.close.emit();
+    }
+
+
+
+    private async requestManualConfirmation(header: string, message: string): Promise<boolean> {
+        const alert = await this.alertCtrl.create({
+            header,
+            message,
+            buttons: [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Confirmar', role: 'confirm' }
+            ]
+        });
+
+        await alert.present();
+        const { role } = await alert.onDidDismiss();
+        return role === 'confirm';
     }
 
     async unreconcile() {

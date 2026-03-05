@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
     IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton,
-    IonIcon, IonList, IonItem, IonLabel, IonNote, IonSpinner, ModalController,
+    IonIcon, IonList, IonItem, IonLabel, IonNote, IonSpinner, ModalController, AlertController,
     IonSearchbar, IonChip, IonFooter, IonSegment, IonSegmentButton,
     IonInput, IonSelect, IonSelectOption, IonRow, IonCol, IonGrid,
     IonDatetime, IonDatetimeButton, IonModal
@@ -39,18 +39,15 @@ import { format, parseISO } from 'date-fns';
 export class ReconciliationActionModalComponent implements OnInit {
     @Input() statement!: BankStatement;
 
-    // Navigation
     activeTab: 'NEW' | 'TRANSFER' = 'NEW';
     mode: 'FORM' | 'SEARCH' = 'FORM';
 
-    // Data Lists
     categories: Category[] = [];
     suppliers: Supplier[] = [];
     costCenters: CostCenter[] = [];
     suggestions: SuggestedMatch[] = [];
     bankAccounts: BankAccount[] = [];
 
-    // Form Data
     form = {
         descricao: '',
         categoriaId: '',
@@ -62,7 +59,6 @@ export class ReconciliationActionModalComponent implements OnInit {
         contaDestinoId: ''
     };
 
-    // State
     loadingSuggestions = true;
     loadingAction = false;
     loadingAux = true;
@@ -73,7 +69,8 @@ export class ReconciliationActionModalComponent implements OnInit {
         private categoriesService: CategoriesService,
         private suppliersService: SuppliersService,
         private costCentersService: CostCentersService,
-        private financialService: FinancialService
+        private financialService: FinancialService,
+        private alertCtrl: AlertController
     ) {
         addIcons({
             closeOutline, checkmarkCircleOutline, searchOutline, addOutline,
@@ -100,8 +97,6 @@ export class ReconciliationActionModalComponent implements OnInit {
         this.loadingAux = true;
         const targetType = this.statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
 
-        // Load all in parallel
-        // Ideally use forkJoin but simple subscription is fine for now
         this.categoriesService.findAll().subscribe(cats => {
             this.categories = cats.filter(c => c.tipo === targetType);
         });
@@ -137,14 +132,8 @@ export class ReconciliationActionModalComponent implements OnInit {
             next: (data) => {
                 this.suggestions = data;
                 this.loadingSuggestions = false;
-
-                // If high match, switch to search mode automatically to show it?
-                // For now keep FORM as default as per Conta Azul style usually defaults to form
-                // unless a very high match is found.
                 const bestMatch = data.find(s => (s.confidence || 0) > 90);
-                if (bestMatch) {
-                    this.mode = 'SEARCH';
-                }
+                if (bestMatch) this.mode = 'SEARCH';
             },
             error: (err) => {
                 console.error(err);
@@ -165,19 +154,17 @@ export class ReconciliationActionModalComponent implements OnInit {
         this.mode = this.mode === 'FORM' ? 'SEARCH' : 'FORM';
     }
 
-    // Action: Create New Transaction and Link
     async confirmCreation() {
         if (this.activeTab === 'TRANSFER') {
-            if (!this.form.contaDestinoId || !this.form.dataCompetencia) {
-                return;
-            }
+            if (!this.form.contaDestinoId || !this.form.dataCompetencia) return;
         } else if (!this.form.descricao || !this.form.categoriaId || !this.form.dataCompetencia) {
-            // Simple validation
             return;
         }
 
+        const confirmed = await this.requestManualConfirmation('Confirmar conciliação', 'Deseja confirmar manualmente esta conciliação?');
+        if (!confirmed) return;
+
         this.loadingAction = true;
-        // Map form to payload (matches createAndLink DTO)
         const payload = {
             descricao: this.form.descricao,
             categoriaId: this.form.categoriaId,
@@ -188,10 +175,10 @@ export class ReconciliationActionModalComponent implements OnInit {
             dataCompetencia: this.form.dataCompetencia,
             contaDestinoId: this.form.contaDestinoId,
             isTransfer: this.activeTab === 'TRANSFER',
-            tipo: this.statement.tipo // Add type
+            tipo: this.statement.tipo
         };
 
-        this.reconciliationService.createAndLink(this.statement.id, payload).subscribe({
+        this.reconciliationService.createAndLink(this.statement.id, payload, true).subscribe({
             next: () => {
                 this.loadingAction = false;
                 this.modalCtrl.dismiss({ action: 'created' });
@@ -203,10 +190,12 @@ export class ReconciliationActionModalComponent implements OnInit {
         });
     }
 
-    // Action: Link to Existing (from suggestions/search)
     async link(match: SuggestedMatch) {
+        const confirmed = await this.requestManualConfirmation('Confirmar vínculo', 'Deseja confirmar manualmente este vínculo de conciliação?');
+        if (!confirmed) return;
+
         this.loadingAction = true;
-        this.reconciliationService.linkManual(this.statement.id, match.id).subscribe({
+        this.reconciliationService.linkManual(this.statement.id, match.id, true).subscribe({
             next: () => {
                 this.loadingAction = false;
                 this.modalCtrl.dismiss({ action: 'linked' });
@@ -216,5 +205,20 @@ export class ReconciliationActionModalComponent implements OnInit {
                 this.loadingAction = false;
             }
         });
+    }
+
+    private async requestManualConfirmation(header: string, message: string): Promise<boolean> {
+        const alert = await this.alertCtrl.create({
+            header,
+            message,
+            buttons: [
+                { text: 'Cancelar', role: 'cancel' },
+                { text: 'Confirmar', role: 'confirm' }
+            ]
+        });
+
+        await alert.present();
+        const { role } = await alert.onDidDismiss();
+        return role === 'confirm';
     }
 }

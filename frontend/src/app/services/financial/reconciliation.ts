@@ -11,6 +11,18 @@ export interface BankStatement {
     importacao?: {
         contaBancariaId: string;
     };
+    suggestedEntity?: {
+        cliente?: {
+            id: string;
+            nome: string;
+            confidence: number;
+        };
+        fornecedor?: {
+            id: string;
+            nome: string;
+            confidence: number;
+        };
+    };
     conciliacoes?: any[];
 }
 

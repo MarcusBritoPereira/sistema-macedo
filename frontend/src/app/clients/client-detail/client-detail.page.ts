@@ -35,7 +35,8 @@ export class ClientDetailPage implements OnInit {
       // 1. Dados Cadastrais
       razaoSocial: ['', [Validators.required]],
       nomeFantasia: [''],
-      cnpj: ['', [Validators.required]],
+      cnpj: [''],
+      cpf: [''],
       email: ['', [Validators.email]],
       telefone: [''],
       endereco: [''],
@@ -75,8 +76,23 @@ export class ClientDetailPage implements OnInit {
 
   loadClient(id: string) {
     this.clientsService.findOne(id).subscribe(client => {
-      this.clientForm.patchValue(client);
+      const data: any = { ...client };
+      if (data.cnpj) data.cnpj = this.formatCnpj(data.cnpj);
+      if (data.cpf) data.cpf = this.formatCpf(data.cpf);
+      this.clientForm.patchValue(data);
     });
+  }
+
+  formatCnpj(value: string): string {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length !== 14) return value;
+    return digits.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+  }
+
+  formatCpf(value: string): string {
+    const digits = value.replace(/\D/g, '');
+    if (digits.length !== 11) return value;
+    return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
   }
 
   async onSubmit() {

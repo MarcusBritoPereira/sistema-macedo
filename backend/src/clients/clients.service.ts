@@ -58,21 +58,31 @@ export class ClientsService {
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
         const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
 
-        // 1. Active Clients
+        // 1. Active Clients with their earliest contract start date
         const activeClientsList = await this.prisma.cliente.findMany({
             where: { ativo: true },
-            select: { createdAt: true }
+            select: {
+                createdAt: true,
+                contratos: {
+                    select: { dataInicio: true },
+                    orderBy: { dataInicio: 'asc' },
+                    take: 1
+                }
+            }
         });
         const activeClients = activeClientsList.length;
 
-        // 4. Average Lifetime (Active Clients)
+        // 4. Average Lifetime (Active Clients) - uses contract dataInicio or createdAt as fallback
         let avgLifetimeMonths = 0;
         if (activeClients > 0) {
             const totalDurationMs = activeClientsList.reduce((acc, client) => {
-                return acc + (now.getTime() - new Date(client.createdAt).getTime());
+                const startDate = client.contratos.length > 0
+                    ? new Date(client.contratos[0].dataInicio)
+                    : new Date(client.createdAt);
+                return acc + (now.getTime() - startDate.getTime());
             }, 0);
             const avgDurationMs = totalDurationMs / activeClients;
-            avgLifetimeMonths = avgDurationMs / (1000 * 60 * 60 * 24 * 30.44);
+            avgLifetimeMonths = Number((avgDurationMs / (1000 * 60 * 60 * 24 * 30.44)).toFixed(1));
         }
 
         // 2. Churn (Deactivated this month)

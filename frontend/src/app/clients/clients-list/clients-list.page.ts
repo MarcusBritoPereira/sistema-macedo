@@ -245,6 +245,8 @@ export class ClientsListPage implements OnInit {
         }
       }
 
+      // Debug logging
+      console.log('CSV line parsed', { lineNumber: i, raw: line, colsLength: cols.length, cols });
       // Mapping based on headers index
       // 0: 'Razao Social', 1: 'Nome Fantasia', 2: 'CNPJ', 3: 'CPF', 4: 'Email', 5: 'Telefone',
       // 6: 'Endereco', 7: 'Representante Nome', 8: 'Representante CPF', 9: 'Financeiro Nome', 10: 'Financeiro Email'

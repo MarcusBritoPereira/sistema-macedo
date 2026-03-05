@@ -283,10 +283,16 @@ export class BankingIntegrationService {
                 });
 
                 if (!exists) {
+                    const tituloNorm = (t.titulo || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                    const descNorm = cleanDesc.toLowerCase().replace(/\s+/g, ' ');
+                    const finalDesc = descNorm.startsWith(tituloNorm)
+                        ? cleanDesc.trim()
+                        : `${t.titulo} - ${cleanDesc}`.trim();
+
                     await this.prisma.extratoBancario.create({
                         data: {
                             data: middayDate,
-                            descricao: `${t.titulo} - ${cleanDesc}`.trim(),
+                            descricao: finalDesc,
                             valor: Math.abs(valor),
                             tipo: t.tipoTransacao === 'CREDITO' || t.tipoOperacao === 'C' ? 'CREDIT' : 'DEBIT',
                             hash: hash,

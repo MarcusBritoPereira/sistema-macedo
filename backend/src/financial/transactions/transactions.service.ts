@@ -32,7 +32,41 @@ export class FinancialTransactionsService {
                 },
             });
 
-            return transaction;
+            // Search for matching unreconciled bank statements
+            const suggestedStatements = await this.findMatchingStatements(tx, transaction);
+
+            return { ...transaction, suggestedStatements };
+        });
+    }
+
+    private async findMatchingStatements(
+        tx: Prisma.TransactionClient,
+        transaction: { valor: any; dataVencimento: Date; tipo: string }
+    ) {
+        const marginDays = 7;
+        const startDate = new Date(transaction.dataVencimento);
+        startDate.setDate(startDate.getDate() - marginDays);
+        const endDate = new Date(transaction.dataVencimento);
+        endDate.setDate(endDate.getDate() + marginDays);
+
+        const expectedStatementType = transaction.tipo === 'RECEITA' ? 'CREDIT' : 'DEBIT';
+
+        return tx.extratoBancario.findMany({
+            where: {
+                valor: Number(transaction.valor),
+                tipo: expectedStatementType,
+                conciliado: false,
+                data: { gte: startDate, lte: endDate },
+            },
+            select: {
+                id: true,
+                descricao: true,
+                valor: true,
+                data: true,
+                tipo: true,
+            },
+            take: 5,
+            orderBy: { data: 'desc' },
         });
     }
 

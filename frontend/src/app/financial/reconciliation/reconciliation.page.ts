@@ -302,10 +302,21 @@ export class ReconciliationPage implements OnInit {
         await loader.present();
 
         this.reconciliationService.sync(this.selectedAccountId).subscribe({
-            next: (res) => {
+            next: async (res: any) => {
                 loader.dismiss();
-                this.showToast(`${res.imported} novos itens importados`);
                 this.loadStatements();
+
+                if (res.suggestions?.length > 0) {
+                    const count = res.suggestions.length;
+                    const alert = await this.alertCtrl.create({
+                        header: 'Sugestões de Conciliação',
+                        message: `${res.imported} novos itens importados. Encontramos ${count} extrato(s) que podem ser conciliados com lançamentos existentes. Revise os itens pendentes.`,
+                        buttons: [{ text: 'Ok', role: 'confirm' }]
+                    });
+                    await alert.present();
+                } else {
+                    this.showToast(`${res.imported} novos itens importados`);
+                }
             },
             error: (err) => {
                 loader.dismiss();

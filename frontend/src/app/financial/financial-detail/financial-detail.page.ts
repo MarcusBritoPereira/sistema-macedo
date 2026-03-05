@@ -273,12 +273,39 @@ export class FinancialDetailPage implements OnInit {
         });
       } else {
         this.financialService.createTransaction(transactionData).subscribe({
-          next: (res) => {
+          next: async (res: any) => {
             if (res && res.id) {
               createRecurring(res.id);
             }
-            this.showToast('Registro criado com sucesso!');
-            this.router.navigate(['/financial']);
+
+            if (res?.suggestedStatements?.length > 0) {
+              const count = res.suggestedStatements.length;
+              const alert = await this.alertController.create({
+                header: 'Conciliação Disponível',
+                message: `Encontramos ${count} extrato(s) bancário(s) compatível(is) com este lançamento. Deseja ir para a conciliação agora?`,
+                buttons: [
+                  {
+                    text: 'Depois',
+                    role: 'cancel',
+                    handler: () => {
+                      this.showToast('Registro criado com sucesso!');
+                      this.router.navigate(['/financial']);
+                    }
+                  },
+                  {
+                    text: 'Ir para Conciliação',
+                    handler: () => {
+                      this.showToast('Registro criado com sucesso!');
+                      this.router.navigate(['/financial/reconciliation']);
+                    }
+                  }
+                ]
+              });
+              await alert.present();
+            } else {
+              this.showToast('Registro criado com sucesso!');
+              this.router.navigate(['/financial']);
+            }
           },
           error: () => this.showToast('Erro ao criar registro.')
         });

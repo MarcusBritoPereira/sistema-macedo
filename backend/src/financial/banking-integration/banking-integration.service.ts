@@ -18,6 +18,7 @@ interface UploadedFile {
 }
 
 import { OfxService } from './ofx.service';
+import { ReconciliationService } from '../reconciliation/reconciliation.service';
 
 @Injectable()
 export class BankingIntegrationService {
@@ -28,7 +29,8 @@ export class BankingIntegrationService {
 
     constructor(
         private prisma: PrismaService,
-        private ofxService: OfxService
+        private ofxService: OfxService,
+        private reconciliationService: ReconciliationService
     ) {
         // Ensure secure directory exists
         if (!fs.existsSync(this.CERTS_DIR)) {
@@ -258,6 +260,7 @@ export class BankingIntegrationService {
 
             let importedCount = 0;
             let duplicatesCount = 0;
+            const newStatementIds: string[] = [];
 
             const importLog = await this.prisma.importacaoBancaria.create({
                 data: {
@@ -289,7 +292,7 @@ export class BankingIntegrationService {
                         ? cleanDesc.trim()
                         : `${t.titulo} - ${cleanDesc}`.trim();
 
-                    await this.prisma.extratoBancario.create({
+                    const created = await this.prisma.extratoBancario.create({
                         data: {
                             data: middayDate,
                             descricao: finalDesc,
@@ -300,6 +303,7 @@ export class BankingIntegrationService {
                             importacaoId: importLog.id
                         }
                     });
+                    newStatementIds.push(created.id);
                     importedCount++;
                 } else {
                     duplicatesCount++;
@@ -313,7 +317,22 @@ export class BankingIntegrationService {
                 data: { lastSync: new Date() }
             });
 
-            return { success: true, imported: importedCount, message: 'Sincronização concluída com sucesso.' };
+            // Find auto-suggestions for newly imported statements
+            let suggestions: any[] = [];
+            try {
+                suggestions = await this.reconciliationService.findAutoSuggestions(newStatementIds);
+            } catch (e) {
+                log(`[Sync] Warning: auto-suggestion failed: ${e.message}`);
+            }
+
+            return {
+                success: true,
+                imported: importedCount,
+                suggestions,
+                message: suggestions.length > 0
+                    ? `Sincronização concluída! ${importedCount} importados. ${suggestions.length} podem ser conciliados.`
+                    : `Sincronização concluída! ${importedCount} importados.`
+            };
 
         } catch (error) {
             log(`[ERROR] ${error.message}`);

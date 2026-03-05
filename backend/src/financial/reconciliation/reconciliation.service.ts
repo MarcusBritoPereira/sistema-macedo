@@ -450,4 +450,53 @@ export class ReconciliationService {
             return { success: true };
         });
     }
+    async findAutoSuggestions(statementIds: string[]) {
+        if (!statementIds.length) return [];
+
+        const statements = await this.prisma.extratoBancario.findMany({
+            where: { id: { in: statementIds }, conciliado: false },
+            select: { id: true, descricao: true, valor: true, data: true, tipo: true },
+        });
+
+        const results: Array<{
+            statementId: string;
+            statementDesc: string;
+            matches: Array<{ id: string; descricao: string; valor: number; dataVencimento: Date }>;
+        }> = [];
+
+        for (const s of statements) {
+            const marginDays = 7;
+            const startDate = new Date(s.data);
+            startDate.setDate(startDate.getDate() - marginDays);
+            const endDate = new Date(s.data);
+            endDate.setDate(endDate.getDate() + marginDays);
+
+            const expectedType = s.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
+
+            const matches = await this.prisma.lancamentoFinanceiro.findMany({
+                where: {
+                    valor: Number(s.valor),
+                    tipo: expectedType,
+                    dataVencimento: { gte: startDate, lte: endDate },
+                    status: { not: 'CANCELADO' },
+                    conciliacoes: { none: {} },
+                },
+                select: { id: true, descricao: true, valor: true, dataVencimento: true },
+                take: 3,
+            });
+
+            if (matches.length > 0) {
+                results.push({
+                    statementId: s.id,
+                    statementDesc: s.descricao,
+                    matches: matches.map(m => ({
+                        ...m,
+                        valor: Number(m.valor),
+                    })),
+                });
+            }
+        }
+
+        return results;
+    }
 }

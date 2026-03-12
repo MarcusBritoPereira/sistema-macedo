@@ -226,7 +226,8 @@ $transition-speed: 0.2s;
     @media (max-width: $breakpoint-mobile) {
         flex-direction: column;
         align-items: flex-start;
-        gap: 16px;
+        gap: 0; /* Removing large gap on mobile since intro-left is hidden */
+        margin-bottom: 16px;
 
         .intro-right {
             width: 100%;
@@ -235,6 +236,7 @@ $transition-speed: 0.2s;
                 display: flex;
                 align-items: baseline;
                 gap: 8px;
+                padding: 6px 12px;
             }
         }
     }
@@ -283,8 +285,19 @@ $transition-speed: 0.2s;
     }
 
     @media (max-width: $breakpoint-mobile) {
-        flex-direction: column;
+        padding: 12px;
+        margin-bottom: 20px;
         align-items: flex-start;
+        gap: 12px;
+
+        .alert-icon {
+            font-size: 20px;
+        }
+        
+        .alert-info p {
+            font-size: 0.85rem;
+            line-height: 1.3;
+        }
     }
 }
 
@@ -300,7 +313,7 @@ $transition-speed: 0.2s;
         gap: 16px;
         
         @media (max-width: $breakpoint-mobile) {
-            flex-direction: column;
+            gap: 8px;
         }
 
         .search-input-wrapper {
@@ -339,6 +352,10 @@ $transition-speed: 0.2s;
             flex: 1;
             min-width: 240px;
             
+            @media (max-width: $breakpoint-mobile) {
+                min-width: 130px;
+            }
+            
             .custom-select {
                 width: 100%;
                 background: #fff;
@@ -350,6 +367,12 @@ $transition-speed: 0.2s;
                 font-size: 0.95rem;
                 color: #2d3748;
                 font-weight: 500;
+                
+                @media (max-width: $breakpoint-mobile) {
+                    --padding-start: 8px;
+                    --padding-end: 8px;
+                    font-size: 0.85rem;
+                }
             }
         }
     }
@@ -359,6 +382,20 @@ $transition-speed: 0.2s;
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
+
+        @media (max-width: $breakpoint-mobile) {
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px; /* Space for hidden scrollbar */
+            
+            /* Hide scrollbar */
+            &::-webkit-scrollbar {
+                display: none;
+            }
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
 
         .pill {
             display: inline-flex;

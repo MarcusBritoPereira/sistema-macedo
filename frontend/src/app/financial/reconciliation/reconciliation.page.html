@@ -76,7 +76,7 @@
 
         <!-- Page Title & Highlight -->
         <div class="page-intro">
-            <div class="intro-left">
+            <div class="intro-left ion-hide-md-down">
                 <h1 class="page-title">Conciliações Bancárias</h1>
                 <p class="page-subtitle">Gerencie e concilie seus lançamentos pendentes.</p>
             </div>
@@ -98,7 +98,7 @@
                 <p>Existem {{ summary.totalCount }} lançamentos bancários pendentes em {{ getPeriodLabel().toLowerCase()
                     }}.</p>
             </div>
-            <div class="alert-action">
+            <div class="alert-action ion-hide-md-down">
                 <ion-button fill="solid" color="primary" size="small"
                     (click)="showToast('Visualizando pendentes...', 'primary')">
                     Ver conciliações pendentes

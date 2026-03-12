@@ -111,7 +111,21 @@ ion-header {
     }
 
     @media (max-width: 576px) {
-        grid-template-columns: 1fr;
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 12px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        .kpi-card {
+            flex: 0 0 85%;
+            scroll-snap-align: start;
+        }
     }
 }
 
@@ -349,5 +363,90 @@ ion-header {
         font-weight: 600;
         font-size: 15px;
         color: $color-blue-dark;
+    }
+}
+
+/* Mobile Card Layout */
+.mobile-list-container {
+    padding: 0;
+    margin-top: 16px;
+    
+    .empty-state {
+        text-align: center;
+        padding: 32px 16px;
+        color: $color-sub;
+    }
+    
+    .mobile-item-card {
+        margin: 0 0 12px 0;
+        border-radius: $border-radius;
+        box-shadow: $shadow;
+        border: 1px solid #e2e8f0;
+        background: $color-surface;
+        
+        ion-card-content {
+            padding: 16px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+
+            .card-title-row {
+                flex: 1;
+
+                .card-title {
+                    font-weight: 600;
+                    font-size: 1.05rem;
+                    color: $color-text;
+                }
+            }
+
+            .actions-btn {
+                margin: -8px -8px 0 0;
+                --color: #888;
+            }
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: $color-sub;
+            margin-bottom: 12px;
+        }
+
+        .card-details {
+            background: $color-bg;
+            border-radius: 6px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+                font-size: 0.85rem;
+
+                &.mb-2 {
+                    margin-bottom: 0;
+                }
+
+                .detail-label {
+                    color: $color-sub;
+                }
+
+                .detail-value {
+                    color: $color-text;
+
+                    &.text-bold {
+                        font-weight: 700;
+                        font-family: monospace;
+                        font-size: 1rem;
+                    }
+                }
+            }
+        }
     }
 }

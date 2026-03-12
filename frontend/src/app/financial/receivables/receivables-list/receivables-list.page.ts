@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, ToastController, LoadingController, IonRefresher, IonRefresherContent, IonFab, IonFabButton, ActionSheetController } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, ToastController, LoadingController, IonRefresher, IonRefresherContent, IonFab, IonFabButton, ActionSheetController, IonCheckbox } from '@ionic/angular/standalone';
 import { FinancialService, Transaction } from '../../../services/financial/financial';
 import { addIcons } from 'ionicons';
 import { checkmarkCircleOutline, alertCircleOutline, timeOutline, calendarOutline, add, arrowUp, chevronBack, chevronForward, search, chevronDown, helpCircleOutline, trash, close } from 'ionicons/icons';
@@ -18,7 +18,7 @@ import { ActionsPopoverComponent } from './actions-popover.component';
     templateUrl: './receivables-list.page.html',
     styleUrls: ['./receivables-list.page.scss'],
     standalone: true,
-    imports: [CommonModule, FormsModule, RouterModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, IonRefresher, IonRefresherContent, IonFab, IonFabButton]
+    imports: [CommonModule, FormsModule, RouterModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, IonRefresher, IonRefresherContent, IonFab, IonFabButton, IonCheckbox]
 })
 export class ReceivablesListPage implements OnInit {
     currentPeriod: Date = new Date();

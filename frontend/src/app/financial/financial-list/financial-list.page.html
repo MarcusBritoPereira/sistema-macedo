@@ -1,6 +1,14 @@
 <ion-header>
+  <!-- Mobile Navigation Bar -->
+  <ion-toolbar class="ion-hide-md-up dashboard-bg">
+    <ion-buttons slot="start">
+      <ion-menu-button color="primary"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Lançamentos</ion-title>
+  </ion-toolbar>
+
   <!-- Top Bar: Title & Primary Actions -->
-  <ion-toolbar class="top-toolbar">
+  <ion-toolbar class="top-toolbar ion-hide-md-down">
     <div class="header-content">
       <div class="left-actions">
         <ion-button color="primary" class="add-btn" routerLink="/financial/new">
@@ -36,34 +44,37 @@
   <!-- Period Navigation & Filters -->
   <ion-toolbar class="filter-toolbar">
     <div class="filter-row">
+      <!-- Date Pickers: Side-by-side -->
       <div class="period-selector">
-        <ion-item lines="none" class="date-range-item">
-          <ion-label position="stacked">Início</ion-label>
-          <ion-input type="date" [(ngModel)]="startDate" (ionChange)="onFilterChange()"></ion-input>
-        </ion-item>
-        <ion-item lines="none" class="date-range-item">
-          <ion-label position="stacked">Fim</ion-label>
-          <ion-input type="date" [(ngModel)]="endDate" (ionChange)="onFilterChange()"></ion-input>
-        </ion-item>
+        <div class="date-input-group">
+          <div class="label-text">Início</div>
+          <input type="date" class="compact-date-input" [(ngModel)]="startDate" (change)="onFilterChange()" />
+        </div>
+        <div class="date-input-group">
+          <div class="label-text">Fim</div>
+          <input type="date" class="compact-date-input" [(ngModel)]="endDate" (change)="onFilterChange()" />
+        </div>
       </div>
 
-      <div class="category-selector">
-        <ion-item lines="none">
-          <ion-select placeholder="Todas Categorias" [(ngModel)]="selectedCategoryId" (ionChange)="onFilterChange()"
-            interface="popover">
-            <ion-select-option value="">Todas</ion-select-option>
-            <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</ion-select-option>
-          </ion-select>
-        </ion-item>
-      </div>
+      <!-- Categories & Search -->
+      <div class="utility-wrap">
+          <div class="category-selector">
+            <div class="label-text">Categoria</div>
+            <select class="compact-select" [(ngModel)]="selectedCategoryId" (change)="onFilterChange()">
+              <option value="">Todas</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</option>
+            </select>
+          </div>
 
       <div class="search-box">
+        <div class="label-text">Período Selecionado</div>
         <div class="input-wrapper">
           <input type="text" placeholder="Buscar..." class="clean-search" [(ngModel)]="searchTerm"
             (change)="onSearchChange()">
           <ion-icon name="search"></ion-icon>
         </div>
       </div>
+     </div>
     </div>
   </ion-toolbar>
 
@@ -99,8 +110,8 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <!-- Data Table -->
-  <div class="data-table-container">
+  <!-- Data Table (Desktop) -->
+  <div class="data-table-container ion-hide-md-down">
     <div class="table-header">
       <div class="col-check"><input type="checkbox" [checked]="allSelected" (change)="toggleAll()"></div>
       <div class="col-date">Competência</div>
@@ -140,5 +151,57 @@
       </div>
     </div>
   </div>
+
+  <!-- Mobile Card List (Mobile) -->
+  <div class="mobile-list-container ion-hide-md-up">
+      <div class="empty-state" *ngIf="displayedItems.length === 0">
+          <p>Nenhum lançamento neste período.</p>
+      </div>
+      
+      <ion-card class="mobile-item-card" *ngFor="let item of displayedItems">
+          <ion-card-content>
+              <div class="card-header">
+                  <div class="card-title-row">
+                      <ion-checkbox [checked]="isSelected(item.id!)" (ionChange)="toggleSelection(item.id!)"></ion-checkbox>
+                      <span class="card-title">{{ item.descricao }}</span>
+                  </div>
+                  <ion-button fill="clear" size="small" class="actions-btn" (click)="openItemActions($event, item)">
+                      <ion-icon name="ellipsis-vertical"></ion-icon>
+                  </ion-button>
+              </div>
+              
+              <div class="card-subtitle">{{ item.clienteId ? 'Cliente' : (item.fornecedor || '-') }}</div>
+              
+              <div class="card-details">
+                  <div class="detail-row">
+                      <span class="detail-label">Competência:</span>
+                      <span class="detail-value">{{ item.dataVencimento | date:'shortDate' }}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">Tipo:</span>
+                      <span class="detail-value" [class.text-danger]="item.tipo === 'DESPESA'" [class.text-success]="item.tipo === 'RECEITA'">{{ item.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">Pagamento:</span>
+                      <span class="detail-value">{{ item.formaPagamento || 'À vista' }}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">Categoria:</span>
+                      <span class="detail-value">Sem categoria</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">Valor:</span>
+                      <span class="detail-value text-bold" [class.text-danger]="item.tipo === 'DESPESA'">R$ {{ item.valor | number:'1.2-2' }}</span>
+                  </div>
+              </div>
+          </ion-card-content>
+      </ion-card>
+  </div>
+  <!-- Mobile FAB for adding new records -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="ion-hide-md-up" style="margin-bottom: 20px;">
+      <ion-fab-button color="primary" routerLink="/financial/new">
+          <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+  </ion-fab>
 
 </ion-content>

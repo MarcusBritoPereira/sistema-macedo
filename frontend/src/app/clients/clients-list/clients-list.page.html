@@ -1,6 +1,6 @@
 <ion-header>
   <!-- Top Bar: Title & Primary Actions -->
-  <ion-toolbar class="top-toolbar">
+  <ion-toolbar class="top-toolbar ion-hide-md-down">
     <div class="header-content">
       <div class="left-actions">
         <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
@@ -97,8 +97,8 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <!-- Data Table -->
-  <div class="data-table-container">
+  <!-- Data Table (Desktop) -->
+  <div class="data-table-container ion-hide-md-down">
     <div class="table-header">
       <div class="col-empresa">Razão Social / Fantasia</div>
       <div class="col-docs">CNPJ / CPF</div>
@@ -158,4 +158,54 @@
       </div>
     </div>
   </div>
+
+  <!-- Mobile Card List (Mobile) -->
+  <div class="mobile-list-container ion-hide-md-up">
+    <div class="empty-state" *ngIf="filteredClients.length === 0">
+      <p>Nenhum cliente encontrado.</p>
+    </div>
+    
+    <ion-card class="mobile-item-card" *ngFor="let client of filteredClients" [routerLink]="['/clients', client.id]">
+      <ion-card-content>
+        <div class="card-header">
+          <div class="card-title-row">
+            <span class="card-title">{{ client.razaoSocial || client.nomeFantasia || 'Cliente sem nome' }}</span>
+          </div>
+          <ion-button fill="clear" size="small" class="actions-btn" (click)="deleteClient(client.id!, $event); $event.stopPropagation();">
+            <ion-icon name="trash-outline" color="danger"></ion-icon>
+          </ion-button>
+        </div>
+        
+        <div class="card-subtitle">{{ client.cnpj || client.cpf || 'Sem documento' }}</div>
+        
+        <div class="card-details">
+          <div class="detail-row" *ngIf="client.telefone || client.email">
+            <span class="detail-label">Contato:</span>
+            <span class="detail-value text-right" style="word-break: break-all;">{{ client.telefone || client.email }}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">LTV / Rec.:</span>
+            <span class="detail-value text-bold">{{ client.revenue | currency:'BRL' }}</span>
+          </div>
+          <div class="detail-row mt-2" style="justify-content: flex-end;">
+            <span class="status-badge" [ngClass]="{
+                  'good': client.healthScore === 'GOOD',
+                  'attention': client.healthScore === 'ATTENTION',
+                  'risk': client.healthScore === 'RISK'
+              }">
+              {{ client.statusDisplay }}
+            </span>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Mobile FAB for adding new records -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="ion-hide-md-up" style="margin-bottom: 20px;">
+      <ion-fab-button color="primary" routerLink="/clients/new">
+          <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+  </ion-fab>
+
 </ion-content>

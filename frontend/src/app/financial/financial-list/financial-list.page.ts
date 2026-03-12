@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { CategoriesService } from '../../services/financial/categories.service';
 import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, ToastController, LoadingController, IonRefresher, IonRefresherContent, IonFab, IonFabButton, ActionSheetController, PopoverController, ModalController, IonSelect, IonSelectOption, IonItem, IonInput } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, ToastController, LoadingController, IonRefresher, IonRefresherContent, IonFab, IonFabButton, ActionSheetController, PopoverController, ModalController, IonSelect, IonSelectOption, IonItem, IonInput, IonCheckbox } from '@ionic/angular/standalone';
 import { FinancialService, Transaction } from '../../services/financial/financial';
 import { addIcons } from 'ionicons';
 import { checkmarkCircleOutline, alertCircleOutline, timeOutline, calendarOutline, add, arrowUp, arrowDown, chevronBack, chevronForward, search, chevronDown, helpCircleOutline, trash, close, createOutline } from 'ionicons/icons';
@@ -17,7 +17,7 @@ import { ActionsPopoverComponent } from '../receivables/receivables-list/actions
   templateUrl: './financial-list.page.html',
   styleUrls: ['./financial-list.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, IonRefresher, IonRefresherContent, IonFab, IonFabButton, IonSelect, IonSelectOption, IonItem, IonInput]
+  imports: [CommonModule, FormsModule, RouterModule, IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonBackButton, IonSearchbar, IonSegment, IonSegmentButton, IonLabel, IonList, IonCard, IonCardContent, IonBadge, IonIcon, IonButton, IonChip, IonRefresher, IonRefresherContent, IonFab, IonFabButton, IonSelect, IonSelectOption, IonItem, IonInput, IonCheckbox]
 })
 export class FinancialListPage implements OnInit {
   currentPeriod: Date = new Date(); // Still used for default view? Or fully custom date range? 

@@ -134,7 +134,8 @@ export class ReconciliationPage implements OnInit {
             next: (accounts) => {
                 this.bankAccounts = accounts;
                 if (accounts.length > 0) {
-                    this.selectedAccountId = targetId || accounts[0].id;
+                    const connectedAccount = accounts.find(a => a.integracao?.status === 'CONNECTED');
+                    this.selectedAccountId = targetId || connectedAccount?.id || accounts[0].id;
                     this.loadStatements();
                 }
             }

@@ -1,5 +1,5 @@
 <ion-header>
-    <ion-toolbar class="top-toolbar">
+    <ion-toolbar class="top-toolbar ion-hide-md-down">
         <div class="header-content">
             <div class="left-actions">
                 <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
@@ -38,7 +38,7 @@
 </ion-header>
 
 <ion-content class="light-bg">
-    <div class="data-table-container">
+    <div class="data-table-container ion-hide-md-down">
         <div class="table-header">
             <div class="col-name">Fornecedor</div>
             <div class="col-doc">CNPJ</div>
@@ -75,4 +75,49 @@
             </div>
         </div>
     </div>
+
+    <!-- Mobile Card List (Mobile) -->
+    <div class="mobile-list-container ion-hide-md-up">
+        <div class="empty-state" *ngIf="filteredSuppliers.length === 0">
+            <p>Nenhum fornecedor encontrado para sua busca.</p>
+        </div>
+
+        <ion-card class="mobile-item-card" *ngFor="let supplier of filteredSuppliers" [routerLink]="['/suppliers', supplier.id]">
+            <ion-card-content>
+                <div class="card-header">
+                    <div class="card-title-row">
+                        <span class="card-title">{{ supplier.nomeFantasia || supplier.razaoSocial || 'Fornecedor sem nome' }}</span>
+                    </div>
+                    <ion-button fill="clear" size="small" color="medium" class="actions-btn">
+                        <ion-icon name="chevron-forward-outline"></ion-icon>
+                    </ion-button>
+                </div>
+
+                <div class="card-subtitle">{{ supplier.razaoSocial || 'Sem Razão Social' }}</div>
+
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">CNPJ:</span>
+                        <span class="detail-value">{{ supplier.cnpj || '-' }}</span>
+                    </div>
+                    <div class="detail-row align-center">
+                        <span class="detail-label">Email:</span>
+                        <span class="detail-value text-right" style="word-break: break-all;">{{ supplier.email || '-' }}</span>
+                    </div>
+                    <div class="detail-row align-center">
+                        <span class="detail-label">Telefone:</span>
+                        <span class="detail-value text-right">{{ supplier.telefone || '-' }}</span>
+                    </div>
+                </div>
+            </ion-card-content>
+        </ion-card>
+    </div>
+
+    <!-- Mobile FAB for adding new records -->
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="ion-hide-md-up" style="margin-bottom: 20px;">
+        <ion-fab-button color="primary" routerLink="/suppliers/new">
+            <ion-icon name="add"></ion-icon>
+        </ion-fab-button>
+    </ion-fab>
+
 </ion-content>

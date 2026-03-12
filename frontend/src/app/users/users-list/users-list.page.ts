@@ -13,7 +13,7 @@ import { add } from 'ionicons/icons';
   templateUrl: './users-list.page.html',
   styleUrls: ['./users-list.page.scss'],
   standalone: true,
-  imports: [CommonModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent, IonList, IonItem, IonLabel, IonFab, IonFabButton, IonIcon, IonRefresher, IonRefresherContent, IonBadge, IonSearchbar, IonCard, IonButton]
+  imports: [CommonModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent, IonList, IonItem, IonLabel, IonFab, IonFabButton, IonIcon, IonRefresher, IonRefresherContent, IonBadge, IonSearchbar, IonCard, IonCardContent, IonButton]
 })
 export class UsersListPage implements OnInit {
   users: Usuario[] = [];

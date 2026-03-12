@@ -166,7 +166,18 @@ ion-content.light-bg {
     border-bottom: 1px solid #ddd;
 
     @media (max-width: 768px) {
-        flex-direction: column;
+        overflow-x: auto;
+        padding: 12px;
+        gap: 12px;
+        background: #f4f6f8;
+        border-bottom: none;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        
+        &::-webkit-scrollbar {
+            display: none;
+        }
     }
 
     .kpi-card {
@@ -181,6 +192,23 @@ ion-content.light-bg {
 
         &:last-child {
             border-right: none;
+        }
+
+        @media (max-width: 768px) {
+            flex: 0 0 auto;
+            min-width: 140px;
+            scroll-snap-align: start;
+            background: white;
+            border: 1px solid #efefef;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            padding: 12px;
+            min-height: 70px;
+            border-right: 1px solid #efefef; /* override global */
+            
+            &:last-child {
+                border-right: 1px solid #efefef;
+            }
         }
 
         .label {
@@ -434,10 +462,6 @@ input[type="checkbox"] {
 @media (max-width: 768px) {
     .filter-toolbar {
         padding: 0 12px;
-
-        .filter-row {
-            gap: 12px;
-        }
     }
 
     .bulk-actions-bar {
@@ -468,5 +492,97 @@ input[type="checkbox"] {
     .table-header,
     .table-row {
         min-width: 620px;
+    }
+}
+
+/* Mobile Card Layout */
+.mobile-list-container {
+    padding: 12px;
+    
+    .mobile-item-card {
+        margin: 0 0 12px 0;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        border: 1px solid #efefef;
+        
+        ion-card-content {
+            padding: 16px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+
+            .card-title-row {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                flex: 1;
+
+                ion-checkbox {
+                    --size: 18px;
+                    margin: 0;
+                }
+
+                .card-title {
+                    font-weight: 600;
+                    font-size: 1.05rem;
+                    color: #333;
+                }
+            }
+
+            .actions-btn {
+                margin: -8px -8px 0 0;
+                --color: #888;
+            }
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 16px;
+            padding-left: 30px; /* Align with title (skipping checkbox) */
+        }
+
+        .card-details {
+            background: #f9f9f9;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 16px;
+
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                font-size: 0.85rem;
+
+                &:last-child {
+                    margin-bottom: 0;
+                }
+
+                .detail-label {
+                    color: #777;
+                }
+
+                .detail-value {
+                    color: #333;
+
+                    &.text-bold {
+                        font-weight: 600;
+                    }
+
+                    &.text-danger {
+                        color: #d32f2f;
+                    }
+                }
+            }
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: flex-end;
+        }
     }
 }

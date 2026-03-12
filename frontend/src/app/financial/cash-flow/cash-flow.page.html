@@ -1,5 +1,5 @@
 <ion-header class="ion-no-border">
-    <ion-toolbar class="header-toolbar">
+    <ion-toolbar class="header-toolbar ion-hide-md-down">
         <ion-buttons slot="start">
             <ion-menu-button></ion-menu-button>
         </ion-buttons>
@@ -129,7 +129,7 @@
                 </div>
             </div>
 
-            <div class="table-container">
+            <div class="table-container ion-hide-md-down">
                 <table class="custom-table">
                     <thead>
                         <tr>
@@ -181,6 +181,60 @@
                     </tbody>
                 </table>
             </div>
+
+            <!-- Mobile Card List (Mobile) -->
+            <div class="mobile-list-container ion-hide-md-up">
+                <div class="empty-state" *ngIf="filteredTransactions.length === 0">
+                    <p>Nenhuma movimentação neste período.</p>
+                </div>
+
+                <ion-card class="mobile-item-card" *ngFor="let t of filteredTransactions">
+                    <ion-card-content>
+                        <div class="card-header">
+                            <div class="card-title-row">
+                                <span class="card-title">{{ t.descricao }}</span>
+                            </div>
+                            <ion-button fill="clear" size="small" class="actions-btn">
+                                <ion-icon name="ellipsis-vertical"></ion-icon>
+                            </ion-button>
+                        </div>
+                        
+                        <div class="card-subtitle">{{ t.conta }} <span *ngIf="t.categoria">• {{ t.categoria }}</span></div>
+                        
+                        <div class="card-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Data:</span>
+                                <span class="detail-value">{{ t.data | date:'dd/MM/yyyy' }}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Tipo:</span>
+                                <span class="detail-value">
+                                    <ion-badge [color]="t.tipo === 'RECEITA' ? 'success' : 'danger'">
+                                        {{ t.tipo === 'RECEITA' ? 'Entrada' : 'Saída' }}
+                                    </ion-badge>
+                                </span>
+                            </div>
+                            <div class="detail-row mb-2">
+                                <span class="detail-label">Valor:</span>
+                                <span class="detail-value text-bold" [class.text-green]="t.tipo === 'RECEITA'" [class.text-red]="t.tipo === 'DESPESA'">
+                                    {{ formatCurrency(t.valor) }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-footer" style="display: flex; justify-content: flex-end; margin-top: 12px;">
+                            <div class="status-tag"
+                                [class.done]="t.status === 'REALIZADO' || t.status === 'CONCILIADO'"
+                                [class.pending]="t.status === 'PREVISTO'">
+                                <ion-icon
+                                    [name]="(t.status === 'REALIZADO' || t.status === 'CONCILIADO') ? 'checkmark-circle-outline' : 'time-outline'"></ion-icon>
+                                {{ (t.status === 'REALIZADO' || t.status === 'CONCILIADO') ? 'Realizado' :
+                                'Pendente' }}
+                            </div>
+                        </div>
+                    </ion-card-content>
+                </ion-card>
+            </div>
         </div>
 
         <!-- BLOCK 4: ACCOUNTS (Collapsible) -->
@@ -205,4 +259,12 @@
         </div>
 
     </div>
+
+    <!-- Mobile FAB for adding new records -->
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="ion-hide-md-up" style="margin-bottom: 20px;">
+        <ion-fab-button class="btn-primary" (click)="openTransactionModal()">
+            <ion-icon name="add"></ion-icon>
+        </ion-fab-button>
+    </ion-fab>
+
 </ion-content>

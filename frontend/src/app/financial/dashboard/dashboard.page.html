@@ -1,11 +1,20 @@
-<ion-content class="dashboard-bg">
+<ion-header [translucent]="true" class="ion-no-border ion-hide-md-up">
+  <ion-toolbar class="dashboard-bg">
+    <ion-buttons slot="start">
+      <ion-menu-button color="primary"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="ion-hide-md-up">Visão Geral</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="dashboard-bg" [fullscreen]="true">
   <title>Dashboard</title>
   <div *ngIf="loading" class="loading-overlay">
     <ion-spinner name="crescent"></ion-spinner>
   </div>
 
   <div class="dashboard-container" *ngIf="operationalData && !loading">
-    <h1 class="page-title">Visão Geral</h1>
+    <h1 class="page-title ion-hide-md-down">Visão Geral</h1>
 
     <!-- KPI ROW -->
     <div class="kpi-row">

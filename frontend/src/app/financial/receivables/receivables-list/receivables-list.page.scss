@@ -77,32 +77,43 @@ ion-content.light-bg {
         align-items: center;
         width: 100%;
         padding: 12px 0;
-        gap: 24px;
+        gap: 16px;
 
         @media (max-width: 900px) {
             flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
+            align-items: stretch;
+            gap: 10px;
+            padding: 8px 0;
         }
 
         .label-text {
-            font-size: 0.75rem;
+            font-size: 0.70rem;
+            font-weight: 500;
             color: #666;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
+            text-transform: uppercase;
         }
 
         .period-selector {
+            min-width: 250px;
+            
+            @media (max-width: 900px) {
+                width: 100%;
+                min-width: 0;
+            }
+
             .selector-box {
                 display: flex;
                 align-items: center;
                 border: 1px solid #ddd;
                 border-radius: 4px;
                 background: #f9f9f9;
-                height: 38px;
+                height: 34px;
 
                 .current-period {
                     padding: 0 12px;
                     font-weight: 600;
+                    font-size: 0.85rem;
                     color: var(--ion-color-secondary);
                     min-width: 140px;
                     text-align: center;
@@ -111,6 +122,7 @@ ion-content.light-bg {
 
                 ion-button {
                     margin: 0;
+                    height: 100%;
                 }
             }
         }
@@ -123,22 +135,22 @@ ion-content.light-bg {
                 align-items: center;
                 border: 1px solid #ddd;
                 border-radius: 4px;
-                padding: 0 12px;
-                height: 38px;
+                padding: 0 10px;
+                height: 34px;
                 background: white;
 
                 input {
                     border: none;
                     outline: none;
                     flex: 1;
-                    font-size: 0.9rem;
+                    font-size: 0.85rem;
                     color: #333;
                     background: transparent;
                 }
 
                 ion-icon {
-                    color: var(--ion-color-secondary);
-                    font-size: 1.2rem;
+                    color: var(--ion-color-medium);
+                    font-size: 1.1rem;
                     cursor: pointer;
                 }
             }
@@ -147,11 +159,23 @@ ion-content.light-bg {
         .more-filters {
             margin-top: 18px;
 
+            @media (max-width: 900px) {
+                margin-top: 0;
+                width: 100%;
+                display: flex;
+            }
+
             /* align with inputs */
             .filter-btn {
                 --border-color: #ddd;
                 --color: var(--ion-color-secondary);
                 text-transform: none;
+                height: 34px;
+                margin: 0;
+                
+                @media (max-width: 900px) {
+                    width: 100%;
+                }
             }
         }
     }
@@ -167,7 +191,18 @@ ion-content.light-bg {
     border-bottom: 1px solid #ddd;
 
     @media (max-width: 768px) {
-        flex-direction: column;
+        overflow-x: auto;
+        padding: 12px;
+        gap: 12px;
+        background: #f4f6f8;
+        border-bottom: none;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        
+        &::-webkit-scrollbar {
+            display: none;
+        }
     }
 
     .kpi-card {
@@ -182,6 +217,23 @@ ion-content.light-bg {
 
         &:last-child {
             border-right: none;
+        }
+
+        @media (max-width: 768px) {
+            flex: 0 0 auto;
+            min-width: 140px;
+            scroll-snap-align: start;
+            background: white;
+            border: 1px solid #efefef;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+            padding: 12px;
+            min-height: 70px;
+            border-right: 1px solid #efefef; /* override global */
+            
+            &:last-child {
+                border-right: 1px solid #efefef;
+            }
         }
 
         .label {
@@ -428,10 +480,6 @@ ion-content.light-bg {
 @media (max-width: 768px) {
     .filter-toolbar {
         padding: 0 12px;
-
-        .filter-row {
-            gap: 12px;
-        }
     }
 
     .bulk-actions-bar {

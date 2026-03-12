@@ -1,5 +1,5 @@
 <ion-header>
-  <ion-toolbar class="top-toolbar">
+  <ion-toolbar class="top-toolbar ion-hide-md-down">
     <div class="header-content">
       <div class="left-actions">
         <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
@@ -37,7 +37,7 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <div class="data-table-container">
+  <div class="data-table-container ion-hide-md-down">
     <div class="table-header">
       <div class="col-nome">Usuário</div>
       <div class="col-email">E-mail</div>
@@ -81,4 +81,56 @@
       </div>
     </div>
   </div>
+
+  <!-- Mobile Card List (Mobile) -->
+  <div class="mobile-list-container ion-hide-md-up">
+    <div class="empty-state" *ngIf="users.length === 0">
+      <p>Nenhum usuário encontrado.</p>
+    </div>
+    
+    <ion-card class="mobile-item-card" *ngFor="let user of users" [routerLink]="['/users', user.id]">
+      <ion-card-content>
+        <div class="card-header">
+          <div class="card-title-row">
+            <span class="user-avatar" [class.admin]="getProfileName(user) === 'ADMINISTRADOR'"
+              [class.manager]="getProfileName(user) === 'GERENTE'">
+              {{ user.nome.charAt(0).toUpperCase() }}
+            </span>
+            <span class="card-title">{{ user.nome }}</span>
+          </div>
+          <ion-button fill="clear" size="small" color="medium" class="actions-btn">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </ion-button>
+        </div>
+        
+        <div class="card-subtitle">{{ user.email }}</div>
+        
+        <div class="card-details">
+          <div class="detail-row align-center">
+            <span class="detail-label">Perfil:</span>
+            <span class="detail-value">
+              <span class="role-badge" [class.admin]="getProfileName(user) === 'ADMINISTRADOR'"
+                [class.manager]="getProfileName(user) === 'GERENTE'">
+                {{ getProfileName(user) }}
+              </span>
+            </span>
+          </div>
+          <div class="detail-row align-center">
+            <span class="detail-label">Status:</span>
+            <span class="status-badge" [ngClass]="user.ativo ? 'good' : 'risk'">
+              {{ user.ativo ? 'Ativo' : 'Inativo' }}
+            </span>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Mobile FAB for adding new records -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="ion-hide-md-up" style="margin-bottom: 20px;">
+      <ion-fab-button color="primary" routerLink="/users/new">
+          <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+  </ion-fab>
+
 </ion-content>

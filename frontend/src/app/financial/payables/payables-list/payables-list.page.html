@@ -1,6 +1,14 @@
 <ion-header>
+    <!-- Mobile Navigation Bar -->
+    <ion-toolbar class="ion-hide-md-up dashboard-bg">
+        <ion-buttons slot="start">
+            <ion-menu-button color="primary"></ion-menu-button>
+        </ion-buttons>
+        <ion-title>Contas a Pagar</ion-title>
+    </ion-toolbar>
+
     <!-- Top Bar: Title & Primary Actions -->
-    <ion-toolbar class="top-toolbar">
+    <ion-toolbar class="top-toolbar ion-hide-md-down">
         <div class="header-content">
             <div class="left-actions">
                 <ion-button color="success" class="add-btn" routerLink="/financial/payables/new">
@@ -103,8 +111,8 @@
         <ion-refresher-content></ion-refresher-content>
     </ion-refresher>
 
-    <!-- Data Table -->
-    <div class="data-table-container">
+    <!-- Data Table (Desktop) -->
+    <div class="data-table-container ion-hide-md-down">
         <div class="table-header">
             <div class="col-check"><input type="checkbox" [checked]="allSelected" (change)="toggleAll()"></div>
             <div class="col-date">Vencimento</div>
@@ -152,6 +160,56 @@
         </div>
     </div>
 
+    <!-- Mobile Card List (Mobile) -->
+    <div class="mobile-list-container ion-hide-md-up">
+        <div class="empty-state" *ngIf="displayedItems.length === 0">
+            <p>Nenhum lançamento neste período.</p>
+        </div>
+        
+        <ion-card class="mobile-item-card" *ngFor="let item of displayedItems">
+            <ion-card-content>
+                <div class="card-header">
+                    <div class="card-title-row">
+                        <ion-checkbox [checked]="isSelected(item.id!)" (ionChange)="toggleSelection(item.id!)"></ion-checkbox>
+                        <span class="card-title">{{ item.descricao }}</span>
+                    </div>
+                    <ion-button fill="clear" size="small" class="actions-btn" (click)="openItemActions($event, item)">
+                        <ion-icon name="ellipsis-vertical"></ion-icon>
+                    </ion-button>
+                </div>
+                
+                <div class="card-subtitle">{{ item.fornecedor?.nomeFantasia || item.fornecedor || 'Sem fornecedor' }}</div>
+                
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Vencimento:</span>
+                        <span class="detail-value">{{ item.dataVencimento | date:'shortDate' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Pagamento:</span>
+                        <span class="detail-value">{{ (item.status === 'REALIZADO' || item.status === 'CONCILIADO') ? (item.dataPagamento | date:'shortDate') : '-' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Total:</span>
+                        <span class="detail-value text-bold">R$ {{ item.valor | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">A pagar:</span>
+                        <span class="detail-value text-bold text-danger">{{ (item.status === 'REALIZADO' || item.status === 'CONCILIADO') ? 'R$ 0,00' : ('R$ ' + (item.valor | number:'1.2-2')) }}</span>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <span class="status-badge"
+                        [class.paid]="(item.status === 'REALIZADO' || item.status === 'CONCILIADO')"
+                        [class.open]="!(item.status === 'REALIZADO' || item.status === 'CONCILIADO')">
+                        {{ (item.status === 'REALIZADO' || item.status === 'CONCILIADO') ? 'Pago' : 'Em aberto' }}
+                    </span>
+                </div>
+            </ion-card-content>
+        </ion-card>
+    </div>
+
     <div class="table-footer">
         <div class="footer-label">
             <strong>Total do período</strong> <br>
@@ -162,5 +220,12 @@
             <strong>{{ kpis.total | number:'1.2-2' }}</strong>
         </div>
     </div>
+
+    <!-- Mobile FAB for adding new records -->
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="ion-hide-md-up" style="margin-bottom: 20px;">
+        <ion-fab-button color="success" routerLink="/financial/payables/new">
+            <ion-icon name="add"></ion-icon>
+        </ion-fab-button>
+    </ion-fab>
 
 </ion-content>

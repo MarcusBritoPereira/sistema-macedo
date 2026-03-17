@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonItem, IonLabel, IonInput, IonSelect, IonSelectOption, ModalController, IonSpinner, IonText } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonItem, IonLabel, IonInput, IonSelect, IonSelectOption, ModalController, IonSpinner, IonText, ToastController } from '@ionic/angular/standalone';
 import { CategoriesService } from '../../../services/financial/categories.service';
 import { SuppliersService } from '../../../services/suppliers/suppliers.service';
 import { ClientsService } from '../../../services/clients/clients';
@@ -35,6 +35,7 @@ export class QuickCreateModalComponent implements OnInit {
 
     constructor(
         private modalCtrl: ModalController,
+        private toastCtrl: ToastController,
         private categoriesService: CategoriesService,
         private suppliersService: SuppliersService,
         private clientsService: ClientsService,
@@ -108,10 +109,12 @@ export class QuickCreateModalComponent implements OnInit {
     }
 
     private createClient() {
+        const digits = this.form.cpfCnpj?.replace(/\D/g, '') || '';
         const payload = {
             nomeFantasia: this.form.nome,
             razaoSocial: this.form.nome,
-            cpfCnpj: this.form.cpfCnpj,
+            cpf: digits.length === 11 ? digits : undefined,
+            cnpj: digits.length === 14 ? digits : undefined,
             ativo: true
         };
         this.clientsService.create(payload).subscribe({
@@ -133,9 +136,20 @@ export class QuickCreateModalComponent implements OnInit {
         });
     }
 
-    private handleError(err: any) {
+    private async handleError(err: any) {
         console.error(err);
         this.isLoading = false;
-        // Ideally show toast here, but simple error log for now
+
+        const message =
+            err?.error?.message ||
+            'Não foi possível salvar. Revise os dados e tente novamente.';
+
+        const toast = await this.toastCtrl.create({
+            message,
+            duration: 3000,
+            color: 'danger',
+            position: 'bottom'
+        });
+        await toast.present();
     }
 }

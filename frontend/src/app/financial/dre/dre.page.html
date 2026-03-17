@@ -11,16 +11,16 @@
             </div>
 
             <div class="month-selector">
-                <div class="filter-item" style="display: flex; align-items: center; gap: 8px; margin-right: 16px;">
-                    <span style="font-size: 12px; color: var(--ion-color-medium); font-weight: 600;">REGIME</span>
-                    <ion-select [(ngModel)]="filters.regime" (ionChange)="gerarDRE()" interface="popover" style="--padding-start: 0;">
+                <div class="filter-item">
+                    <span class="filter-label">REGIME</span>
+                    <ion-select [(ngModel)]="filters.regime" (ionChange)="gerarDRE()" interface="popover">
                         <ion-select-option value="caixa">Caixa</ion-select-option>
                         <ion-select-option value="competencia">Competência</ion-select-option>
                     </ion-select>
                 </div>
-                <div class="filter-item" style="display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 12px; color: var(--ion-color-medium); font-weight: 600;">FREQ.</span>
-                    <ion-select [(ngModel)]="filters.granularidade" (ionChange)="gerarDRE()" interface="popover" style="--padding-start: 0;">
+                <div class="filter-item">
+                    <span class="filter-label">FREQ.</span>
+                    <ion-select [(ngModel)]="filters.granularidade" (ionChange)="gerarDRE()" interface="popover">
                         <ion-select-option value="mensal">Mensal</ion-select-option>
                         <ion-select-option value="trimestral">Trimestral</ion-select-option>
                         <ion-select-option value="anual">Anual</ion-select-option>

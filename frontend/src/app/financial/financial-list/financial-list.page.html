@@ -134,7 +134,7 @@
           <span class="desc-main">{{ item.descricao }}</span>
         </div>
         <div class="col-entity">{{ item.clienteId ? 'Cliente' : (item.fornecedor || '-') }}</div>
-        <div class="col-category">Sem categoria</div>
+        <div class="col-category">{{ item.categoria?.nome || 'Sem categoria' }}</div>
         <div class="col-paymethod">{{ item.formaPagamento || 'À vista' }}</div>
         <div class="col-value" [class.text-danger]="item.tipo === 'DESPESA'">
           {{ item.valor | number:'1.2-2' }}
@@ -187,7 +187,7 @@
                   </div>
                   <div class="detail-row">
                       <span class="detail-label">Categoria:</span>
-                      <span class="detail-value">Sem categoria</span>
+                      <span class="detail-value">{{ item.categoria?.nome || 'Sem categoria' }}</span>
                   </div>
                   <div class="detail-row">
                       <span class="detail-label">Valor:</span>

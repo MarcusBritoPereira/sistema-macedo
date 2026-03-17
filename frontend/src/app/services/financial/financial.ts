@@ -28,7 +28,7 @@ export interface Transaction {
   cliente?: any; // Included relation
   fornecedor?: any; // Can be string (legacy) or Supplier object
   fornecedorId?: string; // New relation
-  fornecedorObj?: { nomeFantasia: string }; // Optional included relation
+  categoria?: { id: string; nome: string }; // Optional included relation
   runningBalance?: number;
   createdAt?: string;
 }

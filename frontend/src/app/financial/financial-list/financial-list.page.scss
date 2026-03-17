@@ -430,51 +430,71 @@ ion-content.light-bg {
 }
 
 .col-desc {
-    flex: 1;
+    flex: 2; /* Give it more room */
     display: flex;
     flex-direction: column;
     gap: 2px;
+    padding-right: 15px;
+    min-width: 250px;
 
     .desc-main {
         font-weight: 500;
+        color: #1e293b;
+        line-height: 1.25;
+        /* Allow 2 lines then ellipsis if it's too long, 
+           or just let it flow if table-row height is flexible. 
+           In financial apps, seeing the full text or at least most of it is better. */
     }
 
     .desc-sub {
         font-size: 0.75rem;
-        color: #888;
+        color: #64748b;
         display: block;
     }
 }
 
 .col-entity {
-    width: 180px;
-    color: #555;
+    width: 200px;
+    color: #475569;
     text-overflow: ellipsis;
     overflow: hidden;
     white-space: nowrap;
 }
 
 .col-category {
-    width: 150px;
-    color: #888;
+    width: 140px;
+    color: #475569;
     font-size: 0.85rem;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 2px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: center;
 }
 
 .col-paymethod {
-    width: 120px;
-    color: #888;
-    font-size: 0.85rem;
+    width: 110px;
+    color: #64748b;
+    font-size: 0.8rem;
+    text-align: center;
 }
 
 .col-value {
-    width: 100px;
+    width: 120px;
     text-align: right;
     padding-right: 10px;
-    font-family: monospace;
-    font-size: 0.95rem;
+    font-family: 'JetBrains Mono', 'Roboto Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 600;
 
     &.text-danger {
-        color: #d32f2f;
+        color: #dc2626;
+    }
+    
+    &.text-success {
+        color: #16a34a;
     }
 }
 

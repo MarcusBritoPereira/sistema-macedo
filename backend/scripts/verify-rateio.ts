@@ -23,17 +23,21 @@ async function bootstrap() {
     await prisma.lancamentoFinanceiro.deleteMany({ where: { observacoes: 'TEST_RATEIO_VERIFICATION' } });
 
     /*
-   ### 3. Sync with GitHub (PR #14)
-O sistema foi sincronizado com as melhorias de UI e tratamento de erros do PR #14.
-- **Melhorias:** Estados de erro em formulários, padronização de feedbacks e ajustes na Conciliação.
-- **Status:** Branches `main` e `pr-14` unificadas e enviadas ao GitHub.
+    ### 3. Sync with GitHub (PR #14)
+    O sistema foi sincronizado com as melhorias de UI e tratamento de erros do PR #14.
+    - **Melhorias:** Estados de erro em formulários, padronização de feedbacks e ajustes na Conciliação.
+    - **Status:** Branches `main` e `pr-14` unificadas e enviadas ao GitHub.
 
-### 4. Production Deployment
-O stack completo foi reiniciado e reconstruído via Docker Compose:
-- **Backend:** Atualizado com DRE, Rateio e correções de segurança.
-- **Frontend:** Nova DRE e melhorias do PR #14 integradas.
-- **Login:** Acesso restabelecido com a senha temporária `123456`.
-*/
+    ### 4. Production Deployment
+    O stack completo foi reiniciado e reconstruído via Docker Compose:
+    - **Backend:** Atualizado com DRE, Rateio e correções de segurança.
+    - **Frontend:** Nova DRE e melhorias do PR #14 integradas.
+    - **Login:** Acesso restabelecido com a senha temporária `123456`.
+
+    ### 5. DRE Granularity & UI Fixes
+    - **Granularidade:** O intervalo padrão foi alterado para 6 meses.
+    - **Campos de Data:** Estilos corrigidos para fundo branco e texto legível.
+    */
     // Find or Create a valid bank account and category for the base transaction
     let conta = await prisma.contaBancaria.findFirst();
     if (!conta) {

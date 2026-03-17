@@ -102,7 +102,7 @@ export class ClientDetailPage implements OnInit {
       if (this.isEditMode && this.clientId) {
         this.clientsService.update(this.clientId, clientData).subscribe({
           next: () => this.showToast('Cliente atualizado com sucesso!'),
-          error: () => this.showToast('Erro ao atualizar cliente.')
+          error: (err) => this.showToast(this.getErrorMessage(err, 'Não foi possível atualizar o cliente.'))
         });
       } else {
         this.clientsService.create(clientData).subscribe({
@@ -110,7 +110,7 @@ export class ClientDetailPage implements OnInit {
             this.showToast('Cliente criado com sucesso!');
             this.router.navigate(['/clients']);
           },
-          error: () => this.showToast('Erro ao criar cliente.')
+          error: (err) => this.showToast(this.getErrorMessage(err, 'Não foi possível criar o cliente.'))
         });
       }
     }
@@ -135,7 +135,7 @@ export class ClientDetailPage implements OnInit {
                   this.showToast('Cliente excluído com sucesso!');
                   this.router.navigate(['/clients']);
                 },
-                error: () => this.showToast('Erro ao excluir cliente.')
+                error: (err) => this.showToast(this.getErrorMessage(err, 'Não foi possível excluir o cliente.'))
               });
             }
           }
@@ -153,4 +153,18 @@ export class ClientDetailPage implements OnInit {
   setToastOpen(isOpen: boolean) {
     this.isToastOpen = isOpen;
   }
+  private getErrorMessage(err: any, fallback: string): string {
+    const message = err?.error?.message;
+
+    if (Array.isArray(message)) {
+      return message.join(' | ');
+    }
+
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+
+    return fallback;
+  }
 }
+

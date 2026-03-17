@@ -66,27 +66,16 @@ export class ContractDetailPage implements OnInit {
   }
 
   async onSubmit() {
-    console.log('onSubmit called. Valid:', this.contractForm.valid);
-    console.log('Form errors:', this.contractForm.errors);
-    Object.keys(this.contractForm.controls).forEach(key => {
-      const controlErrors = this.contractForm.get(key)?.errors;
-      if (controlErrors) {
-        console.log('Control error:', key, controlErrors);
-      }
-    });
-
     if (this.contractForm.valid) {
       const data = this.contractForm.value;
       // Ensure valorMensal is number
       data.valorMensal = parseFloat(data.valorMensal);
-      console.log('Submitting data:', data);
-
       if (this.isEditMode && this.contractId) {
         this.contractsService.update(this.contractId, data).subscribe({
           next: () => this.showToast('Contrato atualizado com sucesso!'),
           error: (err) => {
             console.error('Update error:', err);
-            this.showToast('Erro ao atualizar contrato.');
+            this.showToast(this.getErrorMessage(err, 'Não foi possível atualizar o contrato.'));
           }
         });
       } else {
@@ -97,12 +86,13 @@ export class ContractDetailPage implements OnInit {
           },
           error: (err) => {
             console.error('Create error:', err);
-            this.showToast('Erro ao criar contrato.');
+            this.showToast(this.getErrorMessage(err, 'Não foi possível criar o contrato.'));
           }
         });
       }
     } else {
-      this.showToast('Por favor, preencha todos os campos obrigatórios.');
+      this.contractForm.markAllAsTouched();
+      this.showToast('Preencha os campos obrigatórios antes de salvar.');
     }
   }
 
@@ -125,7 +115,7 @@ export class ContractDetailPage implements OnInit {
                   this.showToast('Contrato excluído com sucesso!');
                   this.router.navigate(['/contracts']);
                 },
-                error: () => this.showToast('Erro ao excluir contrato.')
+                error: (err) => this.showToast(this.getErrorMessage(err, 'Não foi possível excluir o contrato.'))
               });
             }
           }
@@ -146,6 +136,19 @@ export class ContractDetailPage implements OnInit {
 
   get days(): number[] {
     return Array.from({ length: 31 }, (_, i) => i + 1);
+  }
+  private getErrorMessage(err: any, fallback: string): string {
+    const message = err?.error?.message;
+
+    if (Array.isArray(message)) {
+      return message.join(' | ');
+    }
+
+    if (typeof message === 'string' && message.trim()) {
+      return message;
+    }
+
+    return fallback;
   }
 
   async generateFinancial() {
@@ -169,7 +172,7 @@ export class ContractDetailPage implements OnInit {
                 },
                 error: (err) => {
                   console.error(err);
-                  this.showToast('Erro ao gerar financeiro.');
+                  this.showToast(this.getErrorMessage(err, 'Não foi possível gerar os lançamentos financeiros.'));
                 }
               });
             }

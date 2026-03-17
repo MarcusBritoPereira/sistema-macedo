@@ -78,7 +78,7 @@ export class SupplierDetailPage implements OnInit {
                     this.showToast('Fornecedor atualizado!');
                     this.router.navigate(['/suppliers']);
                 },
-                error: () => this.showToast('Erro ao atualizar.', 'danger')
+                error: (err) => this.showToast(this.getErrorMessage(err, 'Não foi possível atualizar o fornecedor.'), 'danger')
             });
         } else {
             this.suppliersService.create(supplier).subscribe({
@@ -86,7 +86,7 @@ export class SupplierDetailPage implements OnInit {
                     this.showToast('Fornecedor criado!');
                     this.router.navigate(['/suppliers']);
                 },
-                error: () => this.showToast('Erro ao criar.', 'danger')
+                error: (err) => this.showToast(this.getErrorMessage(err, 'Não foi possível criar o fornecedor.'), 'danger')
             });
         }
     }
@@ -108,7 +108,7 @@ export class SupplierDetailPage implements OnInit {
                                 },
                                 error: (err) => {
                                     console.error(err);
-                                    this.showToast('Erro ao excluir (verifique vinculos).', 'danger')
+                                    this.showToast(this.getErrorMessage(err, 'Não foi possível excluir o fornecedor. Verifique vínculos ativos.'), 'danger')
                                 }
                             });
                         }
@@ -128,4 +128,18 @@ export class SupplierDetailPage implements OnInit {
         });
         toast.present();
     }
+    private getErrorMessage(err: any, fallback: string): string {
+        const message = err?.error?.message;
+
+        if (Array.isArray(message)) {
+            return message.join(' | ');
+        }
+
+        if (typeof message === 'string' && message.trim()) {
+            return message;
+        }
+
+        return fallback;
+    }
 }
+

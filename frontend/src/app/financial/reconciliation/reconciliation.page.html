@@ -106,6 +106,11 @@
             </div>
         </div>
 
+        <div class="error-banner" *ngIf="loadError">
+            <ion-icon name="alert-circle-outline" color="danger"></ion-icon>
+            <p>{{ loadError }}</p>
+        </div>
+
         <!-- Filters & Tools Section -->
         <div class="tools-section">
             <!-- Search & Category -->
@@ -238,7 +243,7 @@
                     <img src="assets/imgs/reconciliation-empty.svg" alt="Sem dados" (error)="showDefaultIcon($event)">
                     <ion-icon name="receipt-outline" *ngIf="!illustrationLoaded"></ion-icon>
                 </div>
-                <h2>Não existem conciliações pendentes no ms.</h2>
+                <h2>Não existem conciliações pendentes no mês selecionado.</h2>
                 <div class="empty-actions">
                     <ion-button fill="solid" class="btn-primary" (click)="syncBank()"
                         *ngIf="selectedAccount?.statusIntegracao === 'CONNECTED'">

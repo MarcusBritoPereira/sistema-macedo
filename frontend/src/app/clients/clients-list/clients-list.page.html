@@ -6,8 +6,7 @@
         <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
           <ion-menu-button color="primary"></ion-menu-button>
         </ion-buttons>
-        <span style="font-weight: 600; font-size: 1.1rem; margin-right: 16px; margin-left: 8px;">Gestão de Clientes
-          (Atualizado)</span>
+        <span style="font-weight: 600; font-size: 1.1rem; margin-right: 16px; margin-left: 8px;">Gestão de Clientes</span>
         <ion-button color="primary" class="add-btn" routerLink="/clients/new">
           <ion-icon name="add" slot="start"></ion-icon>
           Adicionar
@@ -96,6 +95,10 @@
   <ion-refresher slot="fixed" (ionRefresh)="loadData($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
+
+  <div *ngIf="errorMessage" class="empty-state" style="margin-bottom: 12px;">
+    <p>{{ errorMessage }}</p>
+  </div>
 
   <!-- Data Table (Desktop) -->
   <div class="data-table-container ion-hide-md-down">

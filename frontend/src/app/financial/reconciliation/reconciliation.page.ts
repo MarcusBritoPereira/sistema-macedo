@@ -85,6 +85,7 @@ export class ReconciliationPage implements OnInit {
 
     illustrationLoaded = true;
     loading = false;
+    loadError: string | null = null;
 
     constructor(
         private route: ActivatedRoute,
@@ -145,6 +146,7 @@ export class ReconciliationPage implements OnInit {
     loadStatements(event?: any) {
         if (!this.selectedAccountId) return;
         this.loading = true;
+        this.loadError = null;
 
         this.selectedAccount = this.bankAccounts.find(a => a.id === this.selectedAccountId) || null;
 
@@ -169,8 +171,10 @@ export class ReconciliationPage implements OnInit {
                 if (event) event.target.complete();
                 setTimeout(() => this.restoreScroll(), 100);
             },
-            error: () => {
+            error: (err) => {
+                console.error(err);
                 this.loading = false;
+                this.loadError = "Não foi possível carregar as conciliações. Tente novamente.";
                 if (event) event.target.complete();
             }
         });

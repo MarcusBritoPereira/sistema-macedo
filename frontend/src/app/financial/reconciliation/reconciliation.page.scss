@@ -671,3 +671,20 @@ $transition-speed: 0.2s;
     color: #718096;
     gap: 16px;
 }
+
+.error-banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 10px 12px;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    background: #fff1f2;
+
+    p {
+        margin: 0;
+        color: #9f1239;
+        font-size: 0.9rem;
+    }
+}

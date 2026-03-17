@@ -66,6 +66,18 @@ ion-header {
     font-weight: 500;
 }
 
+input[type="date"] {
+    background-color: white !important;
+    color: #334155 !important;
+    border: 1px solid #e2e8f0;
+    font-family: inherit;
+    &:focus {
+        outline: none;
+        border-color: $color-blue;
+        box-shadow: 0 0 0 2px rgba($color-blue, 0.1);
+    }
+}
+
 .dashboard-content {
     --background: #{$color-bg};
 }

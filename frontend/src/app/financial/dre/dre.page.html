@@ -42,11 +42,11 @@
         <div class="date-filter-group" style="display: flex; gap: 24px;">
             <div class="date-input-wrapper" style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 12px; color: var(--ion-color-medium); font-weight: 600;">DE:</span>
-                <input type="date" [(ngModel)]="filters.dataInicio" (change)="gerarDRE()" style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px; font-size: 14px;">
+                <input type="date" [(ngModel)]="filters.dataInicio" (change)="gerarDRE()" style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px; font-size: 14px; background-color: white; color: #334155;">
             </div>
             <div class="date-input-wrapper" style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 12px; color: var(--ion-color-medium); font-weight: 600;">ATÉ:</span>
-                <input type="date" [(ngModel)]="filters.dataFim" (change)="gerarDRE()" style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px; font-size: 14px;">
+                <input type="date" [(ngModel)]="filters.dataFim" (change)="gerarDRE()" style="border: 1px solid #e2e8f0; border-radius: 4px; padding: 4px 8px; font-size: 14px; background-color: white; color: #334155;">
             </div>
         </div>
     </div>

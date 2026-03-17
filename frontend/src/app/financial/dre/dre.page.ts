@@ -33,7 +33,9 @@ export class DrePage implements OnInit {
 
   constructor(private dreService: DreService) {
     const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    // Default to 6 months back to show meaningful granularity (Monthly/Quarterly)
+    const startDate = subMonths(today, 6);
+    const firstDay = startOfMonth(startDate);
     this.filters.dataInicio = format(firstDay, 'yyyy-MM-dd');
     this.filters.dataFim = format(today, 'yyyy-MM-dd');
   }

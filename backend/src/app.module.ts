@@ -13,7 +13,6 @@ import { ContractsModule } from './contracts/contracts.module';
 import { FiscalModule } from './fiscal/fiscal.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 
-
 @Module({
   imports: [
     UsersModule,
@@ -25,13 +24,15 @@ import { SuppliersModule } from './suppliers/suppliers.module';
     ContractsModule,
     FiscalModule,
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{
-      ttl: 60000,
-      limit: 10,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     SuppliersModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}

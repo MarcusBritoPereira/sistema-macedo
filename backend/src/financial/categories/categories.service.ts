@@ -5,7 +5,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class CategoriesService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   create(createCategoryDto: CreateCategoryDto) {
     return this.prisma.categoriaFinanceira.create({
@@ -16,7 +16,7 @@ export class CategoriesService {
   findAll() {
     return this.prisma.categoriaFinanceira.findMany({
       include: { children: true, parent: true },
-      orderBy: { nome: 'asc' }
+      orderBy: { nome: 'asc' },
     });
   }
 
@@ -25,7 +25,7 @@ export class CategoriesService {
     return this.prisma.categoriaFinanceira.findMany({
       where: { parentId: null },
       include: { children: { include: { children: true } } },
-      orderBy: { nome: 'asc' }
+      orderBy: { nome: 'asc' },
     });
   }
 

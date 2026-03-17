@@ -4,9 +4,9 @@ import { ParametroFiscalController } from './parameters/parametro-fiscal.control
 import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [ParametroFiscalController],
-    providers: [ParametroFiscalService],
-    exports: [ParametroFiscalService]
+  imports: [PrismaModule],
+  controllers: [ParametroFiscalController],
+  providers: [ParametroFiscalService],
+  exports: [ParametroFiscalService],
 })
-export class FiscalModule { }
+export class FiscalModule {}

@@ -6,10 +6,10 @@ import { CashFlowFilterDto } from './dto/cash-flow-filter.dto';
 @Controller('financial/cash-flow')
 @UseGuards(AuthGuard('jwt'))
 export class CashFlowController {
-    constructor(private readonly cashFlowService: CashFlowService) { }
+  constructor(private readonly cashFlowService: CashFlowService) {}
 
-    @Get()
-    async getCashFlow(@Query() filter: CashFlowFilterDto) {
-        return this.cashFlowService.getCashFlow(filter);
-    }
+  @Get()
+  async getCashFlow(@Query() filter: CashFlowFilterDto) {
+    return this.cashFlowService.getCashFlow(filter);
+  }
 }

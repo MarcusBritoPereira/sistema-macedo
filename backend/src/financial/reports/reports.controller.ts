@@ -6,7 +6,7 @@ import { ReportGenerationRequestDto } from './dto/report-generation-request.dto'
 @Controller('financial/reports')
 @UseGuards(AuthGuard('jwt'))
 export class ReportsController {
-  constructor(private readonly reportsService: ReportsService) { }
+  constructor(private readonly reportsService: ReportsService) {}
 
   @Get()
   getReports() {

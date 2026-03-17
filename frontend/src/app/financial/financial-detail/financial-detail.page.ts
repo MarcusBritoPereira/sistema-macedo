@@ -8,7 +8,8 @@ import { ClientsService, Cliente } from '../../services/clients/clients';
 import { CostCentersService, CostCenter } from '../../services/financial/cost-centers.service';
 import { SuppliersService, Supplier } from '../../services/suppliers/suppliers.service';
 import { RecurringService } from '../../services/financial/recurring.service';
-import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList, ModalController } from '@ionic/angular/standalone';
+import { RateioModalComponent } from '../../shared/components/rateio-modal/rateio-modal.component';
 import { addIcons } from 'ionicons';
 import { trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline } from 'ionicons/icons';
 
@@ -17,7 +18,7 @@ import { trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, c
   templateUrl: './financial-detail.page.html',
   styleUrls: ['./financial-detail.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList]
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList, RateioModalComponent]
 })
 export class FinancialDetailPage implements OnInit {
   financialForm: FormGroup;
@@ -45,7 +46,8 @@ export class FinancialDetailPage implements OnInit {
     private costCentersService: CostCentersService,
     private suppliersService: SuppliersService,
     private recurringService: RecurringService,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private modalCtrl: ModalController
   ) {
     addIcons({ trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline });
 
@@ -349,5 +351,27 @@ export class FinancialDetailPage implements OnInit {
 
   setToastOpen(isOpen: boolean) {
     this.isToastOpen = isOpen;
+  }
+
+  async openRateioModal() {
+    if (!this.itemId || this.itemId === 'new') {
+      this.showToast('Salve o lançamento antes de definir o rateio detalhado.');
+      return;
+    }
+
+    const modal = await this.modalCtrl.create({
+      component: RateioModalComponent,
+      componentProps: {
+        transaction: {
+          id: this.itemId,
+          descricao: this.financialForm.get('descricao')?.value,
+          valor: this.financialForm.get('valor')?.value,
+          categoriaId: this.financialForm.get('subcategoriaId')?.value || this.financialForm.get('categoriaId')?.value,
+          habilitarRateio: this.financialForm.get('habilitarRateio')?.value
+        }
+      }
+    });
+
+    await modal.present();
   }
 }

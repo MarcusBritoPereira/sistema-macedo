@@ -7,7 +7,7 @@ function parseOrigins(value?: string) {
   if (!value) return [];
   return value
     .split(',')
-    .map(s => s.trim())
+    .map((s) => s.trim())
     .filter(Boolean);
 }
 

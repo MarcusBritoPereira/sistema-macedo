@@ -90,7 +90,7 @@ model Cliente {
   leads     Lead[]
   lancamentos LancamentoFinanceiro[]
 
-  @@map("usuarios_clientes") // Changed mapping to avoid potential conflicts and follow a clearer naming
+  @@map("clientes")
 }
 
 model Contato {
@@ -104,7 +104,7 @@ model Contato {
   clienteId String
   cliente   Cliente @relation(fields: [clienteId], references: [id])
 
-  @@map("contatos_clientes")
+  @@map("contatos")
 }
 
 model Contrato {
@@ -183,6 +183,9 @@ model LancamentoFinanceiro {
 
   recurrenciaId String?
   recurrencia   Recurrencia? @relation(fields: [recurrenciaId], references: [id])
+
+  recorrente    Boolean  @default(false)
+  rateios       RateioLancamento[]
 
   conciliacoes ConciliacaoBancaria[]
 
@@ -356,8 +359,29 @@ model CategoriaFinanceira {
   children  CategoriaFinanceira[] @relation("CategoriaHierarchy")
 
   lancamentos LancamentoFinanceiro[]
+  rateios     RateioLancamento[]
 
   @@map("categorias_financeiras")
+}
+
+model RateioLancamento {
+  id             String   @id @default(uuid())
+  valor          Decimal  @db.Decimal(10, 2)
+  recorrente     Boolean  @default(false)
+  observacao     String?
+  categoria      String   // ClassificacaoDRE key
+  subcategoria   String?  // nome da subcategoria livre
+
+  lancamentoId   String
+  lancamento     LancamentoFinanceiro @relation(fields: [lancamentoId], references: [id], onDelete: Cascade)
+
+  categoriaFinanceiraId String?
+  categoriaFinanceira   CategoriaFinanceira? @relation(fields: [categoriaFinanceiraId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("rateios_lancamento")
 }
 
 enum ClassificacaoDRE {

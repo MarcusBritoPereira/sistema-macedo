@@ -3,6 +3,8 @@ import { FinancialService } from './financial.service';
 import { FinancialController } from './financial.controller';
 import { CashFlowService } from './cash-flow.service';
 import { CashFlowController } from './cash-flow.controller';
+import { DreModule } from './dre/dre.module';
+import { RateioModule } from './rateio/rateio.module';
 
 import { CategoriesModule } from './categories/categories.module';
 import { CostCentersModule } from './cost-centers/cost-centers.module';
@@ -21,8 +23,29 @@ import { ReportsController } from './reports/reports.controller';
 import { ReportsService } from './reports/reports.service';
 
 @Module({
-  providers: [FinancialService, CashFlowService, FinancialDashboardService, ReportsService],
-  controllers: [FinancialController, BankAccountsController, CashFlowController, FinancialDashboardController, ReportsController],
-  imports: [CategoriesModule, CostCentersModule, FinancialTransactionsModule, BankingIntegrationModule, ReconciliationModule, FinancialBudgetModule, RecurringModule]
+  providers: [
+    FinancialService,
+    CashFlowService,
+    FinancialDashboardService,
+    ReportsService,
+  ],
+  controllers: [
+    FinancialController,
+    BankAccountsController,
+    CashFlowController,
+    FinancialDashboardController,
+    ReportsController,
+  ],
+  imports: [
+    CategoriesModule,
+    CostCentersModule,
+    FinancialTransactionsModule,
+    BankingIntegrationModule,
+    ReconciliationModule,
+    FinancialBudgetModule,
+    RecurringModule,
+    DreModule,
+    RateioModule,
+  ],
 })
-export class FinancialModule { }
+export class FinancialModule {}

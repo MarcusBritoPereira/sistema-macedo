@@ -136,6 +136,11 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'financial/dre',
+    loadComponent: () => import('./financial/dre/dre.page').then(m => m.DrePage),
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'financial/bank-accounts',
     loadComponent: () => import('./financial/bank-accounts/bank-accounts.page').then(m => m.BankAccountsPage),
     canActivate: [AuthGuard]

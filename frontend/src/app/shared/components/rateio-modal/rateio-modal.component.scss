@@ -1,0 +1,64 @@
+.transaction-info {
+  background: var(--ion-color-light);
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid var(--ion-color-primary);
+
+  .label {
+    font-size: 0.8rem;
+    color: var(--ion-color-medium);
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+  }
+
+  .value {
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .total-val {
+    color: var(--ion-color-primary);
+    font-size: 1.4rem;
+  }
+}
+
+.rateio-item {
+  ion-card {
+    background: transparent;
+    border: 1px solid var(--ion-color-light-shade);
+    box-shadow: none;
+  }
+}
+
+.summary-bar {
+  background: var(--ion-color-light);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--ion-color-light-shade);
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+
+    .label {
+      font-size: 0.75rem;
+      color: var(--ion-color-medium);
+    }
+
+    .value {
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    &.error .value {
+      color: var(--ion-color-danger);
+    }
+  }
+}
+
+ion-checkbox {
+    --size: 18px;
+    --checkbox-background-checked: var(--ion-color-primary);
+    font-size: 0.9rem;
+}

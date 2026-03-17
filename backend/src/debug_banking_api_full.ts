@@ -1,4 +1,3 @@
-
 import { PrismaClient } from '@prisma/client';
 import axios from 'axios';
 import * as https from 'https';
@@ -8,43 +7,53 @@ import * as path from 'path';
 const prisma = new PrismaClient();
 
 async function main() {
-    const accountId = 'c92621b6-06e0-422e-bb24-fb45be78879b';
-    const integration = await prisma.integracaoBancaria.findUnique({
-        where: { contaBancariaId: accountId }
-    });
+  const accountId = 'c92621b6-06e0-422e-bb24-fb45be78879b';
+  const integration = await prisma.integracaoBancaria.findUnique({
+    where: { contaBancariaId: accountId },
+  });
 
-    const certContent = fs.readFileSync(integration!.crtFile!);
-    const keyContent = fs.readFileSync(integration!.keyFile!);
-    const agent = new https.Agent({ cert: certContent, key: keyContent, rejectUnauthorized: false });
+  const certContent = fs.readFileSync(integration!.crtFile!);
+  const keyContent = fs.readFileSync(integration!.keyFile!);
+  const agent = new https.Agent({
+    cert: certContent,
+    key: keyContent,
+    rejectUnauthorized: false,
+  });
 
-    // Auth
-    const params = new URLSearchParams();
-    params.append('client_id', integration!.clientId!);
-    params.append('client_secret', integration!.clientSecret!);
-    params.append('scope', 'extrato.read');
-    params.append('grant_type', 'client_credentials');
+  // Auth
+  const params = new URLSearchParams();
+  params.append('client_id', integration!.clientId!);
+  params.append('client_secret', integration!.clientSecret!);
+  params.append('scope', 'extrato.read');
+  params.append('grant_type', 'client_credentials');
 
-    const authRes = await axios.post('https://cdpj.partners.bancointer.com.br/oauth/v2/token', params, {
-        httpsAgent: agent,
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    });
-    const token = authRes.data.access_token;
+  const authRes = await axios.post(
+    'https://cdpj.partners.bancointer.com.br/oauth/v2/token',
+    params,
+    {
+      httpsAgent: agent,
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    },
+  );
+  const token = authRes.data.access_token;
 
-    const dataInicio = '2026-01-20';
-    const dataFim = '2026-01-28';
+  const dataInicio = '2026-01-20';
+  const dataFim = '2026-01-28';
 
-    const url = `https://cdpj.partners.bancointer.com.br/banking/v2/extrato?dataInicio=${dataInicio}&dataFim=${dataFim}`;
-    const response = await axios.get(url, {
-        httpsAgent: agent,
-        headers: { 'Authorization': `Bearer ${token}` }
-    });
+  const url = `https://cdpj.partners.bancointer.com.br/banking/v2/extrato?dataInicio=${dataInicio}&dataFim=${dataFim}`;
+  const response = await axios.get(url, {
+    httpsAgent: agent,
+    headers: { Authorization: `Bearer ${token}` },
+  });
 
-    const trans = response.data.transacoes || [];
-    console.log(`\nFound ${trans.length} transactions for range ${dataInicio} to ${dataFim}`);
-    if (trans.length > 0) {
-        console.log('\n--- Full Transaction Object (First One) ---');
-        console.log(JSON.stringify(trans[0], null, 2));
-    }
+  const trans = response.data.transacoes || [];
+  console.log(
+    `\nFound ${trans.length} transactions for range ${dataInicio} to ${dataFim}`,
+  );
+  if (trans.length > 0) {
+    console.log('\n--- Full Transaction Object (First One) ---');
+    console.log(JSON.stringify(trans[0], null, 2));
+  }
 }
 
-main().catch(err => console.error(err));
+main().catch((err) => console.error(err));

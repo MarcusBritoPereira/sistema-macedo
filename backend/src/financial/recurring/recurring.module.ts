@@ -6,6 +6,6 @@ import { PrismaModule } from '../../prisma/prisma.module';
 @Module({
   imports: [PrismaModule],
   providers: [RecurringService],
-  controllers: [RecurringController]
+  controllers: [RecurringController],
 })
-export class RecurringModule { }
+export class RecurringModule {}

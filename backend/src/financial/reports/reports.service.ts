@@ -22,57 +22,69 @@ export interface ReportGenerationResponse {
     id: string;
     title: string;
     status: string;
-    data?: any
+    data?: any;
   }>;
 }
 
 @Injectable()
 export class ReportsService {
-  constructor(private prisma: PrismaService) { }
+  constructor(private prisma: PrismaService) {}
 
   private readonly reports: ReportDefinition[] = [
     {
       id: 'dre',
       title: 'DRE (Resultado do Exercício)',
-      description: 'Evolução do resultado, margens e comparação com o planejado.',
+      description:
+        'Evolução do resultado, margens e comparação com o planejado.',
       cadence: 'Mensal',
       category: 'Performance',
       tags: ['Essencial', 'Contábil'],
       icon: 'pie-chart-outline',
-      highlights: ['Margem bruta e líquida', 'Receita vs. despesas', 'Comparativo por período'],
-      defaultSelected: true
+      highlights: [
+        'Margem bruta e líquida',
+        'Receita vs. despesas',
+        'Comparativo por período',
+      ],
+      defaultSelected: true,
     },
     {
       id: 'cashflow',
       title: 'Fluxo de Caixa',
-      description: 'Entradas e saídas projetadas para antecipar necessidades de caixa.',
+      description:
+        'Entradas e saídas projetadas para antecipar necessidades de caixa.',
       cadence: 'Diário / Semanal',
       category: 'Liquidez',
       tags: ['Essencial', 'Operacional'],
       icon: 'cash-outline',
-      highlights: ['Saldo inicial e final', 'Projeções futuras', 'Alertas de caixa'],
-      defaultSelected: true
+      highlights: [
+        'Saldo inicial e final',
+        'Projeções futuras',
+        'Alertas de caixa',
+      ],
+      defaultSelected: true,
     },
     {
       id: 'balance',
       title: 'Balanço Patrimonial',
-      description: 'Visão consolidada de ativos, passivos e patrimônio líquido.',
+      description:
+        'Visão consolidada de ativos, passivos e patrimônio líquido.',
       cadence: 'Mensal',
       category: 'Estrutura',
       tags: ['Essencial', 'Contábil'],
       icon: 'layers-outline',
-      highlights: ['Capital de giro', 'Endividamento', 'Saúde financeira']
+      highlights: ['Capital de giro', 'Endividamento', 'Saúde financeira'],
     },
     {
       id: 'aging',
       title: 'Aging de Contas (Pagar/Receber)',
-      description: 'Distribuição por vencimento para priorização de cobrança e pagamentos.',
+      description:
+        'Distribuição por vencimento para priorização de cobrança e pagamentos.',
       cadence: 'Semanal',
       category: 'Risco',
       tags: ['Essencial', 'Cobrança'],
       icon: 'calendar-outline',
       highlights: ['Vencidos', 'A vencer', 'Prioridades de cobrança'],
-      defaultSelected: true
+      defaultSelected: true,
     },
     {
       id: 'bank-position',
@@ -82,7 +94,11 @@ export class ReportsService {
       category: 'Liquidez',
       tags: ['Operacional'],
       icon: 'wallet-outline',
-      highlights: ['Saldo disponível', 'Última conciliação', 'Distribuição por conta']
+      highlights: [
+        'Saldo disponível',
+        'Última conciliação',
+        'Distribuição por conta',
+      ],
     },
     {
       id: 'budget',
@@ -92,7 +108,11 @@ export class ReportsService {
       category: 'Controle',
       tags: ['Gestão'],
       icon: 'bar-chart-outline',
-      highlights: ['Desvios por categoria', 'Alertas de estouro', 'Tendência anual']
+      highlights: [
+        'Desvios por categoria',
+        'Alertas de estouro',
+        'Tendência anual',
+      ],
     },
     {
       id: 'cost-centers',
@@ -102,27 +122,39 @@ export class ReportsService {
       category: 'Gestão',
       tags: ['Gerencial'],
       icon: 'analytics-outline',
-      highlights: ['Ranking por contribuição', 'Comparativo entre áreas', 'Top despesas']
+      highlights: [
+        'Ranking por contribuição',
+        'Comparativo entre áreas',
+        'Top despesas',
+      ],
     },
     {
       id: 'taxes',
       title: 'Resumo de Impostos',
-      description: 'Obrigações fiscais, provisões e pagamentos por competência.',
+      description:
+        'Obrigações fiscais, provisões e pagamentos por competência.',
       cadence: 'Mensal',
       category: 'Compliance',
       tags: ['Fiscal'],
       icon: 'document-text-outline',
-      highlights: ['Impostos a pagar', 'Histórico de recolhimento', 'Alertas de vencimento']
-    }
+      highlights: [
+        'Impostos a pagar',
+        'Histórico de recolhimento',
+        'Alertas de vencimento',
+      ],
+    },
   ];
 
   getCatalog(): ReportDefinition[] {
     return this.reports;
   }
 
-
-  async generate(payload: ReportGenerationRequestDto): Promise<ReportGenerationResponse> {
-    const selected = this.reports.filter(report => payload.reportIds?.includes(report.id));
+  async generate(
+    payload: ReportGenerationRequestDto,
+  ): Promise<ReportGenerationResponse> {
+    const selected = this.reports.filter((report) =>
+      payload.reportIds?.includes(report.id),
+    );
     const now = new Date().toISOString();
 
     return {
@@ -131,18 +163,20 @@ export class ReportsService {
       message: selected.length
         ? `${selected.length} relatório(s) pronto(s) para visualização.`
         : 'Nenhum relatório selecionado.',
-      reports: await Promise.all(selected.map(async report => {
-        let data: any = null;
-        if (report.id === 'dre') {
-          data = await this.generateDREReport(payload.filters);
-        }
-        return {
-          id: report.id,
-          title: report.title,
-          status: 'ready',
-          data: data
-        };
-      }))
+      reports: await Promise.all(
+        selected.map(async (report) => {
+          let data: any = null;
+          if (report.id === 'dre') {
+            data = await this.generateDREReport(payload.filters);
+          }
+          return {
+            id: report.id,
+            title: report.title,
+            status: 'ready',
+            data: data,
+          };
+        }),
+      ),
     };
   }
 
@@ -166,11 +200,12 @@ export class ReportsService {
 
     // 2. Build Query
     const where: any = {
-      dataVencimento: { // Or dataCompetencia if available/preferred
+      dataVencimento: {
+        // Or dataCompetencia if available/preferred
         gte: startDate,
-        lte: endDate
+        lte: endDate,
       },
-      status: { in: ['REALIZADO', 'PAGO', 'CONCILIADO'] } // Only realized
+      status: { in: ['REALIZADO', 'PAGO', 'CONCILIADO'] }, // Only realized
     };
 
     if (filters.accountId && filters.accountId !== 'all') {
@@ -184,8 +219,8 @@ export class ReportsService {
     const transactions = await this.prisma.lancamentoFinanceiro.findMany({
       where,
       include: {
-        categoria: true
-      }
+        categoria: true,
+      },
     });
 
     // 4. Aggregate by Classification
@@ -193,12 +228,20 @@ export class ReportsService {
 
     // Initialize standard keys
     const keys = [
-      'RECEITA_RECORRENTE', 'RECEITA_NAO_RECORRENTE', 'DEDUCOES_RECEITA',
-      'CUSTO_SERVICOS_PRESTADOS', 'DESPESA_ADMINISTRATIVA', 'DESPESA_COMERCIAL',
-      'DESPESA_ESTRUTURAL', 'DESPESA_SOCIOS', 'DESPESA_FINANCEIRA',
-      'RECEITA_FINANCEIRA', 'IMPOSTOS_LUCRO', 'OUTROS'
+      'RECEITA_RECORRENTE',
+      'RECEITA_NAO_RECORRENTE',
+      'DEDUCOES_RECEITA',
+      'CUSTO_SERVICOS_PRESTADOS',
+      'DESPESA_ADMINISTRATIVA',
+      'DESPESA_COMERCIAL',
+      'DESPESA_ESTRUTURAL',
+      'DESPESA_SOCIOS',
+      'DESPESA_FINANCEIRA',
+      'RECEITA_FINANCEIRA',
+      'IMPOSTOS_LUCRO',
+      'OUTROS',
     ];
-    keys.forEach(k => totals[k] = 0);
+    keys.forEach((k) => (totals[k] = 0));
 
     for (const t of transactions) {
       const cls = t.categoria?.classificacao || 'OUTROS';
@@ -228,7 +271,9 @@ export class ReportsService {
     // (-) Outros / Impostos
     // (=) Lucro Líquido
 
-    const receitaBruta = (totals['RECEITA_RECORRENTE'] || 0) + (totals['RECEITA_NAO_RECORRENTE'] || 0);
+    const receitaBruta =
+      (totals['RECEITA_RECORRENTE'] || 0) +
+      (totals['RECEITA_NAO_RECORRENTE'] || 0);
     const deducoes = totals['DEDUCOES_RECEITA'] || 0; // Negative
     const receitaLiquida = receitaBruta + deducoes;
 
@@ -243,7 +288,8 @@ export class ReportsService {
 
     const ebitda = lucroBruto + despesasOp;
 
-    const resFin = (totals['RECEITA_FINANCEIRA'] || 0) + (totals['DESPESA_FINANCEIRA'] || 0);
+    const resFin =
+      (totals['RECEITA_FINANCEIRA'] || 0) + (totals['DESPESA_FINANCEIRA'] || 0);
     const impostos = totals['IMPOSTOS_LUCRO'] || 0;
     const outros = totals['OUTROS'] || 0;
 
@@ -255,14 +301,32 @@ export class ReportsService {
         receitaLiquida,
         lucroBruto,
         ebitda,
-        lucroLiquido
+        lucroLiquido,
       },
       details: [
-        { label: 'Receita Bruta', value: receitaBruta, level: 1, type: 'total' },
-        { label: 'Receita Recorrente', value: totals['RECEITA_RECORRENTE'], level: 2 },
-        { label: 'Receita Não Recorrente', value: totals['RECEITA_NAO_RECORRENTE'], level: 2 },
+        {
+          label: 'Receita Bruta',
+          value: receitaBruta,
+          level: 1,
+          type: 'total',
+        },
+        {
+          label: 'Receita Recorrente',
+          value: totals['RECEITA_RECORRENTE'],
+          level: 2,
+        },
+        {
+          label: 'Receita Não Recorrente',
+          value: totals['RECEITA_NAO_RECORRENTE'],
+          level: 2,
+        },
         { label: '(-) Deduções', value: deducoes, level: 1 },
-        { label: '= Receita Líquida', value: receitaLiquida, level: 0, type: 'total' },
+        {
+          label: '= Receita Líquida',
+          value: receitaLiquida,
+          level: 0,
+          type: 'total',
+        },
         { label: '(-) Custos dos Serviços', value: custos, level: 1 },
         { label: '= Lucro Bruto', value: lucroBruto, level: 0, type: 'total' },
         { label: '(-) Despesas Operacionais', value: despesasOp, level: 1 },
@@ -270,12 +334,23 @@ export class ReportsService {
         { label: 'Comerciais', value: despCom, level: 2 },
         { label: 'Estruturais', value: despEst, level: 2 },
         { label: 'Sócios', value: despSoc, level: 2 },
-        { label: '= Resultado Operacional (EBITDA)', value: ebitda, level: 0, type: 'total' },
+        {
+          label: '= Resultado Operacional (EBITDA)',
+          value: ebitda,
+          level: 0,
+          type: 'total',
+        },
         { label: 'Resultado Financeiro', value: resFin, level: 1 },
         { label: 'Impostos s/ Lucro', value: impostos, level: 1 },
         { label: 'Outros', value: outros, level: 1 },
-        { label: '= Lucro Líquido do Exercício', value: lucroLiquido, level: 0, type: 'total', highlight: true }
-      ]
+        {
+          label: '= Lucro Líquido do Exercício',
+          value: lucroLiquido,
+          level: 0,
+          type: 'total',
+          highlight: true,
+        },
+      ],
     };
   }
 }

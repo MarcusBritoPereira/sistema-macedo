@@ -106,7 +106,14 @@
               <p style="margin: 2px 0 0; font-size: 0.8rem; color: #666;">Dividir valor em múltiplos centros/categorias.
               </p>
             </div>
-            <ion-toggle formControlName="habilitarRateio" color="primary"></ion-toggle>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <ion-button *ngIf="isEditMode" fill="outline" size="small" (click)="openRateioModal()"
+                style="text-transform: none; --border-radius: 4px; font-size: 0.75rem;">
+                <ion-icon name="list-outline" slot="start"></ion-icon>
+                Classificar p/ DRE (Rateio)
+              </ion-button>
+              <ion-toggle formControlName="habilitarRateio" color="primary"></ion-toggle>
+            </div>
           </div>
         </div>
       </div>

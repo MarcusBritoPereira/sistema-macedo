@@ -4,9 +4,9 @@ import { FinancialBudgetController } from './financial-budget.controller';
 import { PrismaModule } from '../../prisma/prisma.module';
 
 @Module({
-    imports: [PrismaModule],
-    controllers: [FinancialBudgetController],
-    providers: [FinancialBudgetService],
-    exports: [FinancialBudgetService]
+  imports: [PrismaModule],
+  controllers: [FinancialBudgetController],
+  providers: [FinancialBudgetService],
+  exports: [FinancialBudgetService],
 })
-export class FinancialBudgetModule { }
+export class FinancialBudgetModule {}

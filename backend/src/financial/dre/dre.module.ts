@@ -5,5 +5,6 @@ import { DreController } from './dre.controller';
 @Module({
   controllers: [DreController],
   providers: [DreService],
+  exports: [DreService],
 })
 export class DreModule {}

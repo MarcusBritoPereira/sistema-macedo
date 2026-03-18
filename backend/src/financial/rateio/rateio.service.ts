@@ -1,10 +1,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateRateioDto } from './dto/create-rateio.dto';
+import { DreService } from '../dre/dre.service';
 
 @Injectable()
 export class RateioService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private dreService: DreService,
+  ) {}
 
   async findByLancamento(lancamentoId: string) {
     return this.prisma.rateioLancamento.findMany({
@@ -13,8 +17,8 @@ export class RateioService {
     });
   }
 
-  async saveBatch(lancamentoId: string, dtos: CreateRateioDto[]) {
-    return this.prisma.$transaction(async (tx) => {
+  async saveBatch(lancamentoId: string, dtos: CreateRateioDto[], usuario?: string) {
+    const result = await this.prisma.$transaction(async (tx) => {
       const lancamento = await tx.lancamentoFinanceiro.findUnique({
         where: { id: lancamentoId },
       });
@@ -23,19 +27,14 @@ export class RateioService {
         throw new BadRequestException('Lançamento não encontrado');
       }
 
-      // 1. Validação de valores negativos
       if (dtos.some((r) => r.valor < 0)) {
-        throw new BadRequestException(
-          'O valor do rateio não pode ser negativo',
-        );
+        throw new BadRequestException('O valor do rateio não pode ser negativo');
       }
 
-      // 2. Validação da soma
       if (dtos.length > 0) {
         const totalRateado = dtos.reduce((acc, curr) => acc + curr.valor, 0);
         const valorTotal = Number(lancamento.valor);
 
-        // Usando uma margem pequena para erros de ponto flutuante
         if (Math.abs(totalRateado - valorTotal) > 0.01) {
           throw new BadRequestException(
             `A soma dos rateios (R$ ${totalRateado.toFixed(2)}) deve ser igual ao valor total do lançamento (R$ ${valorTotal.toFixed(2)})`,
@@ -43,34 +42,82 @@ export class RateioService {
         }
       }
 
-      // 3. Deletar rateios antigos
+      const antigos = await tx.rateioLancamento.findMany({ where: { lancamentoId } });
+
       await tx.rateioLancamento.deleteMany({
         where: { lancamentoId },
       });
 
-      // 4. Se não houver rateios informados, criar automático (100% na categoria do lançamento)
       if (dtos.length === 0) {
-        await tx.rateioLancamento.create({
+        const novo = await tx.rateioLancamento.create({
           data: {
             lancamentoId,
             valor: lancamento.valor,
-            categoria: 'OUTROS', // Placeholder or Extract from category mapping
+            categoria: 'OUTROS',
             categoriaFinanceiraId: lancamento.categoriaId,
-            // @ts-ignore
             recorrente: lancamento.recorrente,
+            updatedBy: usuario,
+          },
+        });
+
+        await tx.rateioHistorico.create({
+          data: {
+            rateioId: novo.id,
+            lancamentoId,
+            valorAntigo: null,
+            valorNovo: novo.valor,
+            categoriaAntiga: null,
+            categoriaNova: novo.categoria,
+            usuario: usuario || 'sistema',
           },
         });
       } else {
-        // 5. Criar novos rateios
-        await tx.rateioLancamento.createMany({
-          data: dtos.map((dto) => ({
-            ...dto,
+        const novos = await Promise.all(
+          dtos.map((dto) =>
+            tx.rateioLancamento.create({
+              data: {
+                ...dto,
+                lancamentoId,
+                updatedBy: usuario,
+              },
+            }),
+          ),
+        );
+
+        for (const novo of novos) {
+          await tx.rateioHistorico.create({
+            data: {
+              rateioId: novo.id,
+              lancamentoId,
+              valorAntigo: null,
+              valorNovo: novo.valor,
+              categoriaAntiga: null,
+              categoriaNova: novo.categoria,
+              usuario: usuario || 'sistema',
+            },
+          });
+        }
+      }
+
+      for (const antigo of antigos) {
+        await tx.rateioHistorico.create({
+          data: {
+            rateioId: antigo.id,
             lancamentoId,
-          })),
+            valorAntigo: antigo.valor,
+            valorNovo: null,
+            categoriaAntiga: antigo.categoria,
+            categoriaNova: null,
+            usuario: usuario || 'sistema',
+          },
         });
       }
 
       return this.findByLancamento(lancamentoId);
     });
+
+    await this.dreService.invalidarCacheDRE();
+
+    return result;
   }
 }

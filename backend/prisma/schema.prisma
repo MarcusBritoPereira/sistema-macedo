@@ -186,6 +186,7 @@ model LancamentoFinanceiro {
 
   recorrente    Boolean  @default(false)
   rateios       RateioLancamento[]
+  rateiosHistorico RateioHistorico[]
 
   conciliacoes ConciliacaoBancaria[]
 
@@ -380,8 +381,39 @@ model RateioLancamento {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  historicos RateioHistorico[]
 
   @@map("rateios_lancamento")
+}
+
+
+model RateioHistorico {
+  id             String   @id @default(uuid())
+  rateioId       String?
+  lancamentoId   String
+  valorAntigo    Decimal? @db.Decimal(10, 2)
+  valorNovo      Decimal? @db.Decimal(10, 2)
+  categoriaAntiga String?
+  categoriaNova   String?
+  dataEdicao     DateTime @default(now())
+  usuario        String
+
+  rateio        RateioLancamento? @relation(fields: [rateioId], references: [id], onDelete: SetNull)
+  lancamento    LancamentoFinanceiro @relation(fields: [lancamentoId], references: [id], onDelete: Cascade)
+
+  @@map("rateios_historico")
+}
+
+model DreCache {
+  id        String   @id @default(uuid())
+  chave     String   @unique
+  payload   Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("dre_cache")
 }
 
 enum ClassificacaoDRE {

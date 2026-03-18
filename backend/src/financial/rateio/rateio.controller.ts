@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Param, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RateioService } from './rateio.service';
 import { CreateRateiosBatchDto } from './dto/create-rateio.dto';
@@ -14,7 +22,7 @@ export class RateioController {
   }
 
   @Post()
-  saveBatch(@Param('id') id: string, @Body() body: CreateRateiosBatchDto) {
-    return this.rateioService.saveBatch(id, body.rateios);
+  saveBatch(@Param('id') id: string, @Body() body: CreateRateiosBatchDto, @Req() req: any) {
+    return this.rateioService.saveBatch(id, body.rateios, req.user?.id);
   }
 }

@@ -21,4 +21,8 @@ export class DreService {
   saveRateios(transactionId: string, rateios: RateioLancamento[]): Observable<RateioLancamento[]> {
     return this.api.post<RateioLancamento[]>(`financial/transactions/${transactionId}/rateios`, { rateios });
   }
+
+  obterDetalhes(params: any): Observable<any[]> {
+    return this.api.post<any[]>('financial/dre/detalhes', params);
+  }
 }

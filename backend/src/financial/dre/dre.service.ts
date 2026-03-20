@@ -62,6 +62,19 @@ export class DreService {
       },
     });
 
+    const cartoesRaw = await this.prisma.cartaoTransacao.findMany({
+      where: {
+        dataCompetencia: {
+          gte: start,
+          lte: end,
+        },
+        status: { in: ['FATURADO', 'PAGO'] },
+      },
+      include: {
+        categoriaFinanceira: true,
+      },
+    });
+
     const classificationKeys = Object.values(ClassificacaoDRE);
     const normalizedData = [
       ...rateiosRaw.map((r: any) => ({
@@ -79,6 +92,16 @@ export class DreService {
         ) as ClassificacaoDRE,
         subcategoria: l.categoria?.nome || 'Não categorizado',
         data: l[dateField],
+      })),
+      ...cartoesRaw.map((c: any) => ({
+        valor: Number(c.valor),
+        categoria: (
+          c.categoriaFinanceira?.classificacao && classificationKeys.includes(c.categoriaFinanceira.classificacao)
+            ? c.categoriaFinanceira.classificacao
+            : 'OUTROS'
+        ) as ClassificacaoDRE,
+        subcategoria: c.categoriaFinanceira?.nome || 'Cartão (Não categorizado)',
+        data: c.dataCompetencia,
       })),
     ];
 
@@ -156,6 +179,7 @@ export class DreService {
     });
 
     const detalhes = itens.map((item) => ({
+      id: item.lancamento.id,
       data: item.lancamento[dateField],
       descricao: item.lancamento.descricao,
       valor: Number(item.valor),
@@ -163,13 +187,42 @@ export class DreService {
       centro_custo: item.lancamento.centroCusto?.nome || null,
     }));
 
-    await this.prisma.dreCache.upsert({
-      where: { chave: cacheKey },
-      update: { payload: detalhes },
-      create: { chave: cacheKey, payload: detalhes },
+    const cartoesDetails = await this.prisma.cartaoTransacao.findMany({
+      where: {
+        categoriaFinanceira: { classificacao: dto.categoria },
+        ...(dto.subcategoria ? { categoriaFinanceira: { nome: dto.subcategoria } } : {}),
+        dataCompetencia: {
+          gte: start,
+          lte: end,
+        },
+      },
+      include: {
+        cliente: true,
+        centroCusto: true,
+      },
+      orderBy: {
+        dataCompetencia: 'asc',
+      },
     });
 
-    return detalhes;
+    const detalhesCartoes = cartoesDetails.map((item) => ({
+      id: item.id,
+      data: item.dataCompetencia,
+      descricao: item.descricao,
+      valor: Number(item.valor),
+      cliente: item.cliente?.nomeFantasia || item.cliente?.razaoSocial || null,
+      centro_custo: item.centroCusto?.nome || null,
+    }));
+
+    const detalhesFinais = [...detalhes, ...detalhesCartoes].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+
+    await this.prisma.dreCache.upsert({
+      where: { chave: cacheKey },
+      update: { payload: detalhesFinais },
+      create: { chave: cacheKey, payload: detalhesFinais },
+    });
+
+    return detalhesFinais;
   }
 
   async invalidarCacheDRE() {
@@ -231,7 +284,6 @@ export class DreService {
           total: 0,
           periodos: this.initializePeriodValues(periodos),
         },
-        ebit: { total: 0, periodos: this.initializePeriodValues(periodos) },
         lair: { total: 0, periodos: this.initializePeriodValues(periodos) },
         resultadoLiquido: {
           total: 0,
@@ -244,7 +296,6 @@ export class DreService {
           periodos: this.initializePeriodValues(periodos),
         },
         bruta: { total: 0, periodos: this.initializePeriodValues(periodos) },
-        ebit: { total: 0, periodos: this.initializePeriodValues(periodos) },
         lair: { total: 0, periodos: this.initializePeriodValues(periodos) },
         liquida: { total: 0, periodos: this.initializePeriodValues(periodos) },
       },
@@ -283,13 +334,12 @@ export class DreService {
         data.DESPESA_ESTRUTURAL.periodos[p] +
         data.DESPESA_SOCIOS.periodos[p];
 
-      const ebit = lucroBruto - despesasOp;
-      result.totais.ebit.periodos[p] = ebit;
-      result.margens.ebit.periodos[p] = recLiquida > 0 ? (ebit / recLiquida) * 100 : 0;
-
       const despesasFin = data.DESPESA_FINANCEIRA.periodos[p];
       const recFin = data.RECEITA_FINANCEIRA.periodos[p];
-      const lair = ebit - despesasFin + recFin;
+      
+      const lucroOperacional = lucroBruto - despesasOp;
+      const lair = lucroOperacional - despesasFin + recFin;
+      
       result.totais.lair.periodos[p] = lair;
       result.margens.lair.periodos[p] = recLiquida > 0 ? (lair / recLiquida) * 100 : 0;
 

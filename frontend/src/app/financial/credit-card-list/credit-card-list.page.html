@@ -1,0 +1,50 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/financial"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Cartões Corporativos</ion-title>
+    <ion-buttons slot="end">
+      <!-- Hidden file input triggered by the button -->
+      <input type="file" #fileInput (change)="processCSV($event)" accept=".csv" style="display:none" />
+      <ion-button (click)="fileInput.click()">
+        <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
+        Importar Fatura CSV
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div *ngIf="faturas.length === 0" class="empty-state">
+    <ion-icon name="card-outline"></ion-icon>
+    <h3>Nenhuma fatura encontrada</h3>
+    <p>Importe um CSV do seu banco para começar o gerenciamento avançado.</p>
+    <ion-button (click)="fileInput.click()">Importar Primeira Fatura</ion-button>
+  </div>
+
+  <ion-grid *ngIf="faturas.length > 0">
+    <ion-row>
+      <ion-col size="12" size-md="6" size-lg="4" *ngFor="let fatura of faturas">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-subtitle>Vencimento: {{ fatura.dataVencimento | date:'dd/MM/yyyy' }}</ion-card-subtitle>
+            <ion-card-title>{{ fatura.valorTotal | currency:'BRL' }}</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <p>Fechamento: {{ fatura.dataFechamento | date:'dd/MM/yyyy' }}</p>
+            <ion-badge [color]="fatura.status === 'PAGA' ? 'success' : (fatura.status === 'FECHADA' ? 'warning' : 'primary')">
+              {{ fatura.status }}
+            </ion-badge>
+            
+            <div class="ion-margin-top actions">
+              <ion-button expand="block" shape="round" routerLink="/financial/credit-cards/{{ fatura.id }}/review" [color]="fatura.status === 'PAGA' ? 'medium' : 'primary'">
+                {{ fatura.status === 'PAGA' ? 'Ver Fatura (Paga)' : 'Conciliar Transações' }}
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>

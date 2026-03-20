@@ -89,14 +89,6 @@
                 </ion-card-content>
             </ion-card>
 
-            <ion-card class="kpi-card bg-red-light" style="margin: 0; border-radius: 12px; background: #fef2f2;">
-                <ion-card-content>
-                    <div class="kpi-label" style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">EBIT</div>
-                    <div class="kpi-value" [class.text-red]="isNegative(dreResult.totais['ebit'].total)" style="font-size: 24px; font-weight: 700;">
-                        {{ dreResult.totais['ebit'].total | currency:'BRL' }}
-                    </div>
-                </ion-card-content>
-            </ion-card>
         </div>
 
         <!-- BLOCK 2: DRE TABLE -->
@@ -127,13 +119,13 @@
                         </tr>
                         <ng-container *ngIf="expandedBlocks['RECEITAS']">
                              <!-- Recorrentes -->
-                            <tr class="sub-group-row" style="background: #fafafa;">
-                                <td class="indent-1" style="padding: 10px 12px 10px 32px; font-weight: 600; color: #334155; position: sticky; left: 0; background: #fafafa;">Receitas Recorrentes</td>
+                            <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('RECEITA_RECORRENTE')">
+                                <td class="indent-1" style="padding: 10px 12px 10px 32px; font-weight: 600; color: #334155; position: sticky; left: 0; background: #fafafa;">Receitas Recorrentes <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px; color: var(--ion-color-primary)"></ion-icon></td>
                                 <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px;">{{ dreResult.data['RECEITA_RECORRENTE'].periodos[p] | number:'1.2-2' }}</td>
                                 <td style="text-align: right; padding: 10px 12px; font-weight: 600;">{{ dreResult.data['RECEITA_RECORRENTE'].total | number:'1.2-2' }}</td>
                             </tr>
-                            <tr *ngFor="let sub of getSubcategorias('RECEITA_RECORRENTE')" class="leaf-row">
-                                <td class="indent-2" style="padding: 8px 12px 8px 52px; font-size: 13px; color: #64748b; position: sticky; left: 0; background: white;">{{ sub[0] }}</td>
+                            <tr *ngFor="let sub of getSubcategorias('RECEITA_RECORRENTE')" class="leaf-row clickable" style="cursor: pointer;" (click)="abrirDetalhes('RECEITA_RECORRENTE', sub[0])">
+                                <td class="indent-2" style="padding: 8px 12px 8px 52px; font-size: 13px; color: #64748b; position: sticky; left: 0; background: white;">{{ sub[0] }} <ion-icon name="open-outline" style="font-size: 12px; margin-left: 4px; color: var(--ion-color-primary)"></ion-icon></td>
                                 <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 8px 12px; font-size: 13px;">{{ sub[1].periodos[p] | number:'1.2-2' }}</td>
                                 <td style="text-align: right; padding: 8px 12px; font-size: 13px; background: #f8fafc;">{{ sub[1].total | number:'1.2-2' }}</td>
                             </tr>

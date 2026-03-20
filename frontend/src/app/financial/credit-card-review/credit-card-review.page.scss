@@ -1,0 +1,31 @@
+.table-container {
+  overflow-x: auto;
+}
+
+.review-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  th, td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--ion-color-step-150);
+  }
+  
+  th {
+    font-weight: 600;
+    color: var(--ion-color-step-600);
+    position: sticky;
+    top: 0;
+    background: var(--ion-background-color, #fff);
+    z-index: 10;
+  }
+}
+
+.bulk-actions {
+  --background: var(--ion-color-light);
+  ion-label {
+    font-weight: bold;
+    margin-right: 16px;
+  }
+}

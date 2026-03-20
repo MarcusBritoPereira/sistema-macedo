@@ -108,14 +108,16 @@ export class FinancialDetailPage implements OnInit {
       if (this.itemId && this.itemId !== 'new') {
         this.isEditMode = true;
         this.loadItem(this.itemId);
-      } else {
         // Check for query params (e.g. from quick add)
         this.route.queryParams.subscribe(params => {
           if (params['clientId']) {
             this.financialForm.patchValue({ clienteId: params['clientId'] });
           }
+          if (params['action'] === 'rateio' && this.isEditMode) {
+            // Need a slight timeout to let the form load data properly
+            setTimeout(() => this.openRateioModal(), 500);
+          }
         });
-      }
     });
   }
 

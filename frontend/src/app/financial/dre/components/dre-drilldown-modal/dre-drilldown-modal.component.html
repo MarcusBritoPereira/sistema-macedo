@@ -1,0 +1,39 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Detalhes: {{ subcategoria || categoria }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="fechar()">Fechar</ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div *ngIf="loading" class="ion-text-center ion-padding">
+    <ion-spinner></ion-spinner>
+    <p>Carregando lançamentos...</p>
+  </div>
+
+  <div *ngIf="!loading && lancamentos.length === 0" class="ion-text-center">
+    <p>Nenhum lançamento encontrado para este período.</p>
+  </div>
+
+  <ion-list *ngIf="!loading && lancamentos.length > 0">
+    <ion-item *ngFor="let item of lancamentos" class="lancamento-item">
+      <ion-label>
+        <h2>{{ item.descricao }}</h2>
+        <p>Data: {{ item.data | date:'dd/MM/yyyy' }}</p>
+        <p *ngIf="item.cliente">Cliente: {{ item.cliente }}</p>
+        <p *ngIf="item.centro_custo">Centro de Custo: {{ item.centro_custo }}</p>
+      </ion-label>
+      <div slot="end" class="valor-acoes">
+        <span class="valor" [class.text-danger]="item.valor < 0">
+          {{ item.valor | currency:'BRL' }}
+        </span>
+        <ion-button fill="clear" size="small" (click)="editarLancamento(item.id)" *ngIf="item.id">
+          <ion-icon name="create-outline"></ion-icon>
+          Editar
+        </ion-button>
+      </div>
+    </ion-item>
+  </ion-list>
+</ion-content>

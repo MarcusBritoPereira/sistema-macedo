@@ -1,0 +1,63 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/financial"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Classificação da Fatura</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="applyAutoRules()">
+        <ion-icon name="flash-outline" slot="start"></ion-icon>
+        Auto-Classificar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+
+  <ion-toolbar *ngIf="selectedIds.size > 0" color="light">
+    <ion-item lines="none" class="bulk-actions">
+      <ion-label>Lote: {{ selectedIds.size }} itens</ion-label>
+      <ion-select [(ngModel)]="bulkCategoriaId" placeholder="Definir Categoria">
+        <ion-select-option *ngFor="let cat of categorias" [value]="cat.id">{{ cat.nome }}</ion-select-option>
+      </ion-select>
+      <ion-button (click)="applyBulkCategory()" [disabled]="!bulkCategoriaId">Aplicar</ion-button>
+    </ion-item>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <div class="table-container ion-padding">
+    <table class="review-table">
+      <thead>
+        <tr>
+          <th><ion-checkbox [checked]="allSelected" (ionChange)="toggleAll()"></ion-checkbox></th>
+          <th>Data</th>
+          <th>Descrição</th>
+          <th>Valor</th>
+          <th>Categoria Sugerida / Atual</th>
+          <th>Confiança</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let tx of transacoes">
+          <td><ion-checkbox [checked]="isSelected(tx.id)" (ionChange)="toggleSelection(tx.id)"></ion-checkbox></td>
+          <td>{{ tx.dataCompra | date:'dd/MM/yyyy' }}</td>
+          <td>{{ tx.descricao }}</td>
+          <td>{{ tx.valor | currency:'BRL' }}</td>
+          <td>
+            <ion-select [(ngModel)]="tx.categoriaId" (ionChange)="onCategoryChange(tx, $event)" interface="popover" placeholder="Sem categoria">
+              <ion-select-option *ngFor="let cat of categorias" [value]="cat.id">{{ cat.nome }}</ion-select-option>
+            </ion-select>
+          </td>
+          <td>
+            <ion-badge [color]="tx.confiancaClassificacao > 0.8 ? 'success' : (tx.confiancaClassificacao > 0.4 ? 'warning' : 'medium')">
+              {{ (tx.confiancaClassificacao || 0) * 100 | number:'1.0-0' }}%
+            </ion-badge>
+          </td>
+          <td>
+            <ion-button fill="clear" size="small" routerLink="/financial/detail/{{ tx.id }}?action=rateio">Rateio</ion-button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</ion-content>

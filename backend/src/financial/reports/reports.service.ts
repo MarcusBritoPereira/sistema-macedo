@@ -170,6 +170,18 @@ export class ReportsService {
             data = await this.generateDREReport(payload.filters);
           } else if (report.id === 'cashflow') {
             data = await this.generateCashFlowReport(payload.filters);
+          } else if (report.id === 'balance') {
+            data = await this.generateBalanceReport(payload.filters);
+          } else if (report.id === 'aging') {
+            data = await this.generateAgingReport(payload.filters);
+          } else if (report.id === 'bank-position') {
+            data = await this.generateBankPositionReport(payload.filters);
+          } else if (report.id === 'budget') {
+            data = await this.generateBudgetReport(payload.filters);
+          } else if (report.id === 'cost-centers') {
+            data = await this.generateCostCentersReport(payload.filters);
+          } else if (report.id === 'taxes') {
+            data = await this.generateTaxesReport(payload.filters);
           }
           return {
             id: report.id,
@@ -411,6 +423,189 @@ export class ReportsService {
         { label: 'Saídas (Despesas)', value: -totalSaidas, level: 0, type: 'total', highlight: true },
         { label: 'Saldo do Período', value: saldoPeriodo, level: 0, type: 'total', highlight: true },
       ],
+    };
+  }
+
+  private async generateBalanceReport(filters: any) {
+    const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+      where: { status: { in: ['REALIZADO', 'CONCILIADO'] } } // simplified balance up to today
+    });
+
+    let ativo = 0;
+    let passivo = 0;
+
+    for (const t of transactions) {
+      const val = Math.abs(Number(t.valor));
+      if (t.tipo === 'RECEITA') ativo += val;
+      if (t.tipo === 'DESPESA') passivo += val;
+    }
+
+    return {
+      summary: null,
+      details: [
+        { label: 'Ativo (Entradas Acumuladas)', value: ativo, level: 0, type: 'total' },
+        { label: 'Passivo (Saídas Acumuladas)', value: passivo, level: 0, type: 'total' },
+        { label: 'Patrimônio Líquido Estimado', value: ativo - passivo, level: 0, type: 'total', highlight: true }
+      ]
+    };
+  }
+
+  private async generateAgingReport(filters: any) {
+    const now = new Date();
+    const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+      where: { status: 'PREVISTO' },
+      include: { categoria: true }
+    });
+
+    let vencidosPag = 0; let aVencerPag = 0;
+    let vencidosRec = 0; let aVencerRec = 0;
+
+    for (const t of transactions) {
+      if (!t.dataVencimento) continue;
+      const isOverdue = new Date(t.dataVencimento) < now;
+      const val = Math.abs(Number(t.valor));
+
+      if (t.tipo === 'DESPESA') {
+        if (isOverdue) vencidosPag += val; else aVencerPag += val;
+      } else {
+        if (isOverdue) vencidosRec += val; else aVencerRec += val;
+      }
+    }
+
+    return {
+      summary: null,
+      details: [
+        { label: 'Contas a Receber', value: vencidosRec + aVencerRec, level: 0, type: 'header' },
+        { label: 'Vencidos', value: vencidosRec, level: 1 },
+        { label: 'A Vencer', value: aVencerRec, level: 1 },
+        { label: 'Contas a Pagar', value: vencidosPag + aVencerPag, level: 0, type: 'header' },
+        { label: 'Vencidos', value: vencidosPag, level: 1 },
+        { label: 'A Vencer', value: aVencerPag, level: 1 },
+        { label: 'Exposição Líquida Curto Prazo', value: (vencidosRec + aVencerRec) - (vencidosPag + aVencerPag), level: 0, type: 'total', highlight: true }
+      ]
+    };
+  }
+
+  private async generateBankPositionReport(filters: any) {
+    const accounts = await this.prisma.contaBancaria.findMany();
+    const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+      where: { status: { in: ['REALIZADO', 'CONCILIADO'] }, contaBancariaId: { not: null } }
+    });
+    
+    let total = 0;
+    const details: any[] = [];
+
+    details.push({ label: 'Saldos em Conta', value: 0, level: 0, type: 'header' });
+
+    for (const acc of accounts) {
+      let b = Number(acc.saldoInicial || 0);
+      const accTrans = transactions.filter(t => t.contaBancariaId === acc.id);
+      for (const t of accTrans) {
+        if (t.tipo === 'RECEITA') b += Math.abs(Number(t.valor));
+        if (t.tipo === 'DESPESA') b -= Math.abs(Number(t.valor));
+      }
+      total += b;
+      details.push({ label: acc.nome, value: b, level: 1 });
+    }
+
+    details.push({ label: 'Total Disponível', value: total, level: 0, type: 'total', highlight: true });
+
+    return { summary: null, details };
+  }
+
+  private async generateBudgetReport(filters: any) {
+    // We don't have a real budgeting table, so we compare Realizado vs Estimado directly from LancamentoFinanceiro where status PENDENTE vs REALIZADO
+    return {
+      summary: null,
+      details: [
+        { label: 'Orçado x Realizado (Demonstração Simples)', value: 0, level: 0, type: 'header' },
+        { label: 'O módulo de orçamentos precisará ser configurado para cruzar estimativas precisas.', value: 0, level: 1 },
+        { label: 'Neste momento as despesas estão guiadas pelos lançamentos de fluxo contínuo.', value: 0, level: 1 }
+      ]
+    };
+  }
+
+  private async generateCostCentersReport(filters: any) {
+    let startDate: Date; let endDate: Date;
+    if (filters.startDate && filters.endDate) {
+      startDate = new Date(filters.startDate); endDate = new Date(filters.endDate);
+      startDate.setHours(0,0,0,0); endDate.setHours(23,59,59,999);
+    } else {
+      const n = new Date(); startDate = new Date(n.getFullYear(), n.getMonth(), 1); endDate = new Date(n.getFullYear(), n.getMonth() + 1, 0);
+    }
+
+    const centers = await this.prisma.centroCusto.findMany();
+    const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+      where: { dataVencimento: { gte: startDate, lte: endDate }, status: { in: ['REALIZADO', 'CONCILIADO'] } }
+    });
+
+    const aggr: Record<string, number> = {};
+    for (const c of centers) aggr[c.id] = 0;
+    let semCentro = 0;
+
+    for (const t of transactions) {
+      if (t.tipo !== 'DESPESA') continue; // only analyze costs
+      const val = Math.abs(Number(t.valor));
+      if (t.centroCustoId && aggr[t.centroCustoId] !== undefined) {
+        aggr[t.centroCustoId] += val;
+      } else {
+        semCentro += val;
+      }
+    }
+
+    const details: any[] = [];
+    details.push({ label: 'Despesas por Centro de Custo', value: 0, level: 0, type: 'header' });
+
+    let total = 0;
+    for (const c of centers) {
+      if (aggr[c.id] > 0) {
+         details.push({ label: c.nome, value: aggr[c.id], level: 1 });
+         total += aggr[c.id];
+      }
+    }
+    if (semCentro > 0) {
+      details.push({ label: 'Sem Centro Específico', value: semCentro, level: 1 });
+      total += semCentro;
+    }
+
+    details.push({ label: 'Total Alocado', value: total, level: 0, type: 'total', highlight: true });
+
+    return { summary: null, details };
+  }
+
+  private async generateTaxesReport(filters: any) {
+    // Just finding expenses matching IMPOSTOS
+    const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+      where: { status: { in: ['REALIZADO', 'CONCILIADO'] } },
+      include: { categoria: true }
+    });
+
+    let federal = 0; let estadual = 0; let municipal = 0; let outros = 0;
+
+    for (const t of transactions) {
+      if (t.tipo !== 'DESPESA') continue;
+      if (t.categoria?.classificacao === 'IMPOSTOS_LUCRO') {
+        const n = (t.categoria.nome || '').toLowerCase();
+        const val = Math.abs(Number(t.valor));
+        if (n.includes('icms')) estadual += val;
+        else if (n.includes('iss')) municipal += val;
+        else if (n.includes('irpj') || n.includes('csll') || n.includes('pis') || n.includes('cofins')) federal += val;
+        else outros += val;
+      }
+    }
+
+    const total = federal + estadual + municipal + outros;
+
+    return {
+      summary: null,
+      details: [
+        { label: 'Carga Tributária', value: total, level: 0, type: 'header' },
+        { label: 'Federais (IRPJ, CSLL, PIS, COFINS)', value: federal, level: 1 },
+        { label: 'Estaduais (ICMS)', value: estadual, level: 1 },
+        { label: 'Municipais (ISS)', value: municipal, level: 1 },
+        { label: 'Outros Encargos', value: outros, level: 1 },
+        { label: 'Total de Impostos Pagos', value: total, level: 0, type: 'total', highlight: true }
+      ]
     };
   }
 }

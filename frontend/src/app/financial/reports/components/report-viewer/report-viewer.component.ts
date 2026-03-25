@@ -30,7 +30,11 @@ export interface ReportData {
         <div class="actions-toolbar">
           <ion-button fill="outline" size="small" (click)="downloadCSV()">
             <ion-icon name="download-outline" slot="start"></ion-icon>
-            Exportar
+            Exportar CSV
+          </ion-button>
+          <ion-button fill="outline" size="small" (click)="exportPDF()">
+            <ion-icon name="print-outline" slot="start"></ion-icon>
+            Exportar PDF
           </ion-button>
           <ion-button fill="clear" size="small" (click)="closeReport()" color="medium">
             <ion-icon name="close-outline" slot="icon-only"></ion-icon>
@@ -473,5 +477,9 @@ export class ReportViewerComponent implements OnInit, OnChanges {
       link.click();
       document.body.removeChild(link);
     }
+  }
+
+  exportPDF() {
+    window.print();
   }
 }

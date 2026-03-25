@@ -50,7 +50,9 @@ export class FinancialTransactionsController {
     @Query('take') take?: string,
   ) {
     const normalizedSkip = Math.max(0, Number(skip) || 0);
-    const normalizedTake = Math.min(Math.max(1, Number(take) || 50), 10000);
+    const maxTake = Number(process.env.FINANCIAL_MAX_PAGE_SIZE || 500);
+    const safeMaxTake = Number.isFinite(maxTake) && maxTake > 0 ? maxTake : 500;
+    const normalizedTake = Math.min(Math.max(1, Number(take) || 50), safeMaxTake);
 
     // Handle both 'tipo' (from frontend) and 'type' (REST convention)
     const finalType = tipo || type;

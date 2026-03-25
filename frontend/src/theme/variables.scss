@@ -77,9 +77,19 @@
     --ion-font-family: 'Inter', sans-serif;
 
     /* Shapes */
-    --bor-radius: 8px;
-    /* Sharper */
-    --ion-border-radius: 8px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --bor-radius: var(--radius-sm);
+    --ion-border-radius: var(--radius-sm);
+
+    /* Spacing scale */
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 12px;
+    --space-4: 16px;
+    --space-5: 20px;
+    --space-6: 24px;
 }
 
 /* Dark Mode Removed explicitly to ensure consistency */

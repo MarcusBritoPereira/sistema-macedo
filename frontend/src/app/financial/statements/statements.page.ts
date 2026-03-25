@@ -53,6 +53,7 @@ interface ColumnSettings {
     providers: [CurrencyPipe]
 })
 export class StatementsPage implements OnInit {
+    private readonly transactionsPageSize = 500;
     // Data
     transactions: Transaction[] = [];
     filteredTransactions: Transaction[] = [];
@@ -155,20 +156,34 @@ export class StatementsPage implements OnInit {
     }
 
     loadTransactions(event?: any) {
-        // Fetch all for local filtering based on the complex rules provided
-        // We request a larger chunk because the backend defaults to 50 and we do the date filtering locally on the frontend here.
-        this.financialService.getTransactions({ take: 10000 } as any).subscribe({
+        const onFinish = () => {
+            if (event) event.target.complete();
+        };
+        this.fetchTransactionsInChunks(0, [], onFinish);
+    }
+
+    private fetchTransactionsInChunks(skip: number, acc: Transaction[], onFinish?: () => void) {
+        this.financialService.getTransactions({ skip, take: this.transactionsPageSize } as any).subscribe({
             next: (response: any) => {
-                this.transactions = response.data || response; // Handle both formats if transitional
+                const pageData: Transaction[] = response?.data || response || [];
+                const total: number = Number(response?.total || pageData.length);
+                const updated = [...acc, ...pageData];
+
+                if (updated.length < total && pageData.length > 0) {
+                    this.fetchTransactionsInChunks(skip + this.transactionsPageSize, updated, onFinish);
+                    return;
+                }
+
+                this.transactions = updated;
                 this.applyFilters();
-                if (event) event.target.complete();
                 this.loading = false;
+                onFinish?.();
             },
             error: (err) => {
                 console.error('Error loading transactions', err);
-                if (event) event.target.complete();
                 this.loading = false;
-            }
+                onFinish?.();
+            },
         });
     }
 

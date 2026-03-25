@@ -10,10 +10,11 @@ RUN apt-get update \
 COPY package*.json ./
 COPY prisma ./prisma/
 
-RUN npm ci
-RUN npx prisma generate
+RUN npm install
 
 COPY . .
+
+RUN npx prisma generate
 
 RUN npm run build
 

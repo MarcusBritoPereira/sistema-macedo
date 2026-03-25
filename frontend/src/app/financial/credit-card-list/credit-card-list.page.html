@@ -1,50 +1,115 @@
-<ion-header>
-  <ion-toolbar color="primary">
+<ion-header class="ion-no-border">
+  <!-- Top Toolbar: Premium ERP Style -->
+  <ion-toolbar class="main-header">
     <ion-buttons slot="start">
-      <ion-back-button defaultHref="/financial"></ion-back-button>
+      <ion-menu-button></ion-menu-button>
     </ion-buttons>
     <ion-title>Cartões Corporativos</ion-title>
+    
     <ion-buttons slot="end">
-      <!-- Hidden file input triggered by the button -->
+      <ion-button color="secondary" class="add-btn" (click)="syncInter()" style="margin-right: 8px;">
+        <ion-icon name="sync-outline" slot="start"></ion-icon>
+        Sincronizar Banco Inter
+      </ion-button>
       <input type="file" #fileInput (change)="processCSV($event)" accept=".csv" style="display:none" />
-      <ion-button (click)="fileInput.click()">
+      <ion-button color="primary" class="add-btn" (click)="fileInput.click()">
         <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
         Importar Fatura CSV
       </ion-button>
     </ion-buttons>
   </ion-toolbar>
+
+  <!-- Tabs Navigation -->
+  <div class="tabs-container">
+    <div class="tab" [class.active]="viewMode === 'FATURAS'" (click)="setViewMode('FATURAS')">
+      Faturas
+    </div>
+    <div class="tab" [class.active]="viewMode === 'TRANSACTIONS'" (click)="setViewMode('TRANSACTIONS')">
+      Todas as Transações
+    </div>
+  </div>
 </ion-header>
 
-<ion-content class="ion-padding">
-  <div *ngIf="faturas.length === 0" class="empty-state">
-    <ion-icon name="card-outline"></ion-icon>
-    <h3>Nenhuma fatura encontrada</h3>
-    <p>Importe um CSV do seu banco para começar o gerenciamento avançado.</p>
-    <ion-button (click)="fileInput.click()">Importar Primeira Fatura</ion-button>
-  </div>
+<ion-content class="light-bg">
+  <div class="main-workspace">
+    
+    <!-- View 1: Invoices (Faturas) -->
+    <div *ngIf="viewMode === 'FATURAS'">
+      <div *ngIf="faturas.length === 0" class="empty-state">
+        <div class="empty-illustration">
+          <ion-icon name="card-outline"></ion-icon>
+        </div>
+        <h3>Nenhuma fatura encontrada</h3>
+        <p>Importe um CSV para começar o gerenciamento avançado.</p>
+        <ion-button fill="solid" color="primary" (click)="fileInput.click()">Importar Primeira Fatura</ion-button>
+      </div>
 
-  <ion-grid *ngIf="faturas.length > 0">
-    <ion-row>
-      <ion-col size="12" size-md="6" size-lg="4" *ngFor="let fatura of faturas">
-        <ion-card>
-          <ion-card-header>
-            <ion-card-subtitle>Vencimento: {{ fatura.dataVencimento | date:'dd/MM/yyyy' }}</ion-card-subtitle>
-            <ion-card-title>{{ fatura.valorTotal | currency:'BRL' }}</ion-card-title>
-          </ion-card-header>
-          <ion-card-content>
-            <p>Fechamento: {{ fatura.dataFechamento | date:'dd/MM/yyyy' }}</p>
-            <ion-badge [color]="fatura.status === 'PAGA' ? 'success' : (fatura.status === 'FECHADA' ? 'warning' : 'primary')">
-              {{ fatura.status }}
-            </ion-badge>
-            
-            <div class="ion-margin-top actions">
-              <ion-button expand="block" shape="round" routerLink="/financial/credit-cards/{{ fatura.id }}/review" [color]="fatura.status === 'PAGA' ? 'medium' : 'primary'">
-                {{ fatura.status === 'PAGA' ? 'Ver Fatura (Paga)' : 'Conciliar Transações' }}
-              </ion-button>
+      <div class="invoice-grid" *ngIf="faturas.length > 0">
+        <ion-grid>
+          <ion-row>
+            <ion-col size="12" size-md="6" size-lg="4" *ngFor="let fatura of faturas">
+              <ion-card class="premium-card">
+                <ion-card-header>
+                  <div class="card-status">
+                    <ion-badge [color]="fatura.status === 'PAGA' ? 'success' : 'warning'">
+                      {{ fatura.status }}
+                    </ion-badge>
+                  </div>
+                  <ion-card-subtitle>Vencimento: {{ fatura.dataVencimento | date:'dd/MM/yyyy' }}</ion-card-subtitle>
+                  <ion-card-title class="valor-total">{{ fatura.valorTotal | currency:'BRL' }}</ion-card-title>
+                </ion-card-header>
+                <ion-card-content>
+                  <div class="card-info">
+                    <span>Fechamento: {{ fatura.dataFechamento | date:'dd/MM/yyyy' }}</span>
+                  </div>
+                  <ion-button expand="block" class="conciliar-btn" 
+                    [routerLink]="['/financial/credit-cards', fatura.id, 'review']"
+                    [color]="fatura.status === 'PAGA' ? 'medium' : 'primary'">
+                    {{ fatura.status === 'PAGA' ? 'Ver Detalhes' : 'Conciliar Transações' }}
+                  </ion-button>
+                </ion-card-content>
+              </ion-card>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </div>
+    </div>
+
+    <!-- View 2: All Transactions -->
+    <div *ngIf="viewMode === 'TRANSACTIONS'">
+      <div class="data-table-container">
+        <div class="table-header">
+          <div class="col-date">Data</div>
+          <div class="col-desc">Descrição</div>
+          <div class="col-card">Cartão</div>
+          <div class="col-category">Categoria</div>
+          <div class="col-value">Valor</div>
+          <div class="col-status">Status</div>
+        </div>
+
+        <div class="table-body">
+          <div class="table-row" *ngFor="let tx of transactions">
+            <div class="col-date">{{ tx.dataCompra | date:'dd/MM/yyyy' }}</div>
+            <div class="col-desc">{{ tx.descricao }}</div>
+            <div class="col-card">{{ tx.fatura?.cartao?.nome || 'Principal' }}</div>
+            <div class="col-category">
+              <ion-badge color="light" class="cat-badge">
+                {{ tx.categoriaFinanceira?.nome || 'Sem categoria' }}
+              </ion-badge>
             </div>
-          </ion-card-content>
-        </ion-card>
-      </ion-col>
-    </ion-row>
-  </ion-grid>
+            <div class="col-value text-bold">{{ tx.valor | currency:'BRL' }}</div>
+            <div class="col-status">
+              <span class="status-dot" [class.done]="tx.status === 'CONCILIADO'" [class.pending]="tx.status !== 'CONCILIADO'"></span>
+              {{ tx.status }}
+            </div>
+          </div>
+
+          <div class="empty-state" *ngIf="transactions.length === 0">
+            <p>Nenhuma transação encontrada.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </ion-content>

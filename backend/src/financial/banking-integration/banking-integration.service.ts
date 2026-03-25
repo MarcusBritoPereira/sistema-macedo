@@ -427,6 +427,7 @@ export class BankingIntegrationService {
       integration.clientSecret!,
       certContent,
       keyContent,
+      'extrato.read'
     );
 
     const responseData = await this.fetchInterBalance(
@@ -439,11 +440,33 @@ export class BankingIntegrationService {
     return parseFloat(responseData.disponivel || '0');
   }
 
-  private async getAccessToken(
+  async fetchInterCards(token: string, cert: Buffer, key: Buffer) {
+    const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+    const url = 'https://cdpj.partners.bancointer.com.br/cartoes/v1/cartoes';
+    const response = await axios.get(url, {
+      httpsAgent: agent,
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  async fetchInterCreditCardTransactions(token: string, cardId: string, startDate: string, endDate: string, cert: Buffer, key: Buffer) {
+    const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+    // Using V1 expanded transactions if possible or matching V2
+    const url = `https://cdpj.partners.bancointer.com.br/cartoes/v1/cartoes/${cardId}/transacoes?dataInicio=${startDate}&dataFim=${endDate}`;
+    const response = await axios.get(url, {
+      httpsAgent: agent,
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data;
+  }
+
+  async getAccessToken(
     clientId: string,
     clientSecret: string,
     cert: Buffer,
     key: Buffer,
+    scope: string = 'extrato.read'
   ): Promise<string> {
     const agent = new https.Agent({
       cert: cert,
@@ -454,7 +477,7 @@ export class BankingIntegrationService {
     const params = new URLSearchParams();
     params.append('client_id', clientId);
     params.append('client_secret', clientSecret);
-    params.append('scope', 'extrato.read');
+    params.append('scope', scope);
     params.append('grant_type', 'client_credentials');
 
     try {
@@ -464,15 +487,14 @@ export class BankingIntegrationService {
       });
       return response.data.access_token;
     } catch (error) {
-      // console.error('Auth Inter Error:', error.response?.data || error.message);
-      const msg = error.response?.data?.error_description || error.message;
-      if (msg.includes('key values mismatch')) {
+      if (error.response) {
+        console.error('Inter Auth Error Response:', JSON.stringify(error.response.data));
         throw new BadRequestException(
-          'A Chave Privada enviada não corresponde ao Certificado. Verifique se os arquivos formam um par válido.',
+          `Falha ao autenticar com Banco Inter: ${error.response.data?.title || error.message} (${error.response.status})`,
         );
       }
       throw new BadRequestException(
-        `Falha ao autenticar com Banco Inter: ${msg}`,
+        `Falha ao autenticar com Banco Inter: ${error.message}`,
       );
     }
   }

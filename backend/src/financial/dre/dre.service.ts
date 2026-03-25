@@ -22,7 +22,7 @@ export class DreService {
 
   async gerar(dto: GerarDreDto) {
     const cacheKey = this.getCacheKey('principal', dto);
-    const cached = await this.prisma.dreCache.findUnique({ where: { chave: cacheKey } });
+    const cached = await (this.prisma as any).dreCache.findUnique({ where: { chave: cacheKey } });
     if (cached) {
       return cached.payload;
     }
@@ -62,7 +62,7 @@ export class DreService {
       },
     });
 
-    const cartoesRaw = await this.prisma.cartaoTransacao.findMany({
+    const cartoesRaw = await (this.prisma as any).cartaoTransacao.findMany({
       where: {
         dataCompetencia: {
           gte: start,
@@ -130,7 +130,7 @@ export class DreService {
 
     const final = this.calculateFinalDRE(result, periodos);
 
-    await this.prisma.dreCache.upsert({
+    await (this.prisma as any).dreCache.upsert({
       where: { chave: cacheKey },
       update: { payload: final },
       create: { chave: cacheKey, payload: final },
@@ -141,7 +141,7 @@ export class DreService {
 
   async obterDetalhesDRE(dto: DREDetalhesDto) {
     const cacheKey = this.getCacheKey('detalhes', dto);
-    const cached = await this.prisma.dreCache.findUnique({ where: { chave: cacheKey } });
+    const cached = await (this.prisma as any).dreCache.findUnique({ where: { chave: cacheKey } });
     if (cached) {
       return cached.payload;
     }
@@ -150,7 +150,7 @@ export class DreService {
     const end = endOfDay(new Date(dto.dataFim));
     const dateField = dto.regime === DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
 
-    const where: Prisma.RateioLancamentoWhereInput = {
+    const where: any = {
       categoria: dto.categoria,
       ...(dto.subcategoria ? { subcategoria: dto.subcategoria } : {}),
       lancamento: {
@@ -161,7 +161,7 @@ export class DreService {
       },
     };
 
-    const itens = await this.prisma.rateioLancamento.findMany({
+    const itens = await (this.prisma as any).rateioLancamento.findMany({
       where,
       include: {
         lancamento: {
@@ -178,18 +178,25 @@ export class DreService {
       },
     });
 
-    const detalhes = itens.map((item) => ({
+    const detalhes = itens.map((item: any) => ({
       id: item.lancamento.id,
-      data: item.lancamento[dateField],
+      data: item.lancamento[dateField] as Date,
       descricao: item.lancamento.descricao,
       valor: Number(item.valor),
       cliente: item.lancamento.cliente?.nomeFantasia || item.lancamento.cliente?.razaoSocial || null,
       centro_custo: item.lancamento.centroCusto?.nome || null,
     }));
 
-    const cartoesDetails = await this.prisma.cartaoTransacao.findMany({
+    // For CartaoTransacao, we fetch category IDs first to avoid nested relation filter typing issues
+    const categoriesWithClassification = await (this.prisma as any).categoriaFinanceira.findMany({
+      where: { classificacao: dto.categoria },
+      select: { id: true }
+    });
+    const categoryIds = categoriesWithClassification.map((c: any) => c.id);
+
+    const cartoesDetails = await (this.prisma as any).cartaoTransacao.findMany({
       where: {
-        categoriaFinanceira: { classificacao: dto.categoria },
+        categoriaId: { in: categoryIds },
         ...(dto.subcategoria ? { categoriaFinanceira: { nome: dto.subcategoria } } : {}),
         dataCompetencia: {
           gte: start,
@@ -205,7 +212,7 @@ export class DreService {
       },
     });
 
-    const detalhesCartoes = cartoesDetails.map((item) => ({
+    const detalhesCartoes = cartoesDetails.map((item: any) => ({
       id: item.id,
       data: item.dataCompetencia,
       descricao: item.descricao,
@@ -214,9 +221,11 @@ export class DreService {
       centro_custo: item.centroCusto?.nome || null,
     }));
 
-    const detalhesFinais = [...detalhes, ...detalhesCartoes].sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime());
+    const detalhesFinais = [...detalhes, ...detalhesCartoes].sort((a, b) => 
+      new Date(a.data as Date).getTime() - new Date(b.data as Date).getTime()
+    );
 
-    await this.prisma.dreCache.upsert({
+    await (this.prisma as any).dreCache.upsert({
       where: { chave: cacheKey },
       update: { payload: detalhesFinais },
       create: { chave: cacheKey, payload: detalhesFinais },
@@ -226,7 +235,7 @@ export class DreService {
   }
 
   async invalidarCacheDRE() {
-    await this.prisma.dreCache.deleteMany({});
+    await (this.prisma as any).dreCache.deleteMany({});
   }
 
   private getCacheKey(prefix: string, dto: Record<string, any>): string {

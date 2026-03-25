@@ -191,6 +191,7 @@ model LancamentoFinanceiro {
 
   conciliacoes ConciliacaoBancaria[]
   faturaPaga   FaturaCartao? @relation("PagamentoFatura")
+  transacoesCartao CartaoTransacao[] @relation("LancamentoParaTransacao")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -615,6 +616,9 @@ model CartaoTransacao {
   
   confiancaClassificacao Float?
   
+  lancamentoRelacionadoId String?
+  lancamentoRelacionado   LancamentoFinanceiro? @relation("LancamentoParaTransacao", fields: [lancamentoRelacionadoId], references: [id])
+  
   rateios                RateioCartaoTransacao[]
 
   createdAt              DateTime @default(now())
@@ -627,6 +631,7 @@ enum StatusTransacaoCartao {
   PENDENTE
   FATURADO
   PAGO
+  CONCILIADO
 }
 
 model RegraClassificacao {

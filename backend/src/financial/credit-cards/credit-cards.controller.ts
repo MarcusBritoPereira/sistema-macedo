@@ -26,6 +26,20 @@ export class CreditCardsController {
     return this.creditCardsService.getTransactions(invoiceId);
   }
 
+  @Get('transactions')
+  async getAllTransactions(@Query('cartaoId') cartaoId?: string, @Query('startDate') start?: string, @Query('endDate') end?: string) {
+    return this.creditCardsService.getAllTransactions({
+      cartaoId,
+      startDate: start ? new Date(start) : undefined,
+      endDate: end ? new Date(end) : undefined
+    });
+  }
+
+  @Post('transactions/:id/link')
+  async linkToEntry(@Param('id') txId: string, @Body('entryId') entryId: string) {
+    return this.creditCardsService.linkToFinancialEntry(txId, entryId);
+  }
+
   @Put('transactions/classify-batch')
   async classifyBatch(@Body() dto: { ids: string[], categoriaId?: string, subcategoriaId?: string, centroCustoId?: string }) {
     return this.creditCardsService.classificarLote(dto.ids, {
@@ -43,5 +57,10 @@ export class CreditCardsController {
   @Post('rules/learn')
   async applyAutoRules(@Body() dto: { transactionsIds: string[] }) {
     return this.creditCardsService.applyAutoRules(dto.transactionsIds);
+  }
+
+  @Post('sync-inter/:contaId')
+  async syncInter(@Param('contaId') contaId: string) {
+    return this.creditCardsService.syncFromInter(contaId);
   }
 }

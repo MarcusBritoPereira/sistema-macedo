@@ -109,7 +109,7 @@ export class FinancialDetailPage implements OnInit {
         this.isEditMode = true;
         this.loadItem(this.itemId);
         // Check for query params (e.g. from quick add)
-        this.route.queryParams.subscribe(params => {
+        this.route.queryParams.subscribe((params: any) => {
           if (params['clientId']) {
             this.financialForm.patchValue({ clienteId: params['clientId'] });
           }
@@ -118,6 +118,7 @@ export class FinancialDetailPage implements OnInit {
             setTimeout(() => this.openRateioModal(), 500);
           }
         });
+      }
     });
   }
 

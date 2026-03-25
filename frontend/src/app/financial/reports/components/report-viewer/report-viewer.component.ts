@@ -116,7 +116,7 @@ export interface ReportData {
 
     </div>
   `,
-  styles: [\`
+  styles: [`
     /* Base Configs */
     .report-container {
       background: #FAFAFA;
@@ -345,7 +345,7 @@ export interface ReportData {
       .report-body { box-shadow: none; }
       .executive-summary .summary-card { border: 1px solid #E0E0E0; box-shadow: none; break-inside: avoid; }
     }
-  \`],
+  `],
   standalone: true,
   imports: [CommonModule, IonicModule]
 })
@@ -422,7 +422,7 @@ export class ReportViewerComponent implements OnInit, OnChanges {
       let sectionName = '';
 
       // Section logic based on DRE common blocks
-      if (this.isDRE && row.level === 0 || row.level === 1) {
+      if (this.isDRE && (row.level === 0 || row.level === 1)) {
         if (normalizedLabel.includes('receita bruta') && currentSection !== 'RECEITA') {
           isSectionHeader = true; sectionName = 'RECEITA'; currentSection = 'RECEITA';
         } else if (normalizedLabel.includes('custos') && currentSection !== 'CUSTOS') {
@@ -453,7 +453,7 @@ export class ReportViewerComponent implements OnInit, OnChanges {
     const headers = ['Descrição', 'Valor'];
     const rows = this.data.details.map(row => {
       const indent = '  '.repeat(row.level || 0);
-      return [\`"\${indent}\${row.label}"\`, row.value.toFixed(2)];
+      return ['"' + indent + row.label + '"', row.value.toFixed(2)];
     });
 
     const csvContent = [
@@ -466,7 +466,8 @@ export class ReportViewerComponent implements OnInit, OnChanges {
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      link.setAttribute('download', \`\${this.title.replace(/\\s+/g, '_')}_\${new Date().toISOString().split('T')[0]}.csv\`);
+      const filename = this.title.replace(/\\s+/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.csv';
+      link.setAttribute('download', filename);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();

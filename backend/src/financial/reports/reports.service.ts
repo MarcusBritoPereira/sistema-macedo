@@ -205,7 +205,7 @@ export class ReportsService {
         gte: startDate,
         lte: endDate,
       },
-      status: { in: ['REALIZADO', 'PAGO', 'CONCILIADO'] }, // Only realized
+      status: { in: ['REALIZADO', 'CONCILIADO'] }, // Only realized and reconciled
     };
 
     if (filters.accountId && filters.accountId !== 'all') {

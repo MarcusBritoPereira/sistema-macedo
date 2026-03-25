@@ -168,6 +168,8 @@ export class ReportsService {
           let data: any = null;
           if (report.id === 'dre') {
             data = await this.generateDREReport(payload.filters);
+          } else if (report.id === 'cashflow') {
+            data = await this.generateCashFlowReport(payload.filters);
           }
           return {
             id: report.id,
@@ -350,6 +352,64 @@ export class ReportsService {
           type: 'total',
           highlight: true,
         },
+      ],
+    };
+  }
+
+  private async generateCashFlowReport(filters: any) {
+    let startDate: Date;
+    let endDate: Date;
+
+    if (filters.startDate && filters.endDate) {
+      startDate = new Date(filters.startDate);
+      endDate = new Date(filters.endDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      const now = new Date();
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    }
+
+    const where: any = {
+      dataVencimento: {
+        gte: startDate,
+        lte: endDate,
+      },
+      status: { in: ['REALIZADO', 'CONCILIADO'] },
+    };
+
+    if (filters.accountId && filters.accountId !== 'all') {
+      where.contaBancariaId = filters.accountId;
+    }
+    if (filters.costCenterId && filters.costCenterId !== 'all') {
+      where.centroCustoId = filters.costCenterId;
+    }
+
+    const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+      where,
+    });
+
+    let totalEntradas = 0;
+    let totalSaidas = 0;
+
+    for (const t of transactions) {
+      let val = Number(t.valor);
+      if (t.tipo === 'DESPESA' || val < 0) {
+        totalSaidas += Math.abs(val);
+      } else {
+        totalEntradas += val;
+      }
+    }
+
+    const saldoPeriodo = totalEntradas - totalSaidas;
+
+    return {
+      summary: null,
+      details: [
+        { label: 'Entradas (Receitas)', value: totalEntradas, level: 0, type: 'total', highlight: true },
+        { label: 'Saídas (Despesas)', value: -totalSaidas, level: 0, type: 'total', highlight: true },
+        { label: 'Saldo do Período', value: saldoPeriodo, level: 0, type: 'total', highlight: true },
       ],
     };
   }

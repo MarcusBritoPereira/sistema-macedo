@@ -96,11 +96,12 @@ export class FinancialListPage implements OnInit {
       skip: skip,
       take: this.pageSize
     }).subscribe({
-      next: (res) => {
-        this.displayedItems = res.data;
-        this.totalItems = res.total;
+      next: (res: any) => {
+        const items = res.data || res || [];
+        this.displayedItems = items;
+        this.totalItems = res.total || items.length;
 
-        this.calculateKpis(res.data); // Note: KPIs currently only reflect the PAGE data + backend logic if we wanted full totals. 
+        this.calculateKpis(items); // Note: KPIs currently only reflect the PAGE data + backend logic if we wanted full totals. 
         // For accurate KPIs of the *Period*, we would need a separate endpoint or aggregate query.
         // User asked for "Alimentar dashboard", and this list has "KPI Cards". 
         // Showing KPIs only for the visible page is misleading. 

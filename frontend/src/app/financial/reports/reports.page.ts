@@ -30,30 +30,30 @@ import {
   IonDatetime,
   IonToggle,
   IonSpinner,
+  IonSearchbar,
   ToastController
 } from '@ionic/angular/standalone';
 import { forkJoin } from 'rxjs';
 import { addIcons } from 'ionicons';
 import {
   documentTextOutline,
-  cashOutline,
-  pieChartOutline,
-  barChartOutline,
-  walletOutline,
   calendarOutline,
   filterOutline,
   downloadOutline,
   analyticsOutline,
   checkmarkCircleOutline,
-  layersOutline,
   refreshOutline,
   eyeOutline,
-  printOutline
+  printOutline,
+  searchOutline,
+  sparklesOutline
 } from 'ionicons/icons';
 import { ReportsService, ReportDefinition, ReportGenerationResponse } from '../../services/financial/reports.service';
 import { FinancialService, BankAccount } from '../../services/financial/financial';
 import { CostCentersService, CostCenter } from '../../services/financial/cost-centers.service';
 import { ReportViewerComponent, ReportData } from './components/report-viewer/report-viewer.component';
+
+type PresetPeriod = 'month' | 'quarter' | 'year' | 'custom';
 
 @Component({
   selector: 'app-reports',
@@ -91,6 +91,7 @@ import { ReportViewerComponent, ReportData } from './components/report-viewer/re
     IonDatetime,
     IonToggle,
     IonSpinner,
+    IonSearchbar,
     ReportViewerComponent
   ]
 })
@@ -99,12 +100,15 @@ export class ReportsPage implements OnInit {
   bankAccounts: BankAccount[] = [];
   costCenters: CostCenter[] = [];
   selectedReports = new Set<string>();
-  selectedPeriod = 'month';
+
+  selectedPeriod: PresetPeriod = 'month';
   startDate = '';
   endDate = '';
   selectedAccount = 'all';
   selectedCostCenter = 'all';
   includeProvisional = true;
+  reportSearch = '';
+
   loadingReports = true;
   loadingFilters = true;
   generating = false;
@@ -122,24 +126,25 @@ export class ReportsPage implements OnInit {
   ) {
     addIcons({
       documentTextOutline,
-      cashOutline,
-      pieChartOutline,
-      barChartOutline,
-      walletOutline,
       calendarOutline,
       filterOutline,
       downloadOutline,
       analyticsOutline,
       checkmarkCircleOutline,
-      layersOutline,
       refreshOutline,
       eyeOutline,
-      printOutline
+      printOutline,
+      searchOutline,
+      sparklesOutline
     });
   }
 
   ngOnInit() {
     this.updateDatesFromPeriod();
+    this.reloadPageData();
+  }
+
+  reloadPageData() {
     this.loadReports();
     this.loadFilters();
   }
@@ -149,8 +154,15 @@ export class ReportsPage implements OnInit {
     this.reportsService.getReports().subscribe({
       next: (reports) => {
         this.reports = reports;
-        const defaults = reports.filter(report => report.defaultSelected).map(report => report.id);
-        this.selectedReports = new Set(defaults);
+
+        if (this.selectedReports.size === 0) {
+          const defaults = reports.filter(report => report.defaultSelected).map(report => report.id);
+          this.selectedReports = new Set(defaults);
+        } else {
+          const existingIds = new Set(reports.map(report => report.id));
+          this.selectedReports = new Set(Array.from(this.selectedReports).filter(id => existingIds.has(id)));
+        }
+
         this.loadingReports = false;
       },
       error: () => {
@@ -196,12 +208,65 @@ export class ReportsPage implements OnInit {
       .map(report => report.title);
   }
 
-  selectAll() {
-    this.selectedReports = new Set(this.reports.map(report => report.id));
+  get filteredReports() {
+    const search = this.reportSearch.trim().toLowerCase();
+    if (!search) {
+      return this.reports;
+    }
+
+    return this.reports.filter((report) => {
+      const haystack = [
+        report.title,
+        report.description,
+        report.category,
+        ...(report.tags ?? []),
+        ...(report.highlights ?? [])
+      ].join(' ').toLowerCase();
+
+      return haystack.includes(search);
+    });
+  }
+
+  get selectedCount() {
+    return this.selectedReports.size;
+  }
+
+  get periodLabel() {
+    const map: Record<PresetPeriod, string> = {
+      month: 'Mês atual',
+      quarter: 'Trimestre',
+      year: 'Ano corrente',
+      custom: 'Personalizado'
+    };
+
+    return map[this.selectedPeriod];
+  }
+
+  get canGenerate() {
+    return !this.generating && !this.loadingReports && this.selectedReports.size > 0 && this.hasValidDateRange;
+  }
+
+  get hasValidDateRange() {
+    const start = this.normalizeDate(this.startDate);
+    const end = this.normalizeDate(this.endDate);
+
+    if (!start || !end) {
+      return false;
+    }
+
+    return new Date(start) <= new Date(end);
+  }
+
+  selectAllFiltered() {
+    this.filteredReports.forEach(report => this.selectedReports.add(report.id));
   }
 
   clearSelection() {
     this.selectedReports.clear();
+  }
+
+  onPeriodChange() {
+    this.updateDatesFromPeriod();
   }
 
   updateDatesFromPeriod() {
@@ -230,8 +295,12 @@ export class ReportsPage implements OnInit {
   }
 
   applyFilters() {
-    this.updateDatesFromPeriod();
-    this.showToast('Filtros atualizados.');
+    if (!this.hasValidDateRange) {
+      this.showToast('Revise o período: a data inicial deve ser menor ou igual à final.', 'warning');
+      return;
+    }
+
+    this.showToast('Filtros prontos para geração.');
   }
 
   generateReports() {
@@ -240,13 +309,19 @@ export class ReportsPage implements OnInit {
       return;
     }
 
+    if (!this.hasValidDateRange) {
+      this.showToast('Período inválido. Ajuste as datas para continuar.', 'warning');
+      return;
+    }
+
     this.generating = true;
+
     const payload = {
       reportIds: Array.from(this.selectedReports),
       filters: {
         period: this.selectedPeriod,
-        startDate: this.startDate || null,
-        endDate: this.endDate || null,
+        startDate: this.normalizeDate(this.startDate),
+        endDate: this.normalizeDate(this.endDate),
         accountId: this.selectedAccount !== 'all' ? this.selectedAccount : null,
         costCenterId: this.selectedCostCenter !== 'all' ? this.selectedCostCenter : null,
         includeProvisional: this.includeProvisional
@@ -258,13 +333,12 @@ export class ReportsPage implements OnInit {
         this.lastGeneration = response;
         this.generating = false;
 
-        // Auto-open if DRE is present and has data
-        const dre = response.reports.find(r => r.id === 'dre' && r.data);
-        if (dre) {
-          this.viewReport(dre);
-        } else {
-          this.showToast(response.message ?? 'Relatórios gerados com sucesso!', 'success');
+        const ready = response.reports.find(r => r.status === 'ready' && r.data);
+        if (ready) {
+          this.viewReport(ready);
         }
+
+        this.showToast(response.message ?? `Pacote gerado com ${response.count} relatório(s).`, 'success');
       },
       error: () => {
         this.generating = false;
@@ -274,13 +348,14 @@ export class ReportsPage implements OnInit {
   }
 
   viewReport(report: any) {
-    if (report.data) {
+    if (report?.data) {
       this.viewingReport = report;
       this.reportData = report.data;
       this.isModalOpen = true;
-    } else {
-      this.showToast('Este relatório não possui visualização disponível.', 'medium');
+      return;
     }
+
+    this.showToast('Este relatório ainda não possui visualização disponível.', 'medium');
   }
 
   closeModal() {
@@ -297,6 +372,14 @@ export class ReportsPage implements OnInit {
       position: 'top'
     });
     await toast.present();
+  }
+
+  private normalizeDate(dateValue: string | null | undefined) {
+    if (!dateValue) {
+      return null;
+    }
+
+    return dateValue.split('T')[0] || null;
   }
 
   private formatDate(date: Date) {

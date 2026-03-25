@@ -4,17 +4,17 @@
   gap: 1.5rem;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 
   h2 {
     margin: 0 0 0.5rem;
-    font-size: 1.6rem;
+    font-size: 1.5rem;
   }
 
   p {
     margin: 0;
     color: var(--ion-color-medium);
-    max-width: 520px;
+    max-width: 560px;
   }
 
   .hero-badges {
@@ -25,13 +25,13 @@
 }
 
 .filters-card {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 
   ion-card-title {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
   }
 }
 
@@ -39,6 +39,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  --padding-start: 0;
 }
 
 .date-row {
@@ -52,7 +53,7 @@
 }
 
 .selection-summary {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.25rem;
 
   .summary-header {
     display: flex;
@@ -77,19 +78,10 @@
     color: var(--ion-color-medium);
   }
 
-  .generate-btn {
-    margin-top: 1rem;
-  }
-
   .generation-result {
     margin-top: 1rem;
-    padding-top: 0.5rem;
+    padding-top: 0.6rem;
     border-top: 1px solid var(--ion-color-light);
-
-    p {
-      margin: 0 0 0.5rem;
-      color: var(--ion-color-medium);
-    }
   }
 }
 
@@ -97,11 +89,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin: 0 0 1rem;
+  margin: 0 0 0.5rem;
 
   h3 {
     margin: 0;
   }
+}
+
+ion-searchbar {
+  margin-bottom: 0.75rem;
 }
 
 .loading-state {
@@ -118,9 +114,10 @@
   height: 100%;
   display: flex;
   flex-direction: column;
+  border: 1px solid transparent;
 
   &.selected {
-    border: 2px solid var(--ion-color-primary);
+    border-color: var(--ion-color-primary);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   }
 
@@ -139,19 +136,14 @@
   .report-icon {
     font-size: 1.8rem;
     color: var(--ion-color-primary);
-    padding-top: 0.25rem;
+    padding-top: 0.2rem;
   }
 
-  .meta {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-
+  .meta,
   .tags {
     display: flex;
-    gap: 0.5rem;
     flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
   .highlights {
@@ -160,7 +152,7 @@
     color: var(--ion-color-medium);
 
     li {
-      margin-bottom: 0.35rem;
+      margin-bottom: 0.3rem;
     }
   }
 }

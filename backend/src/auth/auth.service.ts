@@ -26,8 +26,15 @@ export class AuthService {
       sub: user.id,
       role: user.perfil?.nome,
     };
+    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: refreshSecret,
+      expiresIn: '7d',
+    });
+
     return {
       access_token: this.jwtService.sign(payload),
+      refresh_token: refreshToken,
       user: {
         id: user.id,
         nome: user.nome,
@@ -35,5 +42,34 @@ export class AuthService {
         perfil: user.perfil?.nome,
       },
     };
+  }
+
+  async refresh(refreshToken: string) {
+    try {
+      const refreshSecret =
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+      const payload = this.jwtService.verify(refreshToken, {
+        secret: refreshSecret,
+      });
+
+      const newPayload = {
+        username: payload.username,
+        sub: payload.sub,
+        role: payload.role,
+      };
+
+      const newAccessToken = this.jwtService.sign(newPayload);
+      const newRefreshToken = this.jwtService.sign(newPayload, {
+        secret: refreshSecret,
+        expiresIn: '7d',
+      });
+
+      return {
+        access_token: newAccessToken,
+        refresh_token: newRefreshToken,
+      };
+    } catch {
+      throw new UnauthorizedException('Refresh token inválido');
+    }
   }
 }

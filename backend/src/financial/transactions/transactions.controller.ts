@@ -11,30 +11,38 @@ import {
   Req,
 } from '@nestjs/common';
 import { FinancialTransactionsService } from './transactions.service';
-import { Prisma, TipoLancamento, StatusLancamento } from '@prisma/client';
+import { TipoLancamento, StatusLancamento } from '@prisma/client';
 import { AuthGuard } from '@nestjs/passport';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { UpdateTransactionDto } from './dto/update-transaction.dto';
+import { CreateManyTransactionsDto } from './dto/create-many-transactions.dto';
+import { RolesGuard } from '../../auth/roles.guard';
+import { Roles } from '../../auth/roles.decorator';
 
 @Controller('financial/transactions')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class FinancialTransactionsController {
   constructor(
     private readonly transactionsService: FinancialTransactionsService,
   ) {}
 
   @Post()
+  @Roles('ADMIN', 'FINANCEIRO')
   create(
-    @Body() createDto: Prisma.LancamentoFinanceiroCreateInput,
+    @Body() createDto: CreateTransactionDto,
     @Req() req: any,
   ) {
     return this.transactionsService.create(createDto, req.user.id);
   }
 
   @Post('bulk')
+  @Roles('ADMIN', 'FINANCEIRO')
   createMany(
-    @Body() createDto: Prisma.LancamentoFinanceiroCreateManyInput[],
+    @Body() createDto: CreateManyTransactionsDto | CreateTransactionDto[],
     @Req() req: any,
   ) {
-    return this.transactionsService.createMany(createDto, req.user.id);
+    const items = Array.isArray(createDto) ? createDto : createDto.items || [];
+    return this.transactionsService.createMany(items, req.user.id);
   }
 
   @Get()
@@ -70,20 +78,23 @@ export class FinancialTransactionsController {
   }
 
   @Get(':id')
+  @Roles('ADMIN', 'FINANCEIRO')
   findOne(@Param('id') id: string) {
     return this.transactionsService.findOne(id);
   }
 
   @Patch(':id')
+  @Roles('ADMIN', 'FINANCEIRO')
   update(
     @Param('id') id: string,
-    @Body() updateDto: Prisma.LancamentoFinanceiroUpdateInput,
+    @Body() updateDto: UpdateTransactionDto,
     @Req() req: any,
   ) {
     return this.transactionsService.update(id, updateDto, req.user.id);
   }
 
   @Delete(':id')
+  @Roles('ADMIN', 'FINANCEIRO')
   remove(@Param('id') id: string, @Req() req: any) {
     return this.transactionsService.remove(id, req.user.id);
   }

@@ -196,6 +196,11 @@ model LancamentoFinanceiro {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([tipo, status, dataVencimento], map: "idx_lancamento_tipo_status_venc")
+  @@index([contaBancariaId, status, dataVencimento], map: "idx_lancamento_conta_status_venc")
+  @@index([categoriaId, dataCompetencia], map: "idx_lancamento_categoria_comp")
+  @@index([clienteId, dataVencimento], map: "idx_lancamento_cliente_venc")
+  @@index([fornecedorId, dataVencimento], map: "idx_lancamento_fornecedor_venc")
   @@map("lancamentos_financeiros")
 }
 
@@ -288,6 +293,8 @@ model ExtratoBancario {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  @@index([data, conciliado], map: "idx_extrato_data_conciliado")
+  @@index([importacaoId, conciliado], map: "idx_extrato_importacao_conciliado")
   @@map("extratos_bancarios")
 }
 

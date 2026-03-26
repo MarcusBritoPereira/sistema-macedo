@@ -16,13 +16,16 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { BankingIntegrationService } from './banking-integration.service';
 import { ConfigureBankingDto } from './dto/configure-banking.dto';
+import { RolesGuard } from '../../auth/roles.guard';
+import { Roles } from '../../auth/roles.decorator';
 
 @Controller('financial/banking')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), RolesGuard)
 export class BankingIntegrationController {
   constructor(private readonly service: BankingIntegrationService) {}
 
   @Post('upload-ofx')
+  @Roles('ADMIN', 'FINANCEIRO')
   @UseInterceptors(FileInterceptor('file'))
   uploadOfx(
     @UploadedFile() file: Express.Multer.File,
@@ -32,6 +35,7 @@ export class BankingIntegrationController {
   }
 
   @Post('configure')
+  @Roles('ADMIN', 'FINANCEIRO')
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'certificate', maxCount: 1 },
@@ -50,11 +54,13 @@ export class BankingIntegrationController {
   }
 
   @Get('status/:contaId')
+  @Roles('ADMIN', 'FINANCEIRO')
   getStatus(@Param('contaId') contaId: string) {
     return this.service.getStatus(contaId);
   }
 
   @Post('sync/:contaId')
+  @Roles('ADMIN', 'FINANCEIRO')
   sync(@Param('contaId') contaId: string) {
     return this.service.syncStatements(contaId);
   }

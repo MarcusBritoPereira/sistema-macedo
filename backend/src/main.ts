@@ -16,6 +16,25 @@ async function bootstrap() {
 
   // Segurança básica
   app.use(helmet());
+  app.use((req: any, res: any, next: () => void) => {
+    const startedAt = Date.now();
+    const requestId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    res.setHeader('x-request-id', requestId);
+    res.on('finish', () => {
+      const duration = Date.now() - startedAt;
+      console.log(
+        JSON.stringify({
+          type: 'http_request',
+          requestId,
+          method: req.method,
+          path: req.originalUrl,
+          statusCode: res.statusCode,
+          durationMs: duration,
+        }),
+      );
+    });
+    next();
+  });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
 
   // CORS seguro: lista explícita de origens

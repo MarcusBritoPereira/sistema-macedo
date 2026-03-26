@@ -24,9 +24,16 @@ async function main() {
 
     // 3. User Seed - Skipped Sales Profile
 
-    // 2. Users (Password: 123456)
+    const defaultSeedPassword = process.env.SEED_DEFAULT_PASSWORD;
+    const isDev = process.env.NODE_ENV !== 'production';
+    if (!defaultSeedPassword && !isDev) {
+        throw new Error('SEED_DEFAULT_PASSWORD é obrigatória fora de ambiente local.');
+    }
+    const seedPassword = defaultSeedPassword || '123456';
+
+    // 2. Users
     const salt = await bcrypt.genSalt();
-    const password = await bcrypt.hash('123456', salt);
+    const password = await bcrypt.hash(seedPassword, salt);
 
     await prisma.usuario.upsert({
         where: { email: 'admin@erp.com' },

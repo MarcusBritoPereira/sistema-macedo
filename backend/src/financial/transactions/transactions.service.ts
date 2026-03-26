@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Prisma, TipoLancamento, StatusLancamento } from '@prisma/client';
+import { CreateTransactionDto } from './dto/create-transaction.dto';
+import { UpdateTransactionDto } from './dto/update-transaction.dto';
 
 @Injectable()
 export class FinancialTransactionsService {
@@ -16,11 +18,12 @@ export class FinancialTransactionsService {
   };
 
   async create(
-    data: Prisma.LancamentoFinanceiroCreateInput,
+    data: CreateTransactionDto,
     usuarioId: string,
   ) {
+    const createData = this.toCreateInput(data);
     return this.prisma.$transaction(async (tx) => {
-      const transaction = await tx.lancamentoFinanceiro.create({ data });
+      const transaction = await tx.lancamentoFinanceiro.create({ data: createData });
 
       await tx.logAuditoria.create({
         data: {
@@ -76,12 +79,13 @@ export class FinancialTransactionsService {
   }
 
   async createMany(
-    data: Prisma.LancamentoFinanceiroCreateManyInput[],
+    data: CreateTransactionDto[],
     usuarioId: string,
   ) {
+    const createManyData = data.map((item) => this.toCreateManyInput(item));
     return this.prisma.$transaction(async (tx) => {
       const result = await tx.lancamentoFinanceiro.createMany({
-        data,
+        data: createManyData,
         skipDuplicates: true,
       });
 
@@ -98,7 +102,7 @@ export class FinancialTransactionsService {
 
       return {
         created: result.count,
-        skipped: data.length - result.count,
+        skipped: createManyData.length - result.count,
       };
     });
   }
@@ -173,9 +177,10 @@ export class FinancialTransactionsService {
 
   async update(
     id: string,
-    data: Prisma.LancamentoFinanceiroUpdateInput,
+    data: UpdateTransactionDto,
     usuarioId: string,
   ) {
+    const updateData = this.toUpdateInput(data);
     return this.prisma.$transaction(async (tx) => {
       const oldTransaction = await tx.lancamentoFinanceiro.findUnique({
         where: { id },
@@ -183,7 +188,7 @@ export class FinancialTransactionsService {
       });
       const transaction = await tx.lancamentoFinanceiro.update({
         where: { id },
-        data,
+        data: updateData,
       });
 
       await tx.logAuditoria.create({
@@ -225,5 +230,84 @@ export class FinancialTransactionsService {
 
       return transaction;
     });
+  }
+
+  private toCreateInput(
+    data: CreateTransactionDto,
+  ): Prisma.LancamentoFinanceiroCreateInput {
+    return {
+      descricao: data.descricao,
+      valor: data.valor,
+      dataVencimento: new Date(data.dataVencimento),
+      dataPagamento: data.dataPagamento ? new Date(data.dataPagamento) : undefined,
+      dataCompetencia: data.dataCompetencia
+        ? new Date(data.dataCompetencia)
+        : undefined,
+      tipo: data.tipo,
+      status: data.status || 'PREVISTO',
+      observacoes: data.observacoes,
+      contaBancaria: data.contaBancariaId
+        ? { connect: { id: data.contaBancariaId } }
+        : undefined,
+      categoria: data.categoriaId ? { connect: { id: data.categoriaId } } : undefined,
+      centroCusto: data.centroCustoId
+        ? { connect: { id: data.centroCustoId } }
+        : undefined,
+      contrato: data.contratoId ? { connect: { id: data.contratoId } } : undefined,
+      cliente: data.clienteId ? { connect: { id: data.clienteId } } : undefined,
+      fornecedor: data.fornecedorId
+        ? { connect: { id: data.fornecedorId } }
+        : undefined,
+    };
+  }
+
+  private toCreateManyInput(
+    data: CreateTransactionDto,
+  ): Prisma.LancamentoFinanceiroCreateManyInput {
+    return {
+      descricao: data.descricao,
+      valor: data.valor,
+      dataVencimento: new Date(data.dataVencimento),
+      dataPagamento: data.dataPagamento ? new Date(data.dataPagamento) : null,
+      dataCompetencia: data.dataCompetencia ? new Date(data.dataCompetencia) : null,
+      tipo: data.tipo,
+      status: data.status || 'PREVISTO',
+      observacoes: data.observacoes || null,
+      contaBancariaId: data.contaBancariaId || null,
+      categoriaId: data.categoriaId || null,
+      centroCustoId: data.centroCustoId || null,
+      contratoId: data.contratoId || null,
+      clienteId: data.clienteId || null,
+      fornecedorId: data.fornecedorId || null,
+    };
+  }
+
+  private toUpdateInput(
+    data: UpdateTransactionDto,
+  ): Prisma.LancamentoFinanceiroUpdateInput {
+    return {
+      descricao: data.descricao,
+      valor: data.valor,
+      dataVencimento: data.dataVencimento ? new Date(data.dataVencimento) : undefined,
+      dataPagamento: data.dataPagamento ? new Date(data.dataPagamento) : undefined,
+      dataCompetencia: data.dataCompetencia
+        ? new Date(data.dataCompetencia)
+        : undefined,
+      tipo: data.tipo,
+      status: data.status,
+      observacoes: data.observacoes,
+      contaBancaria: data.contaBancariaId
+        ? { connect: { id: data.contaBancariaId } }
+        : undefined,
+      categoria: data.categoriaId ? { connect: { id: data.categoriaId } } : undefined,
+      centroCusto: data.centroCustoId
+        ? { connect: { id: data.centroCustoId } }
+        : undefined,
+      contrato: data.contratoId ? { connect: { id: data.contratoId } } : undefined,
+      cliente: data.clienteId ? { connect: { id: data.clienteId } } : undefined,
+      fornecedor: data.fornecedorId
+        ? { connect: { id: data.fornecedorId } }
+        : undefined,
+    };
   }
 }

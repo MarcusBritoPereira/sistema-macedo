@@ -10,6 +10,7 @@ import * as path from 'path';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConfigureBankingDto } from './dto/configure-banking.dto';
+import { decryptSecret, encryptSecret } from '../../common/security/secret-crypto';
 
 interface UploadedFile {
   fieldname: string;
@@ -109,11 +110,11 @@ export class BankingIntegrationService {
       };
 
       if (dto.clientId && dto.clientId !== '******') {
-        updateData.clientId = dto.clientId;
+        updateData.clientId = encryptSecret(dto.clientId);
       }
 
       if (dto.clientSecret && dto.clientSecret !== '******') {
-        updateData.clientSecret = dto.clientSecret;
+        updateData.clientSecret = encryptSecret(dto.clientSecret);
       }
 
       // Handle File Uploads
@@ -212,8 +213,8 @@ export class BankingIntegrationService {
 
       // 1. Authenticate (mTLS + OAuth)
       const accessToken = await this.getAccessToken(
-        integration.clientId!,
-        integration.clientSecret!,
+        this.tryDecrypt(integration.clientId!),
+        this.tryDecrypt(integration.clientSecret!),
         certContent,
         keyContent,
       );
@@ -423,8 +424,8 @@ export class BankingIntegrationService {
     const keyContent = fs.readFileSync(integration.keyFile!);
 
     const accessToken = await this.getAccessToken(
-      integration.clientId!,
-      integration.clientSecret!,
+      this.tryDecrypt(integration.clientId!),
+      this.tryDecrypt(integration.clientSecret!),
       certContent,
       keyContent,
       'extrato.read'
@@ -496,6 +497,14 @@ export class BankingIntegrationService {
       throw new BadRequestException(
         `Falha ao autenticar com Banco Inter: ${error.message}`,
       );
+    }
+  }
+
+  private tryDecrypt(value: string): string {
+    try {
+      return decryptSecret(value);
+    } catch {
+      return value;
     }
   }
 

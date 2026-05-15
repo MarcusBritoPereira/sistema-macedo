@@ -4,14 +4,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IonicModule } from '@ionic/angular'; // Use IonicModule for lazy loading or import specific components
 import { AuthService } from '../services/auth/auth.service';
-import { IonContent, IonItem, IonLabel, IonInput, IonButton, IonText, IonSpinner, IonNote } from '@ionic/angular/standalone';
+import { IonContent, IonInput, IonButton, IonText, IonSpinner, IonIcon } from '@ionic/angular/standalone';
+import { addIcons } from 'ionicons';
+import { briefcase, sparkles } from 'ionicons/icons';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, IonContent, IonItem, IonLabel, IonInput, IonButton, IonText, IonSpinner, IonNote]
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, IonContent, IonInput, IonButton, IonText, IonSpinner, IonIcon]
 })
 export class LoginPage implements OnInit {
   loginForm: FormGroup;
@@ -19,6 +21,7 @@ export class LoginPage implements OnInit {
   isSubmitting = false;
 
   constructor(private fb: FormBuilder, private auth: AuthService) {
+    addIcons({ briefcase, sparkles });
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       senha: ['', [Validators.required]]

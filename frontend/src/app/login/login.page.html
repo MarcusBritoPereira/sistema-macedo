@@ -1,73 +1,91 @@
-
 <ion-content [fullscreen]="true" class="login-page">
-  <div class="login-shell">
-    <section class="login-visual" aria-hidden="true">
-      <div class="login-visual__content">
-        <span class="login-visual__badge">Sistema Macedo</span>
-        <h1>Controle financeiro com clareza e velocidade.</h1>
-        <p>Concentre suas rotinas de faturamento, conciliação e contratos em um único painel.</p>
-        <div class="login-visual__stats">
-          <div>
-            <strong>+90%</strong>
-            <span>visibilidade de caixa</span>
+  <div class="split-layout">
+    <aside class="split-layout__form-panel">
+      <div class="form-wrapper">
+        <header class="form-header">
+          <div class="brand-logo">
+            <ion-icon name="briefcase"></ion-icon>
+            <span class="brand-text">Sistema Macedo</span>
           </div>
-          <div>
-            <strong>24h</strong>
-            <span>fechamento mensal</span>
+          <h1 class="form-title">Informe seus dados</h1>
+        </header>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <div class="input-group">
+            <label for="email">E-mail <span class="required">*</span></label>
+            <ion-input
+              id="email"
+              class="custom-input"
+              type="email"
+              formControlName="email"
+              autocomplete="email"
+              [class.ion-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+            ></ion-input>
           </div>
-          <div>
-            <strong>100%</strong>
-            <span>auditável</span>
+
+          <div class="input-group">
+            <label for="senha">Senha <span class="required">*</span></label>
+            <ion-input
+              id="senha"
+              class="custom-input"
+              type="password"
+              formControlName="senha"
+              autocomplete="current-password"
+              [class.ion-invalid]="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched"
+            ></ion-input>
+          </div>
+
+          <ion-text color="danger" *ngIf="errorMessage" class="error-text" role="alert">
+            <p>{{ errorMessage }}</p>
+          </ion-text>
+
+          <div class="form-links">
+            <a href="#">Esqueci minha senha</a>
+            <a href="#">Esqueci meu ID de Suporte</a>
+          </div>
+
+          <ion-button expand="block" type="submit" [disabled]="!loginForm.valid || isSubmitting" class="btn-primary">
+            <ion-spinner *ngIf="isSubmitting" name="crescent" aria-label="Carregando"></ion-spinner>
+            <span>{{ isSubmitting ? 'Entrando...' : 'Entrar' }}</span>
+          </ion-button>
+
+          <div class="form-footer">
+            <a href="#">Não tem uma conta? Experimente grátis!</a>
+          </div>
+        </form>
+      </div>
+    </aside>
+
+    <main class="split-layout__marketing-panel">
+      <div class="marketing-content">
+        <h2 class="marketing-headline">
+          Juntos, a gente<br/>dá conta de <strong>automatizar</strong><br/>o que é repetitivo com<br/>a <strong>Macedo IA</strong>
+        </h2>
+        <p class="marketing-subheadline">
+          — a <strong>IA do Sistema Macedo</strong> que lê, interpreta<br/>e lança documentos de forma automática.
+        </p>
+        
+        <button class="marketing-btn">Entre na sua conta e experimente.</button>
+      </div>
+
+      <!-- decorative elements imitating the UI cards on the right -->
+      <div class="marketing-graphics">
+        <div class="graphic-card">
+          <div class="graphic-header">
+            <span>Macedo AI - Captura</span>
+            <span class="badge">Novo</span>
+          </div>
+          <div class="graphic-body">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+          </div>
+          <div class="floating-bubble">
+            <ion-icon name="sparkles"></ion-icon>
           </div>
         </div>
       </div>
-    </section>
-
-    <section class="login-card" aria-label="Área de autenticação">
-      <header>
-        <p class="login-card__eyebrow">Bem-vindo(a) de volta</p>
-        <h2>Entrar no painel</h2>
-        <p class="login-card__subtitle">Use seu e-mail corporativo para continuar.</p>
-      </header>
-
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-        <ion-input
-          class="login-item"
-          fill="outline"
-          label="Email"
-          label-placement="floating"
-          type="email"
-          formControlName="email"
-          autocomplete="email"
-          [class.ion-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-          error-text="Informe um e-mail válido"
-        ></ion-input>
-
-        <ion-input
-          class="login-item"
-          fill="outline"
-          label="Senha"
-          label-placement="floating"
-          type="password"
-          formControlName="senha"
-          autocomplete="current-password"
-          [class.ion-invalid]="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched"
-          error-text="A senha precisa ser informada"
-        ></ion-input>
-
-        <ion-text color="danger" *ngIf="errorMessage" role="alert">
-          <p>{{ errorMessage }}</p>
-        </ion-text>
-
-        <ion-button expand="block" type="submit" [disabled]="!loginForm.valid || isSubmitting" class="login-submit">
-          <ion-spinner *ngIf="isSubmitting" name="crescent" aria-label="Carregando"></ion-spinner>
-          <span>{{ isSubmitting ? 'Entrando...' : 'Entrar' }}</span>
-        </ion-button>
-      </form>
-
-      <footer class="login-footer">
-        <p>Precisa de ajuda? Contate o administrador do sistema.</p>
-      </footer>
-    </section>
+    </main>
   </div>
 </ion-content>

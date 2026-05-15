@@ -50,7 +50,7 @@
     gap: 8px;
     font-size: 1.5rem;
     font-weight: 800;
-    color: #006ce4;
+    color: #0f172a;
     margin-bottom: 48px;
 
     ion-icon {
@@ -99,8 +99,8 @@
     transition: border-color 0.2s, box-shadow 0.2s;
     
     &.ion-focused {
-      border-color: #006ce4;
-      box-shadow: 0 0 0 3px rgba(0, 108, 228, 0.1);
+      border-color: #0f172a;
+      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
     }
 
     &.ion-invalid.ion-touched {
@@ -121,7 +121,7 @@
   gap: 12px;
 
   a {
-    color: #006ce4;
+    color: #0f172a;
     text-decoration: none;
     font-size: 0.875rem;
     font-weight: 500;
@@ -151,7 +151,7 @@
   margin-top: 16px;
   
   a {
-    color: #006ce4;
+    color: #0f172a;
     text-decoration: none;
     font-size: 0.875rem;
     
@@ -163,7 +163,7 @@
 
 .split-layout__marketing-panel {
   flex: 1;
-  background: linear-gradient(135deg, #005ce6 0%, #0088ff 100%);
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
   position: relative;
   overflow: hidden;
   display: none;
@@ -258,7 +258,7 @@
     font-size: 0.9rem;
 
     .badge {
-      background: #1ea54b;
+      background: #ea580c;
       padding: 4px 8px;
       border-radius: 4px;
       font-size: 0.7rem;
@@ -283,7 +283,7 @@
     right: -20px;
     width: 64px;
     height: 64px;
-    background: #003399;
+    background: #ea580c;
     border-radius: 50%;
     display: flex;
     align-items: center;

@@ -4,15 +4,15 @@
       <div class="form-wrapper">
         <header class="form-header">
           <div class="brand-logo">
-            <ion-icon name="briefcase"></ion-icon>
+            <ion-icon name="business"></ion-icon>
             <span class="brand-text">Sistema Macedo</span>
           </div>
-          <h1 class="form-title">Informe seus dados</h1>
+          <h1 class="form-title">Acesso Restrito</h1>
         </header>
 
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
           <div class="input-group">
-            <label for="email">E-mail <span class="required">*</span></label>
+            <label for="email">E-mail corporativo <span class="required">*</span></label>
             <ion-input
               id="email"
               class="custom-input"
@@ -41,17 +41,12 @@
 
           <div class="form-links">
             <a href="#">Esqueci minha senha</a>
-            <a href="#">Esqueci meu ID de Suporte</a>
           </div>
 
           <ion-button expand="block" type="submit" [disabled]="!loginForm.valid || isSubmitting" class="btn-primary">
             <ion-spinner *ngIf="isSubmitting" name="crescent" aria-label="Carregando"></ion-spinner>
-            <span>{{ isSubmitting ? 'Entrando...' : 'Entrar' }}</span>
+            <span>{{ isSubmitting ? 'Autenticando...' : 'Entrar no Sistema' }}</span>
           </ion-button>
-
-          <div class="form-footer">
-            <a href="#">Não tem uma conta? Experimente grátis!</a>
-          </div>
         </form>
       </div>
     </aside>
@@ -59,21 +54,19 @@
     <main class="split-layout__marketing-panel">
       <div class="marketing-content">
         <h2 class="marketing-headline">
-          Juntos, a gente<br/>dá conta de <strong>automatizar</strong><br/>o que é repetitivo com<br/>a <strong>Macedo IA</strong>
+          Gestão financeira e<br/>controle de <strong>obras</strong><br/>em um <strong>único lugar</strong>
         </h2>
         <p class="marketing-subheadline">
-          — a <strong>IA do Sistema Macedo</strong> que lê, interpreta<br/>e lança documentos de forma automática.
+          O ERP exclusivo da <strong>Macedo Engenharia</strong> para o gerenciamento administrativo e visibilidade total dos projetos.
         </p>
-        
-        <button class="marketing-btn">Entre na sua conta e experimente.</button>
       </div>
 
       <!-- decorative elements imitating the UI cards on the right -->
       <div class="marketing-graphics">
         <div class="graphic-card">
           <div class="graphic-header">
-            <span>Macedo AI - Captura</span>
-            <span class="badge">Novo</span>
+            <span>Visão Geral - Obras</span>
+            <span class="badge">Ativo</span>
           </div>
           <div class="graphic-body">
             <div class="skeleton-line"></div>
@@ -82,7 +75,7 @@
             <div class="skeleton-line"></div>
           </div>
           <div class="floating-bubble">
-            <ion-icon name="sparkles"></ion-icon>
+            <ion-icon name="bar-chart"></ion-icon>
           </div>
         </div>
       </div>

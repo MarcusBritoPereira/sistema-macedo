@@ -6,7 +6,7 @@ import { IonicModule } from '@ionic/angular'; // Use IonicModule for lazy loadin
 import { AuthService } from '../services/auth/auth.service';
 import { IonContent, IonInput, IonButton, IonText, IonSpinner, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { briefcase, sparkles } from 'ionicons/icons';
+import { business, barChart } from 'ionicons/icons';
 
 @Component({
   selector: 'app-login',
@@ -21,7 +21,7 @@ export class LoginPage implements OnInit {
   isSubmitting = false;
 
   constructor(private fb: FormBuilder, private auth: AuthService) {
-    addIcons({ briefcase, sparkles });
+    addIcons({ business, 'bar-chart': barChart });
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
       senha: ['', [Validators.required]]

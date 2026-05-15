@@ -18,7 +18,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "create:admin": "ts-node prisma/create-macedo-admin.ts"
+    "create:admin": "node prisma/create-macedo-admin.js"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"

@@ -2,7 +2,7 @@
   "name": "sistema-macedo",
   "version": "0.0.1",
   "author": "Sistema Macedo",
-  "homepage": "https://sistemamacedo.com.br/",
+  "homepage": "https://sistemamacedo.cloud/",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

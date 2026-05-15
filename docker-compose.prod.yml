@@ -30,7 +30,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      FRONTEND_URL: http://212.85.14.87
+      FRONTEND_URL: http://sistemamacedo.cloud
       DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-macedo_system}
       JWT_SECRET: ${JWT_SECRET:-supersecretkeyCHANGE}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretrefreshCHANGE}

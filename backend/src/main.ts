@@ -41,8 +41,9 @@ async function bootstrap() {
 
   // CORS seguro: lista explícita de origens
   const allowedOrigins = [
-    'https://sistemamacedo.com.br',
-    'https://www.sistemamacedo.com.br',
+    'https://sistemamacedo.cloud',
+    'https://www.sistemamacedo.cloud',
+    'http://sistemamacedo.cloud',
     'http://localhost:8100', // dev (Ionic/Angular)
     ...parseOrigins(process.env.FRONTEND_URL), // opcional (pode ser CSV)
   ];

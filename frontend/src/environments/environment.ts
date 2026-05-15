@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'https://api.sistemamacedo.com.br'
+  apiUrl: 'https://api.sistemamacedo.cloud'
 };
 
 /*

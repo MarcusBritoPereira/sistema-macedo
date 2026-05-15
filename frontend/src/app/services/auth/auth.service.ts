@@ -34,7 +34,8 @@ export class AuthService {
                     sessionStorage.setItem('user', JSON.stringify(res.user));
                     this.userSubject.next(res.user);
                     this.isAuthenticated = true;
-                    this.router.navigate(['/home']);
+                    // Force a hard redirect to bypass Ionic's ion-split-pane transition bugs
+                    window.location.href = '/financial/dashboard';
                 }
             })
         );

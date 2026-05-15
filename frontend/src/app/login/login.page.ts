@@ -39,8 +39,6 @@ export class LoginPage implements OnInit {
         next: () => {
           this.errorMessage = '';
           this.isSubmitting = false;
-          // Force explicit navigation after successful login
-          window.location.href = '/financial/dashboard';
         },
         error: (err) => {
           this.errorMessage = 'Credenciais inválidas ou erro no servidor.';

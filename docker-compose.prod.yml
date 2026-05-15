@@ -1,37 +1,37 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: erp_postgres_prod
+    container_name: macedo_postgres_prod
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-erp_system}
+      POSTGRES_DB: ${DB_NAME:-macedo_system}
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     networks:
-      - erp_network
+      - macedo_network
     restart: always
 
   redis:
     image: redis:7-alpine
-    container_name: erp_redis_prod
+    container_name: macedo_redis_prod
     command: redis-server --appendonly yes
     volumes:
       - redis_data_prod:/data
     networks:
-      - erp_network
+      - macedo_network
     restart: always
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: erp_backend_prod
+    container_name: macedo_backend_prod
     ports:
-      - "127.0.0.1:3000:3000"
+      - "3000:3000"
     environment:
-      FRONTEND_URL: https://upfinance.cloud
-      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-erp_system}
+      FRONTEND_URL: http://212.85.14.87
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-macedo_system}
       JWT_SECRET: ${JWT_SECRET:-supersecretkeyCHANGE}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretrefreshCHANGE}
       REDIS_HOST: redis
@@ -45,24 +45,24 @@ services:
     volumes:
       - secure_data_prod:/app/secure
     networks:
-      - erp_network
+      - macedo_network
     restart: always
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: erp_frontend_prod
+    container_name: macedo_frontend_prod
     ports:
-      - "127.0.0.1:8080:80"
+      - "80:80"
     depends_on:
       - backend
     networks:
-      - erp_network
+      - macedo_network
     restart: always
 
 networks:
-  erp_network:
+  macedo_network:
     driver: bridge
 
 volumes:

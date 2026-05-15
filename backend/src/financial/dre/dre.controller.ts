@@ -11,6 +11,7 @@ export class DreController {
 
   @Post()
   gerar(@Body() dto: GerarDreDto) {
+    console.log(`[DRE Controller] Recebido:`, dto);
     return this.dreService.gerar(dto);
   }
 

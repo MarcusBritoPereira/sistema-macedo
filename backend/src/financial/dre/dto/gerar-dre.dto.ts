@@ -1,4 +1,4 @@
-import { IsEnum, IsISO8601, IsOptional, IsBoolean } from 'class-validator';
+import { IsEnum, IsISO8601, IsOptional, IsBoolean, IsString } from 'class-validator';
 
 export enum DRERegime {
   CAIXA = 'caixa',
@@ -27,4 +27,12 @@ export class GerarDreDto {
   @IsBoolean()
   @IsOptional()
   incluirRateios?: boolean = true;
+
+  @IsString()
+  @IsOptional()
+  centroCustoId?: string;
+
+  @IsString()
+  @IsOptional()
+  contaBancariaId?: string;
 }

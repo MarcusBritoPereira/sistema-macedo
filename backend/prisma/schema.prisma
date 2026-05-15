@@ -35,6 +35,7 @@ model Perfil {
   permissoes Json?   // Armazenar permissões como JSON para flexibilidade
   usuarios  Usuario[]
 
+  @@index([nome], map: "idx_perfis_nome")
   @@map("perfis")
 }
 
@@ -147,6 +148,7 @@ enum StatusContrato {
 // --- V2: Lançamento Financeiro Unificado ---
 
 model LancamentoFinanceiro {
+  @@index([dataCompetencia], map: "idx_lancamentos_competencia")
   id          String   @id @default(uuid())
   descricao   String
   valor       Decimal  @db.Decimal(10, 2)
@@ -295,6 +297,8 @@ model ExtratoBancario {
 
   @@index([data, conciliado], map: "idx_extrato_data_conciliado")
   @@index([importacaoId, conciliado], map: "idx_extrato_importacao_conciliado")
+  @@index([tipo, conciliado], map: "idx_extrato_tipo_conciliado")
+  @@index([valor, data], map: "idx_extrato_valor_data")
   @@map("extratos_bancarios")
 }
 
@@ -340,6 +344,8 @@ model ConciliacaoBancaria {
   extratoBancarioId     String @unique
   extratoBancario       ExtratoBancario @relation(fields: [extratoBancarioId], references: [id])
 
+  @@index([lancamentoFinanceiroId], map: "idx_conciliacao_lancamento")
+  @@index([extratoBancarioId], map: "idx_conciliacao_extrato")
   @@map("conciliacoes_bancarias")
 }
 

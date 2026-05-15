@@ -16,16 +16,16 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { BankingIntegrationService } from './banking-integration.service';
 import { ConfigureBankingDto } from './dto/configure-banking.dto';
-import { RolesGuard } from '../../auth/roles.guard';
-import { Roles } from '../../auth/roles.decorator';
+import { PermissionsGuard } from '../../auth/permissions.guard';
+import { RequirePermissions } from '../../auth/permissions.decorator';
 
 @Controller('financial/banking')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class BankingIntegrationController {
   constructor(private readonly service: BankingIntegrationService) {}
 
   @Post('upload-ofx')
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('can_manage_banking')
   @UseInterceptors(FileInterceptor('file'))
   uploadOfx(
     @UploadedFile() file: Express.Multer.File,
@@ -35,7 +35,7 @@ export class BankingIntegrationController {
   }
 
   @Post('configure')
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('can_manage_banking')
   @UseInterceptors(
     FileFieldsInterceptor([
       { name: 'certificate', maxCount: 1 },
@@ -54,13 +54,13 @@ export class BankingIntegrationController {
   }
 
   @Get('status/:contaId')
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('can_manage_banking')
   getStatus(@Param('contaId') contaId: string) {
     return this.service.getStatus(contaId);
   }
 
   @Post('sync/:contaId')
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('can_manage_banking')
   sync(@Param('contaId') contaId: string) {
     return this.service.syncStatements(contaId);
   }

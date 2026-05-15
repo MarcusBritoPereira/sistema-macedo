@@ -5,11 +5,12 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { ReconciliationModule } from '../reconciliation/reconciliation.module';
 
 import { OfxService } from './ofx.service';
+import { CryptoService } from '../../shared/crypto.service';
 
 @Module({
   imports: [ReconciliationModule],
   controllers: [BankingIntegrationController],
-  providers: [BankingIntegrationService, PrismaService, OfxService],
+  providers: [BankingIntegrationService, PrismaService, OfxService, CryptoService],
   exports: [BankingIntegrationService],
 })
 export class BankingIntegrationModule {}

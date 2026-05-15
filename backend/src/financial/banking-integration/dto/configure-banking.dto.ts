@@ -31,6 +31,10 @@ export class ConfigureBankingDto {
 
   @IsString()
   @IsOptional()
+  apiKey?: string; // API Key (encrypted at rest)
+
+  @IsString()
+  @IsOptional()
   certificate?: string; // Content of .crt/.pfx
 
   @IsString()

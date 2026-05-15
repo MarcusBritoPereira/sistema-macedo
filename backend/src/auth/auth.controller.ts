@@ -10,7 +10,7 @@ import {
 import { AuthService } from './auth.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { LoginDto } from './dto/login.dto';
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 
 function getCookie(req: Request, name: string): string | null {
   const rawCookie = req.headers.cookie;
@@ -85,7 +85,11 @@ export class AuthController {
   }
 
   @Post('logout')
-  logout(@Res({ passthrough: true }) res: Response) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+    const refreshToken = getCookie(req, 'refresh_token');
+    if (refreshToken) {
+      await this.authService.logout(refreshToken);
+    }
     res.clearCookie('access_token', { path: '/' });
     res.clearCookie('refresh_token', { path: '/' });
     return { ok: true };

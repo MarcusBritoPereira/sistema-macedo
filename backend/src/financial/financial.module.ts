@@ -21,6 +21,8 @@ import { FinancialBudgetModule } from './budget/financial-budget.module';
 import { RecurringModule } from './recurring/recurring.module';
 import { ReportsController } from './reports/reports.controller';
 import { ReportsService } from './reports/reports.service';
+import { FinancialCacheInterceptor } from '../common/interceptors/financial-cache.interceptor';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   providers: [
@@ -28,6 +30,10 @@ import { ReportsService } from './reports/reports.service';
     CashFlowService,
     FinancialDashboardService,
     ReportsService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: FinancialCacheInterceptor,
+    },
   ],
   controllers: [
     FinancialController,

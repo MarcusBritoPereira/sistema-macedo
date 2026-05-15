@@ -27,7 +27,10 @@ export class DreService {
       return cached.payload;
     }
 
-    const { regime, dataInicio, dataFim, granularidade } = dto;
+    const { regime, dataInicio, dataFim, granularidade, centroCustoId, contaBancariaId } = dto;
+    console.time(`DRE_Generation:${regime}:${granularidade}`);
+    console.log(`[DRE] Iniciando geração: ${regime} ${granularidade} [${dataInicio} - ${dataFim}]`);
+    
     const start = startOfDay(new Date(dataInicio));
     const end = endOfDay(new Date(dataFim));
 
@@ -35,12 +38,14 @@ export class DreService {
 
     const rateiosRaw = await this.prisma.rateioLancamento.findMany({
       where: {
+        ...(centroCustoId ? { centroCustoId } : {}),
         lancamento: {
           [dateField]: {
             gte: start,
             lte: end,
           },
           status: regime === DRERegime.CAIXA ? 'REALIZADO' : { not: 'CANCELADO' },
+          ...(contaBancariaId ? { contaBancariaId } : {}),
         },
       },
       include: {
@@ -56,6 +61,8 @@ export class DreService {
         },
         status: regime === DRERegime.CAIXA ? 'REALIZADO' : { not: 'CANCELADO' },
         rateios: { none: {} },
+        ...(centroCustoId ? { centroCustoId } : {}),
+        ...(contaBancariaId ? { contaBancariaId } : {}),
       },
       include: {
         categoria: true,
@@ -69,6 +76,7 @@ export class DreService {
           lte: end,
         },
         status: { in: ['FATURADO', 'PAGO'] },
+        // No Cost Center filter for credit cards yet as it's at the header level in this model
       },
       include: {
         categoriaFinanceira: true,
@@ -153,11 +161,13 @@ export class DreService {
     const where: any = {
       categoria: dto.categoria,
       ...(dto.subcategoria ? { subcategoria: dto.subcategoria } : {}),
+      ...(dto.centroCustoId ? { centroCustoId: dto.centroCustoId } : {}),
       lancamento: {
         [dateField]: {
           gte: start,
           lte: end,
         },
+        ...(dto.contaBancariaId ? { contaBancariaId: dto.contaBancariaId } : {}),
       },
     };
 
@@ -202,6 +212,7 @@ export class DreService {
           gte: start,
           lte: end,
         },
+        ...(dto.centroCustoId ? { centroCustoId: dto.centroCustoId } : {}),
       },
       include: {
         cliente: true,
@@ -373,6 +384,8 @@ export class DreService {
       result.margens[key].total = periodos.length > 0 ? avg / periodos.length : 0;
     }
 
+    console.log(`[DRE] Finalizando: ${periodos.length} períodos calculados`);
+    console.timeEnd(`DRE_Generation:${result.regime || ''}:${result.granularidade || ''}`);
     return result;
   }
 }

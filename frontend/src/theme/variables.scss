@@ -90,6 +90,39 @@
     --space-4: 16px;
     --space-5: 20px;
     --space-6: 24px;
+    --space-8: 32px;
+    --space-12: 48px;
+
+    /* Z-Index Scale */
+    --z-base: 0;
+    --z-card: 10;
+    --z-dropdown: 100;
+    --z-sticky: 200;
+    --z-modal: 1000;
+    --z-toast: 1100;
+
+    /* Elevation / Shadow */
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 8px rgba(0,0,0,0.08), 0 2px 4px rgba(0,0,0,0.04);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.1), 0 5px 10px rgba(0,0,0,0.06);
+
+    /* Interaction tokens */
+    --transition-fast: 150ms ease;
+    --transition-base: 250ms ease;
+    --transition-slow: 400ms ease;
+
+    /* Focus ring (Accessibility) */
+    --focus-ring: 0 0 0 3px rgba(254, 190, 16, 0.5); /* Brand Yellow focus */
+
+    /* Status Colors (for badges and chips - semantic) */
+    --status-previsto-bg: #fef9c3;
+    --status-previsto-text: #b45309;
+    --status-realizado-bg: #dcfce7;
+    --status-realizado-text: #15803d;
+    --status-conciliado-bg: #dbeafe;
+    --status-conciliado-text: #1d4ed8;
+    --status-cancelado-bg: #f1f5f9;
+    --status-cancelado-text: #64748b;
 }
 
 /* Dark Mode Removed explicitly to ensure consistency */

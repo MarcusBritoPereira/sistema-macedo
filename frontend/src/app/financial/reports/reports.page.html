@@ -83,7 +83,7 @@
 
         <ion-row class="date-row">
           <ion-col size="12" size-md="4">
-            <ion-item>
+            <ion-item [disabled]="selectedPeriod !== 'custom'">
               <ion-label position="stacked">Data inicial</ion-label>
               <ion-datetime-button datetime="startDatePicker"></ion-datetime-button>
               <ion-modal keepContentsMounted="true">
@@ -92,7 +92,7 @@
             </ion-item>
           </ion-col>
           <ion-col size="12" size-md="4">
-            <ion-item>
+            <ion-item [disabled]="selectedPeriod !== 'custom'">
               <ion-label position="stacked">Data final</ion-label>
               <ion-datetime-button datetime="endDatePicker"></ion-datetime-button>
               <ion-modal keepContentsMounted="true">

@@ -13,8 +13,11 @@ services:
     restart: always
 
   redis:
-    image: redis:alpine
+    image: redis:7-alpine
     container_name: erp_redis_prod
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data_prod:/data
     networks:
       - erp_network
     restart: always
@@ -30,8 +33,11 @@ services:
       FRONTEND_URL: https://upfinance.cloud
       DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-erp_system}
       JWT_SECRET: ${JWT_SECRET:-supersecretkeyCHANGE}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretrefreshCHANGE}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:-jJyGy6myLktYQ0lKw71m/+PTWEx7hQL+HJ4cPa1eIr4=}
       PORT: 3000
     depends_on:
       - postgres
@@ -61,4 +67,5 @@ networks:
 
 volumes:
   postgres_data_prod:
+  redis_data_prod:
   secure_data_prod:

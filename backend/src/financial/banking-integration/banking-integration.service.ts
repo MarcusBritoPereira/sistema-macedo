@@ -10,7 +10,7 @@ import * as path from 'path';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ConfigureBankingDto } from './dto/configure-banking.dto';
-import { decryptSecret, encryptSecret } from '../../common/security/secret-crypto';
+import { CryptoService } from '../../shared/crypto.service';
 
 interface UploadedFile {
   fieldname: string;
@@ -38,6 +38,7 @@ export class BankingIntegrationService {
     private prisma: PrismaService,
     private ofxService: OfxService,
     private reconciliationService: ReconciliationService,
+    private cryptoService: CryptoService,
   ) {
     // Ensure secure directory exists
     if (!fs.existsSync(this.CERTS_DIR)) {
@@ -110,11 +111,15 @@ export class BankingIntegrationService {
       };
 
       if (dto.clientId && dto.clientId !== '******') {
-        updateData.clientId = encryptSecret(dto.clientId);
+        updateData.clientId = this.cryptoService.encrypt(dto.clientId);
       }
 
       if (dto.clientSecret && dto.clientSecret !== '******') {
-        updateData.clientSecret = encryptSecret(dto.clientSecret);
+        updateData.clientSecret = this.cryptoService.encrypt(dto.clientSecret);
+      }
+      
+      if ((dto as any).apiKey && (dto as any).apiKey !== '******') {
+        updateData.apiKey = this.cryptoService.encrypt((dto as any).apiKey);
       }
 
       // Handle File Uploads
@@ -502,7 +507,7 @@ export class BankingIntegrationService {
 
   private tryDecrypt(value: string): string {
     try {
-      return decryptSecret(value);
+      return this.cryptoService.decrypt(value);
     } catch {
       return value;
     }

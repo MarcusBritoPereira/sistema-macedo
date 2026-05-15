@@ -11,9 +11,12 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ReconciliationService } from './reconciliation.service';
+import { PermissionsGuard } from '../../auth/permissions.guard';
+import { RequirePermissions } from '../../auth/permissions.decorator';
 
 @Controller('financial/reconciliation')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
+@RequirePermissions('can_reconcile')
 export class ReconciliationController {
   constructor(private readonly service: ReconciliationService) {}
 

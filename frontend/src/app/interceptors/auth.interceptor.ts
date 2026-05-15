@@ -6,11 +6,25 @@ import { catchError, throwError } from 'rxjs';
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const router = inject(Router);
 
-    return next(req).pipe(
+    const authReq = req.clone({
+        withCredentials: true
+    });
+
+    return next(authReq).pipe(
         catchError((error) => {
             if (error.status === 401) {
-                sessionStorage.removeItem('user');
+                // To avoid infinite loops, if the error comes from /refresh or /login, we don't try to refresh again
+                if (req.url.includes('/auth/refresh') || req.url.includes('/auth/login')) {
+                    sessionStorage.removeItem('user');
+                    router.navigate(['/login']);
+                    return throwError(() => error);
+                }
 
+                // Call refresh endpoint and retry logic should ideally be here, 
+                // but since we want to keep it simple as a starting point and we rely on backend automatic cookies, 
+                // we can just force the user to login again for now or trigger a reload that checks session.
+                // For a complete flow, we'd inject HttpClient and call POST /auth/refresh here.
+                sessionStorage.removeItem('user');
                 router.navigate(['/login']);
             }
             return throwError(() => error);

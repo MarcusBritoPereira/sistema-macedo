@@ -17,4 +17,12 @@ export class DREDetalhesDto {
 
   @IsEnum(DRERegime)
   regime: DRERegime;
+
+  @IsString()
+  @IsOptional()
+  centroCustoId?: string;
+
+  @IsString()
+  @IsOptional()
+  contaBancariaId?: string;
 }

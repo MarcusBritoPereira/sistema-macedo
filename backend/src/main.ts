@@ -1,7 +1,8 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
 function parseOrigins(value?: string) {
   if (!value) return [];
@@ -35,7 +36,8 @@ async function bootstrap() {
     });
     next();
   });
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
+  app.useGlobalInterceptors(new LoggingInterceptor());
 
   // CORS seguro: lista explícita de origens
   const allowedOrigins = [

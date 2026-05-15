@@ -44,4 +44,6 @@ export interface DREParams {
   dataFim: string;
   granularidade: 'mensal' | 'trimestral' | 'anual';
   incluirRateios?: boolean;
+  centroCustoId?: string;
+  contaBancariaId?: string;
 }

@@ -11,7 +11,7 @@
         <ion-icon name="sync-outline" slot="start"></ion-icon>
         Sincronizar Banco Inter
       </ion-button>
-      <input type="file" #fileInput (change)="processCSV($event)" accept=".csv" style="display:none" />
+      <input type="file" #fileInput (change)="processCSV($event)" accept=".csv" style="display:none" aria-label="Importar fatura CSV" />
       <ion-button color="primary" class="add-btn" (click)="fileInput.click()">
         <ion-icon name="cloud-upload-outline" slot="start"></ion-icon>
         Importar Fatura CSV

@@ -1,4 +1,4 @@
-# Análise do sistema UP_Fin e implementações necessárias (versão acionável)
+# Análise do sistema Sistema Macedo e implementações necessárias (versão acionável)
 
 > Objetivo: transformar diagnóstico técnico em backlog executável, com foco em segurança, confiabilidade, escala e governança de produto.
 
@@ -178,7 +178,7 @@
 ---
 
 ## 5) Resultado esperado
-Após executar esse plano, o UP_Fin terá:
+Após executar esse plano, o Sistema Macedo terá:
 1. **Segurança de acesso significativamente superior** (sessão, segredos e permissões).
 2. **APIs mais estáveis para evolução** (DTOs e contratos explícitos).
 3. **Melhor escalabilidade operacional** (queries otimizadas e observabilidade real).

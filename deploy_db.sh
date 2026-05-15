@@ -14,7 +14,7 @@ fi
 
 # 2. Restore on remote server
 echo "restore database on remote server..."
-ssh root@srv1311817 "cat /root/dump.sql | docker exec -i erp_postgres_prod psql -U postgres -d erp_system"
+ssh root@srv1311817 "cat /root/dump.sql | docker exec -i macedo_postgres_prod psql -U postgres -d macedo_system"
 
 if [ $? -eq 0 ]; then
     echo "✅ Database successfully restored on production!"

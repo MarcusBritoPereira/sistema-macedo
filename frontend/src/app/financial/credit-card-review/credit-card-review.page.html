@@ -32,7 +32,7 @@
   <ion-toolbar *ngIf="selectedIds.size > 0" class="bulk-toolbar">
     <div class="bulk-content">
       <span>{{ selectedIds.size }} selecionados</span>
-      <select [(ngModel)]="bulkCategoriaId" class="bulk-select">
+      <select [(ngModel)]="bulkCategoriaId" class="bulk-select" aria-label="Definir categoria em lote">
         <option value="">Definir Categoria...</option>
         <option *ngFor="let cat of categorias" [value]="cat.id">{{ cat.nome }}</option>
       </select>
@@ -66,7 +66,7 @@
           </td>
           <td class="text-bold">{{ tx.valor | currency:'BRL' }}</td>
           <td>
-            <select class="inline-select" [(ngModel)]="tx.categoriaId" (change)="onCategoryChange(tx, $event)">
+            <select class="inline-select" [(ngModel)]="tx.categoriaId" (change)="onCategoryChange(tx, $event)" aria-label="Definir categoria da transação">
               <option [value]="null">Sem categoria</option>
               <option *ngFor="let cat of categorias" [value]="cat.id">{{ cat.nome }}</option>
             </select>

@@ -41,8 +41,8 @@ async function bootstrap() {
 
   // CORS seguro: lista explícita de origens
   const allowedOrigins = [
-    'https://upfinance.cloud',
-    'https://www.upfinance.cloud',
+    'https://sistemamacedo.com.br',
+    'https://www.sistemamacedo.com.br',
     'http://localhost:8100', // dev (Ionic/Angular)
     ...parseOrigins(process.env.FRONTEND_URL), // opcional (pode ser CSV)
   ];

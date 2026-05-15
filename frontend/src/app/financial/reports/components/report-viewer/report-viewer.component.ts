@@ -25,7 +25,7 @@ export interface ReportData {
         <div class="report-toolbar-titles">
           <h1>{{ title }}</h1>
           <h2>Mês: {{ period || 'N/A' }}</h2>
-          <h2>Empresa: Up Finance</h2>
+          <h2>Empresa: Sistema Macedo</h2>
         </div>
         <div class="actions-toolbar">
           <ion-button fill="outline" size="small" (click)="downloadCSV()">

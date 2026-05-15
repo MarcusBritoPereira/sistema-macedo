@@ -1,8 +1,8 @@
 {
-  "name": "up-finance",
+  "name": "sistema-macedo",
   "version": "0.0.1",
-  "author": "Up Finance",
-  "homepage": "https://upfinance.cloud/",
+  "author": "Sistema Macedo",
+  "homepage": "https://sistemamacedo.com.br/",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -65,5 +65,5 @@
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.9.0"
   },
-  "description": "Up Finance Application"
+  "description": "Sistema Macedo Application"
 }

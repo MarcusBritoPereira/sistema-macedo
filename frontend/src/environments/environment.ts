@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'https://api.upfinance.cloud'
+  apiUrl: 'https://api.sistemamacedo.com.br'
 };
 
 /*

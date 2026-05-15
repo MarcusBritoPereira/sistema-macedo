@@ -3,7 +3,7 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: erp_postgres
+    container_name: macedo_postgres
     restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
@@ -16,7 +16,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: erp_redis
+    container_name: macedo_redis
     restart: always
     ports:
       - "${REDIS_PORT}:6379"

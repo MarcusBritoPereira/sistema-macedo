@@ -1,4 +1,4 @@
-# Plano de Implementação — Segurança, Design System e Desempenho (UP_Fin)
+# Plano de Implementação — Segurança, Design System e Desempenho (Sistema Macedo)
 
 ## 1) Diagnóstico consolidado (estado atual)
 

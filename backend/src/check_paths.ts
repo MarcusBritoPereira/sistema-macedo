@@ -7,8 +7,8 @@ async function main() {
   console.log('--- Database Path Verification ---');
 
   const currentDir = process.cwd();
-  const oldProjectName = 'Projeto_ERP_Up';
-  const newProjectName = 'UP_Fin';
+  const oldNames = ['Projeto_ERP_Up', 'UP_Fin', 'up-finance'];
+  const newProjectName = 'sistema-macedo';
 
   console.log(`Current Working Directory: ${currentDir}`);
 
@@ -20,16 +20,18 @@ async function main() {
     let newCrtFile = integration.crtFile;
     let newKeyFile = integration.keyFile;
 
-    if (integration.crtFile && integration.crtFile.includes(oldProjectName)) {
-      newCrtFile = integration.crtFile.replace(oldProjectName, newProjectName);
-      console.log(`Updating CRT path: ${integration.crtFile} -> ${newCrtFile}`);
-      updated = true;
-    }
+    for (const oldName of oldNames) {
+      if (integration.crtFile && integration.crtFile.includes(oldName)) {
+        newCrtFile = integration.crtFile.replace(oldName, newProjectName);
+        console.log(`Updating CRT path: ${integration.crtFile} -> ${newCrtFile}`);
+        updated = true;
+      }
 
-    if (integration.keyFile && integration.keyFile.includes(oldProjectName)) {
-      newKeyFile = integration.keyFile.replace(oldProjectName, newProjectName);
-      console.log(`Updating KEY path: ${integration.keyFile} -> ${newKeyFile}`);
-      updated = true;
+      if (integration.keyFile && integration.keyFile.includes(oldName)) {
+        newKeyFile = integration.keyFile.replace(oldName, newProjectName);
+        console.log(`Updating KEY path: ${integration.keyFile} -> ${newKeyFile}`);
+        updated = true;
+      }
     }
 
     if (updated) {

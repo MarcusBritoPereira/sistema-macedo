@@ -1,4 +1,4 @@
-# Matriz de Auditoria Página-a-Página — UP_Fin
+# Matriz de Auditoria Página-a-Página — Sistema Macedo
 
 ## Legenda de status
 - **OK**: funcional e coerente com o fluxo esperado.

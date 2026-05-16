@@ -44,6 +44,7 @@ async function bootstrap() {
     'https://sistemamacedo.cloud',
     'https://www.sistemamacedo.cloud',
     'http://sistemamacedo.cloud',
+    'http://212.85.14.87',
     'http://localhost:8100', // dev (Ionic/Angular)
     ...parseOrigins(process.env.FRONTEND_URL), // opcional (pode ser CSV)
   ];

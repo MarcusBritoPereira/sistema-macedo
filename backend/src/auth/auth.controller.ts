@@ -36,10 +36,10 @@ export class AuthController {
     }
     const auth = await this.authService.login(user);
 
-    const isProd = process.env.NODE_ENV === 'production';
+    const isSecure = req.headers['x-forwarded-proto'] === 'https' || req.secure;
     const cookieBase = {
       httpOnly: true,
-      secure: isProd,
+      secure: isSecure,
       sameSite: 'lax' as const,
       path: '/',
     };
@@ -66,10 +66,10 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token ausente');
     }
     const auth = await this.authService.refresh(refreshToken);
-    const isProd = process.env.NODE_ENV === 'production';
+    const isSecure = req.headers['x-forwarded-proto'] === 'https' || req.secure;
     const cookieBase = {
       httpOnly: true,
-      secure: isProd,
+      secure: isSecure,
       sameSite: 'lax' as const,
       path: '/',
     };

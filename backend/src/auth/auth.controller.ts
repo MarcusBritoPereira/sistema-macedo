@@ -29,7 +29,7 @@ export class AuthController {
 
   @UseGuards(ThrottlerGuard)
   @Post('login')
-  async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response) {
+  async login(@Body() body: LoginDto, @Res({ passthrough: true }) res: Response, @Req() req: Request) {
     const user = await this.authService.validateUser(body.email, body.senha);
     if (!user) {
       throw new UnauthorizedException('Credenciais inválidas');

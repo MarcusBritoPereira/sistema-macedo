@@ -80,7 +80,7 @@ async function main() {
         },
         {
             nome: 'DESPESAS FINANCEIRAS', tipo: TipoCategoria.DESPESA, classificacao: ClassificacaoDRE.DESPESA_FINANCEIRA,
-            children: ['Fatura do cartão', 'Empréstimos', 'IOF', 'Tarifas Bancárias']
+            children: ['Juros e Encargos', 'Empréstimos', 'IOF', 'Tarifas Bancárias']
         }
     ];
 

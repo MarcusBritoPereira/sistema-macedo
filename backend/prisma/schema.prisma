@@ -90,7 +90,6 @@ model Cliente {
   contatos  Contato[]
   leads     Lead[]
   lancamentos LancamentoFinanceiro[]
-  cartaoTransacoes CartaoTransacao[]
 
   @@map("clientes")
 }
@@ -192,8 +191,6 @@ model LancamentoFinanceiro {
   rateiosHistorico RateioHistorico[]
 
   conciliacoes ConciliacaoBancaria[]
-  faturaPaga   FaturaCartao? @relation("PagamentoFatura")
-  transacoesCartao CartaoTransacao[] @relation("LancamentoParaTransacao")
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -377,7 +374,6 @@ model CategoriaFinanceira {
 
   lancamentos LancamentoFinanceiro[]
   rateios     RateioLancamento[]
-  cartaoTransacoes CartaoTransacao[]
   regras           RegraClassificacao[]
 
   @@map("categorias_financeiras")
@@ -461,7 +457,6 @@ model CentroCusto {
   descricao String?
 
   lancamentos LancamentoFinanceiro[]
-  cartaoTransacoes CartaoTransacao[]
   regras           RegraClassificacao[]
 
   @@map("centros_custo")
@@ -569,84 +564,6 @@ enum FrequenciaRecurrencia {
   DIARIO
 }
 
-// --- V2: Cartões de Crédito ---
-
-model FaturaCartao {
-  id                    String   @id @default(uuid())
-  cartaoId              String?  @default("default")
-  dataFechamento        DateTime
-  dataVencimento        DateTime
-  valorTotal            Decimal  @db.Decimal(10, 2)
-  status                StatusFatura @default(ABERTA)
-  
-  lancamentoPagamentoId String?  @unique
-  lancamentoPagamento   LancamentoFinanceiro? @relation("PagamentoFatura", fields: [lancamentoPagamentoId], references: [id])
-  
-  transacoes            CartaoTransacao[]
-
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-
-  @@map("faturas_cartao")
-}
-
-enum StatusFatura {
-  ABERTA
-  FECHADA
-  PAGA
-}
-
-model CartaoTransacao {
-  id                     String   @id @default(uuid())
-  cartaoId               String?  @default("default")
-  descricao              String
-  valor                  Decimal  @db.Decimal(10, 2)
-  dataCompra             DateTime
-  dataCompetencia        DateTime
-  
-  categoriaId            String?
-  categoriaFinanceira    CategoriaFinanceira? @relation(fields: [categoriaId], references: [id])
-  
-  subcategoriaId         String?
-  
-  centroCustoId          String?
-  centroCusto            CentroCusto? @relation(fields: [centroCustoId], references: [id])
-  
-  clienteId              String?
-  cliente                Cliente? @relation(fields: [clienteId], references: [id])
-  
-  projetoId              String?
-  
-  recorrente             Boolean  @default(false)
-  parcelado              Boolean  @default(false)
-  numeroParcela          Int?
-  totalParcelas          Int?
-  
-  status                 StatusTransacaoCartao @default(PENDENTE)
-  
-  faturaId               String?
-  fatura                 FaturaCartao? @relation(fields: [faturaId], references: [id])
-  
-  confiancaClassificacao Float?
-  
-  lancamentoRelacionadoId String?
-  lancamentoRelacionado   LancamentoFinanceiro? @relation("LancamentoParaTransacao", fields: [lancamentoRelacionadoId], references: [id])
-  
-  rateios                RateioCartaoTransacao[]
-
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-
-  @@map("cartao_transacoes")
-}
-
-enum StatusTransacaoCartao {
-  PENDENTE
-  FATURADO
-  PAGO
-  CONCILIADO
-}
-
 model RegraClassificacao {
   id             String   @id @default(uuid())
   padraoTexto    String   @unique
@@ -661,14 +578,4 @@ model RegraClassificacao {
   updatedAt      DateTime @updatedAt
 
   @@map("regras_classificacao")
-}
-
-model RateioCartaoTransacao {
-  id             String   @id @default(uuid())
-  transacaoId    String
-  transacao      CartaoTransacao @relation(fields: [transacaoId], references: [id], onDelete: Cascade)
-  valor          Decimal  @db.Decimal(10, 2)
-  categoria      String
-
-  @@map("rateios_cartao_transacao")
 }

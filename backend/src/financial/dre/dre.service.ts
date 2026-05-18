@@ -69,20 +69,6 @@ export class DreService {
       },
     });
 
-    const cartoesRaw = await (this.prisma as any).cartaoTransacao.findMany({
-      where: {
-        dataCompetencia: {
-          gte: start,
-          lte: end,
-        },
-        status: { in: ['FATURADO', 'PAGO'] },
-        // No Cost Center filter for credit cards yet as it's at the header level in this model
-      },
-      include: {
-        categoriaFinanceira: true,
-      },
-    });
-
     const classificationKeys = Object.values(ClassificacaoDRE);
     const normalizedData = [
       ...rateiosRaw.map((r: any) => ({
@@ -100,16 +86,6 @@ export class DreService {
         ) as ClassificacaoDRE,
         subcategoria: l.categoria?.nome || 'Não categorizado',
         data: l[dateField],
-      })),
-      ...cartoesRaw.map((c: any) => ({
-        valor: Number(c.valor),
-        categoria: (
-          c.categoriaFinanceira?.classificacao && classificationKeys.includes(c.categoriaFinanceira.classificacao)
-            ? c.categoriaFinanceira.classificacao
-            : 'OUTROS'
-        ) as ClassificacaoDRE,
-        subcategoria: c.categoriaFinanceira?.nome || 'Cartão (Não categorizado)',
-        data: c.dataCompetencia,
       })),
     ];
 
@@ -197,44 +173,7 @@ export class DreService {
       centro_custo: item.lancamento.centroCusto?.nome || null,
     }));
 
-    // For CartaoTransacao, we fetch category IDs first to avoid nested relation filter typing issues
-    const categoriesWithClassification = await (this.prisma as any).categoriaFinanceira.findMany({
-      where: { classificacao: dto.categoria },
-      select: { id: true }
-    });
-    const categoryIds = categoriesWithClassification.map((c: any) => c.id);
-
-    const cartoesDetails = await (this.prisma as any).cartaoTransacao.findMany({
-      where: {
-        categoriaId: { in: categoryIds },
-        ...(dto.subcategoria ? { categoriaFinanceira: { nome: dto.subcategoria } } : {}),
-        dataCompetencia: {
-          gte: start,
-          lte: end,
-        },
-        ...(dto.centroCustoId ? { centroCustoId: dto.centroCustoId } : {}),
-      },
-      include: {
-        cliente: true,
-        centroCusto: true,
-      },
-      orderBy: {
-        dataCompetencia: 'asc',
-      },
-    });
-
-    const detalhesCartoes = cartoesDetails.map((item: any) => ({
-      id: item.id,
-      data: item.dataCompetencia,
-      descricao: item.descricao,
-      valor: Number(item.valor),
-      cliente: item.cliente?.nomeFantasia || item.cliente?.razaoSocial || null,
-      centro_custo: item.centroCusto?.nome || null,
-    }));
-
-    const detalhesFinais = [...detalhes, ...detalhesCartoes].sort((a, b) => 
-      new Date(a.data as Date).getTime() - new Date(b.data as Date).getTime()
-    );
+    const detalhesFinais = detalhes;
 
     await (this.prisma as any).dreCache.upsert({
       where: { chave: cacheKey },

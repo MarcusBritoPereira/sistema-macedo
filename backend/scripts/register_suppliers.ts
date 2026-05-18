@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 const EXISTING_CATEGORIES: Record<string, string> = {
     internet: 'c9f1a17d-c535-49a2-89bf-330b67848e2d', // Internet e telefonia
-    faturaCartao: '7edb137a-bc3f-4243-aae6-cf55827d740e', // Fatura do cartão
+    jurosEncargos: '7edb137a-bc3f-4243-aae6-cf55827d740e', // Juros e Encargos
     emprestimos: '99854cd0-95b1-4d57-b168-a143143c5b7a', // Empréstimos
     energia: '0032c71a-bb48-4b9a-8c04-be5442c1a27e', // Energia
     aluguel: '793ca461-656d-46dd-ab63-5bb662217647', // Aluguel
@@ -21,8 +21,8 @@ const EXISTING_CATEGORIES: Record<string, string> = {
 const SUPPLIERS_LIST = [
     ['AD Sumus', 'Segurança'],
     ['Internet', 'internet'],
-    ['Cartão Rose', 'faturaCartao'],
-    ['Cartão UP', 'faturaCartao'],
+    ['Encargos Rose', 'jurosEncargos'],
+    ['Encargos UP', 'jurosEncargos'],
     ['Placa solar Boleto', 'energia'], // Energia Solar -> Energia
     ['Leandro (Emprestimo)', 'emprestimos'],
     ['Tania (Emprestimo)', 'emprestimos'],

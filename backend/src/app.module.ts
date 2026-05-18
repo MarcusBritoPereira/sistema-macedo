@@ -12,7 +12,6 @@ import { FinancialModule } from './financial/financial.module';
 import { ContractsModule } from './contracts/contracts.module';
 import { FiscalModule } from './fiscal/fiscal.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
-import { CreditCardsModule } from './financial/credit-cards/credit-cards.module';
 
 @Module({
   imports: [
@@ -32,7 +31,6 @@ import { CreditCardsModule } from './financial/credit-cards/credit-cards.module'
       },
     ]),
     SuppliersModule,
-    CreditCardsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -160,15 +160,6 @@ export const routes: Routes = [
     loadComponent: () => import('./financial/reports/reports.page').then(m => m.ReportsPage),
     canActivate: [AuthGuard]
   },
-  {
-    path: 'financial/credit-cards',
-    loadComponent: () => import('./financial/credit-card-list/credit-card-list.page').then(m => m.CreditCardListPage),
-    canActivate: [AuthGuard]
-  },
-  {
-    path: 'financial/credit-cards/:id/review',
-    loadComponent: () => import('./financial/credit-card-review/credit-card-review.page').then(m => m.CreditCardReviewPage),
-    canActivate: [AuthGuard]
-  },
+
 
 ];

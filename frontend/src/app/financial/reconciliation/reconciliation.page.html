@@ -249,11 +249,15 @@
                         *ngIf="selectedAccount?.statusIntegracao === 'CONNECTED'">
                         Importar lançamentos automaticamente
                     </ion-button>
-                    <!-- Hidden File Input -->
+                    <!-- Hidden File Inputs -->
                     <input type="file" #ofxInput hidden (change)="onOfxFileSelected($event)" accept=".ofx,.OFX">
+                    <input type="file" #csvInput hidden (change)="onCsvFileSelected($event)" accept=".csv,.CSV">
 
                     <ion-button fill="clear" class="btn-link" (click)="triggerOfxUpload()">
                         Importar lançamentos via OFX
+                    </ion-button>
+                    <ion-button fill="clear" class="btn-link" (click)="triggerCsvUpload()">
+                        Importar lançamentos via CSV
                     </ion-button>
                 </div>
             </div>

@@ -17,7 +17,11 @@ export class RateioService {
     });
   }
 
-  async saveBatch(lancamentoId: string, dtos: CreateRateioDto[], usuario?: string) {
+  async saveBatch(
+    lancamentoId: string,
+    dtos: CreateRateioDto[],
+    usuario?: string,
+  ) {
     const result = await this.prisma.$transaction(async (tx) => {
       const lancamento = await tx.lancamentoFinanceiro.findUnique({
         where: { id: lancamentoId },
@@ -28,7 +32,9 @@ export class RateioService {
       }
 
       if (dtos.some((r) => r.valor < 0)) {
-        throw new BadRequestException('O valor do rateio não pode ser negativo');
+        throw new BadRequestException(
+          'O valor do rateio não pode ser negativo',
+        );
       }
 
       if (dtos.length > 0) {
@@ -42,7 +48,9 @@ export class RateioService {
         }
       }
 
-      const antigos = await tx.rateioLancamento.findMany({ where: { lancamentoId } });
+      const antigos = await tx.rateioLancamento.findMany({
+        where: { lancamentoId },
+      });
 
       await tx.rateioLancamento.deleteMany({
         where: { lancamentoId },

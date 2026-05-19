@@ -55,7 +55,8 @@ describe('CryptoService', () => {
     });
 
     it('throws InternalServerErrorException if key is wrong length', () => {
-      process.env.ENCRYPTION_MASTER_KEY = Buffer.from('short-key').toString('base64');
+      process.env.ENCRYPTION_MASTER_KEY =
+        Buffer.from('short-key').toString('base64');
       expect(() => new CryptoService()).toThrow(InternalServerErrorException);
     });
   });

@@ -2,7 +2,8 @@ import { decryptSecret, encryptSecret } from './secret-crypto';
 
 describe('secret-crypto', () => {
   beforeAll(() => {
-    process.env.SECRETS_ENCRYPTION_KEY = 'test-key-with-at-least-thirty-two-chars';
+    process.env.SECRETS_ENCRYPTION_KEY =
+      'test-key-with-at-least-thirty-two-chars';
   });
 
   it('encrypts and decrypts with round-trip consistency', () => {

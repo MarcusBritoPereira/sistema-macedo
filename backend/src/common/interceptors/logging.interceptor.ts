@@ -8,7 +8,14 @@ import {
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
-const SENSITIVE_KEYS = ['password', 'senha', 'token', 'secret', 'apiKey', 'clientSecret'];
+const SENSITIVE_KEYS = [
+  'password',
+  'senha',
+  'token',
+  'secret',
+  'apiKey',
+  'clientSecret',
+];
 
 function sanitize(body: any): any {
   if (!body || typeof body !== 'object') return body;
@@ -50,7 +57,9 @@ export class LoggingInterceptor implements NestInterceptor {
           );
           // SLO: Flag slow requests
           if (duration > 2000) {
-            this.logger.warn(`SLOW REQUEST: ${method} ${originalUrl} took ${duration}ms`);
+            this.logger.warn(
+              `SLOW REQUEST: ${method} ${originalUrl} took ${duration}ms`,
+            );
           }
         },
         error: (err) => {

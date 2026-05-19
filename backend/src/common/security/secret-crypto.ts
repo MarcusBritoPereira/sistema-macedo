@@ -15,7 +15,10 @@ function getKey(): Buffer {
 export function encryptSecret(value: string): string {
   const iv = crypto.randomBytes(12);
   const cipher = crypto.createCipheriv(ALGO, getKey(), iv);
-  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  const encrypted = Buffer.concat([
+    cipher.update(value, 'utf8'),
+    cipher.final(),
+  ]);
   const authTag = cipher.getAuthTag();
   return `${iv.toString('base64')}.${authTag.toString('base64')}.${encrypted.toString('base64')}`;
 }

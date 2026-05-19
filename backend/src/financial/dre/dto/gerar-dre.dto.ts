@@ -1,4 +1,10 @@
-import { IsEnum, IsISO8601, IsOptional, IsBoolean, IsString } from 'class-validator';
+import {
+  IsEnum,
+  IsISO8601,
+  IsOptional,
+  IsBoolean,
+  IsString,
+} from 'class-validator';
 
 export enum DRERegime {
   CAIXA = 'caixa',

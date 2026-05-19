@@ -334,6 +334,7 @@ export class ReconciliationPage implements OnInit {
 
 
     @ViewChild('ofxInput') ofxInput: any;
+    @ViewChild('csvInput') csvInput: any;
 
     triggerOfxUpload() {
         if (!this.selectedAccountId) {
@@ -341,6 +342,14 @@ export class ReconciliationPage implements OnInit {
             return;
         }
         this.ofxInput.nativeElement.click();
+    }
+
+    triggerCsvUpload() {
+        if (!this.selectedAccountId) {
+            this.showToast('Selecione uma conta bancária primeiro.', 'warning');
+            return;
+        }
+        this.csvInput.nativeElement.click();
     }
 
     async onOfxFileSelected(event: any) {
@@ -362,6 +371,31 @@ export class ReconciliationPage implements OnInit {
                 loader.dismiss();
                 console.error(err);
                 this.showToast('Erro ao importar OFX.', 'danger');
+                event.target.value = null;
+            }
+        });
+    }
+
+    async onCsvFileSelected(event: any) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const loader = await this.loadingCtrl.create({ message: 'Processando arquivo CSV...' });
+        await loader.present();
+
+        this.bankingIntegrationService.uploadCsv(file, this.selectedAccountId).subscribe({
+            next: (res) => {
+                loader.dismiss();
+                this.showToast(res.message || 'Importação CSV concluída!');
+                this.loadStatements();
+                // Clear input
+                event.target.value = null;
+            },
+            error: (err) => {
+                loader.dismiss();
+                console.error(err);
+                const errorMsg = err.error?.message || 'Erro ao importar CSV.';
+                this.showToast(errorMsg, 'danger');
                 event.target.value = null;
             }
         });

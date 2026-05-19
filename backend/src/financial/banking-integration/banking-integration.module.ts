@@ -10,7 +10,12 @@ import { CryptoService } from '../../shared/crypto.service';
 @Module({
   imports: [ReconciliationModule],
   controllers: [BankingIntegrationController],
-  providers: [BankingIntegrationService, PrismaService, OfxService, CryptoService],
+  providers: [
+    BankingIntegrationService,
+    PrismaService,
+    OfxService,
+    CryptoService,
+  ],
   exports: [BankingIntegrationService],
 })
 export class BankingIntegrationModule {}

@@ -117,7 +117,7 @@ export class BankingIntegrationService {
       if (dto.clientSecret && dto.clientSecret !== '******') {
         updateData.clientSecret = this.cryptoService.encrypt(dto.clientSecret);
       }
-      
+
       if ((dto as any).apiKey && (dto as any).apiKey !== '******') {
         updateData.apiKey = this.cryptoService.encrypt((dto as any).apiKey);
       }
@@ -433,7 +433,7 @@ export class BankingIntegrationService {
       this.tryDecrypt(integration.clientSecret!),
       certContent,
       keyContent,
-      'extrato.read'
+      'extrato.read',
     );
 
     const responseData = await this.fetchInterBalance(
@@ -451,18 +451,25 @@ export class BankingIntegrationService {
     const url = 'https://cdpj.partners.bancointer.com.br/cartoes/v1/cartoes';
     const response = await axios.get(url, {
       httpsAgent: agent,
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
   }
 
-  async fetchInterCreditCardTransactions(token: string, cardId: string, startDate: string, endDate: string, cert: Buffer, key: Buffer) {
+  async fetchInterCreditCardTransactions(
+    token: string,
+    cardId: string,
+    startDate: string,
+    endDate: string,
+    cert: Buffer,
+    key: Buffer,
+  ) {
     const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
     // Using V1 expanded transactions if possible or matching V2
     const url = `https://cdpj.partners.bancointer.com.br/cartoes/v1/cartoes/${cardId}/transacoes?dataInicio=${startDate}&dataFim=${endDate}`;
     const response = await axios.get(url, {
       httpsAgent: agent,
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
   }
@@ -472,7 +479,7 @@ export class BankingIntegrationService {
     clientSecret: string,
     cert: Buffer,
     key: Buffer,
-    scope: string = 'extrato.read'
+    scope: string = 'extrato.read',
   ): Promise<string> {
     const agent = new https.Agent({
       cert: cert,
@@ -494,7 +501,10 @@ export class BankingIntegrationService {
       return response.data.access_token;
     } catch (error) {
       if (error.response) {
-        console.error('Inter Auth Error Response:', JSON.stringify(error.response.data));
+        console.error(
+          'Inter Auth Error Response:',
+          JSON.stringify(error.response.data),
+        );
         throw new BadRequestException(
           `Falha ao autenticar com Banco Inter: ${error.response.data?.title || error.message} (${error.response.status})`,
         );
@@ -514,7 +524,16 @@ export class BankingIntegrationService {
   }
 
   async importOfx(fileBuffer: Buffer, contaId: string) {
-    const ofxContent = fileBuffer.toString('utf-8');
+    // Smart encoding detection (UTF-8 with fatal flag first, fallback to Windows-1252)
+    let ofxContent = '';
+    try {
+      const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+      ofxContent = utf8Decoder.decode(fileBuffer);
+    } catch {
+      const winDecoder = new TextDecoder('windows-1252');
+      ofxContent = winDecoder.decode(fileBuffer);
+    }
+
     const transactions = this.ofxService.parseOfx(ofxContent);
 
     const importLog = await this.prisma.importacaoBancaria.create({
@@ -534,8 +553,354 @@ export class BankingIntegrationService {
       const valor = t.amount;
       const cleanDesc = (t.descricao || '').replace(/\s+/g, ' ').trim();
 
-      const hashDateStr = t.date.toISOString().split('T')[0];
+      let dateObj = t.date;
+      if (!dateObj || isNaN(dateObj.getTime())) {
+        dateObj = new Date();
+      }
+
+      const hashDateStr = dateObj.toISOString().split('T')[0];
       const hash = `OFX-${hashDateStr}-${t.type}-${t.id}-${t.amount}-${cleanDesc.substring(0, 50)}`;
+
+      const exists = await this.prisma.extratoBancario.findUnique({
+        where: { hash },
+      });
+
+      if (!exists) {
+        await this.prisma.extratoBancario.create({
+          data: {
+            data: dateObj,
+            descricao: cleanDesc,
+            valor: Math.abs(valor),
+            tipo: valor < 0 ? 'DEBIT' : 'CREDIT',
+            hash: hash,
+            conciliado: false,
+            importacaoId: importLog.id,
+            fitid: t.id,
+            sourceType: 'OFX',
+          },
+        });
+        importedCount++;
+      } else {
+        duplicatesCount++;
+      }
+    }
+
+    return {
+      success: true,
+      imported: importedCount,
+      duplicates: duplicatesCount,
+      message: `Importação concluída: ${importedCount} novos, ${duplicatesCount} duplicados.`,
+    };
+  }
+
+  async importCsv(fileBuffer: Buffer, contaId: string) {
+    // 1. Decode buffer using smart encoding detection (UTF-8 with fatal flag first, fallback to Windows-1252)
+    let csvContent = '';
+    try {
+      const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+      csvContent = utf8Decoder.decode(fileBuffer);
+    } catch {
+      const winDecoder = new TextDecoder('windows-1252');
+      csvContent = winDecoder.decode(fileBuffer);
+    }
+
+    // 2. Parse lines
+    const rawLines = csvContent.split(/\r?\n/);
+    const cleanedLines = rawLines
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    if (cleanedLines.length === 0) {
+      throw new BadRequestException('O arquivo CSV está vazio.');
+    }
+
+    // 3. Detect Separator (check first line or a line containing semicolons/commas)
+    // Excel in Portuguese uses semicolons
+    let sep = ',';
+    const sampleLine = cleanedLines[0];
+    const semicolonCount = (sampleLine.match(/;/g) || []).length;
+    const commaCount = (sampleLine.match(/,/g) || []).length;
+    if (semicolonCount > commaCount) {
+      sep = ';';
+    }
+
+    // Helper: Split CSV row taking care of quotes
+    const splitCsvLine = (line: string, separator: string): string[] => {
+      const result: string[] = [];
+      let current = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === separator && !inQuotes) {
+          result.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      result.push(current.trim());
+      return result.map((val) => {
+        if (val.startsWith('"') && val.endsWith('"')) {
+          return val.slice(1, -1).trim();
+        }
+        return val;
+      });
+    };
+
+    // Helper: Parse Date (noon UTC to avoid TZ day shift)
+    const parseBrazilianDate = (dateStr: string): Date | null => {
+      if (!dateStr) return null;
+      const cleaned = dateStr.trim();
+      if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+        const d = new Date(`${cleaned}T12:00:00Z`);
+        return isNaN(d.getTime()) ? null : d;
+      }
+      const match = cleaned.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+      if (match) {
+        const day = parseInt(match[1], 10);
+        const month = parseInt(match[2], 10) - 1;
+        const year = parseInt(match[3], 10);
+        return new Date(Date.UTC(year, month, day, 12, 0, 0));
+      }
+      const matchShort = cleaned.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2})$/);
+      if (matchShort) {
+        const day = parseInt(matchShort[1], 10);
+        const month = parseInt(matchShort[2], 10) - 1;
+        let year = parseInt(matchShort[3], 10);
+        year += year < 50 ? 2000 : 1900;
+        return new Date(Date.UTC(year, month, day, 12, 0, 0));
+      }
+      const parsed = new Date(cleaned);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    // Helper: Parse Value
+    const parseBrazilianValue = (valStr: string): number | null => {
+      if (!valStr) return null;
+      let cleaned = valStr.trim().replace('R$', '').replace(/\s+/g, '');
+      if (cleaned === '' || cleaned === '-') return null;
+      let isNegative = false;
+      if (cleaned.endsWith('-')) {
+        isNegative = true;
+        cleaned = cleaned.slice(0, -1);
+      }
+      if (cleaned.startsWith('-')) {
+        isNegative = true;
+        cleaned = cleaned.slice(1);
+      }
+      if (cleaned.startsWith('+')) {
+        cleaned = cleaned.slice(1);
+      }
+      const hasComma = cleaned.includes(',');
+      const hasDot = cleaned.includes('.');
+      if (hasComma && hasDot) {
+        if (cleaned.indexOf('.') < cleaned.indexOf(',')) {
+          cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else {
+          cleaned = cleaned.replace(/,/g, '');
+        }
+      } else if (hasComma) {
+        cleaned = cleaned.replace(',', '.');
+      }
+      const numValue = parseFloat(cleaned);
+      if (isNaN(numValue)) return null;
+      return isNegative ? -numValue : numValue;
+    };
+
+    // 4. Find the header row dynamically
+    let headerIdx = -1;
+    let colMap = {
+      dateIdx: -1,
+      descIdx: -1,
+      valueIdx: -1,
+      typeIdx: -1,
+      creditIdx: -1,
+      debitIdx: -1,
+    };
+
+    for (let i = 0; i < cleanedLines.length; i++) {
+      const cols = splitCsvLine(cleanedLines[i], sep);
+      const normalizedCols = cols.map((c) =>
+        c
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '')
+          .trim(),
+      );
+
+      const hasDate = normalizedCols.some(
+        (c) =>
+          c.includes('data') || c.includes('date') || c === 'dt' || c === 'dt.',
+      );
+      const hasValue = normalizedCols.some(
+        (c) =>
+          c === 'valor' ||
+          c === 'value' ||
+          c === 'amount' ||
+          c.includes('valor (') ||
+          c === 'val' ||
+          c.includes('lancamento') ||
+          c === 'entrada' ||
+          c === 'saida' ||
+          c.includes('credito') ||
+          c.includes('debito'),
+      );
+
+      if (hasDate && hasValue) {
+        headerIdx = i;
+        for (let j = 0; j < normalizedCols.length; j++) {
+          const col = normalizedCols[j];
+          if (
+            col.includes('data') ||
+            col.includes('date') ||
+            col === 'dt' ||
+            col === 'dt.'
+          ) {
+            colMap.dateIdx = j;
+          } else if (
+            col.includes('descricao') ||
+            col.includes('historico') ||
+            col.includes('detalhe') ||
+            col.includes('description') ||
+            col.includes('motivo')
+          ) {
+            colMap.descIdx = j;
+          } else if (
+            col === 'valor' ||
+            col === 'value' ||
+            col === 'amount' ||
+            col.includes('valor (') ||
+            col === 'val' ||
+            col.includes('lancamento')
+          ) {
+            colMap.valueIdx = j;
+          } else if (
+            col === 'tipo' ||
+            col === 'type' ||
+            col === 'c/d' ||
+            col.includes('operacao')
+          ) {
+            colMap.typeIdx = j;
+          } else if (col === 'entrada' || col.includes('credito')) {
+            colMap.creditIdx = j;
+          } else if (col === 'saida' || col.includes('debito')) {
+            colMap.debitIdx = j;
+          }
+        }
+        break;
+      }
+    }
+
+    if (headerIdx === -1) {
+      colMap = {
+        dateIdx: 0,
+        descIdx: 1,
+        valueIdx: 2,
+        typeIdx: 3,
+        creditIdx: -1,
+        debitIdx: -1,
+      };
+      headerIdx = -1;
+    }
+
+    const startRowIdx = headerIdx + 1;
+    const parsedTransactions: Array<{
+      date: Date;
+      description: string;
+      value: number;
+      type: 'DEBIT' | 'CREDIT';
+    }> = [];
+
+    for (let i = startRowIdx; i < cleanedLines.length; i++) {
+      const cols = splitCsvLine(cleanedLines[i], sep);
+      if (
+        cols.length <= Math.max(colMap.dateIdx, colMap.descIdx, colMap.valueIdx)
+      ) {
+        continue;
+      }
+
+      const rawDate = cols[colMap.dateIdx];
+      const parsedDate = parseBrazilianDate(rawDate);
+      if (!parsedDate) continue;
+
+      const description =
+        colMap.descIdx !== -1 ? cols[colMap.descIdx] : 'Lançamento CSV';
+
+      let value = 0;
+      let isDebit = false;
+
+      if (colMap.creditIdx !== -1 && colMap.debitIdx !== -1) {
+        const credVal = parseBrazilianValue(cols[colMap.creditIdx]);
+        const debVal = parseBrazilianValue(cols[colMap.debitIdx]);
+        if (credVal !== null && credVal !== 0) {
+          value = Math.abs(credVal);
+          isDebit = false;
+        } else if (debVal !== null && debVal !== 0) {
+          value = Math.abs(debVal);
+          isDebit = true;
+        } else {
+          continue;
+        }
+      } else {
+        const val = parseBrazilianValue(cols[colMap.valueIdx]);
+        if (val === null) continue;
+        value = val;
+
+        if (colMap.typeIdx !== -1) {
+          const typeStr = cols[colMap.typeIdx].toUpperCase().trim();
+          if (
+            typeStr.startsWith('D') ||
+            typeStr.includes('SAIDA') ||
+            typeStr.includes('DEBIT')
+          ) {
+            isDebit = true;
+          } else if (
+            typeStr.startsWith('C') ||
+            typeStr.includes('ENTRADA') ||
+            typeStr.includes('CREDIT')
+          ) {
+            isDebit = false;
+          } else {
+            isDebit = value < 0;
+          }
+        } else {
+          isDebit = value < 0;
+        }
+      }
+
+      parsedTransactions.push({
+        date: parsedDate,
+        description: description || 'Lançamento Sem Descrição',
+        value: Math.abs(value),
+        type: isDebit ? 'DEBIT' : 'CREDIT',
+      });
+    }
+
+    if (parsedTransactions.length === 0) {
+      throw new BadRequestException(
+        'Nenhuma transação válida foi encontrada no arquivo CSV.',
+      );
+    }
+
+    const importLog = await this.prisma.importacaoBancaria.create({
+      data: {
+        filename: `Upload CSV ${new Date().toISOString()}`,
+        fileType: 'CSV',
+        contaBancariaId: contaId,
+        status: 'COMPLETED',
+      },
+    });
+
+    let importedCount = 0;
+    let duplicatesCount = 0;
+
+    for (const t of parsedTransactions) {
+      const cleanDesc = t.description.replace(/\s+/g, ' ').trim();
+      const hashDateStr = t.date.toISOString().split('T')[0];
+      const signVal = t.type === 'DEBIT' ? -t.value : t.value;
+      const hash = `CSV-${hashDateStr}-${t.type}-${signVal}-${cleanDesc.substring(0, 50)}`;
 
       const exists = await this.prisma.extratoBancario.findUnique({
         where: { hash },
@@ -546,11 +911,12 @@ export class BankingIntegrationService {
           data: {
             data: t.date,
             descricao: cleanDesc,
-            valor: Math.abs(valor),
-            tipo: valor < 0 ? 'DEBIT' : 'CREDIT',
+            valor: t.value,
+            tipo: t.type as any,
             hash: hash,
             conciliado: false,
             importacaoId: importLog.id,
+            sourceType: 'CSV',
           },
         });
         importedCount++;

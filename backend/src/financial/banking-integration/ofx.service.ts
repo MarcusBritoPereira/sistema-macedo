@@ -5,23 +5,35 @@ export class OfxService {
   constructor() {}
 
   parseOfx(ofxContent: string): any[] {
-    // Simple manual parsing or use library if available.
-    // For robustness without deps, regex is often used for OFX headers, but body is cleaning XML.
-    // OFX is often SGML (no closing tags) or XML.
-    // Requested logic: Read <MEMO> or <NAME> for beneficiary.
-
     const transactions: any[] = [];
-    const lines = ofxContent.split('\n');
+    
+    // Normalize line endings to facilitate parsing
+    const normalizedContent = ofxContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = normalizedContent.split('\n');
     let currentTx: any = null;
     let insideTx = false;
 
     for (const line of lines) {
       const trimmed = line.trim();
-      if (trimmed.startsWith('<STMTTRN>')) {
+      if (!trimmed) continue;
+
+      const upperTrimmed = trimmed.toUpperCase();
+
+      if (upperTrimmed.includes('<STMTTRN>')) {
+        // If there's an existing currentTx, push it first (implicit close in SGML)
+        if (currentTx) {
+          if (!currentTx.id) {
+            currentTx.id = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          }
+          transactions.push(currentTx);
+        }
         currentTx = {};
         insideTx = true;
-      } else if (trimmed.startsWith('</STMTTRN>')) {
-        if (currentTx && currentTx.id) {
+      } else if (upperTrimmed.includes('</STMTTRN>')) {
+        if (currentTx) {
+          if (!currentTx.id) {
+            currentTx.id = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          }
           transactions.push(currentTx);
         }
         insideTx = false;
@@ -39,20 +51,51 @@ export class OfxService {
       }
     }
 
+    // Push the last one if file ended without closing tag
+    if (currentTx) {
+      if (!currentTx.id) {
+        currentTx.id = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      }
+      transactions.push(currentTx);
+    }
+
     return transactions.map((t) => {
       // Parse Amount
-      const amount = t.rawAmount
-        ? parseFloat(t.rawAmount.replace(',', '.'))
-        : 0;
+      let amount = 0;
+      if (t.rawAmount) {
+        let cleanedAmt = t.rawAmount.trim();
+        // Handle trailing signs
+        if (cleanedAmt.endsWith('-')) {
+          cleanedAmt = '-' + cleanedAmt.slice(0, -1);
+        } else if (cleanedAmt.endsWith('+')) {
+          cleanedAmt = cleanedAmt.slice(0, -1);
+        }
+        
+        // Handle decimals and thousands separator
+        if (cleanedAmt.includes(',') && cleanedAmt.includes('.')) {
+          if (cleanedAmt.indexOf(',') > cleanedAmt.indexOf('.')) {
+            cleanedAmt = cleanedAmt.replace(/\,/g, '');
+          } else {
+            cleanedAmt = cleanedAmt.replace(/\./g, '').replace(',', '.');
+          }
+        } else if (cleanedAmt.includes(',')) {
+          cleanedAmt = cleanedAmt.replace(',', '.');
+        }
+        amount = parseFloat(cleanedAmt);
+        if (isNaN(amount)) amount = 0;
+      }
 
       // Parse Date (OFX format: YYYYMMDDHHMMSS[-TZ] or YYYYMMDD)
       let date = new Date();
-      if (t.rawDate && t.rawDate.length >= 8) {
-        const y = parseInt(t.rawDate.substring(0, 4));
-        const m = parseInt(t.rawDate.substring(4, 6)) - 1;
-        const d = parseInt(t.rawDate.substring(6, 8));
-        // Set to noon to avoid timezone shifting issues
-        date = new Date(Date.UTC(y, m, d, 12, 0, 0));
+      if (t.rawDate) {
+        const cleanedDate = t.rawDate.replace(/\D/g, ''); // strip non-digits
+        if (cleanedDate.length >= 8) {
+          const y = parseInt(cleanedDate.substring(0, 4), 10);
+          const m = parseInt(cleanedDate.substring(4, 6), 10) - 1;
+          const d = parseInt(cleanedDate.substring(6, 8), 10);
+          // Set to noon to avoid timezone shifting issues
+          date = new Date(Date.UTC(y, m, d, 12, 0, 0));
+        }
       }
 
       const cleanDesc = this.cleanupDescription(
@@ -62,11 +105,15 @@ export class OfxService {
         t.payeeid,
       );
 
+      const isCredit = (t.type || '').toUpperCase() === 'CREDIT' || 
+                       (t.type || '').toUpperCase() === 'DEP' || 
+                       amount >= 0;
+
       return {
         id: t.id,
         date: date,
         amount: amount,
-        type: (t.type || '').toUpperCase(),
+        type: isCredit ? 'CREDIT' : 'DEBIT',
         descricao: cleanDesc,
         rawMemo: t.memo || t.payee || '',
         rawName: t.name || t.payeeid || '',
@@ -136,6 +183,8 @@ export class OfxService {
       'DEB AUT',
       'TRANSFERENCIA PARA',
       'TRANSF. PARA',
+      'TRANSFERENCIA RECEBIDA',
+      'TRANSF RECEBIDA',
       'LIQUIDACAO COBRANCA',
       'LIQ COBRANCA',
       'TITULO BAIXADO',
@@ -145,6 +194,10 @@ export class OfxService {
       'PIX QRD',
       'PIX TRANSF',
       'PIX - ',
+      'PAGTO ',
+      'PAGAMENTO ',
+      'PGTO ',
+      'PAG ',
     ];
 
     let candidate = n;
@@ -172,7 +225,11 @@ export class OfxService {
     }
 
     // 2. Cleaning the chosen candidate
-    let cleaned = candidate.toUpperCase();
+    let cleaned = candidate
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .trim();
 
     // Remove known prefixes
     for (const prefix of prefixesToRemove) {
@@ -182,8 +239,10 @@ export class OfxService {
       }
     }
 
-    // Remove leading non-alphanumeric chars (e.g. "- ", ": ", "000123 ")
-    cleaned = cleaned.replace(/^[\d\-\.:\s]+/, '');
+    // Remove leading prepositions (DE, DO, DA, PARA, EM, A) and non-alphanumeric noise
+    cleaned = cleaned.replace(/^(DE|DO|DA|PARA|EM|A)\s+/g, '').trim();
+    cleaned = cleaned.replace(/^[\d\-\.:\s]+/g, '').trim();
+    cleaned = cleaned.replace(/^(DE|DO|DA|PARA|EM|A)\s+/g, '').trim(); // run once more just in case
 
     // 3. Fallback: If we stripped perfectly good info or it became empty, combine
     if (cleaned.length < 3) {
@@ -200,8 +259,7 @@ export class OfxService {
     target: any,
     targetKey: string,
   ) {
-    // Matches <TAG>Value or <TAG>Value</TAG>
-    const regex = new RegExp(`<${tag}>(.*?)($|</${tag}>)`);
+    const regex = new RegExp(`<${tag}>([^<\\n\\r]*)`, 'i');
     const match = line.match(regex);
     if (match) {
       target[targetKey] = match[1].trim();

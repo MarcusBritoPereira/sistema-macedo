@@ -1,18 +1,26 @@
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from './permissions.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  constructor(private reflector: Reflector, private prisma: PrismaService) {}
+  constructor(
+    private reflector: Reflector,
+    private prisma: PrismaService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(PERMISSIONS_KEY, [
-      context.getHandler(),
-      context.getClass(),
-    ]);
-    
+    const requiredPermissions = this.reflector.getAllAndOverride<string[]>(
+      PERMISSIONS_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
     // If no permissions are explicitly required, we allow (or default to RolesGuard).
     // Usually it's better to explicitly secure endpoints.
     if (!requiredPermissions) {
@@ -31,11 +39,13 @@ export class PermissionsGuard implements CanActivate {
     });
 
     if (!dbUser || !dbUser.perfil || !dbUser.perfil.permissoes) {
-      throw new ForbiddenException('Acesso negado. Nenhuma permissão atribuída.');
+      throw new ForbiddenException(
+        'Acesso negado. Nenhuma permissão atribuída.',
+      );
     }
 
-    const userPermissions: string[] = Array.isArray(dbUser.perfil.permissoes) 
-      ? dbUser.perfil.permissoes as string[] 
+    const userPermissions: string[] = Array.isArray(dbUser.perfil.permissoes)
+      ? (dbUser.perfil.permissoes as string[])
       : [];
 
     const hasPermission = requiredPermissions.every((permission) =>
@@ -43,7 +53,9 @@ export class PermissionsGuard implements CanActivate {
     );
 
     if (!hasPermission) {
-      throw new ForbiddenException('Você não tem as permissões necessárias para acessar este recurso');
+      throw new ForbiddenException(
+        'Você não tem as permissões necessárias para acessar este recurso',
+      );
     }
 
     return true;

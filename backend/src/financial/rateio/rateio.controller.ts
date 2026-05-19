@@ -22,7 +22,11 @@ export class RateioController {
   }
 
   @Post()
-  saveBatch(@Param('id') id: string, @Body() body: CreateRateiosBatchDto, @Req() req: any) {
+  saveBatch(
+    @Param('id') id: string,
+    @Body() body: CreateRateiosBatchDto,
+    @Req() req: any,
+  ) {
     return this.rateioService.saveBatch(id, body.rateios, req.user?.id);
   }
 }

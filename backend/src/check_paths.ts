@@ -23,13 +23,17 @@ async function main() {
     for (const oldName of oldNames) {
       if (integration.crtFile && integration.crtFile.includes(oldName)) {
         newCrtFile = integration.crtFile.replace(oldName, newProjectName);
-        console.log(`Updating CRT path: ${integration.crtFile} -> ${newCrtFile}`);
+        console.log(
+          `Updating CRT path: ${integration.crtFile} -> ${newCrtFile}`,
+        );
         updated = true;
       }
 
       if (integration.keyFile && integration.keyFile.includes(oldName)) {
         newKeyFile = integration.keyFile.replace(oldName, newProjectName);
-        console.log(`Updating KEY path: ${integration.keyFile} -> ${newKeyFile}`);
+        console.log(
+          `Updating KEY path: ${integration.keyFile} -> ${newKeyFile}`,
+        );
         updated = true;
       }
     }

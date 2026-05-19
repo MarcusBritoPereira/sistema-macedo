@@ -406,7 +406,7 @@ export class ReportsService {
     let totalSaidas = 0;
 
     for (const t of transactions) {
-      let val = Number(t.valor);
+      const val = Number(t.valor);
       if (t.tipo === 'DESPESA' || val < 0) {
         totalSaidas += Math.abs(val);
       } else {
@@ -419,16 +419,34 @@ export class ReportsService {
     return {
       summary: null,
       details: [
-        { label: 'Entradas (Receitas)', value: totalEntradas, level: 0, type: 'total', highlight: true },
-        { label: 'Saídas (Despesas)', value: -totalSaidas, level: 0, type: 'total', highlight: true },
-        { label: 'Saldo do Período', value: saldoPeriodo, level: 0, type: 'total', highlight: true },
+        {
+          label: 'Entradas (Receitas)',
+          value: totalEntradas,
+          level: 0,
+          type: 'total',
+          highlight: true,
+        },
+        {
+          label: 'Saídas (Despesas)',
+          value: -totalSaidas,
+          level: 0,
+          type: 'total',
+          highlight: true,
+        },
+        {
+          label: 'Saldo do Período',
+          value: saldoPeriodo,
+          level: 0,
+          type: 'total',
+          highlight: true,
+        },
       ],
     };
   }
 
   private async generateBalanceReport(filters: any) {
     const transactions = await this.prisma.lancamentoFinanceiro.findMany({
-      where: { status: { in: ['REALIZADO', 'CONCILIADO'] } } // simplified balance up to today
+      where: { status: { in: ['REALIZADO', 'CONCILIADO'] } }, // simplified balance up to today
     });
 
     let ativo = 0;
@@ -443,10 +461,26 @@ export class ReportsService {
     return {
       summary: null,
       details: [
-        { label: 'Ativo (Entradas Acumuladas)', value: ativo, level: 0, type: 'total' },
-        { label: 'Passivo (Saídas Acumuladas)', value: passivo, level: 0, type: 'total' },
-        { label: 'Patrimônio Líquido Estimado', value: ativo - passivo, level: 0, type: 'total', highlight: true }
-      ]
+        {
+          label: 'Ativo (Entradas Acumuladas)',
+          value: ativo,
+          level: 0,
+          type: 'total',
+        },
+        {
+          label: 'Passivo (Saídas Acumuladas)',
+          value: passivo,
+          level: 0,
+          type: 'total',
+        },
+        {
+          label: 'Patrimônio Líquido Estimado',
+          value: ativo - passivo,
+          level: 0,
+          type: 'total',
+          highlight: true,
+        },
+      ],
     };
   }
 
@@ -454,11 +488,13 @@ export class ReportsService {
     const now = new Date();
     const transactions = await this.prisma.lancamentoFinanceiro.findMany({
       where: { status: 'PREVISTO' },
-      include: { categoria: true }
+      include: { categoria: true },
     });
 
-    let vencidosPag = 0; let aVencerPag = 0;
-    let vencidosRec = 0; let aVencerRec = 0;
+    let vencidosPag = 0;
+    let aVencerPag = 0;
+    let vencidosRec = 0;
+    let aVencerRec = 0;
 
     for (const t of transactions) {
       if (!t.dataVencimento) continue;
@@ -466,40 +502,66 @@ export class ReportsService {
       const val = Math.abs(Number(t.valor));
 
       if (t.tipo === 'DESPESA') {
-        if (isOverdue) vencidosPag += val; else aVencerPag += val;
+        if (isOverdue) vencidosPag += val;
+        else aVencerPag += val;
       } else {
-        if (isOverdue) vencidosRec += val; else aVencerRec += val;
+        if (isOverdue) vencidosRec += val;
+        else aVencerRec += val;
       }
     }
 
     return {
       summary: null,
       details: [
-        { label: 'Contas a Receber', value: vencidosRec + aVencerRec, level: 0, type: 'header' },
+        {
+          label: 'Contas a Receber',
+          value: vencidosRec + aVencerRec,
+          level: 0,
+          type: 'header',
+        },
         { label: 'Vencidos', value: vencidosRec, level: 1 },
         { label: 'A Vencer', value: aVencerRec, level: 1 },
-        { label: 'Contas a Pagar', value: vencidosPag + aVencerPag, level: 0, type: 'header' },
+        {
+          label: 'Contas a Pagar',
+          value: vencidosPag + aVencerPag,
+          level: 0,
+          type: 'header',
+        },
         { label: 'Vencidos', value: vencidosPag, level: 1 },
         { label: 'A Vencer', value: aVencerPag, level: 1 },
-        { label: 'Exposição Líquida Curto Prazo', value: (vencidosRec + aVencerRec) - (vencidosPag + aVencerPag), level: 0, type: 'total', highlight: true }
-      ]
+        {
+          label: 'Exposição Líquida Curto Prazo',
+          value: vencidosRec + aVencerRec - (vencidosPag + aVencerPag),
+          level: 0,
+          type: 'total',
+          highlight: true,
+        },
+      ],
     };
   }
 
   private async generateBankPositionReport(filters: any) {
     const accounts = await this.prisma.contaBancaria.findMany();
     const transactions = await this.prisma.lancamentoFinanceiro.findMany({
-      where: { status: { in: ['REALIZADO', 'CONCILIADO'] }, contaBancariaId: { not: null } }
+      where: {
+        status: { in: ['REALIZADO', 'CONCILIADO'] },
+        contaBancariaId: { not: null },
+      },
     });
-    
+
     let total = 0;
     const details: any[] = [];
 
-    details.push({ label: 'Saldos em Conta', value: 0, level: 0, type: 'header' });
+    details.push({
+      label: 'Saldos em Conta',
+      value: 0,
+      level: 0,
+      type: 'header',
+    });
 
     for (const acc of accounts) {
       let b = Number(acc.saldoInicial || 0);
-      const accTrans = transactions.filter(t => t.contaBancariaId === acc.id);
+      const accTrans = transactions.filter((t) => t.contaBancariaId === acc.id);
       for (const t of accTrans) {
         if (t.tipo === 'RECEITA') b += Math.abs(Number(t.valor));
         if (t.tipo === 'DESPESA') b -= Math.abs(Number(t.valor));
@@ -508,7 +570,13 @@ export class ReportsService {
       details.push({ label: acc.nome, value: b, level: 1 });
     }
 
-    details.push({ label: 'Total Disponível', value: total, level: 0, type: 'total', highlight: true });
+    details.push({
+      label: 'Total Disponível',
+      value: total,
+      level: 0,
+      type: 'total',
+      highlight: true,
+    });
 
     return { summary: null, details };
   }
@@ -518,25 +586,48 @@ export class ReportsService {
     return {
       summary: null,
       details: [
-        { label: 'Orçado x Realizado (Demonstração Simples)', value: 0, level: 0, type: 'header' },
-        { label: 'O módulo de orçamentos precisará ser configurado para cruzar estimativas precisas.', value: 0, level: 1 },
-        { label: 'Neste momento as despesas estão guiadas pelos lançamentos de fluxo contínuo.', value: 0, level: 1 }
-      ]
+        {
+          label: 'Orçado x Realizado (Demonstração Simples)',
+          value: 0,
+          level: 0,
+          type: 'header',
+        },
+        {
+          label:
+            'O módulo de orçamentos precisará ser configurado para cruzar estimativas precisas.',
+          value: 0,
+          level: 1,
+        },
+        {
+          label:
+            'Neste momento as despesas estão guiadas pelos lançamentos de fluxo contínuo.',
+          value: 0,
+          level: 1,
+        },
+      ],
     };
   }
 
   private async generateCostCentersReport(filters: any) {
-    let startDate: Date; let endDate: Date;
+    let startDate: Date;
+    let endDate: Date;
     if (filters.startDate && filters.endDate) {
-      startDate = new Date(filters.startDate); endDate = new Date(filters.endDate);
-      startDate.setHours(0,0,0,0); endDate.setHours(23,59,59,999);
+      startDate = new Date(filters.startDate);
+      endDate = new Date(filters.endDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
     } else {
-      const n = new Date(); startDate = new Date(n.getFullYear(), n.getMonth(), 1); endDate = new Date(n.getFullYear(), n.getMonth() + 1, 0);
+      const n = new Date();
+      startDate = new Date(n.getFullYear(), n.getMonth(), 1);
+      endDate = new Date(n.getFullYear(), n.getMonth() + 1, 0);
     }
 
     const centers = await this.prisma.centroCusto.findMany();
     const transactions = await this.prisma.lancamentoFinanceiro.findMany({
-      where: { dataVencimento: { gte: startDate, lte: endDate }, status: { in: ['REALIZADO', 'CONCILIADO'] } }
+      where: {
+        dataVencimento: { gte: startDate, lte: endDate },
+        status: { in: ['REALIZADO', 'CONCILIADO'] },
+      },
     });
 
     const aggr: Record<string, number> = {};
@@ -554,21 +645,36 @@ export class ReportsService {
     }
 
     const details: any[] = [];
-    details.push({ label: 'Despesas por Centro de Custo', value: 0, level: 0, type: 'header' });
+    details.push({
+      label: 'Despesas por Centro de Custo',
+      value: 0,
+      level: 0,
+      type: 'header',
+    });
 
     let total = 0;
     for (const c of centers) {
       if (aggr[c.id] > 0) {
-         details.push({ label: c.nome, value: aggr[c.id], level: 1 });
-         total += aggr[c.id];
+        details.push({ label: c.nome, value: aggr[c.id], level: 1 });
+        total += aggr[c.id];
       }
     }
     if (semCentro > 0) {
-      details.push({ label: 'Sem Centro Específico', value: semCentro, level: 1 });
+      details.push({
+        label: 'Sem Centro Específico',
+        value: semCentro,
+        level: 1,
+      });
       total += semCentro;
     }
 
-    details.push({ label: 'Total Alocado', value: total, level: 0, type: 'total', highlight: true });
+    details.push({
+      label: 'Total Alocado',
+      value: total,
+      level: 0,
+      type: 'total',
+      highlight: true,
+    });
 
     return { summary: null, details };
   }
@@ -577,10 +683,13 @@ export class ReportsService {
     // Just finding expenses matching IMPOSTOS
     const transactions = await this.prisma.lancamentoFinanceiro.findMany({
       where: { status: { in: ['REALIZADO', 'CONCILIADO'] } },
-      include: { categoria: true }
+      include: { categoria: true },
     });
 
-    let federal = 0; let estadual = 0; let municipal = 0; let outros = 0;
+    let federal = 0;
+    let estadual = 0;
+    let municipal = 0;
+    let outros = 0;
 
     for (const t of transactions) {
       if (t.tipo !== 'DESPESA') continue;
@@ -589,7 +698,13 @@ export class ReportsService {
         const val = Math.abs(Number(t.valor));
         if (n.includes('icms')) estadual += val;
         else if (n.includes('iss')) municipal += val;
-        else if (n.includes('irpj') || n.includes('csll') || n.includes('pis') || n.includes('cofins')) federal += val;
+        else if (
+          n.includes('irpj') ||
+          n.includes('csll') ||
+          n.includes('pis') ||
+          n.includes('cofins')
+        )
+          federal += val;
         else outros += val;
       }
     }
@@ -600,12 +715,22 @@ export class ReportsService {
       summary: null,
       details: [
         { label: 'Carga Tributária', value: total, level: 0, type: 'header' },
-        { label: 'Federais (IRPJ, CSLL, PIS, COFINS)', value: federal, level: 1 },
+        {
+          label: 'Federais (IRPJ, CSLL, PIS, COFINS)',
+          value: federal,
+          level: 1,
+        },
         { label: 'Estaduais (ICMS)', value: estadual, level: 1 },
         { label: 'Municipais (ISS)', value: municipal, level: 1 },
         { label: 'Outros Encargos', value: outros, level: 1 },
-        { label: 'Total de Impostos Pagos', value: total, level: 0, type: 'total', highlight: true }
-      ]
+        {
+          label: 'Total de Impostos Pagos',
+          value: total,
+          level: 0,
+          type: 'total',
+          highlight: true,
+        },
+      ],
     };
   }
 }

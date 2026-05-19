@@ -42,4 +42,11 @@ export class BankingIntegrationService {
         formData.append('contaId', contaBancariaId);
         return this.api.post('financial/banking/upload-ofx', formData);
     }
+
+    uploadCsv(file: File, contaBancariaId: string): Observable<any> {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('contaId', contaBancariaId);
+        return this.api.post('financial/banking/upload-csv', formData);
+    }
 }

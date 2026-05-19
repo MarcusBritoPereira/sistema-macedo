@@ -22,19 +22,31 @@ export class DreService {
 
   async gerar(dto: GerarDreDto) {
     const cacheKey = this.getCacheKey('principal', dto);
-    const cached = await (this.prisma as any).dreCache.findUnique({ where: { chave: cacheKey } });
+    const cached = await (this.prisma as any).dreCache.findUnique({
+      where: { chave: cacheKey },
+    });
     if (cached) {
       return cached.payload;
     }
 
-    const { regime, dataInicio, dataFim, granularidade, centroCustoId, contaBancariaId } = dto;
+    const {
+      regime,
+      dataInicio,
+      dataFim,
+      granularidade,
+      centroCustoId,
+      contaBancariaId,
+    } = dto;
     console.time(`DRE_Generation:${regime}:${granularidade}`);
-    console.log(`[DRE] Iniciando geração: ${regime} ${granularidade} [${dataInicio} - ${dataFim}]`);
-    
+    console.log(
+      `[DRE] Iniciando geração: ${regime} ${granularidade} [${dataInicio} - ${dataFim}]`,
+    );
+
     const start = startOfDay(new Date(dataInicio));
     const end = endOfDay(new Date(dataFim));
 
-    const dateField = regime === DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
+    const dateField =
+      regime === DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
 
     const rateiosRaw = await this.prisma.rateioLancamento.findMany({
       where: {
@@ -44,7 +56,8 @@ export class DreService {
             gte: start,
             lte: end,
           },
-          status: regime === DRERegime.CAIXA ? 'REALIZADO' : { not: 'CANCELADO' },
+          status:
+            regime === DRERegime.CAIXA ? 'REALIZADO' : { not: 'CANCELADO' },
           ...(contaBancariaId ? { contaBancariaId } : {}),
         },
       },
@@ -53,37 +66,40 @@ export class DreService {
       },
     });
 
-    const lancamentosSemRateio = await this.prisma.lancamentoFinanceiro.findMany({
-      where: {
-        [dateField]: {
-          gte: start,
-          lte: end,
+    const lancamentosSemRateio =
+      await this.prisma.lancamentoFinanceiro.findMany({
+        where: {
+          [dateField]: {
+            gte: start,
+            lte: end,
+          },
+          status:
+            regime === DRERegime.CAIXA ? 'REALIZADO' : { not: 'CANCELADO' },
+          rateios: { none: {} },
+          ...(centroCustoId ? { centroCustoId } : {}),
+          ...(contaBancariaId ? { contaBancariaId } : {}),
         },
-        status: regime === DRERegime.CAIXA ? 'REALIZADO' : { not: 'CANCELADO' },
-        rateios: { none: {} },
-        ...(centroCustoId ? { centroCustoId } : {}),
-        ...(contaBancariaId ? { contaBancariaId } : {}),
-      },
-      include: {
-        categoria: true,
-      },
-    });
+        include: {
+          categoria: true,
+        },
+      });
 
     const classificationKeys = Object.values(ClassificacaoDRE);
     const normalizedData = [
       ...rateiosRaw.map((r: any) => ({
         valor: Number(r.valor),
-        categoria: (classificationKeys.includes(r.categoria) ? r.categoria : 'OUTROS') as ClassificacaoDRE,
+        categoria: (classificationKeys.includes(r.categoria)
+          ? r.categoria
+          : 'OUTROS') as ClassificacaoDRE,
         subcategoria: r.subcategoria || 'Outros',
         data: r.lancamento[dateField],
       })),
       ...lancamentosSemRateio.map((l: any) => ({
         valor: Number(l.valor),
-        categoria: (
-          l.categoria?.classificacao && classificationKeys.includes(l.categoria.classificacao)
-            ? l.categoria.classificacao
-            : 'OUTROS'
-        ) as ClassificacaoDRE,
+        categoria: (l.categoria?.classificacao &&
+        classificationKeys.includes(l.categoria.classificacao)
+          ? l.categoria.classificacao
+          : 'OUTROS') as ClassificacaoDRE,
         subcategoria: l.categoria?.nome || 'Não categorizado',
         data: l[dateField],
       })),
@@ -98,7 +114,8 @@ export class DreService {
 
       if (!result.data[cat]) continue;
 
-      result.data[cat].periodos[pKey] = (result.data[cat].periodos[pKey] || 0) + item.valor;
+      result.data[cat].periodos[pKey] =
+        (result.data[cat].periodos[pKey] || 0) + item.valor;
       result.data[cat].total += item.valor;
       result.data[cat].detalhes.quantidade_lancamentos += 1;
 
@@ -108,7 +125,8 @@ export class DreService {
           periodos: this.initializePeriodValues(periodos),
         };
       }
-      result.data[cat].subcategorias[item.subcategoria].periodos[pKey] += item.valor;
+      result.data[cat].subcategorias[item.subcategoria].periodos[pKey] +=
+        item.valor;
       result.data[cat].subcategorias[item.subcategoria].total += item.valor;
     }
 
@@ -125,14 +143,17 @@ export class DreService {
 
   async obterDetalhesDRE(dto: DREDetalhesDto) {
     const cacheKey = this.getCacheKey('detalhes', dto);
-    const cached = await (this.prisma as any).dreCache.findUnique({ where: { chave: cacheKey } });
+    const cached = await (this.prisma as any).dreCache.findUnique({
+      where: { chave: cacheKey },
+    });
     if (cached) {
       return cached.payload;
     }
 
     const start = startOfDay(new Date(dto.dataInicio));
     const end = endOfDay(new Date(dto.dataFim));
-    const dateField = dto.regime === DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
+    const dateField =
+      dto.regime === DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
 
     const where: any = {
       categoria: dto.categoria,
@@ -143,7 +164,9 @@ export class DreService {
           gte: start,
           lte: end,
         },
-        ...(dto.contaBancariaId ? { contaBancariaId: dto.contaBancariaId } : {}),
+        ...(dto.contaBancariaId
+          ? { contaBancariaId: dto.contaBancariaId }
+          : {}),
       },
     };
 
@@ -169,7 +192,10 @@ export class DreService {
       data: item.lancamento[dateField] as Date,
       descricao: item.lancamento.descricao,
       valor: Number(item.valor),
-      cliente: item.lancamento.cliente?.nomeFantasia || item.lancamento.cliente?.razaoSocial || null,
+      cliente:
+        item.lancamento.cliente?.nomeFantasia ||
+        item.lancamento.cliente?.razaoSocial ||
+        null,
       centro_custo: item.lancamento.centroCusto?.nome || null,
     }));
 
@@ -192,14 +218,19 @@ export class DreService {
     return `${prefix}:${JSON.stringify(dto)}`;
   }
 
-  private getPeriodKeys(start: Date, end: Date, gran: DREGranularidade): string[] {
+  private getPeriodKeys(
+    start: Date,
+    end: Date,
+    gran: DREGranularidade,
+  ): string[] {
     const keys: string[] = [];
     let current = start;
 
     while (isBefore(current, end) || isSameDay(current, end)) {
       keys.push(this.getPeriodKey(current, gran));
       if (gran === DREGranularidade.MENSAL) current = addMonths(current, 1);
-      else if (gran === DREGranularidade.TRIMESTRAL) current = addQuarters(current, 1);
+      else if (gran === DREGranularidade.TRIMESTRAL)
+        current = addQuarters(current, 1);
       else current = addYears(current, 1);
     }
     return Array.from(new Set(keys));
@@ -207,8 +238,10 @@ export class DreService {
 
   private getPeriodKey(date: Date, gran: DREGranularidade): string {
     const d = new Date(date);
-    if (gran === DREGranularidade.MENSAL) return format(d, 'MMM/yy', { locale: ptBR });
-    if (gran === DREGranularidade.TRIMESTRAL) return `Q${getQuarter(d)}/${format(d, 'yy')}`;
+    if (gran === DREGranularidade.MENSAL)
+      return format(d, 'MMM/yy', { locale: ptBR });
+    if (gran === DREGranularidade.TRIMESTRAL)
+      return `Q${getQuarter(d)}/${format(d, 'yy')}`;
     return format(d, 'yyyy');
   }
 
@@ -280,12 +313,14 @@ export class DreService {
 
       result.totais.receitaBruta.periodos[p] = recBruta;
       result.totais.receitaLiquida.periodos[p] = recLiquida;
-      result.margens.receitaLiquida.periodos[p] = recBruta > 0 ? (recLiquida / recBruta) * 100 : 0;
+      result.margens.receitaLiquida.periodos[p] =
+        recBruta > 0 ? (recLiquida / recBruta) * 100 : 0;
 
       const custos = data.CUSTO_SERVICOS_PRESTADOS.periodos[p];
       const lucroBruto = recLiquida - custos;
       result.totais.lucroBruto.periodos[p] = lucroBruto;
-      result.margens.bruta.periodos[p] = recLiquida > 0 ? (lucroBruto / recLiquida) * 100 : 0;
+      result.margens.bruta.periodos[p] =
+        recLiquida > 0 ? (lucroBruto / recLiquida) * 100 : 0;
 
       const despesasOp =
         data.DESPESA_ADMINISTRATIVA.periodos[p] +
@@ -295,36 +330,40 @@ export class DreService {
 
       const despesasFin = data.DESPESA_FINANCEIRA.periodos[p];
       const recFin = data.RECEITA_FINANCEIRA.periodos[p];
-      
+
       const lucroOperacional = lucroBruto - despesasOp;
       const lair = lucroOperacional - despesasFin + recFin;
-      
+
       result.totais.lair.periodos[p] = lair;
-      result.margens.lair.periodos[p] = recLiquida > 0 ? (lair / recLiquida) * 100 : 0;
+      result.margens.lair.periodos[p] =
+        recLiquida > 0 ? (lair / recLiquida) * 100 : 0;
 
       const impostos = data.IMPOSTOS_LUCRO.periodos[p];
       const resLiq = lair - impostos;
       result.totais.resultadoLiquido.periodos[p] = resLiq;
-      result.margens.liquida.periodos[p] = recLiquida > 0 ? (resLiq / recLiquida) * 100 : 0;
+      result.margens.liquida.periodos[p] =
+        recLiquida > 0 ? (resLiq / recLiquida) * 100 : 0;
     }
 
     for (const key of Object.keys(result.totais)) {
-      result.totais[key].total = Object.values(result.totais[key].periodos).reduce(
-        (a: number, b: any) => a + Number(b),
-        0,
-      );
+      result.totais[key].total = Object.values(
+        result.totais[key].periodos,
+      ).reduce((a: number, b: any) => a + Number(b), 0);
     }
 
     for (const key of Object.keys(result.margens)) {
-      const avg = (Object.values(result.margens[key].periodos) as number[]).reduce(
-        (a: number, b: number) => a + Number(b),
+      const avg = Object.values(result.margens[key].periodos).reduce(
+        (a: number, b: any) => a + Number(b),
         0,
-      );
-      result.margens[key].total = periodos.length > 0 ? avg / periodos.length : 0;
+      ) as number;
+      result.margens[key].total =
+        periodos.length > 0 ? avg / periodos.length : 0;
     }
 
     console.log(`[DRE] Finalizando: ${periodos.length} períodos calculados`);
-    console.timeEnd(`DRE_Generation:${result.regime || ''}:${result.granularidade || ''}`);
+    console.timeEnd(
+      `DRE_Generation:${result.regime || ''}:${result.granularidade || ''}`,
+    );
     return result;
   }
 }

@@ -25,13 +25,23 @@ export class BankingIntegrationController {
   constructor(private readonly service: BankingIntegrationService) {}
 
   @Post('upload-ofx')
-  @RequirePermissions('can_manage_banking')
+  @RequirePermissions('can_reconcile')
   @UseInterceptors(FileInterceptor('file'))
   uploadOfx(
     @UploadedFile() file: Express.Multer.File,
     @Body('contaId') contaId: string,
   ) {
     return this.service.importOfx(file.buffer, contaId);
+  }
+
+  @Post('upload-csv')
+  @RequirePermissions('can_reconcile')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadCsv(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('contaId') contaId: string,
+  ) {
+    return this.service.importCsv(file.buffer, contaId);
   }
 
   @Post('configure')

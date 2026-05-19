@@ -89,19 +89,25 @@ describe('ReconciliationService - Business Logic', () => {
     }).compile();
 
     service = module.get<ReconciliationService>(ReconciliationService);
-    prisma = module.get(PrismaService) as jest.Mocked<PrismaService>;
-    auditLog = module.get(AuditLogService) as jest.Mocked<AuditLogService>;
+    prisma = module.get(PrismaService);
+    auditLog = module.get(AuditLogService);
   });
 
   describe('findSuggestedMatches', () => {
     it('throws NotFoundException when extrato does not exist', async () => {
       (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(null);
-      await expect(service.findSuggestedMatches('non-existent-id')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.findSuggestedMatches('non-existent-id'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('returns matching lancamentos by valor and date window', async () => {
-      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(mockStatement);
-      (prisma.lancamentoFinanceiro.findMany as jest.Mock).mockResolvedValue([mockLancamento]);
+      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(
+        mockStatement,
+      );
+      (prisma.lancamentoFinanceiro.findMany as jest.Mock).mockResolvedValue([
+        mockLancamento,
+      ]);
 
       const result = await service.findSuggestedMatches('stmt-001');
       expect(result).toHaveLength(1);
@@ -112,34 +118,61 @@ describe('ReconciliationService - Business Logic', () => {
   describe('linkManual', () => {
     it('throws NotFoundException if statement does not exist', async () => {
       (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(null);
-      (prisma.lancamentoFinanceiro.findUnique as jest.Mock).mockResolvedValue(mockLancamento);
-      
-      await expect(service.linkManual('non-exist', 'lanc-001', true, 'user-01')).rejects.toThrow(NotFoundException);
+      (prisma.lancamentoFinanceiro.findUnique as jest.Mock).mockResolvedValue(
+        mockLancamento,
+      );
+
+      await expect(
+        service.linkManual('non-exist', 'lanc-001', true, 'user-01'),
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('throws BadRequestException if confirmacaoManual is false', async () => {
-      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(mockStatement);
-      (prisma.lancamentoFinanceiro.findUnique as jest.Mock).mockResolvedValue(mockLancamento);
-      
-      await expect(service.linkManual('stmt-001', 'lanc-001', false, 'user-01')).rejects.toThrow(BadRequestException);
+      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(
+        mockStatement,
+      );
+      (prisma.lancamentoFinanceiro.findUnique as jest.Mock).mockResolvedValue(
+        mockLancamento,
+      );
+
+      await expect(
+        service.linkManual('stmt-001', 'lanc-001', false, 'user-01'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws BadRequestException if statement is already conciliated', async () => {
       const alreadyConciliado = { ...mockStatement, conciliado: true };
-      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(alreadyConciliado);
-      (prisma.lancamentoFinanceiro.findUnique as jest.Mock).mockResolvedValue(mockLancamento);
-      
-      await expect(service.linkManual('stmt-001', 'lanc-001', true, 'user-01')).rejects.toThrow(BadRequestException);
+      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(
+        alreadyConciliado,
+      );
+      (prisma.lancamentoFinanceiro.findUnique as jest.Mock).mockResolvedValue(
+        mockLancamento,
+      );
+
+      await expect(
+        service.linkManual('stmt-001', 'lanc-001', true, 'user-01'),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('sets lancamento status to CONCILIADO on success', async () => {
-      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(mockStatement);
-      (prisma.lancamentoFinanceiro.findUnique as jest.Mock).mockResolvedValue(mockLancamento);
-      (prisma.conciliacaoBancaria.create as jest.Mock).mockResolvedValue({ id: 'conc-001' });
+      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(
+        mockStatement,
+      );
+      (prisma.lancamentoFinanceiro.findUnique as jest.Mock).mockResolvedValue(
+        mockLancamento,
+      );
+      (prisma.conciliacaoBancaria.create as jest.Mock).mockResolvedValue({
+        id: 'conc-001',
+      });
       (prisma.extratoBancario.update as jest.Mock).mockResolvedValue({});
       (prisma.lancamentoFinanceiro.update as jest.Mock).mockResolvedValue({});
 
-      const result = await service.linkManual('stmt-001', 'lanc-001', true, 'user-01');
+      const result = await service.linkManual(
+        'stmt-001',
+        'lanc-001',
+        true,
+        'user-01',
+      );
       expect(result).toEqual({ success: true });
 
       expect(prisma.lancamentoFinanceiro.update).toHaveBeenCalledWith(
@@ -152,13 +185,23 @@ describe('ReconciliationService - Business Logic', () => {
 
   describe('unlink', () => {
     it('throws NotFoundException for non-existent conciliacao', async () => {
-      (prisma.conciliacaoBancaria.findUnique as jest.Mock).mockResolvedValue(null);
-      await expect(service.unlink('non-existent', 'user-01')).rejects.toThrow(NotFoundException);
+      (prisma.conciliacaoBancaria.findUnique as jest.Mock).mockResolvedValue(
+        null,
+      );
+      await expect(service.unlink('non-existent', 'user-01')).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('reverts lancamento to REALIZADO on unlink', async () => {
-      const mockLink = { id: 'conc-01', extratoBancarioId: 'stmt-001', lancamentoFinanceiroId: 'lanc-001' };
-      (prisma.conciliacaoBancaria.findUnique as jest.Mock).mockResolvedValue(mockLink);
+      const mockLink = {
+        id: 'conc-01',
+        extratoBancarioId: 'stmt-001',
+        lancamentoFinanceiroId: 'lanc-001',
+      };
+      (prisma.conciliacaoBancaria.findUnique as jest.Mock).mockResolvedValue(
+        mockLink,
+      );
       (prisma.conciliacaoBancaria.delete as jest.Mock).mockResolvedValue({});
       (prisma.extratoBancario.update as jest.Mock).mockResolvedValue({});
       (prisma.lancamentoFinanceiro.update as jest.Mock).mockResolvedValue({});

@@ -17,13 +17,12 @@ export class FinancialTransactionsService {
     contaBancaria: true,
   };
 
-  async create(
-    data: CreateTransactionDto,
-    usuarioId: string,
-  ) {
+  async create(data: CreateTransactionDto, usuarioId: string) {
     const createData = this.toCreateInput(data);
     return this.prisma.$transaction(async (tx) => {
-      const transaction = await tx.lancamentoFinanceiro.create({ data: createData });
+      const transaction = await tx.lancamentoFinanceiro.create({
+        data: createData,
+      });
 
       await tx.logAuditoria.create({
         data: {
@@ -78,10 +77,7 @@ export class FinancialTransactionsService {
     });
   }
 
-  async createMany(
-    data: CreateTransactionDto[],
-    usuarioId: string,
-  ) {
+  async createMany(data: CreateTransactionDto[], usuarioId: string) {
     const createManyData = data.map((item) => this.toCreateManyInput(item));
     return this.prisma.$transaction(async (tx) => {
       const result = await tx.lancamentoFinanceiro.createMany({
@@ -175,11 +171,7 @@ export class FinancialTransactionsService {
     });
   }
 
-  async update(
-    id: string,
-    data: UpdateTransactionDto,
-    usuarioId: string,
-  ) {
+  async update(id: string, data: UpdateTransactionDto, usuarioId: string) {
     const updateData = this.toUpdateInput(data);
     return this.prisma.$transaction(async (tx) => {
       const oldTransaction = await tx.lancamentoFinanceiro.findUnique({
@@ -239,7 +231,9 @@ export class FinancialTransactionsService {
       descricao: data.descricao,
       valor: data.valor,
       dataVencimento: new Date(data.dataVencimento),
-      dataPagamento: data.dataPagamento ? new Date(data.dataPagamento) : undefined,
+      dataPagamento: data.dataPagamento
+        ? new Date(data.dataPagamento)
+        : undefined,
       dataCompetencia: data.dataCompetencia
         ? new Date(data.dataCompetencia)
         : undefined,
@@ -249,11 +243,15 @@ export class FinancialTransactionsService {
       contaBancaria: data.contaBancariaId
         ? { connect: { id: data.contaBancariaId } }
         : undefined,
-      categoria: data.categoriaId ? { connect: { id: data.categoriaId } } : undefined,
+      categoria: data.categoriaId
+        ? { connect: { id: data.categoriaId } }
+        : undefined,
       centroCusto: data.centroCustoId
         ? { connect: { id: data.centroCustoId } }
         : undefined,
-      contrato: data.contratoId ? { connect: { id: data.contratoId } } : undefined,
+      contrato: data.contratoId
+        ? { connect: { id: data.contratoId } }
+        : undefined,
       cliente: data.clienteId ? { connect: { id: data.clienteId } } : undefined,
       fornecedor: data.fornecedorId
         ? { connect: { id: data.fornecedorId } }
@@ -269,7 +267,9 @@ export class FinancialTransactionsService {
       valor: data.valor,
       dataVencimento: new Date(data.dataVencimento),
       dataPagamento: data.dataPagamento ? new Date(data.dataPagamento) : null,
-      dataCompetencia: data.dataCompetencia ? new Date(data.dataCompetencia) : null,
+      dataCompetencia: data.dataCompetencia
+        ? new Date(data.dataCompetencia)
+        : null,
       tipo: data.tipo,
       status: data.status || 'PREVISTO',
       observacoes: data.observacoes || null,
@@ -288,8 +288,12 @@ export class FinancialTransactionsService {
     return {
       descricao: data.descricao,
       valor: data.valor,
-      dataVencimento: data.dataVencimento ? new Date(data.dataVencimento) : undefined,
-      dataPagamento: data.dataPagamento ? new Date(data.dataPagamento) : undefined,
+      dataVencimento: data.dataVencimento
+        ? new Date(data.dataVencimento)
+        : undefined,
+      dataPagamento: data.dataPagamento
+        ? new Date(data.dataPagamento)
+        : undefined,
       dataCompetencia: data.dataCompetencia
         ? new Date(data.dataCompetencia)
         : undefined,
@@ -299,11 +303,15 @@ export class FinancialTransactionsService {
       contaBancaria: data.contaBancariaId
         ? { connect: { id: data.contaBancariaId } }
         : undefined,
-      categoria: data.categoriaId ? { connect: { id: data.categoriaId } } : undefined,
+      categoria: data.categoriaId
+        ? { connect: { id: data.categoriaId } }
+        : undefined,
       centroCusto: data.centroCustoId
         ? { connect: { id: data.centroCustoId } }
         : undefined,
-      contrato: data.contratoId ? { connect: { id: data.contratoId } } : undefined,
+      contrato: data.contratoId
+        ? { connect: { id: data.contratoId } }
+        : undefined,
       cliente: data.clienteId ? { connect: { id: data.clienteId } } : undefined,
       fornecedor: data.fornecedorId
         ? { connect: { id: data.fornecedorId } }

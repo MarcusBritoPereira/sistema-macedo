@@ -33,19 +33,28 @@ export class AuthService {
       sub: user.id,
       role: user.perfil?.nome,
     };
-    
+
     // access token (1h)
     const accessToken = this.jwtService.sign(payload);
 
     // refresh token with sessionId (7d)
-    const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
-    const refreshToken = this.jwtService.sign({ ...payload, sessionId }, {
-      secret: refreshSecret,
-      expiresIn: '7d',
-    });
+    const refreshSecret =
+      process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    const refreshToken = this.jwtService.sign(
+      { ...payload, sessionId },
+      {
+        secret: refreshSecret,
+        expiresIn: '7d',
+      },
+    );
 
     // Store session in Redis with 7 days TTL (604800 seconds)
-    await this.redis.set(`session:${user.id}:${sessionId}`, 'valid', 'EX', 7 * 24 * 60 * 60);
+    await this.redis.set(
+      `session:${user.id}:${sessionId}`,
+      'valid',
+      'EX',
+      7 * 24 * 60 * 60,
+    );
 
     return {
       access_token: accessToken,
@@ -61,7 +70,8 @@ export class AuthService {
 
   async refresh(refreshToken: string) {
     try {
-      const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+      const refreshSecret =
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
       const payload = this.jwtService.verify(refreshToken, {
         secret: refreshSecret,
       });
@@ -75,7 +85,7 @@ export class AuthService {
       // Verify session exists in Redis
       const sessionKey = `session:${userId}:${sessionId}`;
       const isValid = await this.redis.get(sessionKey);
-      
+
       if (!isValid) {
         throw new Error('Session is revoked or expired');
       }
@@ -92,13 +102,21 @@ export class AuthService {
       };
 
       const newAccessToken = this.jwtService.sign(newPayload);
-      const newRefreshToken = this.jwtService.sign({ ...newPayload, sessionId: newSessionId }, {
-        secret: refreshSecret,
-        expiresIn: '7d',
-      });
+      const newRefreshToken = this.jwtService.sign(
+        { ...newPayload, sessionId: newSessionId },
+        {
+          secret: refreshSecret,
+          expiresIn: '7d',
+        },
+      );
 
       // Store new session in Redis
-      await this.redis.set(`session:${userId}:${newSessionId}`, 'valid', 'EX', 7 * 24 * 60 * 60);
+      await this.redis.set(
+        `session:${userId}:${newSessionId}`,
+        'valid',
+        'EX',
+        7 * 24 * 60 * 60,
+      );
 
       return {
         access_token: newAccessToken,
@@ -111,7 +129,8 @@ export class AuthService {
 
   async logout(refreshToken: string) {
     try {
-      const refreshSecret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+      const refreshSecret =
+        process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
       const payload = this.jwtService.verify(refreshToken, {
         secret: refreshSecret,
         ignoreExpiration: true, // We still want to delete it even if it just expired

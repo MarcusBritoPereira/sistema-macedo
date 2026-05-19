@@ -30,7 +30,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      FRONTEND_URL: http://sistemamacedo.cloud
+      FRONTEND_URL: https://sistemamacedo.cloud
       DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-macedo_system}
       JWT_SECRET: ${JWT_SECRET:-supersecretkeyCHANGE}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretrefreshCHANGE}
@@ -54,7 +54,7 @@ services:
       dockerfile: Dockerfile
     container_name: macedo_frontend_prod
     ports:
-      - "80:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       - backend
     networks:

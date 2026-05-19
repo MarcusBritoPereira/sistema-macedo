@@ -2,21 +2,21 @@
 // Base: Neutral Off-white + Deep Blue Identity
 
 :root {
-    /* Primary: Brand Yellow (Action/Attention) */
-    --ion-color-primary: #FEBE10;
-    --ion-color-primary-rgb: 254, 190, 16;
-    --ion-color-primary-contrast: #1A1A1A;
-    --ion-color-primary-contrast-rgb: 26, 26, 26;
-    --ion-color-primary-shade: #e0a80e;
-    --ion-color-primary-tint: #fec528;
+    /* Primary: Brand Blue (Electric Blue from Logo) */
+    --ion-color-primary: #0082FF;
+    --ion-color-primary-rgb: 0, 130, 255;
+    --ion-color-primary-contrast: #ffffff;
+    --ion-color-primary-contrast-rgb: 255, 255, 255;
+    --ion-color-primary-shade: #0075e6;
+    --ion-color-primary-tint: #1a8eff;
 
-    /* Secondary: Brand Black (Structure/Strong Text) */
-    --ion-color-secondary: #1A1A1A;
-    --ion-color-secondary-rgb: 26, 26, 26;
+    /* Secondary: Brand Deep Navy (Structure/Strong Text) */
+    --ion-color-secondary: #0c2440;
+    --ion-color-secondary-rgb: 12, 36, 64;
     --ion-color-secondary-contrast: #ffffff;
     --ion-color-secondary-contrast-rgb: 255, 255, 255;
-    --ion-color-secondary-shade: #171717;
-    --ion-color-secondary-tint: #313131;
+    --ion-color-secondary-shade: #0a1f38;
+    --ion-color-secondary-tint: #1e3a5f;
 
     /* Tertiary: Gray (Neutral for Info/Actions) */
     --ion-color-tertiary: #6b7280;
@@ -112,7 +112,7 @@
     --transition-slow: 400ms ease;
 
     /* Focus ring (Accessibility) */
-    --focus-ring: 0 0 0 3px rgba(254, 190, 16, 0.5); /* Brand Yellow focus */
+    --focus-ring: 0 0 0 3px rgba(0, 130, 255, 0.5); /* Brand Blue focus */
 
     /* Status Colors (for badges and chips - semantic) */
     --status-previsto-bg: #fef9c3;

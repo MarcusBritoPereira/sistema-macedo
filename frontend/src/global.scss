@@ -147,13 +147,13 @@ ion-title {
     }
 }
 
-/* Split Pane Menu - Black Sidebar */
+/* Split Pane Menu - Brand Electric Blue Sidebar */
 ion-menu {
     --width: 280px;
 
     ion-content {
-        --background: var(--ion-color-secondary);
-        /* Black */
+        --background: var(--ion-color-primary);
+        /* Electric Blue */
         border-right: 1px solid rgba(255, 255, 255, 0.1);
         /* Subtle divider */
     }
@@ -165,22 +165,22 @@ ion-menu {
 
     ion-item {
         --background: transparent;
-        --color: #d1d5db;
-        /* Light Grey for inactive */
+        --color: rgba(255, 255, 255, 0.85);
+        /* Light Grey/White for inactive */
         margin: var(--space-1) var(--space-3);
         border-radius: var(--radius-sm);
         font-weight: 500;
 
         &.selected {
-            --background: var(--ion-color-primary);
-            /* Yellow */
-            --color: var(--ion-color-secondary);
-            /* Black Text for Contrast */
+            --background: var(--ion-color-secondary);
+            /* Deep Navy */
+            --color: #ffffff;
+            /* White Text for Contrast */
             font-weight: 700;
         }
 
         &:hover:not(.selected) {
-            --background: rgba(255, 255, 255, 0.05);
+            --background: rgba(255, 255, 255, 0.15);
             --color: #ffffff;
             cursor: pointer;
         }

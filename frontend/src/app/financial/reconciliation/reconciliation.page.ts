@@ -31,6 +31,8 @@ import { CategoriesService } from '../../services/financial/categories.service';
 import { BankingIntegrationService } from '../../services/financial/banking-integration.service';
 import { CostCentersService } from '../../services/financial/cost-centers.service';
 import { SearchableSelectionModalComponent } from '../../shared/components/searchable-selection-modal/searchable-selection-modal.component';
+import { ClientsService } from '../../services/clients/clients';
+import { SuppliersService } from '../../services/suppliers/suppliers.service';
 @Component({
     selector: 'app-reconciliation',
     templateUrl: './reconciliation.page.html',
@@ -72,6 +74,11 @@ export class ReconciliationPage implements OnInit {
     categories: any[] = [];
     selectedCategoryId: string = '';
 
+    // Auxiliary caches to share with detail components
+    costCenters: any[] = [];
+    suppliers: any[] = [];
+    clients: any[] = [];
+
     // Period State
     currentDate: Date = new Date();
 
@@ -97,7 +104,9 @@ export class ReconciliationPage implements OnInit {
         private modalCtrl: ModalController,
         private categoriesService: CategoriesService,
         private bankingIntegrationService: BankingIntegrationService,
-        private costCentersService: CostCentersService
+        private costCentersService: CostCentersService,
+        private suppliersService: SuppliersService,
+        private clientsService: ClientsService
     ) {
         addIcons({
             receiptOutline, syncOutline, checkmarkCircleOutline, alertCircleOutline,
@@ -114,6 +123,8 @@ export class ReconciliationPage implements OnInit {
     ngOnInit() {
         this.loadCategories();
         this.loadCostCenters();
+        this.loadSuppliers();
+        this.loadClients();
         this.route.queryParams.subscribe(params => {
             const accId = params['accountId'];
             this.loadAccounts(accId);
@@ -122,6 +133,16 @@ export class ReconciliationPage implements OnInit {
 
     loadCategories() {
         this.categoriesService.findAll().subscribe((cats: any[]) => this.categories = cats);
+    }
+
+
+
+    loadSuppliers() {
+        this.suppliersService.findAll().subscribe((sups: any[]) => this.suppliers = sups);
+    }
+
+    loadClients() {
+        this.clientsService.findAll().subscribe((cls: any[]) => this.clients = cls);
     }
 
     setViewMode(mode: 'PENDING' | 'MOVEMENTS') {
@@ -166,7 +187,7 @@ export class ReconciliationPage implements OnInit {
                 this.statements = data;
                 this.calculateSummary();
                 this.applySearch(); // Apply type filter
-                this.expandAll(); // Default to expanded
+                this.collapseAll(); // DO NOT expand all by default for large datasets (3,000+ rows) to avoid massive rendering freeze
                 this.loading = false;
                 if (event) event.target.complete();
                 setTimeout(() => this.restoreScroll(), 100);
@@ -573,6 +594,7 @@ export class ReconciliationPage implements OnInit {
 
     loadCostCenters() {
         this.costCentersService.findAll().subscribe(ccs => {
+            this.costCenters = ccs;
             const geral = ccs.find(c => c.nome.toLowerCase() === 'geral');
             if (geral) {
                 this.geralCostCenterId = geral.id;

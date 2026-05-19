@@ -230,7 +230,13 @@
 
                     <!-- Accordion Content -->
                     <div class="statement-detail" *ngIf="isExpanded(s.id)">
-                        <app-reconciliation-detail [statement]="s" (close)="toggleExpand(s)"
+                        <app-reconciliation-detail 
+                            [statement]="s" 
+                            [categories]="categories"
+                            [suppliers]="suppliers"
+                            [clients]="clients"
+                            [costCenters]="costCenters"
+                            (close)="toggleExpand(s)"
                             (complete)="onDetailAction($event)">
                         </app-reconciliation-detail>
                     </div>

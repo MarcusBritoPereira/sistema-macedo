@@ -40,10 +40,10 @@ export class ReconciliationDetailComponent implements OnInit {
     @Output() close = new EventEmitter<void>();
     @Output() complete = new EventEmitter<void>();
 
-    categories: Category[] = [];
-    suppliers: Supplier[] = [];
-    clients: Cliente[] = [];
-    costCenters: CostCenter[] = [];
+    @Input() categories: Category[] = [];
+    @Input() suppliers: Supplier[] = [];
+    @Input() clients: Cliente[] = [];
+    @Input() costCenters: CostCenter[] = [];
 
     loadingAux = false;
     loadingAction = false;
@@ -129,33 +129,45 @@ export class ReconciliationDetailComponent implements OnInit {
         this.loadingAux = true;
         const targetType = this.statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
 
-        this.categoriesService.findAll().subscribe(cats => {
-            this.categories = cats.filter(c => c.tipo === targetType);
-        });
-
-        if (targetType === 'DESPESA') {
-            this.suppliersService.findAll().subscribe(sups => {
-                this.suppliers = sups;
-            });
-        } else {
-            this.clientsService.findAll().subscribe(clients => {
-                this.clients = clients;
-            });
-        }
-
-        this.costCentersService.findAll().subscribe(ccs => {
-            this.costCenters = ccs;
+        const processData = () => {
+            // Filter local copy by type
+            this.categories = this.categories.filter(c => c.tipo === targetType);
 
             // Default to "Geral" if not set
-            if (!this.form.centroCustoId) {
-                const geral = ccs.find(c => c.nome.toLowerCase() === 'geral');
+            if (!this.form.centroCustoId && this.costCenters.length > 0) {
+                const geral = this.costCenters.find(c => c.nome.toLowerCase() === 'geral');
                 if (geral) {
                     this.form.centroCustoId = geral.id;
                 }
             }
-
             this.loadingAux = false;
-        });
+        };
+
+        // Fallback: If for some reason lists were not passed from parent, fetch them
+        if (this.categories.length === 0 && this.costCenters.length === 0) {
+            this.categoriesService.findAll().subscribe(cats => {
+                this.categories = cats;
+                if (targetType === 'DESPESA') {
+                    this.suppliersService.findAll().subscribe(sups => {
+                        this.suppliers = sups;
+                        this.costCentersService.findAll().subscribe(ccs => {
+                            this.costCenters = ccs;
+                            processData();
+                        });
+                    });
+                } else {
+                    this.clientsService.findAll().subscribe(clients => {
+                        this.clients = clients;
+                        this.costCentersService.findAll().subscribe(ccs => {
+                            this.costCenters = ccs;
+                            processData();
+                        });
+                    });
+                }
+            });
+        } else {
+            processData();
+        }
     }
 
     async confirmCreation() {

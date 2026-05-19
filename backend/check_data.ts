@@ -4,18 +4,12 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-    console.log('--- Checking Database Counts ---');
-    const clients = await prisma.cliente.count();
-    const users = await prisma.usuario.count();
-
-    console.log(`Clients: ${clients}`);
-    console.log(`Users: ${users}`);
-
-    if (clients > 0) {
-        const firstClient = await prisma.cliente.findFirst();
-        console.log('Sample Client:', firstClient?.razaoSocial);
-    }
-
+    console.log('--- Inspecting User ---');
+    const user = await prisma.usuario.findUnique({
+        where: { id: 'e896de03-3fdf-47b8-8407-266d6d587e6e' },
+        include: { perfil: true }
+    });
+    console.log('User:', JSON.stringify(user, null, 2));
 }
 
 main()

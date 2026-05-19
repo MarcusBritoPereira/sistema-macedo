@@ -44,8 +44,20 @@ export class PermissionsGuard implements CanActivate {
       );
     }
 
-    const userPermissions: string[] = Array.isArray(dbUser.perfil.permissoes)
-      ? (dbUser.perfil.permissoes as string[])
+    const permissoesRaw = dbUser.perfil.permissoes;
+
+    // Se o perfil tiver permissão total (ex: {"all": true}), permite o acesso a qualquer recurso
+    if (
+      permissoesRaw &&
+      typeof permissoesRaw === 'object' &&
+      !Array.isArray(permissoesRaw) &&
+      (permissoesRaw as any).all === true
+    ) {
+      return true;
+    }
+
+    const userPermissions: string[] = Array.isArray(permissoesRaw)
+      ? (permissoesRaw as string[])
       : [];
 
     const hasPermission = requiredPermissions.every((permission) =>

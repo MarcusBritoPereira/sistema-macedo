@@ -127,7 +127,7 @@ export class BankAccountsPage implements OnInit {
     }
 
     async configureAutoConciliation() {
-        this.showToast('Funcionalidade em desenvolvimento', 'primary');
+        this.navCtrl.navigateForward('/financial/banking-configuration');
     }
 
     async openWizard(accountToEdit?: BankAccount) {

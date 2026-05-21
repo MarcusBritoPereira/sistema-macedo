@@ -23,6 +23,7 @@ import { ReportsController } from './reports/reports.controller';
 import { ReportsService } from './reports/reports.service';
 import { FinancialCacheInterceptor } from '../common/interceptors/financial-cache.interceptor';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ObrasModule } from './obras/obras.module';
 
 @Module({
   providers: [
@@ -52,6 +53,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     RecurringModule,
     DreModule,
     RateioModule,
+    ObrasModule,
   ],
 })
 export class FinancialModule {}

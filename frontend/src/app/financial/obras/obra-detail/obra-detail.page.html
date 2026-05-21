@@ -1,0 +1,120 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="bg-white/70 backdrop-blur-md">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()" color="dark">
+        <ion-icon name="arrow-back-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title class="font-semibold text-gray-800">
+      {{ isEdit ? 'Editar Obra' : 'Nova Obra' }}
+    </ion-title>
+    <ion-buttons slot="end" *ngIf="isEdit">
+      <ion-button color="danger" (click)="deleteObra()" [disabled]="saving">
+        <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding bg-gray-50/50">
+  <div class="max-w-3xl mx-auto">
+    
+    <div *ngIf="loading" class="flex justify-center p-12">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!loading" class="space-y-6">
+      
+      <!-- Informações Principais -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100/50">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Informações Principais</h3>
+        
+        <ion-list class="bg-transparent" lines="full">
+          <ion-item class="mb-2 --border-radius-8">
+            <ion-label position="stacked">Nome da Obra <span class="text-danger">*</span></ion-label>
+            <ion-input formControlName="nome" placeholder="Ex: Reforma Condomínio X" type="text"></ion-input>
+          </ion-item>
+
+          <ion-item class="mb-2">
+            <ion-label position="stacked">Status</ion-label>
+            <ion-select formControlName="status" interface="popover">
+              <ion-select-option value="PLANEJAMENTO">Planejamento</ion-select-option>
+              <ion-select-option value="EM_ANDAMENTO">Em Andamento</ion-select-option>
+              <ion-select-option value="PAUSADA">Pausada</ion-select-option>
+              <ion-select-option value="CONCLUIDA">Concluída</ion-select-option>
+              <ion-select-option value="CANCELADA">Cancelada</ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item class="mb-2">
+            <ion-label position="stacked">Descrição / Detalhes</ion-label>
+            <ion-textarea formControlName="descricao" placeholder="Detalhes adicionais da obra" [autoGrow]="true"></ion-textarea>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- Datas e Financeiro -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100/50">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Datas e Financeiro</h3>
+        
+        <ion-list class="bg-transparent" lines="full">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ion-item>
+              <ion-label position="stacked">Data Início</ion-label>
+              <ion-input formControlName="dataInicio" type="date"></ion-input>
+            </ion-item>
+            
+            <ion-item>
+              <ion-label position="stacked">Previsão Fim</ion-label>
+              <ion-input formControlName="dataPrevisaoFim" type="date"></ion-input>
+            </ion-item>
+          </div>
+
+          <ion-item class="mt-4 mb-2">
+            <ion-label position="stacked">Orçamento Previsto (R$)</ion-label>
+            <ion-input formControlName="orcamentoPrevisto" type="number" step="0.01"></ion-input>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- Vínculos -->
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100/50">
+        <h3 class="text-lg font-bold text-gray-800 mb-4">Vínculos</h3>
+        
+        <ion-list class="bg-transparent" lines="full">
+          <ion-item class="mb-2">
+            <ion-label position="stacked">Cliente (Opcional)</ion-label>
+            <ion-select formControlName="clienteId" interface="action-sheet" placeholder="Selecione um cliente">
+              <ion-select-option [value]="null">Nenhum</ion-select-option>
+              <ion-select-option *ngFor="let cliente of clientes" [value]="cliente.id">
+                {{ cliente.razaoSocial }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item class="mb-2">
+            <ion-label position="stacked">Centro de Custo (Opcional)</ion-label>
+            <ion-select formControlName="centroCustoId" interface="action-sheet" placeholder="Vincular Centro de Custo">
+              <ion-select-option [value]="null">Nenhum</ion-select-option>
+              <ion-select-option *ngFor="let cc of centrosCusto" [value]="cc.id">
+                {{ cc.nome }}
+              </ion-select-option>
+            </ion-select>
+          </ion-item>
+
+          <ion-item>
+            <ion-label>Obra Ativa</ion-label>
+            <ion-toggle formControlName="ativo" slot="end" color="primary"></ion-toggle>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <div class="py-4">
+        <ion-button type="submit" expand="block" shape="round" color="primary" class="h-12 font-bold" [disabled]="form.invalid || saving">
+          <ion-spinner *ngIf="saving" name="crescent" class="mr-2"></ion-spinner>
+          {{ isEdit ? 'Salvar Alterações' : 'Criar Obra' }}
+        </ion-button>
+      </div>
+    </form>
+  </div>
+</ion-content>

@@ -160,6 +160,16 @@ export const routes: Routes = [
     loadComponent: () => import('./financial/reports/reports.page').then(m => m.ReportsPage),
     canActivate: [AuthGuard]
   },
+  {
+    path: 'financial/obras/obras-list',
+    loadComponent: () => import('./financial/obras/obras-list/obras-list.page').then( m => m.ObrasListPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'financial/obras/obra-detail/:id',
+    loadComponent: () => import('./financial/obras/obra-detail/obra-detail.page').then( m => m.ObraDetailPage),
+    canActivate: [AuthGuard]
+  },
 
 
 ];

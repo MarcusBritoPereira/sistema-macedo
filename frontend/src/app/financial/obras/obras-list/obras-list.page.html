@@ -1,0 +1,77 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar class="bg-white/70 backdrop-blur-md">
+    <ion-buttons slot="start">
+      <ion-menu-button color="dark"></ion-menu-button>
+    </ion-buttons>
+    <ion-title class="font-semibold text-gray-800">Gestão de Obras</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="addObra()" color="primary" class="font-medium">
+        <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+        Nova Obra
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding bg-gray-50/50">
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- Header Section -->
+    <div class="flex justify-between items-center bg-white p-6 rounded-2xl shadow-sm border border-gray-100/50">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800 m-0">Obras</h1>
+        <p class="text-gray-500 m-0 mt-1">Gerencie e acompanhe o andamento dos projetos e obras</p>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="flex justify-center p-12">
+      <ion-spinner name="crescent" color="primary"></ion-spinner>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="!loading && obras.length === 0" class="text-center py-16 bg-white rounded-2xl shadow-sm border border-gray-100/50">
+      <div class="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+        <ion-icon name="business-outline" class="text-3xl text-primary"></ion-icon>
+      </div>
+      <h3 class="text-lg font-semibold text-gray-800 mb-1">Nenhuma obra cadastrada</h3>
+      <p class="text-gray-500 mb-6">Comece adicionando a sua primeira obra.</p>
+      <ion-button (click)="addObra()" fill="outline" shape="round">
+        Cadastrar Obra
+      </ion-button>
+    </div>
+
+    <!-- List -->
+    <div *ngIf="!loading && obras.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <ion-card *ngFor="let obra of obras" 
+                class="m-0 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow cursor-pointer"
+                (click)="editObra(obra)">
+        <ion-card-header class="pb-2">
+          <div class="flex justify-between items-start mb-2">
+            <ion-badge [color]="getStatusColor(obra.status)" class="rounded-lg px-2 py-1 font-medium">
+              {{ obra.status | titlecase }}
+            </ion-badge>
+            <span class="text-xs text-gray-400" *ngIf="obra.dataInicio">
+              Início: {{ obra.dataInicio | date:'dd/MM/yyyy' }}
+            </span>
+          </div>
+          <ion-card-title class="text-lg font-bold text-gray-800">{{ obra.nome }}</ion-card-title>
+          <ion-card-subtitle class="text-sm mt-1" *ngIf="obra.cliente">
+            Cliente: {{ obra.cliente.nomeFantasia || obra.cliente.razaoSocial }}
+          </ion-card-subtitle>
+        </ion-card-header>
+        <ion-card-content>
+          <p class="text-gray-600 text-sm line-clamp-2 mb-4">
+            {{ obra.descricao || 'Sem descrição' }}
+          </p>
+          <div class="flex justify-between items-center border-t border-gray-100 pt-3">
+            <div class="flex flex-col">
+              <span class="text-xs text-gray-500">Orçamento Previsto</span>
+              <span class="font-semibold text-gray-800">{{ formatCurrency(obra.orcamentoPrevisto) }}</span>
+            </div>
+            <ion-icon name="chevron-forward-outline" class="text-gray-400"></ion-icon>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+</ion-content>

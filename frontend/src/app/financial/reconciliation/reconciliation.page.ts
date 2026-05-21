@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -26,6 +26,8 @@ import { FinancialService, BankAccount } from '../../services/financial/financia
 import { BankStatement, SuggestedMatch } from '../../services/financial/reconciliation';
 import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ReconciliationDetailComponent } from './components/reconciliation-detail/reconciliation-detail.component';
 import { CategoriesService } from '../../services/financial/categories.service';
 import { BankingIntegrationService } from '../../services/financial/banking-integration.service';
@@ -49,7 +51,7 @@ import { SuppliersService } from '../../services/suppliers/suppliers.service';
         ReconciliationDetailComponent
     ]
 })
-export class ReconciliationPage implements OnInit {
+export class ReconciliationPage implements OnInit, OnDestroy {
     bankAccounts: BankAccount[] = [];
     selectedAccountId: string = '';
     selectedAccount: BankAccount | null = null;
@@ -93,6 +95,12 @@ export class ReconciliationPage implements OnInit {
     illustrationLoaded = true;
     loading = false;
     loadError: string | null = null;
+    page = 1;
+    pageSize = 50;
+    totalItems = 0;
+    totalPages = 1;
+    private searchSubject = new Subject<string>();
+    private searchSub?: Subscription;
 
     constructor(
         private route: ActivatedRoute,
@@ -121,6 +129,14 @@ export class ReconciliationPage implements OnInit {
     }
 
     ngOnInit() {
+        this.searchSub = this.searchSubject
+            .pipe(debounceTime(400), distinctUntilChanged())
+            .subscribe((term) => {
+                this.searchTerm = term;
+                this.page = 1;
+                this.loadStatements();
+            });
+
         this.loadCategories();
         this.loadCostCenters();
         this.loadSuppliers();
@@ -129,6 +145,10 @@ export class ReconciliationPage implements OnInit {
             const accId = params['accountId'];
             this.loadAccounts(accId);
         });
+    }
+
+    ngOnDestroy(): void {
+        this.searchSub?.unsubscribe();
     }
 
     loadCategories() {
@@ -148,6 +168,7 @@ export class ReconciliationPage implements OnInit {
     setViewMode(mode: 'PENDING' | 'MOVEMENTS') {
         this.viewMode = mode;
         this.filterStatus = (mode === 'PENDING') ? 'PENDING' : 'ALL';
+        this.page = 1;
         this.loadStatements();
     }
 
@@ -175,7 +196,9 @@ export class ReconciliationPage implements OnInit {
             startDate: this.filterStatus === 'PENDING' ? undefined : format(startOfMonth(this.currentDate), 'yyyy-MM-dd'),
             endDate: format(endOfMonth(this.currentDate), 'yyyy-MM-dd'),
             status: this.filterStatus === 'ALL' ? undefined : this.filterStatus,
-            categoryId: this.selectedCategoryId || undefined
+            categoryId: this.selectedCategoryId || undefined,
+            page: this.page,
+            pageSize: this.pageSize
         };
 
         if (this.searchTerm.trim()) {
@@ -183,8 +206,11 @@ export class ReconciliationPage implements OnInit {
         }
 
         this.reconciliationService.getStatements(this.selectedAccountId, filters).subscribe({
-            next: (data) => {
-                this.statements = data;
+            next: (response) => {
+                this.statements = response.data || [];
+                this.totalItems = response.pagination?.total || 0;
+                this.totalPages = response.pagination?.totalPages || 1;
+                this.page = response.pagination?.page || this.page;
                 this.calculateSummary();
                 this.applySearch(); // Apply type filter
                 this.collapseAll(); // DO NOT expand all by default for large datasets (3,000+ rows) to avoid massive rendering freeze
@@ -202,7 +228,7 @@ export class ReconciliationPage implements OnInit {
     }
 
     calculateSummary() {
-        this.summary.totalCount = this.statements.length;
+        this.summary.totalCount = this.totalItems;
         this.summary.receivablesCount = this.statements.filter(s => s.tipo === 'CREDIT').length;
         this.summary.payablesCount = this.statements.filter(s => s.tipo === 'DEBIT').length;
         this.summary.totalPendingValue = this.statements
@@ -225,25 +251,40 @@ export class ReconciliationPage implements OnInit {
     }
 
     onSearch(event: any) {
-        this.searchTerm = event.target.value;
-        this.loadStatements();
+        const term = (event?.target?.value || '').toString();
+        this.searchSubject.next(term);
     }
 
     clearFilters() {
         this.searchTerm = '';
         this.selectedCategoryId = '';
         this.filterType = 'ALL';
+        this.page = 1;
         this.loadStatements();
         this.showToast('Filtros limpos com sucesso.', 'medium');
     }
 
     nextMonth() {
         this.currentDate = addMonths(this.currentDate, 1);
+        this.page = 1;
         this.loadStatements();
     }
 
     prevMonth() {
         this.currentDate = subMonths(this.currentDate, 1);
+        this.page = 1;
+        this.loadStatements();
+    }
+
+    goToPreviousPage() {
+        if (this.page <= 1) return;
+        this.page -= 1;
+        this.loadStatements();
+    }
+
+    goToNextPage() {
+        if (this.page >= this.totalPages) return;
+        this.page += 1;
         this.loadStatements();
     }
 

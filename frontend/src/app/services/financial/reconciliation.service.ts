@@ -2,7 +2,7 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '../api/api.service';
 import { Observable } from 'rxjs';
-import { BankStatement, SuggestedMatch } from './reconciliation';
+import { BankStatement, SuggestedMatch, PaginatedStatementsResponse } from './reconciliation';
 
 @Injectable({
     providedIn: 'root'
@@ -10,16 +10,20 @@ import { BankStatement, SuggestedMatch } from './reconciliation';
 export class ReconciliationService {
     constructor(private api: ApiService) { }
 
-    getStatements(contaId: string, filters?: any): Observable<BankStatement[]> {
+    getStatements(contaId: string, filters?: any): Observable<PaginatedStatementsResponse> {
         let query = '';
         if (filters) {
             const parts = [];
             if (filters.startDate) parts.push(`startDate=${filters.startDate}`);
             if (filters.endDate) parts.push(`endDate=${filters.endDate}`);
             if (filters.status) parts.push(`status=${filters.status}`);
+            if (filters.search) parts.push(`search=${encodeURIComponent(filters.search)}`);
+            if (filters.categoryId) parts.push(`categoryId=${filters.categoryId}`);
+            if (filters.page) parts.push(`page=${filters.page}`);
+            if (filters.pageSize) parts.push(`pageSize=${filters.pageSize}`);
             if (parts.length > 0) query = `?${parts.join('&')}`;
         }
-        return this.api.get<BankStatement[]>(`financial/reconciliation/statements/${contaId}${query}`);
+        return this.api.get<PaginatedStatementsResponse>(`financial/reconciliation/statements/${contaId}${query}`);
     }
 
     getSuggestedMatches(statementId: string): Observable<SuggestedMatch[]> {

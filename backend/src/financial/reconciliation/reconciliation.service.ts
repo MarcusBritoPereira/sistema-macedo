@@ -137,6 +137,13 @@ export class ReconciliationService {
   }
 
   async getBankStatements(contaBancariaId: string, filters?: any) {
+    const page = Math.max(Number(filters?.page) || 1, 1);
+    const pageSize = Math.min(
+      Math.max(Number(filters?.pageSize) || 50, 1),
+      200,
+    );
+    const skip = (page - 1) * pageSize;
+
     const where: any = {
       importacao: { contaBancariaId },
     };
@@ -183,18 +190,23 @@ export class ReconciliationService {
       };
     }
 
-    const statements = await this.prisma.extratoBancario.findMany({
-      where,
-      include: {
-        conciliacoes: {
-          include: {
-            lancamentoFinanceiro: true,
+    const [total, statements] = await this.prisma.$transaction([
+      this.prisma.extratoBancario.count({ where }),
+      this.prisma.extratoBancario.findMany({
+        where,
+        include: {
+          conciliacoes: {
+            include: {
+              lancamentoFinanceiro: true,
+            },
           },
+          importacao: true,
         },
-        importacao: true,
-      },
-      orderBy: { data: 'desc' },
-    });
+        orderBy: [{ data: 'desc' }, { id: 'desc' }],
+        skip,
+        take: pageSize,
+      }),
+    ]);
 
     const enrichedStatements = await Promise.all(
       statements.map(async (statement) => {
@@ -210,7 +222,15 @@ export class ReconciliationService {
       }),
     );
 
-    return enrichedStatements;
+    return {
+      data: enrichedStatements,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    };
   }
 
   async findSuggestedMatches(statementId: string) {

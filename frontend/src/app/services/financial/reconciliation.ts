@@ -36,3 +36,13 @@ export interface SuggestedMatch {
     centroCusto?: { nome: string };
     confidence?: number;
 }
+
+export interface PaginatedStatementsResponse {
+    data: BankStatement[];
+    pagination: {
+        page: number;
+        pageSize: number;
+        total: number;
+        totalPages: number;
+    };
+}

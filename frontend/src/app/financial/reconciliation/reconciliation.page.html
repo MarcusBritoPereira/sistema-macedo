@@ -241,6 +241,18 @@
                         </app-reconciliation-detail>
                     </div>
                 </div>
+
+                <div class="pagination-controls" *ngIf="totalPages > 1">
+                    <ion-button fill="outline" size="small" (click)="goToPreviousPage()" [disabled]="page <= 1">
+                        <ion-icon name="chevron-back-outline" slot="start"></ion-icon>
+                        Anterior
+                    </ion-button>
+                    <span>Página {{ page }} de {{ totalPages }} · {{ totalItems }} registros</span>
+                    <ion-button fill="outline" size="small" (click)="goToNextPage()" [disabled]="page >= totalPages">
+                        Próxima
+                        <ion-icon name="chevron-forward-outline" slot="end"></ion-icon>
+                    </ion-button>
+                </div>
             </div>
 
             <!-- Empty State -->

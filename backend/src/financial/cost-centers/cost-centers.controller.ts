@@ -7,8 +7,13 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  Res,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { CostCentersService } from './cost-centers.service';
 import { CreateCostCenterDto } from './dto/create-cost-center.dto';
 import { UpdateCostCenterDto } from './dto/update-cost-center.dto';
@@ -21,6 +26,17 @@ export class CostCentersController {
   @Post()
   create(@Body() createCostCenterDto: CreateCostCenterDto) {
     return this.costCentersService.create(createCostCenterDto);
+  }
+
+  @Get('template/csv')
+  getTemplate(@Res() res: Response) {
+    return this.costCentersService.getTemplate(res);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  importCsv(@UploadedFile() file: Express.Multer.File) {
+    return this.costCentersService.importCsv(file);
   }
 
   @Get()

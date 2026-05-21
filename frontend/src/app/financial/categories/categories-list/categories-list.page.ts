@@ -3,9 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonButton, IonIcon, IonSearchbar, IonCard, IonFab, IonFabButton, IonRefresher, IonRefresherContent } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { searchOutline, pricetagOutline, chevronForwardOutline, pricetagsOutline, add, arrowDownCircleOutline, arrowUpCircleOutline } from 'ionicons/icons';
+import { searchOutline, pricetagOutline, chevronForwardOutline, pricetagsOutline, add, arrowDownCircleOutline, arrowUpCircleOutline, cloudUploadOutline } from 'ionicons/icons';
 import { CategoriesService, Category } from '../../../services/financial/categories.service';
 import { RouterModule } from '@angular/router';
+import { ModalController } from '@ionic/angular';
+import { ImportModalComponent } from '../../../shared/components/import-modal/import-modal.component';
 
 @Component({
   selector: 'app-categories-list',
@@ -19,9 +21,10 @@ export class CategoriesListPage implements OnInit {
   filteredCategories: Category[] = [];
 
   constructor(
-    private categoriesService: CategoriesService
+    private categoriesService: CategoriesService,
+    private modalCtrl: ModalController
   ) {
-    addIcons({ searchOutline, pricetagOutline, chevronForwardOutline, pricetagsOutline, add, arrowDownCircleOutline, arrowUpCircleOutline });
+    addIcons({ searchOutline, pricetagOutline, chevronForwardOutline, pricetagsOutline, add, arrowDownCircleOutline, arrowUpCircleOutline, cloudUploadOutline });
   }
 
   ngOnInit() {
@@ -53,5 +56,24 @@ export class CategoriesListPage implements OnInit {
     this.filteredCategories = this.categories.filter(category =>
       category.nome.toLowerCase().includes(query)
     );
+  }
+
+  async openImportModal() {
+    const modal = await this.modalCtrl.create({
+      component: ImportModalComponent,
+      componentProps: {
+        title: 'Importar Categorias',
+        endpointUrl: 'financial/categories/import'
+      },
+      cssClass: 'import-modal'
+    });
+
+    modal.onDidDismiss().then((result) => {
+      if (result.data) {
+        this.loadCategories();
+      }
+    });
+
+    await modal.present();
   }
 }

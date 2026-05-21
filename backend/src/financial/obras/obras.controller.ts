@@ -1,4 +1,6 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { ObrasService } from './obras.service';
 import { CreateObraDto } from './dto/create-obra.dto';
 import { UpdateObraDto } from './dto/update-obra.dto';
@@ -15,6 +17,19 @@ export class ObrasController {
   @RequirePermissions('financeiro.obras.write')
   create(@Body() createObraDto: CreateObraDto) {
     return this.obrasService.create(createObraDto);
+  }
+
+  @Get('template/csv')
+  @RequirePermissions('financeiro.obras.read')
+  getTemplate(@Res() res: Response) {
+    return this.obrasService.getTemplate(res);
+  }
+
+  @Post('import')
+  @RequirePermissions('financeiro.obras.write')
+  @UseInterceptors(FileInterceptor('file'))
+  importCsv(@UploadedFile() file: Express.Multer.File) {
+    return this.obrasService.importCsv(file);
   }
 
   @Get()

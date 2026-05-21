@@ -3,9 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, RouterLink } from '@angular/router';
 import { ClientsService, Cliente, ClientExecutiveDTO } from '../../services/clients/clients';
-import { IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonList, IonItem, IonLabel, IonFab, IonFabButton, IonIcon, IonSearchbar, IonCard, IonCardContent, IonButton, AlertController, IonRippleEffect, IonChip } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent, IonRefresher, IonRefresherContent, IonList, IonItem, IonLabel, IonFab, IonFabButton, IonIcon, IonSearchbar, IonCard, IonCardContent, IonButton, AlertController, IonRippleEffect, IonChip, ModalController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { add, trashOutline, chevronForwardOutline, searchOutline, callOutline, createOutline, documentTextOutline, alertCircleOutline, caretDownOutline, statsChartOutline, heart, cloudUploadOutline, downloadOutline } from 'ionicons/icons';
+import { add, trashOutline, chevronForwardOutline, searchOutline, callOutline, createOutline, documentTextOutline, alertCircleOutline, caretDownOutline, statsChartOutline, cloudUploadOutline, downloadOutline, ellipsisVertical, cloudDownloadOutline, warningOutline, checkmarkCircleOutline } from 'ionicons/icons';
+import { ImportModalComponent } from '../../shared/components/import-modal/import-modal.component';
 
 @Component({
   selector: 'app-clients-list',
@@ -37,9 +38,10 @@ export class ClientsListPage implements OnInit {
 
   constructor(
     private clientsService: ClientsService,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private modalCtrl: ModalController
   ) {
-    addIcons({ add, trashOutline, chevronForwardOutline, searchOutline, callOutline, createOutline, documentTextOutline, alertCircleOutline, caretDownOutline, statsChartOutline, cloudUploadOutline, downloadOutline });
+    addIcons({ add, trashOutline, chevronForwardOutline, searchOutline, callOutline, createOutline, documentTextOutline, alertCircleOutline, caretDownOutline, statsChartOutline, cloudUploadOutline, downloadOutline, ellipsisVertical, cloudDownloadOutline, warningOutline, checkmarkCircleOutline });
   }
 
   ngOnInit() {
@@ -172,143 +174,23 @@ export class ClientsListPage implements OnInit {
     await alert.present();
   }
 
-  // --- Bulk CSV Upload Logic ---
-
-  downloadCsvTemplate() {
-    const headers = [
-      'Razao Social', 'Nome Fantasia', 'CNPJ', 'CPF', 'Email', 'Telefone',
-      'Endereco', 'Representante Nome', 'Representante CPF', 'Financeiro Nome', 'Financeiro Email'
-    ];
-    const csvContent = headers.join(';') + '\n' +
-      'Empresa Exemplo Ltda;Empresa Ex;12.345.678/0001-99;;contato@empresa.com;11999999999;Rua Exemplo 123;Joao Silva;123.456.789-00;Maria Fin;pagar@empresa.com';
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', 'modelo_importacao_clientes.csv');
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  }
-
-  triggerCsvUpload(event: Event) {
-    // Hidden input click is handled by UI linking or ViewChild.
-    // Here we assume the method is called by button to click input.
-    // Actually in Angular/Ionic easier to just have the input hidden and click it from template ref
-    // We will use ViewChild approach in bigger apps, but simple (click) on input via template ref is fine.
-    // This method might not be needed if HTML handles the click relay.
-  }
-
-  onCsvSelected(event: any) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e: any) => {
-      const text = e.target.result;
-      this.processCsvData(text);
-    };
-    reader.readAsText(file);
-    // Reset input
-    event.target.value = '';
-  }
-
-  processCsvData(csvText: string) {
-    const lines = csvText.split('\n');
-    const clients: Cliente[] = [];
-    // Skip header row
-    const startIndex = 1;
-
-    for (let i = startIndex; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-
-      // A robust approach to detect the primary delimiter
-      // If the line has semicolons, it's highly likely an Excel exported CSV (Brazilian format).
-      const delimiter = line.includes(';') ? ';' : ',';
-
-      // Split strings accurately ignoring delimiters inside quotes.
-      const regex = new RegExp(`${delimiter}(?=(?:(?:[^"]*"){2})*[^"]*$)`);
-      let cols = line.split(regex).map(col => col.replace(/^"(.*)"$/, '$1').trim());
-
-      // Fallback: If Excel placed everything into Column A and wrapped it in quotes,
-      // cols will have length 1 but contain the delimiter inside.
-      if (cols.length === 1) {
-        if (cols[0].includes(';')) {
-          cols = cols[0].split(';').map(col => col.trim());
-        } else if (cols[0].includes(',')) {
-          cols = cols[0].split(',').map(col => col.trim());
-        }
-      }
-
-      // Debug logging
-      console.log('CSV line parsed', { lineNumber: i, raw: line, colsLength: cols.length, cols });
-      // Mapping based on headers index
-      // 0: 'Razao Social', 1: 'Nome Fantasia', 2: 'CNPJ', 3: 'CPF', 4: 'Email', 5: 'Telefone',
-      // 6: 'Endereco', 7: 'Representante Nome', 8: 'Representante CPF', 9: 'Financeiro Nome', 10: 'Financeiro Email'
-
-      if (cols.length < 1) continue;
-
-      const client: Cliente = {
-        razaoSocial: cols[0] || 'Sem Razão Social',
-        nomeFantasia: cols[1] || undefined,
-        cnpj: cols[2] || undefined,
-        cpf: cols[3] || undefined,
-        email: cols[4] || undefined,
-        telefone: cols[5] || undefined,
-        endereco: cols[6] || undefined,
-        representanteNome: cols[7] || undefined,
-        representanteCpf: cols[8] || undefined,
-        financeiroNome: cols[9] || undefined,
-        financeiroEmail: cols[10] || undefined,
-        ativo: true
-      };
-
-      // Validate basic requirement
-      if (client.razaoSocial) {
-        clients.push(client);
-      }
-    }
-
-    if (clients.length > 0) {
-      this.uploadClients(clients);
-    } else {
-      this.alertController.create({
-        header: 'Erro',
-        message: 'Nenhum cliente válido encontrado no arquivo.',
-        buttons: ['OK']
-      }).then(a => a.present());
-    }
-  }
-
-  async uploadClients(clients: Cliente[]) {
-    this.isImporting = true;
-    this.clientsService.createMany(clients).subscribe({
-      next: async (res: any) => {
-        this.isImporting = false;
-        const alert = await this.alertController.create({
-          header: 'Sucesso',
-          message: `${res.created} clientes importados. ${res.skipped ? res.skipped + ' duplicados ignorados.' : ''}`,
-          buttons: ['OK']
-        });
-        await alert.present();
-        this.loadData();
+  async openImportModal() {
+    const modal = await this.modalCtrl.create({
+      component: ImportModalComponent,
+      componentProps: {
+        title: 'Importar Clientes',
+        endpointUrl: 'clients/import'
       },
-      error: async (err) => {
-        this.isImporting = false;
-        console.error(err);
-        const alert = await this.alertController.create({
-          header: 'Erro',
-          message: 'Falha ao importar clientes. Verifique se há campos obrigatórios faltando ou duplicados.',
-          buttons: ['OK']
-        });
-        await alert.present();
+      cssClass: 'import-modal'
+    });
+
+    modal.onDidDismiss().then((result) => {
+      if (result.data) {
+        this.loadData();
       }
     });
+
+    await modal.present();
   }
 
   exportCSV() {

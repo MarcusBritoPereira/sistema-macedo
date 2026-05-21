@@ -19,15 +19,10 @@
           [disabled]="isImporting">
           <ion-icon name="download-outline" slot="start"></ion-icon> Exportar
         </ion-button>
-        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="downloadCsvTemplate()"
-          [disabled]="isImporting">
-          <ion-icon name="document-text-outline" slot="start"></ion-icon> Modelo CSV
-        </ion-button>
-        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="csvInput.click()"
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="openImportModal()"
           [disabled]="isImporting">
           <ion-icon name="cloud-upload-outline" slot="start"></ion-icon> Importar
         </ion-button>
-        <input #csvInput type="file" (change)="onCsvSelected($event)" accept=".csv" style="display: none;">
 
         <div class="pagination-controls">
           <ion-button fill="clear" size="small" disabled><ion-icon name="chevron-back"></ion-icon></ion-button>

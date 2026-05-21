@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, AlertController, ToastController } from '@ionic/angular';
+import { IonicModule, AlertController, ToastController, ModalController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline } from 'ionicons/icons';
+import { chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline, cloudUploadOutline } from 'ionicons/icons';
 import { FinancialBudgetService, FinancialBudget } from '../../services/financial/financial-budget.service';
+import { ImportModalComponent } from '../../shared/components/import-modal/import-modal.component';
 
 @Component({
     selector: 'app-budget',
@@ -21,9 +22,10 @@ export class BudgetPage implements OnInit {
     constructor(
         private budgetService: FinancialBudgetService,
         private alertCtrl: AlertController,
-        private toastCtrl: ToastController
+        private toastCtrl: ToastController,
+        private modalCtrl: ModalController
     ) {
-        addIcons({ chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline });
+        addIcons({ chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline, cloudUploadOutline });
     }
 
     ngOnInit() {
@@ -169,5 +171,24 @@ export class BudgetPage implements OnInit {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    }
+
+    async openImportModal() {
+        const modal = await this.modalCtrl.create({
+            component: ImportModalComponent,
+            componentProps: {
+                title: 'Importar Orçamento',
+                endpointUrl: 'financial/budget/import'
+            },
+            cssClass: 'import-modal'
+        });
+
+        modal.onDidDismiss().then((result) => {
+            if (result.data) {
+                this.loadBudgets();
+            }
+        });
+
+        await modal.present();
     }
 }

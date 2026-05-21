@@ -7,8 +7,13 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  Res,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
@@ -21,6 +26,17 @@ export class CategoriesController {
   @Post()
   create(@Body() createCategoryDto: CreateCategoryDto) {
     return this.categoriesService.create(createCategoryDto);
+  }
+
+  @Get('template/csv')
+  getTemplate(@Res() res: Response) {
+    return this.categoriesService.getTemplate(res);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  importCsv(@UploadedFile() file: Express.Multer.File) {
+    return this.categoriesService.importCsv(file);
   }
 
   @Get('tree')

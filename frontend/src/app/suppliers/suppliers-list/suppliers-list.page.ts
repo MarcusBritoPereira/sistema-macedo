@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule } from '@ionic/angular';
+import { IonicModule, ModalController } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { add, searchOutline, downloadOutline, chevronForwardOutline } from 'ionicons/icons';
+import { add, searchOutline, downloadOutline, chevronForwardOutline, cloudUploadOutline } from 'ionicons/icons';
 import { SuppliersService, Supplier } from '../../services/suppliers/suppliers.service';
+import { ImportModalComponent } from '../../shared/components/import-modal/import-modal.component';
 
 @Component({
     selector: 'app-suppliers-list',
@@ -19,8 +20,11 @@ export class SuppliersListPage implements OnInit {
     filteredSuppliers: Supplier[] = [];
     searchTerm = '';
 
-    constructor(private suppliersService: SuppliersService) {
-        addIcons({ add, searchOutline, downloadOutline, chevronForwardOutline });
+    constructor(
+        private suppliersService: SuppliersService,
+        private modalCtrl: ModalController
+    ) {
+        addIcons({ add, searchOutline, downloadOutline, chevronForwardOutline, cloudUploadOutline });
     }
 
     ngOnInit() {
@@ -71,5 +75,24 @@ export class SuppliersListPage implements OnInit {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+    }
+
+    async openImportModal() {
+        const modal = await this.modalCtrl.create({
+            component: ImportModalComponent,
+            componentProps: {
+                title: 'Importar Fornecedores',
+                endpointUrl: 'suppliers/import'
+            },
+            cssClass: 'import-modal'
+        });
+
+        modal.onDidDismiss().then((result) => {
+            if (result.data) {
+                this.loadSuppliers();
+            }
+        });
+
+        await modal.present();
     }
 }

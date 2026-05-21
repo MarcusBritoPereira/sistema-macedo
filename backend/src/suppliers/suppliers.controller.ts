@@ -7,7 +7,12 @@ import {
   Param,
   Delete,
   UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  Res,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { SuppliersService } from './suppliers.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
@@ -21,6 +26,17 @@ export class SuppliersController {
   @Post()
   create(@Body() createSupplierDto: CreateSupplierDto) {
     return this.suppliersService.create(createSupplierDto);
+  }
+
+  @Get('template/csv')
+  getTemplate(@Res() res: Response) {
+    return this.suppliersService.getTemplate(res);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  importCsv(@UploadedFile() file: Express.Multer.File) {
+    return this.suppliersService.importCsv(file);
   }
 
   @Get()

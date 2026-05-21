@@ -1,8 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, NavController, ToastController } from '@ionic/angular';
+import { IonicModule, NavController, ToastController, ModalController } from '@ionic/angular';
 import { ObrasService, Obra } from '../../../services/financial/obras.service';
+import { ImportModalComponent } from '../../../shared/components/import-modal/import-modal.component';
+import { addIcons } from 'ionicons';
+import { cloudUploadOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-obras-list',
@@ -18,8 +21,11 @@ export class ObrasListPage implements OnInit {
   constructor(
     private obrasService: ObrasService,
     private navCtrl: NavController,
-    private toastCtrl: ToastController
-  ) {}
+    private toastCtrl: ToastController,
+    private modalCtrl: ModalController
+  ) {
+    addIcons({ cloudUploadOutline });
+  }
 
   ngOnInit() {
     this.loadObras();
@@ -78,5 +84,24 @@ export class ObrasListPage implements OnInit {
       position: 'bottom'
     });
     await toast.present();
+  }
+
+  async openImportModal() {
+    const modal = await this.modalCtrl.create({
+      component: ImportModalComponent,
+      componentProps: {
+        title: 'Importar Obras',
+        endpointUrl: 'financial/obras/import'
+      },
+      cssClass: 'import-modal'
+    });
+
+    modal.onDidDismiss().then((result) => {
+      if (result.data) {
+        this.loadObras();
+      }
+    });
+
+    await modal.present();
   }
 }

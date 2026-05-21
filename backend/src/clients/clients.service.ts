@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateClientDto } from './dto/create-client.dto';
+import * as Papa from 'papaparse';
+import { Response } from 'express';
 
 @Injectable()
 export class ClientsService {
@@ -9,6 +11,40 @@ export class ClientsService {
 
   create(data: Prisma.ClienteCreateInput) {
     return this.prisma.cliente.create({ data });
+  }
+
+  getTemplate(res: Response) {
+    const csv = Papa.unparse([{ razaoSocial: 'Empresa Exemplo LTDA', nomeFantasia: 'Exemplo', cnpj: '00.000.000/0000-00', cpf: '', email: 'contato@exemplo.com', telefone: '11999999999', endereco: 'Rua Exemplo, 123' }]);
+    res.header('Content-Type', 'text/csv');
+    res.attachment('clientes_modelo.csv');
+    return res.send(csv);
+  }
+
+  async importCsv(file: Express.Multer.File) {
+    const csvData = file.buffer.toString('utf-8');
+    const { data } = Papa.parse(csvData, { header: true, skipEmptyLines: true });
+    
+    const validData: any[] = [];
+    
+    for (const row of data as any[]) {
+      if (!row.razaoSocial) continue;
+      
+      validData.push({
+        razaoSocial: row.razaoSocial.trim(),
+        nomeFantasia: row.nomeFantasia?.trim() || null,
+        cnpj: row.cnpj?.trim() || null,
+        cpf: row.cpf?.trim() || null,
+        email: row.email?.trim() || null,
+        telefone: row.telefone?.trim() || null,
+        endereco: row.endereco?.trim() || null,
+      });
+    }
+
+    if (validData.length > 0) {
+      return this.createMany(validData);
+    }
+    
+    return { total: 0, created: 0, skipped: 0 };
   }
 
   async createMany(data: CreateClientDto[]) {

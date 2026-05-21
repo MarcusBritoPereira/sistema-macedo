@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
+import * as Papa from 'papaparse';
+import { Response } from 'express';
 
 @Injectable()
 export class SuppliersService {
@@ -19,6 +21,43 @@ export class SuppliersService {
         ativo: dto.ativo ?? true,
       },
     });
+  }
+
+  getTemplate(res: Response) {
+    const csv = Papa.unparse([{ nomeFantasia: 'Exemplo Fornecedor', razaoSocial: 'Fornecedor Exemplo LTDA', cnpj: '00.000.000/0000-00', email: 'contato@exemplo.com', telefone: '11999999999' }]);
+    res.header('Content-Type', 'text/csv');
+    res.attachment('fornecedores_modelo.csv');
+    return res.send(csv);
+  }
+
+  async importCsv(file: Express.Multer.File) {
+    const csvData = file.buffer.toString('utf-8');
+    const { data } = Papa.parse(csvData, { header: true, skipEmptyLines: true });
+    
+    const validData: any[] = [];
+    
+    for (const row of data as any[]) {
+      if (!row.nomeFantasia) continue;
+      
+      validData.push({
+        nomeFantasia: row.nomeFantasia.trim(),
+        razaoSocial: row.razaoSocial?.trim() || null,
+        cnpj: row.cnpj?.trim() || null,
+        email: row.email?.trim() || null,
+        telefone: row.telefone?.trim() || null,
+        ativo: true,
+      });
+    }
+
+    if (validData.length > 0) {
+      const result = await this.prisma.fornecedor.createMany({
+        data: validData,
+        skipDuplicates: true,
+      });
+      return { success: true, imported: result.count };
+    }
+    
+    return { success: true, imported: 0 };
   }
 
   async findAll() {

@@ -8,7 +8,12 @@ import {
   Delete,
   UseGuards,
   Query,
+  UseInterceptors,
+  UploadedFile,
+  Res,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -27,6 +32,17 @@ export class ClientsController {
   @Post('bulk')
   createMany(@Body() createClientsDto: CreateClientDto[]) {
     return this.clientsService.createMany(createClientsDto);
+  }
+
+  @Get('template/csv')
+  getTemplate(@Res() res: Response) {
+    return this.clientsService.getTemplate(res);
+  }
+
+  @Post('import')
+  @UseInterceptors(FileInterceptor('file'))
+  importCsv(@UploadedFile() file: Express.Multer.File) {
+    return this.clientsService.importCsv(file);
   }
 
   @Get()

@@ -39,46 +39,10 @@
           <ion-icon name="search"></ion-icon>
         </div>
       </div>
-
-      <div class="more-filters" style="flex: 2; margin-top: 0; display: flex; align-items: flex-end; gap: 8px;">
-        <ion-button [fill]="activeFilter === 'ALL' ? 'solid' : 'outline'" size="small"
-          [color]="activeFilter === 'ALL' ? 'dark' : 'medium'" (click)="setFilter('ALL')"
-          class="filter-chip-btn">Todos</ion-button>
-        <ion-button [fill]="activeFilter === 'RISK' ? 'solid' : 'outline'" size="small"
-          [color]="activeFilter === 'RISK' ? 'danger' : 'medium'" (click)="setFilter('RISK')"
-          class="filter-chip-btn">Risco/Inadimplentes</ion-button>
-        <ion-button [fill]="activeFilter === 'TOP_REVENUE' ? 'solid' : 'outline'" size="small"
-          [color]="activeFilter === 'TOP_REVENUE' ? 'success' : 'medium'" (click)="setFilter('TOP_REVENUE')"
-          class="filter-chip-btn">Top Receita</ion-button>
-        <ion-button [fill]="activeFilter === 'OLD' ? 'solid' : 'outline'" size="small"
-          [color]="activeFilter === 'OLD' ? 'primary' : 'medium'" (click)="setFilter('OLD')"
-          class="filter-chip-btn">Antigos</ion-button>
-        <ion-button [fill]="activeFilter === 'ARCHIVED' ? 'solid' : 'outline'" size="small"
-          [color]="activeFilter === 'ARCHIVED' ? 'dark' : 'medium'" (click)="setFilter('ARCHIVED')"
-          class="filter-chip-btn">Arquivados</ion-button>
-      </div>
     </div>
   </ion-toolbar>
 
-  <!-- KPI Cards -->
-  <div class="kpi-container">
-    <div class="kpi-card blue-text">
-      <span class="label">Clientes Ativos</span>
-      <span class="value">{{ kpis.activeClients }}</span>
-    </div>
-    <div class="kpi-card border-blue">
-      <span class="label">Average LTV</span>
-      <span class="value">{{ kpis.avgLtv | currency:'BRL' }}</span>
-    </div>
-    <div class="kpi-card red-text">
-      <span class="label">Churn (Mês)</span>
-      <span class="value">{{ kpis.churnCount }}</span>
-    </div>
-    <div class="kpi-card green-text">
-      <span class="label">LTV</span>
-      <span class="value">{{ kpis.avgLifetimeMonths }}m</span>
-    </div>
-  </div>
+
 </ion-header>
 
 <ion-content class="light-bg">

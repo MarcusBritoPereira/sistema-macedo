@@ -12,7 +12,7 @@ git commit -m "chore: deploy para producao" || true
 git push origin main
 
 echo "3. Conectando via SSH ao servidor e atualizando o Docker..."
-ssh root@srv1311817 << 'EOF'
+ssh sistema-macedo << 'EOF'
   echo "⬇️ Puxando código mais recente..."
   # Tenta entrar na pasta do projeto no servidor (ajuste o caminho se for diferente)
   cd /root/sistema-macedo || cd /var/www/sistema-macedo || cd /sistema-macedo

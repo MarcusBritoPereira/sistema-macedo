@@ -8,7 +8,7 @@ import { ImportModalComponent } from '../../shared/components/import-modal/impor
 import { IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent, IonList, IonItem, IonLabel, IonFab, IonFabButton, IonIcon, IonRefresher, IonRefresherContent, IonBadge, IonSearchbar, IonCard, IonCardContent, IonButton } from '@ionic/angular/standalone';
 import { ModalController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { add, cloudUploadOutline, downloadOutline } from 'ionicons/icons';
+import { add, cloudUploadOutline, downloadOutline, search, chevronForwardOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-users-list',
@@ -24,7 +24,7 @@ export class UsersListPage implements OnInit {
     private usersService: UsersService,
     private modalCtrl: ModalController
   ) {
-    addIcons({ add, cloudUploadOutline, downloadOutline });
+    addIcons({ add, cloudUploadOutline, downloadOutline, search, chevronForwardOutline });
   }
 
   ngOnInit() {

@@ -5,7 +5,7 @@ import { IonicModule, NavController, ToastController, ModalController } from '@i
 import { ObrasService, Obra } from '../../../services/financial/obras.service';
 import { ImportModalComponent } from '../../../shared/components/import-modal/import-modal.component';
 import { addIcons } from 'ionicons';
-import { cloudUploadOutline } from 'ionicons/icons';
+import { cloudUploadOutline, downloadOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-obras-list',
@@ -24,7 +24,7 @@ export class ObrasListPage implements OnInit {
     private toastCtrl: ToastController,
     private modalCtrl: ModalController
   ) {
-    addIcons({ cloudUploadOutline });
+    addIcons({ cloudUploadOutline, downloadOutline });
   }
 
   ngOnInit() {
@@ -103,5 +103,28 @@ export class ObrasListPage implements OnInit {
     });
 
     await modal.present();
+  }
+
+  exportCSV() {
+    const csvRows = [];
+    csvRows.push('ID,Nome,Status,DataInicio,OrcamentoPrevisto');
+    
+    this.obras.forEach(o => {
+      const id = o.id || '';
+      const nome = o.nome ? `"${o.nome.replace(/"/g, '""')}"` : '';
+      const status = o.status || '';
+      const dataInicio = o.dataInicio ? new Date(o.dataInicio).toLocaleDateString('pt-BR') : '';
+      const orcamento = o.orcamentoPrevisto || 0;
+      csvRows.push(`${id},${nome},${status},${dataInicio},${orcamento}`);
+    });
+    
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "obras.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 }

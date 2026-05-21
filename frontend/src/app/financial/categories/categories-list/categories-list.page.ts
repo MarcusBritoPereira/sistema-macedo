@@ -58,6 +58,29 @@ export class CategoriesListPage implements OnInit {
     );
   }
 
+  exportCSV() {
+    // Simple CSV export logic for Categories
+    const csvRows = [];
+    csvRows.push('ID,Nome,Tipo,Subcategorias');
+    
+    this.categories.forEach(cat => {
+      const id = cat.id || '';
+      const nome = cat.nome ? `"${cat.nome.replace(/"/g, '""')}"` : '';
+      const tipo = cat.tipo || '';
+      const subLength = cat.subcategorias ? cat.subcategorias.length : 0;
+      csvRows.push(`${id},${nome},${tipo},${subLength}`);
+    });
+    
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "categorias.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
   async openImportModal() {
     const modal = await this.modalCtrl.create({
       component: ImportModalComponent,

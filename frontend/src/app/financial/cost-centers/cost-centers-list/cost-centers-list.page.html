@@ -12,8 +12,11 @@
       </div>
 
       <div class="right-actions">
-        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="openImportModal()" style="margin-right: 8px;">
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="openImportModal()">
             <ion-icon name="cloud-upload-outline" slot="start"></ion-icon> Importar
+        </ion-button>
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="exportCSV()">
+            <ion-icon name="download-outline" slot="start"></ion-icon> Exportar
         </ion-button>
         <ion-button color="primary" class="add-btn" routerLink="/financial/cost-centers/new">
           <ion-icon name="add" slot="start"></ion-icon>

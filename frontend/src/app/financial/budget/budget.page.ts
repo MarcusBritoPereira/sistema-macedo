@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule, AlertController, ToastController, ModalController } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline, cloudUploadOutline } from 'ionicons/icons';
+import { chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline, cloudUploadOutline, search, add } from 'ionicons/icons';
 import { FinancialBudgetService, FinancialBudget } from '../../services/financial/financial-budget.service';
 import { ImportModalComponent } from '../../shared/components/import-modal/import-modal.component';
 
@@ -25,7 +25,7 @@ export class BudgetPage implements OnInit {
         private toastCtrl: ToastController,
         private modalCtrl: ModalController
     ) {
-        addIcons({ chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline, cloudUploadOutline });
+        addIcons({ chevronBack, chevronForward, createOutline, trendingUpOutline, trendingDownOutline, walletOutline, downloadOutline, cloudUploadOutline, search, add });
     }
 
     ngOnInit() {
@@ -47,6 +47,14 @@ export class BudgetPage implements OnInit {
     changeYear(delta: number) {
         this.currentYear += delta;
         this.loadBudgets();
+    }
+
+    addBudget() {
+        this.showToast('Nova funcionalidade de orçamento em breve.', 'primary');
+    }
+
+    filterBudget(event: any) {
+        // Search filter placeholder
     }
 
     getBudget(month: number) {

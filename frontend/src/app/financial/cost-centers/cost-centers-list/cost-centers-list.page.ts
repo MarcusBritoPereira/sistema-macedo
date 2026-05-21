@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonButton, IonIcon, IonSearchbar, IonCard, IonFab, IonFabButton, IonRefresher, IonRefresherContent, ModalController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { searchOutline, businessOutline, chevronForwardOutline, add, cloudUploadOutline } from 'ionicons/icons';
+import { searchOutline, businessOutline, chevronForwardOutline, add, cloudUploadOutline, downloadOutline } from 'ionicons/icons';
 import { CostCentersService, CostCenter } from '../../../services/financial/cost-centers.service';
 import { RouterModule } from '@angular/router';
 import { ImportModalComponent } from '../../../shared/components/import-modal/import-modal.component';
@@ -22,7 +22,7 @@ export class CostCentersListPage implements OnInit {
     private costCentersService: CostCentersService,
     private modalCtrl: ModalController
   ) {
-    addIcons({ searchOutline, businessOutline, chevronForwardOutline, add, cloudUploadOutline });
+    addIcons({ searchOutline, businessOutline, chevronForwardOutline, add, cloudUploadOutline, downloadOutline });
   }
 
   ngOnInit() {
@@ -40,6 +40,27 @@ export class CostCentersListPage implements OnInit {
         if (event) event.target.complete();
       }
     });
+  }
+
+  exportCSV() {
+    const csvRows = [];
+    csvRows.push('ID,Nome,Descricao');
+    
+    this.costCenters.forEach(cc => {
+      const id = cc.id || '';
+      const nome = cc.nome ? `"${cc.nome.replace(/"/g, '""')}"` : '';
+      const desc = cc.descricao ? `"${cc.descricao.replace(/"/g, '""')}"` : '';
+      csvRows.push(`${id},${nome},${desc}`);
+    });
+    
+    const csvContent = "data:text/csv;charset=utf-8," + csvRows.join("\\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "centros_de_custo.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   async openImportModal() {

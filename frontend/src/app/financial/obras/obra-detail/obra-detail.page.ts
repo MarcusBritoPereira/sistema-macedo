@@ -1,11 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { IonicModule, NavController } from '@ionic/angular';
+import { IonicModule, NavController, ToastController } from '@ionic/angular';
 import { ActivatedRoute } from '@angular/router';
 import { ObrasService, Obra } from '../../../services/financial/obras.service';
-import { ToastService } from '../../../services/toast.service';
-import { ClientsService } from '../../../services/clients.service';
+import { ClientsService } from '../../../services/clients/clients';
 import { CostCentersService } from '../../../services/financial/cost-centers.service';
 
 @Component({
@@ -30,7 +29,7 @@ export class ObraDetailPage implements OnInit {
     private route: ActivatedRoute,
     private navCtrl: NavController,
     private obrasService: ObrasService,
-    private toastService: ToastService,
+    private toastCtrl: ToastController,
     private clientsService: ClientsService,
     private costCentersService: CostCentersService,
     private location: Location
@@ -62,8 +61,8 @@ export class ObraDetailPage implements OnInit {
   }
 
   loadDependencies() {
-    this.clientsService.getAll().subscribe(res => this.clientes = res);
-    this.costCentersService.getAll().subscribe(res => this.centrosCusto = res);
+    this.clientsService.findAll().subscribe(res => this.clientes = res);
+    this.costCentersService.findAll().subscribe(res => this.centrosCusto = res);
   }
 
   loadObra() {
@@ -86,9 +85,9 @@ export class ObraDetailPage implements OnInit {
         });
         this.loading = false;
       },
-      error: (err) => {
+      error: async (err) => {
         console.error(err);
-        this.toastService.showError('Erro ao carregar os dados da obra.');
+        await this.showToast('Erro ao carregar os dados da obra.', 'danger');
         this.loading = false;
         this.goBack();
       }
@@ -98,7 +97,7 @@ export class ObraDetailPage implements OnInit {
   async save() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      this.toastService.showWarning('Preencha os campos obrigatórios.');
+      await this.showToast('Preencha os campos obrigatórios.', 'warning');
       return;
     }
 
@@ -108,15 +107,15 @@ export class ObraDetailPage implements OnInit {
     try {
       if (this.isEdit && this.obraId) {
         await this.obrasService.update(this.obraId, data).toPromise();
-        this.toastService.showSuccess('Obra atualizada com sucesso!');
+        await this.showToast('Obra atualizada com sucesso!', 'success');
       } else {
         await this.obrasService.create(data).toPromise();
-        this.toastService.showSuccess('Obra criada com sucesso!');
+        await this.showToast('Obra criada com sucesso!', 'success');
       }
       this.goBack();
     } catch (err) {
       console.error(err);
-      this.toastService.showError('Erro ao salvar a obra.');
+      await this.showToast('Erro ao salvar a obra.', 'danger');
     } finally {
       this.saving = false;
     }
@@ -125,16 +124,15 @@ export class ObraDetailPage implements OnInit {
   async deleteObra() {
     if (!this.obraId) return;
     
-    // Simplification for the autonomous agent. A real confirm dialog could be added here.
     if(confirm('Tem certeza que deseja excluir esta obra?')) {
       this.saving = true;
       try {
         await this.obrasService.delete(this.obraId).toPromise();
-        this.toastService.showSuccess('Obra excluída com sucesso!');
+        await this.showToast('Obra excluída com sucesso!', 'success');
         this.goBack();
       } catch (err) {
         console.error(err);
-        this.toastService.showError('Erro ao excluir a obra.');
+        await this.showToast('Erro ao excluir a obra.', 'danger');
       } finally {
         this.saving = false;
       }
@@ -143,5 +141,15 @@ export class ObraDetailPage implements OnInit {
 
   goBack() {
     this.location.back();
+  }
+
+  async showToast(message: string, color: string) {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 3000,
+      color,
+      position: 'bottom'
+    });
+    await toast.present();
   }
 }

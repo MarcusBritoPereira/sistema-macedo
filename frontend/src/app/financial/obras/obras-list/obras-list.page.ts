@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonicModule, NavController } from '@ionic/angular';
+import { IonicModule, NavController, ToastController } from '@ionic/angular';
 import { ObrasService, Obra } from '../../../services/financial/obras.service';
-import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-obras-list',
@@ -19,7 +18,7 @@ export class ObrasListPage implements OnInit {
   constructor(
     private obrasService: ObrasService,
     private navCtrl: NavController,
-    private toastService: ToastService
+    private toastCtrl: ToastController
   ) {}
 
   ngOnInit() {
@@ -37,9 +36,9 @@ export class ObrasListPage implements OnInit {
         this.obras = data;
         this.loading = false;
       },
-      error: (err) => {
+      error: async (err) => {
         console.error(err);
-        this.toastService.showError('Erro ao carregar obras.');
+        await this.showToast('Erro ao carregar obras.', 'danger');
         this.loading = false;
       }
     });
@@ -67,5 +66,15 @@ export class ObrasListPage implements OnInit {
   formatCurrency(value?: number): string {
     if (value === undefined || value === null) return 'R$ 0,00';
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+  }
+
+  async showToast(message: string, color: string) {
+    const toast = await this.toastCtrl.create({
+      message,
+      duration: 3000,
+      color,
+      position: 'bottom'
+    });
+    await toast.present();
   }
 }

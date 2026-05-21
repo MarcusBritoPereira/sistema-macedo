@@ -29,17 +29,19 @@ export class ObrasListPage implements OnInit {
     this.loadObras();
   }
 
-  loadObras() {
-    this.loading = true;
+  loadObras(event?: any) {
+    this.loading = !event;
     this.obrasService.getAll().subscribe({
       next: (data) => {
         this.obras = data;
         this.loading = false;
+        if (event) event.target.complete();
       },
       error: async (err) => {
         console.error(err);
         await this.showToast('Erro ao carregar obras.', 'danger');
         this.loading = false;
+        if (event) event.target.complete();
       }
     });
   }

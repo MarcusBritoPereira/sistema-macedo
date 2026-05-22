@@ -44,25 +44,10 @@ export class ClientDetailPage implements OnInit {
       // 2. Representante Legal
       representanteNome: [''],
       representanteCpf: [''],
-      representanteCargo: [''],
-      representanteEmail: [''],
-      representanteTelefone: [''],
 
       // 3. Responsável Financeiro
       financeiroNome: [''],
-      financeiroEmail: [''],
-      financeiroWhatsapp: [''],
-      financeiroPreferenciaContato: [''],
-
-      // 5. Dados Fiscais
-      emissaoNf: [false],
-      emailNf: [''],
-      obsFiscais: [''],
-
-      // 6. Dados Jurídicos
-      foro: [''],
-      lgpdAceito: [false],
-      aceiteEletronico: [false],
+      financeiroEmail: ['']
     });
   }
 

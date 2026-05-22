@@ -24,7 +24,13 @@ export class SuppliersService {
   }
 
   getTemplate(res: Response) {
-    const csv = Papa.unparse([{ nomeFantasia: 'Exemplo Fornecedor', razaoSocial: 'Fornecedor Exemplo LTDA', cnpj: '00.000.000/0000-00', email: 'contato@exemplo.com', telefone: '11999999999' }]);
+    const csv = Papa.unparse([{
+      'Fornecedor': 'Exemplo Fornecedor',
+      'Razão Social': 'Fornecedor Exemplo LTDA',
+      'CNPJ': '00.000.000/0000-00',
+      'Email': 'contato@exemplo.com',
+      'Telefone': '11999999999'
+    }]);
     res.header('Content-Type', 'text/csv');
     res.attachment('fornecedores_modelo.csv');
     return res.send(csv);
@@ -36,15 +42,53 @@ export class SuppliersService {
     
     const validData: any[] = [];
     
-    for (const row of data as any[]) {
-      if (!row.nomeFantasia) continue;
+    const normalizeKey = (key: string): string => {
+      return key
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '');
+    };
+
+    const keyMap: Record<string, string> = {
+      fornecedor: 'nomeFantasia',
+      nomefantasia: 'nomeFantasia',
+      razaosocial: 'razaoSocial',
+      cnpj: 'cnpj',
+      email: 'email',
+      telefone: 'telefone',
+    };
+    
+    for (const rawRow of data as any[]) {
+      const row: any = {};
+      for (const rawKey of Object.keys(rawRow)) {
+        const normalized = normalizeKey(rawKey);
+        const mappedKey = keyMap[normalized];
+        if (mappedKey) {
+          row[mappedKey] = rawRow[rawKey];
+        } else {
+          row[rawKey] = rawRow[rawKey];
+        }
+      }
+
+      let nomeFantasia = row.nomeFantasia?.toString().trim();
+      let razaoSocial = row.razaoSocial?.toString().trim();
+      
+      if (!nomeFantasia && razaoSocial) {
+        nomeFantasia = razaoSocial;
+      }
+      if (!razaoSocial && nomeFantasia) {
+        razaoSocial = nomeFantasia;
+      }
+
+      if (!nomeFantasia) continue;
       
       validData.push({
-        nomeFantasia: row.nomeFantasia.trim(),
-        razaoSocial: row.razaoSocial?.trim() || null,
-        cnpj: row.cnpj?.trim() || null,
-        email: row.email?.trim() || null,
-        telefone: row.telefone?.trim() || null,
+        nomeFantasia: nomeFantasia,
+        razaoSocial: razaoSocial || null,
+        cnpj: row.cnpj?.toString().trim() || null,
+        email: row.email?.toString().trim() || null,
+        telefone: row.telefone?.toString().trim() || null,
         ativo: true,
       });
     }

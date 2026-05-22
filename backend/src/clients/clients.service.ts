@@ -14,7 +14,19 @@ export class ClientsService {
   }
 
   getTemplate(res: Response) {
-    const csv = Papa.unparse([{ razaoSocial: 'Empresa Exemplo LTDA', nomeFantasia: 'Exemplo', cnpj: '00.000.000/0000-00', cpf: '', email: 'contato@exemplo.com', telefone: '11999999999', endereco: 'Rua Exemplo, 123' }]);
+    const csv = Papa.unparse([{
+      'Razão Social': 'Empresa Exemplo LTDA',
+      'Nome Fantasia': 'Exemplo',
+      'CNPJ': '00.000.000/0000-00',
+      'CPF': '',
+      'Email': 'contato@exemplo.com',
+      'Telefone': '11999999999',
+      'Endereço': 'Rua Exemplo, 123',
+      'Representante Nome': 'João da Silva',
+      'Representante CPF': '000.000.000-00',
+      'Financeiro Nome': 'Maria Souza',
+      'Financeiro Email': 'financeiro@exemplo.com'
+    }]);
     res.header('Content-Type', 'text/csv');
     res.attachment('clientes_modelo.csv');
     return res.send(csv);
@@ -26,25 +38,84 @@ export class ClientsService {
     
     const validData: any[] = [];
     
-    for (const row of data as any[]) {
-      if (!row.razaoSocial) continue;
+    const normalizeKey = (key: string): string => {
+      return key
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]/g, '');
+    };
+
+    const keyMap: Record<string, string> = {
+      razaosocial: 'razaoSocial',
+      nomefantasia: 'nomeFantasia',
+      cnpj: 'cnpj',
+      cpf: 'cpf',
+      email: 'email',
+      telefone: 'telefone',
+      endereco: 'endereco',
+      enderecoprincipal: 'endereco',
+      representantenome: 'representanteNome',
+      nomerepresentante: 'representanteNome',
+      representantecpf: 'representanteCpf',
+      cpfrepresentante: 'representanteCpf',
+      financeironome: 'financeiroNome',
+      nomefinanceiro: 'financeiroNome',
+      financeiroemail: 'financeiroEmail',
+      emailfinanceiro: 'financeiroEmail',
+    };
+    
+    for (const rawRow of data as any[]) {
+      const row: any = {};
+      for (const rawKey of Object.keys(rawRow)) {
+        const normalized = normalizeKey(rawKey);
+        const mappedKey = keyMap[normalized];
+        if (mappedKey) {
+          row[mappedKey] = rawRow[rawKey];
+        } else {
+          row[rawKey] = rawRow[rawKey];
+        }
+      }
+
+      let razaoSocial = row.razaoSocial?.toString().trim();
+      let nomeFantasia = row.nomeFantasia?.toString().trim();
       
+      if (!razaoSocial && nomeFantasia) {
+        razaoSocial = nomeFantasia;
+      }
+      if (!nomeFantasia && razaoSocial) {
+        nomeFantasia = razaoSocial;
+      }
+
+      if (!razaoSocial) continue;
+
       validData.push({
-        razaoSocial: row.razaoSocial.trim(),
-        nomeFantasia: row.nomeFantasia?.trim() || null,
-        cnpj: row.cnpj?.trim() || null,
-        cpf: row.cpf?.trim() || null,
-        email: row.email?.trim() || null,
-        telefone: row.telefone?.trim() || null,
-        endereco: row.endereco?.trim() || null,
+        razaoSocial: razaoSocial,
+        nomeFantasia: nomeFantasia || null,
+        cnpj: row.cnpj?.toString().trim() || null,
+        cpf: row.cpf?.toString().trim() || null,
+        email: row.email?.toString().trim() || null,
+        telefone: row.telefone?.toString().trim() || null,
+        endereco: row.endereco?.toString().trim() || null,
+        representanteNome: row.representanteNome?.toString().trim() || null,
+        representanteCpf: row.representanteCpf?.toString().trim() || null,
+        financeiroNome: row.financeiroNome?.toString().trim() || null,
+        financeiroEmail: row.financeiroEmail?.toString().trim() || null,
       });
     }
 
     if (validData.length > 0) {
-      return this.createMany(validData);
+      const result = await this.createMany(validData);
+      return {
+        success: true,
+        imported: result.created,
+        total: result.total,
+        created: result.created,
+        skipped: result.skipped,
+      };
     }
     
-    return { total: 0, created: 0, skipped: 0 };
+    return { success: true, imported: 0, total: 0, created: 0, skipped: 0 };
   }
 
   async createMany(data: CreateClientDto[]) {

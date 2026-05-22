@@ -55,7 +55,8 @@ export class ImportModalComponent {
     try {
       const response: any = await this.http.post(`${environment.apiUrl}/${this.endpointUrl}`, formData).toPromise();
       this.loading = false;
-      this.showToast(`Importação concluída! ${response.imported} registros foram importados.`, 'success');
+      const importedCount = response.imported ?? response.created ?? response.count ?? 0;
+      this.showToast(`Importação concluída! ${importedCount} registros foram importados.`, 'success');
       this.dismiss(true);
     } catch (error) {
       this.loading = false;

@@ -36,9 +36,7 @@ export class SupplierDetailPage implements OnInit {
             razaoSocial: [''],
             cnpj: [''],
             email: ['', [Validators.email]],
-            telefone: [''],
-            categoriaDefaultId: [''],
-            ativo: [true]
+            telefone: ['']
         });
     }
 

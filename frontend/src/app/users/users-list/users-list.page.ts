@@ -5,8 +5,7 @@ import { IonicModule } from '@ionic/angular';
 import { RouterModule } from '@angular/router';
 import { UsersService, Usuario } from '../../services/users/users';
 import { ImportModalComponent } from '../../shared/components/import-modal/import-modal.component';
-import { IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent, IonList, IonItem, IonLabel, IonFab, IonFabButton, IonIcon, IonRefresher, IonRefresherContent, IonBadge, IonSearchbar, IonCard, IonCardContent, IonButton } from '@ionic/angular/standalone';
-import { ModalController } from '@ionic/angular';
+import { IonHeader, IonToolbar, IonButtons, IonMenuButton, IonTitle, IonContent, IonList, IonItem, IonLabel, IonFab, IonFabButton, IonIcon, IonRefresher, IonRefresherContent, IonBadge, IonSearchbar, IonCard, IonCardContent, IonButton, ModalController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { add, cloudUploadOutline, downloadOutline, search, chevronForwardOutline } from 'ionicons/icons';
 

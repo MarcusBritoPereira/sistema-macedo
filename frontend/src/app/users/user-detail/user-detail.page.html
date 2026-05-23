@@ -44,7 +44,7 @@
             <ion-col size="12" size-md="6">
               <ion-item>
                 <ion-label position="floating">Perfil de Acesso</ion-label>
-                <ion-select formControlName="perfil" interface="popover">
+                <ion-select formControlName="perfil" interface="alert">
                   <ion-select-option value="ADMIN">Administrador</ion-select-option>
                   <ion-select-option value="FINANCEIRO">Financeiro</ion-select-option>
                 </ion-select>
@@ -55,15 +55,19 @@
       </ion-card>
 
       <div class="form-actions">
+        <p class="helper-text">Os campos com dados sensíveis impactam permissões de acesso.</p>
         <ion-button expand="block" type="submit" [disabled]="!userForm.valid" class="save-btn" shape="round">
           {{ isEditMode ? 'Salvar Alterações' : 'Criar Usuário' }}
         </ion-button>
 
-        <ion-button *ngIf="isEditMode" expand="block" fill="clear" color="danger" class="delete-btn"
-          (click)="onDelete()">
-          <ion-icon name="trash-outline" slot="start"></ion-icon>
-          Excluir Usuário
-        </ion-button>
+        <div class="danger-zone" *ngIf="isEditMode">
+          <h3>Zona de risco</h3>
+          <p>Esta ação remove o usuário permanentemente.</p>
+          <ion-button expand="block" fill="outline" color="danger" class="delete-btn" (click)="onDelete()">
+            <ion-icon name="trash-outline" slot="start"></ion-icon>
+            Excluir Usuário
+          </ion-button>
+        </div>
       </div>
     </form>
   </div>

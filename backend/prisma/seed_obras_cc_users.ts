@@ -61,7 +61,7 @@ async function main() {
     { nome: 'Instalações Elétricas e Hidráulicas', codigo: '1.05', ativo: true, aceitaLancamento: true },
     
     // Estrutura Administrativa
-    { nome: 'Administrativo & HQ', codigo: '2.0', ativo: true, aceitaLancamento: false },
+    { nome: 'Administrativo & Escritório Central', codigo: '2.0', ativo: true, aceitaLancamento: false },
     { nome: 'Despesas de Escritório', codigo: '2.01', ativo: true, aceitaLancamento: true },
     { nome: 'Pessoal & RH', codigo: '2.02', ativo: true, aceitaLancamento: true },
     { nome: 'Marketing e Vendas', codigo: '2.03', ativo: true, aceitaLancamento: true }

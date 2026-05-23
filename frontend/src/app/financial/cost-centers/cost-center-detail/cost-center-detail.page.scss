@@ -70,8 +70,20 @@ ion-content {
     }
 }
 
+.form-grid {
+    padding: 0 !important;
+
+    ion-row {
+        margin: 0 -12px !important;
+    }
+
+    ion-col {
+        padding: 8px 12px !important;
+    }
+}
+
 .input-group {
-    margin-bottom: 20px;
+    margin-bottom: 4px;
 
     ion-label {
         font-size: 0.82rem;
@@ -180,7 +192,7 @@ ion-content {
     border: 1px solid #e2e8f0;
     border-radius: 10px;
     padding: 14px 18px;
-    margin-bottom: 12px;
+    margin-bottom: 0;
     transition: all 0.2s ease;
 
     &:hover {

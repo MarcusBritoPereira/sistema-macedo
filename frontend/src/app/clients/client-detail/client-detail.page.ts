@@ -34,7 +34,6 @@ export class ClientDetailPage implements OnInit {
     this.clientForm = this.fb.group({
       razaoSocial: ['', [Validators.required]],
       cpf: [''],
-      email: ['', [Validators.email]],
       telefone: [''],
       endereco: ['']
     });

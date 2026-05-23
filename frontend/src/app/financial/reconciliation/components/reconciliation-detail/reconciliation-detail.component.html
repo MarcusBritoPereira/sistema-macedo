@@ -104,14 +104,6 @@
                     </div>
 
                     <div class="field-item">
-                        <label>Categoria</label>
-                        <div class="custom-select-trigger" (click)="openSelection('CATEGORY')">
-                            <span [class.placeholder]="!form.categoriaId">{{ getCategoryName() || 'Selecione' }}</span>
-                            <ion-icon name="chevron-down-outline"></ion-icon>
-                        </div>
-                    </div>
-
-                    <div class="field-item">
                         <label>{{ statement.tipo === 'CREDIT' ? 'Cliente' : 'Fornecedor' }}</label>
                         <div class="custom-select-trigger" (click)="openSelection('ENTITY')">
                             <span [class.placeholder]="!form.fornecedorId">{{ getEntityName() || 'Selecione' }}</span>

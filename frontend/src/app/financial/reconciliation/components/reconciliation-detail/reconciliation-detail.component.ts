@@ -225,7 +225,7 @@ export class ReconciliationDetailComponent implements OnInit {
     }
 
     async confirmCreation() {
-        if (!this.form.descricao || !this.form.categoriaId) {
+        if (!this.form.descricao) {
             return;
         }
 

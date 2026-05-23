@@ -61,7 +61,7 @@
       <div class="col-docs">CPF</div>
       <div class="col-contato">Número de Contato</div>
       <div class="col-endereco">Endereço</div>
-      <div class="col-kpis">Ind.</div>
+      <div class="col-edit">Editar</div>
       <div class="col-actions"></div>
     </div>
 
@@ -80,15 +80,10 @@
         <div class="col-endereco">
           <span class="desc-main" title="{{ client.endereco }}">{{ client.endereco || '-' }}</span>
         </div>
-        <div class="col-kpis">
-          <span class="desc-main">{{ client.revenue | currency:'BRL' }}</span>
-          <span class="status-badge" [ngClass]="{
-                        'good': client.healthScore === 'GOOD',
-                        'attention': client.healthScore === 'ATTENTION',
-                        'risk': client.healthScore === 'RISK'
-                    }">
-            {{ client.statusDisplay }}
-          </span>
+        <div class="col-edit">
+          <ion-button fill="clear" color="primary" [routerLink]="['/clients', client.id]" (click)="$event.stopPropagation();">
+            <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+          </ion-button>
         </div>
         <div class="col-actions">
           <ion-button fill="clear" color="medium" (click)="deleteClient(client.id!, $event); $event.stopPropagation();">

@@ -262,13 +262,20 @@ ion-content.light-bg {
     min-width: 0;
 }
 
-.col-kpis {
-    flex: 1;
+.col-edit {
+    flex: 0.8;
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-    align-items: flex-end;
+    align-items: center;
+    justify-content: center;
     min-width: 0;
+
+    ion-button {
+        --padding-start: 0;
+        --padding-end: 0;
+        margin: 0;
+        height: 36px;
+        width: 36px;
+    }
 }
 
 .col-actions {

@@ -19,94 +19,54 @@ ion-content {
     display: none;
 }
 
-/* Custom Accordion Styling */
-ion-accordion-group {
-    background: transparent;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin: 0;
+/* Premium Form Card */
+.form-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+    margin-bottom: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
 
-    ion-accordion {
-        background: #ffffff;
-        border-radius: 16px;
-        box-shadow: none !important;
-        overflow: hidden;
-        margin: 0;
-        border: 1px solid rgba(0, 0, 0, 0.03);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
+    }
 
-        &.accordion-expanding,
-        &.accordion-expanded {
-            box-shadow: none !important;
-            transform: translateY(-2px);
-            border-color: var(--ion-color-primary-tint);
+    .form-card-header {
+        display: flex;
+        align-items: center;
+        padding: 24px 24px 20px 24px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        gap: 16px;
+
+        ion-icon {
+            font-size: 24px;
+            color: var(--ion-color-primary);
+            background: rgba(var(--ion-color-primary-rgb), 0.08);
+            padding: 12px;
+            border-radius: 12px;
         }
 
-        /* Header Styling (Premium) */
-        .accordion-custom-header {
-            --background: #ffffff;
-            --padding-start: 16px;
-            --inner-padding-end: 16px;
-            --min-height: 80px;
-            /* Taller click area */
-            --detail-icon-color: #cbd5e1;
-            /* Subtle chevron */
-            --detail-icon-opacity: 1;
-
-            &::part(native) {
-                padding-right: 16px;
-                /* Ensure chevron padding */
-            }
-
-            /* Icon Styling */
-            ion-icon.header-icon {
-                font-size: 24px;
-                color: var(--ion-color-primary);
-                background: rgba(var(--ion-color-primary-rgb), 0.08);
-                /* Soft tint background */
-                padding: 10px;
-                border-radius: 12px;
-                margin-right: 16px;
-                margin-top: 0;
-                margin-bottom: 0;
-                align-self: center;
-            }
-
-            /* Label Styling */
-            ion-label.header-info {
-                display: flex;
-                flex-direction: column;
-                gap: 4px;
-                margin: 0;
-                padding: 8px 0;
-
-                h2 {
-                    font-size: 1.05rem;
-                    font-weight: 600;
-                    color: #1e293b;
-                    margin: 0;
-                    letter-spacing: -0.01em;
-                }
-
-                p {
-                    font-size: 0.85rem;
-                    font-weight: 500;
-                    color: #94a3b8;
-                    /* Secondary text color */
-                    margin: 0;
-                    text-transform: uppercase;
-                    letter-spacing: 0.05em;
-                }
-            }
+        h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+            letter-spacing: -0.01em;
         }
 
-        /* Content Styling */
-        div[slot="content"] {
-            background: #ffffff;
-            padding: 24px 24px 32px 24px;
-            border-top: 1px solid rgba(0, 0, 0, 0.04);
+        p {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #94a3b8;
+            margin: 4px 0 0 0;
         }
+    }
+
+    .form-card-body {
+        padding: 24px 24px 32px 24px;
     }
 }
 

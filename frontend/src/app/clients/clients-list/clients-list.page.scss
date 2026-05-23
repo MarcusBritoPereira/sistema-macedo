@@ -219,6 +219,7 @@ ion-content.light-bg {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .col-docs {
@@ -226,6 +227,7 @@ ion-content.light-bg {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .col-contato {
@@ -233,6 +235,7 @@ ion-content.light-bg {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .col-endereco {
@@ -240,6 +243,7 @@ ion-content.light-bg {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .col-representante {
@@ -247,6 +251,7 @@ ion-content.light-bg {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .col-financeiro {
@@ -254,6 +259,7 @@ ion-content.light-bg {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .col-kpis {
@@ -262,9 +268,11 @@ ion-content.light-bg {
     flex-direction: column;
     gap: 2px;
     align-items: flex-end;
+    min-width: 0;
 }
 
 .col-actions {
+    flex: 0 0 60px;
     width: 60px;
     text-align: right;
 }
@@ -287,6 +295,9 @@ ion-content.light-bg {
     font-size: 0.75rem;
     color: #888;
     display: block;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
 
     &.danger {
         color: #d32f2f;

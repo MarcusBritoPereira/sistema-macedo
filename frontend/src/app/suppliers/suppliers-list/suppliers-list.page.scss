@@ -137,10 +137,12 @@ ion-content.light-bg {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .col-doc {
     flex: 1;
+    min-width: 0;
 }
 
 .col-contact {
@@ -148,9 +150,11 @@ ion-content.light-bg {
     display: flex;
     flex-direction: column;
     gap: 2px;
+    min-width: 0;
 }
 
 .col-actions {
+    flex: 0 0 60px;
     width: 60px;
     text-align: right;
 }
@@ -168,6 +172,9 @@ ion-content.light-bg {
 .desc-sub {
     font-size: 0.75rem;
     color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .empty-state {

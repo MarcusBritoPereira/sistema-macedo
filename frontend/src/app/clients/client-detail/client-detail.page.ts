@@ -32,22 +32,11 @@ export class ClientDetailPage implements OnInit {
     addIcons({ businessOutline, personOutline, cashOutline, constructOutline, receiptOutline, scaleOutline, trashOutline });
 
     this.clientForm = this.fb.group({
-      // 1. Dados Cadastrais
       razaoSocial: ['', [Validators.required]],
-      nomeFantasia: [''],
-      cnpj: [''],
       cpf: [''],
       email: ['', [Validators.email]],
       telefone: [''],
-      endereco: [''],
-
-      // 2. Representante Legal
-      representanteNome: [''],
-      representanteCpf: [''],
-
-      // 3. Responsável Financeiro
-      financeiroNome: [''],
-      financeiroEmail: ['']
+      endereco: ['']
     });
   }
 

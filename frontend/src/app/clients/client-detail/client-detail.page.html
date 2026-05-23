@@ -8,46 +8,32 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
+  <div class="form-wrapper">
+    <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
+      
+      <div class="form-card">
+        <div class="form-card-header">
+          <ion-icon name="person-outline" color="primary"></ion-icon>
+          <div>
+            <h2>Informações do Cliente</h2>
+            <p>Preencha os campos abaixo para {{ isEditMode ? 'atualizar' : 'cadastrar' }} o cliente</p>
+          </div>
+        </div>
 
-    <ion-accordion-group [multiple]="true" [value]="['cadastral']">
-
-      <!-- 1. DADOS CADASTRAIS -->
-      <ion-accordion value="cadastral">
-        <ion-item slot="header" class="accordion-custom-header" lines="none">
-          <ion-icon name="business-outline" slot="start" class="header-icon"></ion-icon>
-          <ion-label class="header-info">
-            <h2>Dados Cadastrais</h2>
-            <p>Etapa 1</p>
-          </ion-label>
-        </ion-item>
-        <div class="ion-padding" slot="content">
+        <div class="form-card-body">
           <ion-grid>
             <ion-row>
+              <!-- Nome -->
               <ion-col size="12">
                 <div class="field-group">
-                  <label>Razão Social *</label>
+                  <label>Nome *</label>
                   <ion-item lines="none" class="input-item">
-                    <ion-input formControlName="razaoSocial" placeholder="Ex: Tech Solutions Ltda"></ion-input>
+                    <ion-input formControlName="razaoSocial" placeholder="Ex: João da Silva ou Tech Solutions Ltda"></ion-input>
                   </ion-item>
                 </div>
               </ion-col>
-              <ion-col size="12">
-                <div class="field-group">
-                  <label>Nome Fantasia</label>
-                  <ion-item lines="none" class="input-item">
-                    <ion-input formControlName="nomeFantasia" placeholder="Ex: Tech Soluções"></ion-input>
-                  </ion-item>
-                </div>
-              </ion-col>
-              <ion-col size="12" size-md="6">
-                <div class="field-group">
-                  <label>CNPJ</label>
-                  <ion-item lines="none" class="input-item">
-                    <ion-input formControlName="cnpj" placeholder="00.000.000/0000-00"></ion-input>
-                  </ion-item>
-                </div>
-              </ion-col>
+
+              <!-- CPF -->
               <ion-col size="12" size-md="6">
                 <div class="field-group">
                   <label>CPF</label>
@@ -57,116 +43,53 @@
                 </div>
               </ion-col>
 
+              <!-- E-mail -->
+              <ion-col size="12" size-md="6">
+                <div class="field-group">
+                  <label>E-mail</label>
+                  <ion-item lines="none" class="input-item">
+                    <ion-input type="email" formControlName="email" placeholder="contato@email.com"></ion-input>
+                  </ion-item>
+                </div>
+              </ion-col>
+
+              <!-- Número de contato -->
+              <ion-col size="12" size-md="6">
+                <div class="field-group">
+                  <label>Número de Contato</label>
+                  <ion-item lines="none" class="input-item">
+                    <ion-input type="tel" formControlName="telefone" placeholder="(00) 00000-0000"></ion-input>
+                  </ion-item>
+                </div>
+              </ion-col>
+
+              <!-- Endereço -->
               <ion-col size="12">
                 <div class="field-group">
-                  <label>Endereço Completo</label>
+                  <label>Endereço</label>
                   <ion-item lines="none" class="input-item">
                     <ion-textarea formControlName="endereco" rows="2"
                       placeholder="Rua, Número, Bairro, Cidade - UF"></ion-textarea>
                   </ion-item>
                 </div>
               </ion-col>
-              <ion-col size="12" size-md="6">
-                <div class="field-group">
-                  <label>Email Geral</label>
-                  <ion-item lines="none" class="input-item">
-                    <ion-input type="email" formControlName="email" placeholder="contato@empresa.com"></ion-input>
-                  </ion-item>
-                </div>
-              </ion-col>
-              <ion-col size="12" size-md="6">
-                <div class="field-group">
-                  <label>Telefone Geral</label>
-                  <ion-item lines="none" class="input-item">
-                    <ion-input type="tel" formControlName="telefone" placeholder="(00) 0000-0000"></ion-input>
-                  </ion-item>
-                </div>
-              </ion-col>
             </ion-row>
           </ion-grid>
         </div>
-      </ion-accordion>
+      </div>
 
-      <!-- 2. REPRESENTANTE LEGAL -->
-      <ion-accordion value="representante">
-        <ion-item slot="header" class="accordion-custom-header" lines="none">
-          <ion-icon name="person-outline" slot="start" class="header-icon"></ion-icon>
-          <ion-label class="header-info">
-            <h2>Representante Legal</h2>
-            <p>Etapa 2</p>
-          </ion-label>
-        </ion-item>
-        <div class="ion-padding" slot="content">
-          <ion-grid>
-            <ion-row>
-              <ion-col size="12" size-md="6">
-                <div class="field-group">
-                  <label>Nome Completo</label>
-                  <ion-item lines="none" class="input-item">
-                    <ion-input formControlName="representanteNome" placeholder="Nome do representante"></ion-input>
-                  </ion-item>
-                </div>
-              </ion-col>
-              <ion-col size="12" size-md="6">
-                <div class="field-group">
-                  <label>CPF</label>
-                  <ion-item lines="none" class="input-item">
-                    <ion-input formControlName="representanteCpf" placeholder="000.000.000-00"></ion-input>
-                  </ion-item>
-                </div>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-        </div>
-      </ion-accordion>
+      <div class="form-actions">
+        <ion-button expand="block" type="submit" [disabled]="!clientForm.valid" class="save-btn" shape="round">
+          {{ isEditMode ? 'Salvar Alterações' : 'Cadastrar Cliente' }}
+        </ion-button>
 
-      <!-- 3. RESPONSÁVEL FINANCEIRO -->
-      <ion-accordion value="financeiro">
-        <ion-item slot="header" class="accordion-custom-header" lines="none">
-          <ion-icon name="cash-outline" slot="start" class="header-icon"></ion-icon>
-          <ion-label class="header-info">
-            <h2>Responsável Financeiro</h2>
-            <p>Etapa 3</p>
-          </ion-label>
-        </ion-item>
-        <div class="ion-padding" slot="content">
-          <ion-grid>
-            <ion-row>
-              <ion-col size="12" size-md="6">
-                <div class="field-group">
-                  <label>Nome</label>
-                  <ion-item lines="none" class="input-item">
-                    <ion-input formControlName="financeiroNome" placeholder="Contato Financeiro"></ion-input>
-                  </ion-item>
-                </div>
-              </ion-col>
-              <ion-col size="12" size-md="6">
-                <div class="field-group">
-                  <label>E-mail Financeiro</label>
-                  <ion-item lines="none" class="input-item">
-                    <ion-input type="email" formControlName="financeiroEmail"
-                      placeholder="financeiro@empresa.com"></ion-input>
-                  </ion-item>
-                </div>
-              </ion-col>
-            </ion-row>
-          </ion-grid>
-        </div>
-      </ion-accordion>
-
-    </ion-accordion-group>
-
-    <div class="form-actions ion-padding-top">
-      <ion-button expand="block" type="submit" [disabled]="!clientForm.valid" class="save-btn" shape="round">
-        {{ isEditMode ? 'Salvar Alterações' : 'Cadastrar Cliente' }}
-      </ion-button>
-
-      <ion-button *ngIf="isEditMode" expand="block" fill="clear" color="danger" (click)="onDelete()">
-        <ion-icon name="trash-outline" slot="start"></ion-icon>
-        Excluir Cliente
-      </ion-button>
-    </div>
-  </form>
+        <ion-button *ngIf="isEditMode" expand="block" fill="clear" color="danger" (click)="onDelete()">
+          <ion-icon name="trash-outline" slot="start"></ion-icon>
+          Excluir Cliente
+        </ion-button>
+      </div>
+    </form>
+  </div>
 
   <ion-toast [isOpen]="isToastOpen" [message]="toastMessage" [duration]="2000" (didDismiss)="setToastOpen(false)"
     position="top" color="dark"></ion-toast>

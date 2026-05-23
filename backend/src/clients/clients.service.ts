@@ -15,6 +15,16 @@ export class ClientsService {
         where: { cpf: data.cpf },
       });
       if (existingCpf) {
+        if (!existingCpf.ativo) {
+          // Reativa e atualiza o cliente deletado logicamente (soft-delete)
+          return this.prisma.cliente.update({
+            where: { id: existingCpf.id },
+            data: {
+              ...data,
+              ativo: true,
+            },
+          });
+        }
         throw new ConflictException('Já existe um cliente cadastrado com este CPF.');
       }
     }
@@ -24,6 +34,16 @@ export class ClientsService {
         where: { cnpj: data.cnpj },
       });
       if (existingCnpj) {
+        if (!existingCnpj.ativo) {
+          // Reativa e atualiza o cliente deletado logicamente (soft-delete)
+          return this.prisma.cliente.update({
+            where: { id: existingCnpj.id },
+            data: {
+              ...data,
+              ativo: true,
+            },
+          });
+        }
         throw new ConflictException('Já existe um cliente cadastrado com este CNPJ.');
       }
     }

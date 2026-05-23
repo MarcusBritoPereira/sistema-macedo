@@ -102,7 +102,26 @@ export class ObraDetailPage implements OnInit {
     }
 
     this.saving = true;
-    const data = this.form.value;
+    
+    // Sanitize data before sending to backend to avoid validation errors
+    const rawData = this.form.value;
+    const data = { ...rawData };
+    
+    const sanitize = (val: any) => val === '' || val === 'null' || val === null || val === undefined ? null : val;
+    
+    data.dataInicio = sanitize(data.dataInicio);
+    data.dataPrevisaoFim = sanitize(data.dataPrevisaoFim);
+    data.dataConclusao = sanitize(data.dataConclusao);
+    data.clienteId = sanitize(data.clienteId);
+    data.centroCustoId = sanitize(data.centroCustoId);
+    data.endereco = sanitize(data.endereco);
+    data.descricao = sanitize(data.descricao);
+    
+    if (data.orcamentoPrevisto) {
+      data.orcamentoPrevisto = Number(data.orcamentoPrevisto);
+    } else {
+      data.orcamentoPrevisto = null;
+    }
 
     try {
       if (this.isEdit && this.obraId) {

@@ -57,12 +57,10 @@
   <!-- Data Table (Desktop) -->
   <div class="data-table-container ion-hide-md-down">
     <div class="table-header">
-      <div class="col-empresa">Razão Social / Fantasia</div>
-      <div class="col-docs">CNPJ / CPF</div>
-      <div class="col-contato">E-mail / Telefone</div>
+      <div class="col-empresa">Nome</div>
+      <div class="col-docs">CPF</div>
+      <div class="col-contato">Número de Contato</div>
       <div class="col-endereco">Endereço</div>
-      <div class="col-representante">Representante (Nome/CPF)</div>
-      <div class="col-financeiro">Financeiro (Nome/Email)</div>
       <div class="col-kpis">Ind.</div>
       <div class="col-actions"></div>
     </div>
@@ -72,26 +70,15 @@
         style="cursor: pointer;">
         <div class="col-empresa">
           <span class="desc-main" title="{{ client.razaoSocial }}">{{ client.razaoSocial }}</span>
-          <span class="desc-sub" title="{{ client.nomeFantasia }}">{{ client.nomeFantasia || '-' }}</span>
         </div>
         <div class="col-docs">
-          <span class="desc-main" title="{{ client.cnpj }}">{{ client.cnpj || '-' }}</span>
-          <span class="desc-sub" title="{{ client.cpf }}">{{ client.cpf || '-' }}</span>
+          <span class="desc-main" title="{{ client.cpf }}">{{ client.cpf || '-' }}</span>
         </div>
         <div class="col-contato">
-          <span class="desc-main" title="{{ client.email }}">{{ client.email || '-' }}</span>
-          <span class="desc-sub" title="{{ client.telefone }}">{{ client.telefone || '-' }}</span>
+          <span class="desc-main" title="{{ client.telefone }}">{{ client.telefone || '-' }}</span>
         </div>
         <div class="col-endereco">
           <span class="desc-main" title="{{ client.endereco }}">{{ client.endereco || '-' }}</span>
-        </div>
-        <div class="col-representante">
-          <span class="desc-main" title="{{ client.representanteNome }}">{{ client.representanteNome || '-' }}</span>
-          <span class="desc-sub" title="{{ client.representanteCpf }}">{{ client.representanteCpf || '-' }}</span>
-        </div>
-        <div class="col-financeiro">
-          <span class="desc-main" title="{{ client.financeiroNome }}">{{ client.financeiroNome || '-' }}</span>
-          <span class="desc-sub" title="{{ client.financeiroEmail }}">{{ client.financeiroEmail || '-' }}</span>
         </div>
         <div class="col-kpis">
           <span class="desc-main">{{ client.revenue | currency:'BRL' }}</span>

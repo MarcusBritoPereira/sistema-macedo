@@ -521,30 +521,116 @@ export class ReportsService {
   }
 
   private async generateBudgetReport(filters: any) {
-    // We don't have a real budgeting table, so we compare Realizado vs Estimado directly from LancamentoFinanceiro where status PENDENTE vs REALIZADO
-    return {
-      summary: null,
-      details: [
-        {
-          label: 'Orçado x Realizado (Demonstração Simples)',
-          value: 0,
-          level: 0,
-          type: 'header',
+    let startDate: Date;
+    let endDate: Date;
+    if (filters.startDate && filters.endDate) {
+      startDate = new Date(filters.startDate);
+      endDate = new Date(filters.endDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      const n = new Date();
+      startDate = new Date(n.getFullYear(), n.getMonth(), 1);
+      endDate = new Date(n.getFullYear(), n.getMonth() + 1, 0);
+    }
+
+    // 1. Get all Cost Centers that have a defined budget
+    const budgetedCenters = await this.prisma.centroCusto.findMany({
+      where: {
+        orcamentoPrevisto: { not: null },
+        ativo: true
+      },
+      orderBy: { codigo: 'asc' }
+    });
+
+    const details: any[] = [];
+    details.push({
+      label: 'Acompanhamento Físico-Financeiro das Obras',
+      value: 0,
+      level: 0,
+      type: 'header',
+    });
+
+    let totalBudget = 0;
+    let totalReal = 0;
+
+    for (const c of budgetedCenters) {
+      const budget = Number(c.orcamentoPrevisto || 0);
+      
+      // Get all recursive child IDs for rollup
+      const ccIds = await this.obterIdsHierarquia(c.id);
+      
+      // Query transactions under these cost centers
+      const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+        where: {
+          dataVencimento: { gte: startDate, lte: endDate },
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+          tipo: 'DESPESA',
+          centroCustoId: { in: ccIds }
         },
-        {
-          label:
-            'O módulo de orçamentos precisará ser configurado para cruzar estimativas precisas.',
-          value: 0,
-          level: 1,
-        },
-        {
-          label:
-            'Neste momento as despesas estão guiadas pelos lançamentos de fluxo contínuo.',
-          value: 0,
-          level: 1,
-        },
-      ],
-    };
+        select: { valor: true }
+      });
+
+      const realValue = transactions.reduce((sum, t) => sum + Math.abs(Number(t.valor)), 0);
+      
+      totalBudget += budget;
+      totalReal += realValue;
+
+      details.push({
+        label: `${c.codigo || 'S/C'} - ${c.nome} (Orçamento Previsto)`,
+        value: budget,
+        level: 1,
+      });
+
+      details.push({
+        label: `${c.codigo || 'S/C'} - ${c.nome} (Realizado Acumulado)`,
+        value: realValue,
+        level: 1,
+      });
+
+      const variance = realValue - budget;
+      if (variance > 0) {
+        details.push({
+          label: `${c.codigo || 'S/C'} - ${c.nome} (⚠️ Estouro de Orçamento)`,
+          value: variance,
+          level: 2,
+          highlight: true,
+        });
+      } else {
+        details.push({
+          label: `${c.codigo || 'S/C'} - ${c.nome} (✅ Saldo Restante/Sobra)`,
+          value: Math.abs(variance),
+          level: 2,
+        });
+      }
+    }
+
+    details.push({
+      label: 'Total Geral Orçado (Obras)',
+      value: totalBudget,
+      level: 0,
+      type: 'total',
+      highlight: true,
+    });
+
+    details.push({
+      label: 'Total Geral Realizado (Obras)',
+      value: totalReal,
+      level: 0,
+      type: 'total',
+      highlight: true,
+    });
+
+    const totalVariance = totalReal - totalBudget;
+    details.push({
+      label: totalVariance > 0 ? 'Diferença Consolidada (Estouro Total)' : 'Diferença Consolidada (Economia Total)',
+      value: Math.abs(totalVariance),
+      level: 0,
+      type: 'total',
+      highlight: true,
+    });
+
+    return { summary: null, details };
   }
 
   private async generateCostCentersReport(filters: any) {

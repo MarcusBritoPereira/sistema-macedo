@@ -79,6 +79,31 @@
                     </div>
 
                     <div class="field-item">
+                        <label>Classificação</label>
+                        <ion-select [(ngModel)]="form.classificacao" interface="popover" class="custom-select-trigger select-box">
+                            <ion-select-option value="RECEITA">Receita</ion-select-option>
+                            <ion-select-option value="DESPESA">Despesa</ion-select-option>
+                            <ion-select-option value="INVESTIMENTO">Investimento</ion-select-option>
+                            <ion-select-option value="OUTRO">Outro</ion-select-option>
+                        </ion-select>
+                    </div>
+
+                    <div class="field-item">
+                        <label>Tipo de Lançamento</label>
+                        <ion-select [(ngModel)]="form.tipoLancamento" interface="popover" class="custom-select-trigger select-box">
+                            <ion-select-option value="ADMINISTRATIVO">Administrativo</ion-select-option>
+                            <ion-select-option value="OBRA">De Obras</ion-select-option>
+                        </ion-select>
+                    </div>
+
+                    <div class="field-item" *ngIf="form.tipoLancamento === 'OBRA'">
+                        <label>Obra Destino</label>
+                        <ion-select [(ngModel)]="form.obraId" placeholder="Selecione a Obra" interface="popover" class="custom-select-trigger select-box">
+                            <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
+                        </ion-select>
+                    </div>
+
+                    <div class="field-item">
                         <label>Categoria</label>
                         <div class="custom-select-trigger" (click)="openSelection('CATEGORY')">
                             <span [class.placeholder]="!form.categoriaId">{{ getCategoryName() || 'Selecione' }}</span>
@@ -104,9 +129,79 @@
                     </div>
                 </div>
 
+                <!-- ITEMS SECTION -->
+                <div class="items-section">
+                    <div class="section-header">
+                        <h4>Detalhamento de Itens e Quantidades</h4>
+                        <ion-button fill="outline" size="small" (click)="addItem()">
+                            <ion-icon name="add-outline" slot="start"></ion-icon>
+                            Adicionar Item
+                        </ion-button>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div class="empty-items" *ngIf="!form.items || form.items.length === 0">
+                        Nenhum item detalhado. Clique em "Adicionar Item" se precisar discriminar itens e quantidades.
+                    </div>
+
+                    <!-- Items List -->
+                    <div class="items-list-wrapper" *ngIf="form.items && form.items.length > 0">
+                        <div class="items-header-row">
+                            <span class="col-desc">Descrição do Item</span>
+                            <span class="col-qty">Qtd</span>
+                            <span class="col-price">Valor Unitário</span>
+                            <span class="col-total">Subtotal</span>
+                            <span class="col-action"></span>
+                        </div>
+                        <div class="item-input-row" *ngFor="let item of form.items; let i = index">
+                            <div class="col-desc">
+                                <ion-input [(ngModel)]="item.descricao" placeholder="Ex: Areia grossa, Cimento..." class="item-input"></ion-input>
+                            </div>
+                            <div class="col-qty">
+                                <ion-input type="number" [(ngModel)]="item.quantidade" class="item-input"></ion-input>
+                            </div>
+                            <div class="col-price">
+                                <ion-input type="number" [(ngModel)]="item.valorUnitario" class="item-input"></ion-input>
+                            </div>
+                            <div class="col-total">
+                                <span>{{ (item.quantidade * item.valorUnitario) | currency:'BRL' }}</span>
+                            </div>
+                            <div class="col-action">
+                                <ion-button fill="clear" color="danger" size="small" (click)="removeItem(i)">
+                                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                                </ion-button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verification Status Bar -->
+                    <div class="validation-status-bar" *ngIf="form.items && form.items.length > 0"
+                        [class.matching]="isItemsTotalMatching()"
+                        [class.divergent]="!isItemsTotalMatching()">
+                        <div class="status-indicator">
+                            <ion-icon [name]="isItemsTotalMatching() ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
+                            <span>{{ isItemsTotalMatching() ? 'Valores Conciliados!' : 'Valores Divergentes' }}</span>
+                        </div>
+                        <div class="status-details">
+                            <div class="status-val-block">
+                                <label>Total Itens:</label>
+                                <strong>{{ getItemsTotal() | currency:'BRL' }}</strong>
+                            </div>
+                            <div class="status-val-block">
+                                <label>Total Extrato:</label>
+                                <strong>{{ form.valor | currency:'BRL' }}</strong>
+                            </div>
+                            <div class="status-val-block difference" *ngIf="!isItemsTotalMatching()">
+                                <label>Diferença:</label>
+                                <strong>{{ (form.valor - getItemsTotal()) | currency:'BRL' }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-actions">
                     <ion-button fill="clear" color="medium" (click)="cancel()">Cancelar</ion-button>
-                    <ion-button class="confirm-btn" (click)="confirmCreation()" [disabled]="loadingAction">
+                    <ion-button class="confirm-btn" (click)="confirmCreation()" [disabled]="loadingAction || (form.items && form.items.length > 0 && !isItemsTotalMatching())">
                         <ion-spinner *ngIf="loadingAction" name="crescent"></ion-spinner>
                         <span *ngIf="!loadingAction">Conciliar Lançamento</span>
                     </ion-button>

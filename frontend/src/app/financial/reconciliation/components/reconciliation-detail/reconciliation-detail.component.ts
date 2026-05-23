@@ -4,14 +4,14 @@ import { FormsModule } from '@angular/forms';
 import {
     IonButton, IonIcon, IonSpinner, IonSearchbar, IonChip,
     IonInput, IonSelect, IonSelectOption, IonDatetime, IonModal, IonContent, IonDatetimeButton,
-    ModalController, AlertController
+    ModalController, AlertController, ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
     closeOutline, checkmarkCircleOutline, searchOutline, addOutline,
     linkOutline, warningOutline, calendarOutline, cashOutline,
     swapHorizontalOutline, locationOutline, businessOutline, cloudUploadOutline,
-    chevronDownOutline // Added this
+    chevronDownOutline, trashOutline
 } from 'ionicons/icons';
 import { BankStatement, SuggestedMatch } from '../../../../services/financial/reconciliation';
 import { ReconciliationService } from '../../../../services/financial/reconciliation.service';
@@ -19,6 +19,7 @@ import { CategoriesService, Category } from '../../../../services/financial/cate
 import { ClientsService, Cliente } from '../../../../services/clients/clients';
 import { SuppliersService, Supplier } from '../../../../services/suppliers/suppliers.service';
 import { CostCentersService, CostCenter } from '../../../../services/financial/cost-centers.service';
+import { ObrasService, Obra } from '../../../../services/financial/obras.service';
 import { QuickCreateModalComponent, EntityType } from '../../../../shared/components/quick-create-modal/quick-create-modal.component';
 import { SearchableSelectionModalComponent, SelectionItem } from '../../../../shared/components/searchable-selection-modal/searchable-selection-modal.component';
 
@@ -45,6 +46,8 @@ export class ReconciliationDetailComponent implements OnInit {
     @Input() clients: Cliente[] = [];
     @Input() costCenters: CostCenter[] = [];
 
+    obras: Obra[] = [];
+
     loadingAux = false;
     loadingAction = false;
     loadingSuggestions = false;
@@ -61,7 +64,11 @@ export class ReconciliationDetailComponent implements OnInit {
         dataCompetencia: '',
         categoriaId: '',
         fornecedorId: '', // Used for both supplier and client ID
-        centroCustoId: ''
+        centroCustoId: '',
+        classificacao: '',
+        tipoLancamento: 'ADMINISTRATIVO',
+        obraId: '',
+        items: []
     };
 
     constructor(
@@ -70,6 +77,8 @@ export class ReconciliationDetailComponent implements OnInit {
         private suppliersService: SuppliersService,
         private clientsService: ClientsService,
         private costCentersService: CostCentersService,
+        private obrasService: ObrasService,
+        private toastCtrl: ToastController,
         private modalCtrl: ModalController,
         private alertCtrl: AlertController
     ) {
@@ -77,7 +86,7 @@ export class ReconciliationDetailComponent implements OnInit {
             closeOutline, checkmarkCircleOutline, searchOutline, addOutline,
             linkOutline, warningOutline, calendarOutline, cashOutline,
             swapHorizontalOutline, locationOutline, businessOutline, cloudUploadOutline,
-            chevronDownOutline
+            chevronDownOutline, trashOutline
         });
     }
 
@@ -90,6 +99,11 @@ export class ReconciliationDetailComponent implements OnInit {
             this.form.dataVencimento = this.statement.data;
             this.form.dataCompetencia = this.statement.data; // Default to statement date
 
+            this.form.classificacao = this.statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
+            this.form.tipoLancamento = 'ADMINISTRATIVO';
+            this.form.obraId = '';
+            this.form.items = [];
+
             if (this.statement.tipo === 'CREDIT' && this.statement.suggestedEntity?.cliente?.id) {
                 this.form.fornecedorId = this.statement.suggestedEntity.cliente.id;
             }
@@ -98,6 +112,14 @@ export class ReconciliationDetailComponent implements OnInit {
             }
 
             this.loadAuxData();
+
+            // Load active obras
+            this.obrasService.getAll().subscribe({
+                next: (obras) => {
+                    this.obras = obras || [];
+                },
+                error: (err) => console.error('Erro ao buscar obras:', err)
+            });
 
             // Auto-switch to SEARCH if suggestions exist
             if (this.suggestions && this.suggestions.length > 0) {
@@ -170,8 +192,45 @@ export class ReconciliationDetailComponent implements OnInit {
         }
     }
 
+    addItem() {
+        this.form.items.push({
+            descricao: '',
+            quantidade: 1,
+            valorUnitario: 0
+        });
+    }
+
+    removeItem(index: number) {
+        this.form.items.splice(index, 1);
+    }
+
+    getItemsTotal(): number {
+        if (!this.form.items || this.form.items.length === 0) return 0;
+        return this.form.items.reduce((sum: number, item: any) => sum + (Number(item.quantidade || 0) * Number(item.valorUnitario || 0)), 0);
+    }
+
+    isItemsTotalMatching(): boolean {
+        if (!this.form.items || this.form.items.length === 0) return true;
+        return Math.abs(this.getItemsTotal() - this.form.valor) < 0.01;
+    }
+
+    async presentToast(message: string, color: 'success' | 'warning' | 'danger') {
+        const toast = await this.toastCtrl.create({
+            message,
+            duration: 3000,
+            position: 'bottom',
+            color
+        });
+        await toast.present();
+    }
+
     async confirmCreation() {
         if (!this.form.descricao || !this.form.categoriaId) {
+            return;
+        }
+
+        if (this.form.items && this.form.items.length > 0 && !this.isItemsTotalMatching()) {
+            this.presentToast('O valor total dos itens deve corresponder exatamente ao valor do extrato.', 'warning');
             return;
         }
 
@@ -185,6 +244,13 @@ export class ReconciliationDetailComponent implements OnInit {
         const entityId = this.form.fornecedorId;
         const isCredit = this.statement.tipo === 'CREDIT';
 
+        let observacoes = '';
+        if (this.form.items && this.form.items.length > 0) {
+            observacoes = 'Itens Detalhados:\n' + this.form.items
+                .map((it: any) => `- ${it.descricao || 'Item'}: ${it.quantidade} x ${it.valorUnitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} = ${(it.quantidade * it.valorUnitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`)
+                .join('\n');
+        }
+
         const payload = {
             descricao: this.form.descricao,
             categoriaId: this.form.categoriaId,
@@ -194,7 +260,9 @@ export class ReconciliationDetailComponent implements OnInit {
             valor: this.form.valor,
             dataVencimento: this.form.dataVencimento,
             dataCompetencia: this.form.dataCompetencia,
-            tipo: this.statement.tipo
+            tipo: this.form.classificacao, // Use the user selected classification
+            obraId: this.form.tipoLancamento === 'OBRA' ? this.form.obraId : null,
+            observacoes: observacoes || undefined
         };
 
         this.reconciliationService.createAndLink(this.statement.id, payload, true).subscribe({

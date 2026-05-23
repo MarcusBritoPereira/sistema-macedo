@@ -309,3 +309,12 @@ ion-content.light-bg {
         }
     }
 }
+.page-heading { margin: 0; font-size: 1.1rem; font-weight: 600; }
+.menu-btn-wrap { display:inline-block; vertical-align:middle; }
+.left-actions { gap: 8px; }
+.search-box { flex: 1; }
+.table-row { cursor: pointer; }
+.empty-state h3 { margin: 0 0 8px; color: #334155; font-size: 1.05rem; }
+.empty-state p { margin: 0; color: #64748b; }
+.empty-actions { margin-top: 16px; display: flex; justify-content: center; gap: 10px; }
+.fab-space { margin-bottom: 20px; }

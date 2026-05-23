@@ -13,12 +13,10 @@
 @import "@ionic/angular/css/text-transformation.css";
 @import "@ionic/angular/css/flex-utils.css";
 
-/* Google Fonts: Inter */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
+/* Fonte externa removida para evitar falha de build por bloqueio de rede. */
 /* Global Overrides */
 * {
-    font-family: 'Inter', sans-serif !important;
+    font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
 }
 
 body {

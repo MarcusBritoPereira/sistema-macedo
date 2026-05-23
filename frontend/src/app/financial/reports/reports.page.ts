@@ -33,7 +33,7 @@ import {
   IonSearchbar,
   ToastController
 } from '@ionic/angular/standalone';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of, catchError } from 'rxjs';
 import { addIcons } from 'ionicons';
 import {
   documentTextOutline,
@@ -175,8 +175,8 @@ export class ReportsPage implements OnInit {
   loadFilters() {
     this.loadingFilters = true;
     forkJoin({
-      accounts: this.financialService.getBankAccounts(),
-      costCenters: this.costCentersService.findAll()
+      accounts: this.financialService.getBankAccounts().pipe(catchError(() => of([]))),
+      costCenters: this.costCentersService.findAll().pipe(catchError(() => of([])))
     }).subscribe({
       next: ({ accounts, costCenters }) => {
         this.bankAccounts = accounts;
@@ -185,7 +185,8 @@ export class ReportsPage implements OnInit {
       },
       error: () => {
         this.loadingFilters = false;
-        this.showToast('Não foi possível carregar contas e centros de custo.', 'warning');
+        // fallback in case of catastrophic failure (not captured by individual catchErrors)
+        this.showToast('Não foi possível carregar as opções de filtros do relatório.', 'warning');
       }
     });
   }

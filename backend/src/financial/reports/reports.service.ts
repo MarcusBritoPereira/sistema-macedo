@@ -30,6 +30,25 @@ export interface ReportGenerationResponse {
 export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
+  private async obterIdsHierarquia(centroCustoId: string): Promise<string[]> {
+    const ccs = await this.prisma.centroCusto.findMany({
+      select: { id: true, parentId: true }
+    });
+
+    const filhos: string[] = [centroCustoId];
+    const processar = (id: string) => {
+      const directChildren = ccs.filter(c => c.parentId === id);
+      directChildren.forEach(child => {
+        filhos.push(child.id);
+        processar(child.id);
+      });
+    };
+
+    processar(centroCustoId);
+    return filhos;
+  }
+
+
   private readonly reports: ReportDefinition[] = [
     {
       id: 'dre',
@@ -226,7 +245,8 @@ export class ReportsService {
       where.contaBancariaId = filters.accountId;
     }
     if (filters.costCenterId && filters.costCenterId !== 'all') {
-      where.centroCustoId = filters.costCenterId;
+      const costCenterIds = await this.obterIdsHierarquia(filters.costCenterId);
+      where.centroCustoId = { in: costCenterIds };
     }
 
     // 3. Fetch Transactions with Category info
@@ -395,7 +415,8 @@ export class ReportsService {
       where.contaBancariaId = filters.accountId;
     }
     if (filters.costCenterId && filters.costCenterId !== 'all') {
-      where.centroCustoId = filters.costCenterId;
+      const costCenterIds = await this.obterIdsHierarquia(filters.costCenterId);
+      where.centroCustoId = { in: costCenterIds };
     }
 
     const transactions = await this.prisma.lancamentoFinanceiro.findMany({

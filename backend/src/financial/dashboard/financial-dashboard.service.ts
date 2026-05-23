@@ -498,6 +498,132 @@ export class FinancialDashboardService {
       });
     }
 
+    // === CALCULO DE KPIS DE CENTROS DE CUSTO PARA BI ===
+    const ccs = await this.prisma.centroCusto.findMany({
+      where: { ativo: true }
+    });
+
+    // Fetch all current month realized expenses
+    const monthlyExpenses = await this.prisma.lancamentoFinanceiro.findMany({
+      where: {
+        tipo: 'DESPESA',
+        status: { in: ['REALIZADO', 'CONCILIADO'] },
+        dataPagamento: { gte: startOfMonth, lte: endOfMonth }
+      }
+    });
+
+    // Also fetch rateios for the current month
+    const monthlyRateios = await this.prisma.rateioLancamento.findMany({
+      where: {
+        lancamento: {
+          tipo: 'DESPESA',
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+          dataPagamento: { gte: startOfMonth, lte: endOfMonth }
+        }
+      },
+      include: {
+        lancamento: true
+      }
+    });
+
+    // Aggregate expenses by Cost Center ID
+    const ccRealizado: Record<string, number> = {};
+    ccs.forEach(c => ccRealizado[c.id] = 0);
+
+    // 1. Standard bookings without rateios
+    monthlyExpenses.forEach(t => {
+      if (t.centroCustoId && ccRealizado[t.centroCustoId] !== undefined) {
+        ccRealizado[t.centroCustoId] += Number(t.valor);
+      }
+    });
+
+    // 2. Add rateios
+    monthlyRateios.forEach(r => {
+      if (r.lancamento?.centroCustoId && ccRealizado[r.lancamento.centroCustoId] !== undefined) {
+        ccRealizado[r.lancamento.centroCustoId] += Number(r.valor);
+      }
+    });
+
+
+    // 3. Format expensesByCostCenter
+    const expensesByCostCenter = ccs
+      .map(c => ({
+        id: c.id,
+        nome: c.nome,
+        codigo: c.codigo,
+        total: ccRealizado[c.id] || 0,
+        cor: c.cor || '#475569'
+      }))
+      .filter(item => item.total > 0)
+      .sort((a, b) => b.total - a.total);
+
+    // 4. Format deviations
+    const deviations = ccs
+      .filter(c => c.orcamentoPrevisto && Number(c.orcamentoPrevisto) > 0)
+      .map(c => {
+        const realizado = ccRealizado[c.id] || 0;
+        const previsto = Number(c.orcamentoPrevisto);
+        const desvio = realizado - previsto;
+        return {
+          id: c.id,
+          nome: c.nome,
+          codigo: c.codigo,
+          previsto,
+          realizado,
+          desvio,
+          limiteMaximo: c.limiteMaximo ? Number(c.limiteMaximo) : null
+        };
+      })
+      .filter(d => d.realizado > 0)
+      .sort((a, b) => b.realizado - a.realizado);
+
+    // 5. Format productionTargets
+    const productionTargets = ccs
+      .filter(c => c.unidadeMedida && c.metaFisica && Number(c.metaFisica) > 0)
+      .map(c => {
+        const realizadoVal = ccRealizado[c.id] || 0;
+        const meta = Number(c.metaFisica);
+        const custoUnitario = meta > 0 ? realizadoVal / meta : 0;
+        const custoUnitarioPrevisto = c.orcamentoPrevisto ? Number(c.orcamentoPrevisto) / meta : 0;
+        
+        return {
+          id: c.id,
+          nome: c.nome,
+          codigo: c.codigo,
+          metaFisica: meta,
+          realizado: realizadoVal,
+          unidadeMedida: c.unidadeMedida || 'un',
+          custoUnitario,
+          custoUnitarioPrevisto
+        };
+      });
+
+    // 6. Format expensesByTag
+    const tagMap: Record<string, number> = {};
+    ccs.forEach(c => {
+      const tags = c.tags ? c.tags.split(',') : [];
+      const realizado = ccRealizado[c.id] || 0;
+      if (realizado > 0) {
+        tags.forEach(tag => {
+          const tName = tag.trim();
+          if (tName) {
+            tagMap[tName] = (tagMap[tName] || 0) + realizado;
+          }
+        });
+      }
+    });
+
+    const expensesByTag = Object.entries(tagMap)
+      .map(([tag, total]) => ({ tag, total }))
+      .sort((a, b) => b.total - a.total);
+
+    const costCenterKpis = {
+      expensesByCostCenter,
+      deviations,
+      productionTargets,
+      expensesByTag
+    };
+
     return {
       receivables: {
         overdue: recOverdue,
@@ -513,9 +639,11 @@ export class FinancialDashboardService {
       totalBalance,
       dailyFlow,
       monthlyHistory,
+      costCenterKpis,
       lastUpdate: now.toISOString(),
     };
   }
+
 
   async getCashFlowDashboard(month?: number, year?: number) {
     const now = new Date();

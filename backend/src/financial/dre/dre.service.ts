@@ -20,6 +20,24 @@ import { DREDetalhesDto } from './dto/dre-detalhes.dto';
 export class DreService {
   constructor(private prisma: PrismaService) {}
 
+  private async obterIdsHierarquia(centroCustoId: string): Promise<string[]> {
+    const ccs = await this.prisma.centroCusto.findMany({
+      select: { id: true, parentId: true }
+    });
+
+    const filhos: string[] = [centroCustoId];
+    const processar = (id: string) => {
+      const directChildren = ccs.filter(c => c.parentId === id);
+      directChildren.forEach(child => {
+        filhos.push(child.id);
+        processar(child.id);
+      });
+    };
+
+    processar(centroCustoId);
+    return filhos;
+  }
+
   async gerar(dto: GerarDreDto) {
     const cacheKey = this.getCacheKey('principal', dto);
     const cached = await (this.prisma as any).dreCache.findUnique({
@@ -48,9 +66,11 @@ export class DreService {
     const dateField =
       regime === DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
 
+    const costCenterIds = centroCustoId ? await this.obterIdsHierarquia(centroCustoId) : undefined;
+
     const rateiosRaw = await this.prisma.rateioLancamento.findMany({
       where: {
-        ...(centroCustoId ? { centroCustoId } : {}),
+        ...(costCenterIds ? { centroCustoId: { in: costCenterIds } } : {}),
         lancamento: {
           [dateField]: {
             gte: start,
@@ -76,7 +96,7 @@ export class DreService {
           status:
             regime === DRERegime.CAIXA ? 'REALIZADO' : { not: 'CANCELADO' },
           rateios: { none: {} },
-          ...(centroCustoId ? { centroCustoId } : {}),
+          ...(costCenterIds ? { centroCustoId: { in: costCenterIds } } : {}),
           ...(contaBancariaId ? { contaBancariaId } : {}),
         },
         include: {
@@ -155,10 +175,12 @@ export class DreService {
     const dateField =
       dto.regime === DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
 
+    const costCenterIds = dto.centroCustoId ? await this.obterIdsHierarquia(dto.centroCustoId) : undefined;
+
     const where: any = {
       categoria: dto.categoria,
       ...(dto.subcategoria ? { subcategoria: dto.subcategoria } : {}),
-      ...(dto.centroCustoId ? { centroCustoId: dto.centroCustoId } : {}),
+      ...(costCenterIds ? { centroCustoId: { in: costCenterIds } } : {}),
       lancamento: {
         [dateField]: {
           gte: start,

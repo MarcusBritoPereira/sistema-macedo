@@ -10,7 +10,7 @@ import {
 import { FinancialDashboardService, OperationalDashboardResponse } from '../../services/financial/financial-dashboard.service';
 import { addIcons } from 'ionicons';
 import {
-  business, ellipsisHorizontal
+  business, ellipsisHorizontal, alertCircleOutline, speedometerOutline, pieChartOutline, pricetagOutline, constructOutline, trendingUpOutline, trendingDownOutline, cashOutline
 } from 'ionicons/icons';
 import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -69,10 +69,54 @@ export class DashboardPage implements OnInit {
     datasets: []
   };
 
+  // Chart 3: Cost Center Expenses (Doughnut)
+  public costCenterChartOptions: ChartConfiguration<'doughnut'>['options'] = {
+    responsive: true,
+    maintainAspectRatio: false,
+    cutout: '70%',
+    plugins: {
+      legend: {
+        display: false
+      },
+      tooltip: {
+        backgroundColor: '#1E293B',
+        titleColor: '#F8FAFC',
+        bodyColor: '#F8FAFC',
+        borderColor: '#334155',
+        borderWidth: 1,
+        padding: 12,
+        boxPadding: 6,
+        usePointStyle: true,
+        callbacks: {
+          label: (context) => {
+            const label = context.label || '';
+            const value = (context.raw as number) || 0;
+            return ` ${label}: ${this.formatCurrency(value)}`;
+          }
+        }
+      }
+    }
+  };
+  public costCenterChartData: ChartData<'doughnut'> = {
+    labels: [],
+    datasets: []
+  };
+
   constructor(
     private dashboardService: FinancialDashboardService
   ) {
-    addIcons({ business, ellipsisHorizontal });
+    addIcons({ 
+      business, 
+      ellipsisHorizontal, 
+      alertCircleOutline, 
+      speedometerOutline, 
+      pieChartOutline, 
+      pricetagOutline, 
+      constructOutline, 
+      trendingUpOutline, 
+      trendingDownOutline, 
+      cashOutline 
+    });
   }
 
   ngOnInit() {
@@ -160,6 +204,28 @@ export class DashboardPage implements OnInit {
             backgroundColor: '#0EA5E9', // Blue Sky
             borderRadius: 4,
             barPercentage: 0.6
+          }
+        ]
+      };
+    }
+
+    // 3. Cost Center Expenses Chart
+    if (data.costCenterKpis?.expensesByCostCenter) {
+      const expenses = data.costCenterKpis.expensesByCostCenter;
+      const ccLabels = expenses.map(e => e.nome);
+      const ccValues = expenses.map(e => e.total);
+      const ccColors = expenses.map(e => e.cor || '#64748B');
+
+      this.costCenterChartData = {
+        labels: ccLabels,
+        datasets: [
+          {
+            data: ccValues,
+            backgroundColor: ccColors,
+            hoverBackgroundColor: ccColors,
+            borderWidth: 2,
+            borderColor: '#ffffff',
+            hoverOffset: 6
           }
         ]
       };

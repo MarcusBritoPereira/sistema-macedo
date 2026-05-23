@@ -24,6 +24,7 @@ model Usuario {
   perfil   Perfil @relation(fields: [perfilId], references: [id])
 
   logs LogAuditoria[]
+  centrosCustoResponsavel CentroCusto[] @relation("CentroCustoResponsavel")
 
   @@map("usuarios")
 }
@@ -377,6 +378,7 @@ model CategoriaFinanceira {
   lancamentos LancamentoFinanceiro[]
   rateios     RateioLancamento[]
   regras      RegraClassificacao[]
+  centrosCusto CentroCusto[] @relation("CentroCustoPlanoConta")
 
   @@map("categorias_financeiras")
 }
@@ -451,15 +453,75 @@ enum TipoCategoria {
   DESPESA
 }
 
-model CentroCusto {
-  id        String  @id @default(uuid())
-  nome      String
-  codigo    String?
-  descricao String?
+enum TipoCentroCusto {
+  OPERACIONAL
+  ADMINISTRATIVO
+  COMERCIAL
+  FINANCEIRO
+  ENGENHARIA
+  SUPRIMENTOS
+  RH
+  POS_OBRA
+  EQUIPAMENTOS
+}
 
+enum CategoriaFinanceiraCentro {
+  RECEITA
+  CUSTO
+  DESPESA
+  INVESTIMENTO
+}
+
+model CentroCusto {
+  id                 String                     @id @default(uuid())
+  nome               String
+  codigo             String?                    @unique
+  descricao          String?
+  tipo               TipoCentroCusto?
+  categoriaFinanceira CategoriaFinanceiraCentro? @map("categoria_financeira")
+
+  // Hierarquia (Auto-relacionamento)
+  parentId String?       @map("parent_id")
+  parent   CentroCusto?  @relation("Hierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children CentroCusto[] @relation("Hierarchy")
+
+  // Vinculação com Obra e Etapas
+  obraId  String? @map("obra_id")
+  obra    Obra?   @relation("CentroCustoObra", fields: [obraId], references: [id], onDelete: SetNull)
+  etapaId String? @map("etapa_id") // 'FUNDACAO' | 'ESTRUTURA' | 'ACABAMENTO' | 'INSTALACOES' | 'FACHADA' etc.
+
+  // Controle Financeiro
+  ativo               Boolean  @default(true)
+  aceitaLancamento    Boolean  @default(true) @map("aceita_lancamento")
+  orcamentoPrevisto   Decimal? @db.Decimal(15, 2) @map("orcamento_previsto")
+  limiteMaximo        Decimal? @db.Decimal(15, 2) @map("limite_maximo")
+  aprovacaoNecessaria Boolean  @default(false) @map("aprovacao_necessaria")
+
+  responsavelId String?  @map("responsavel_id")
+  responsavel   Usuario? @relation("CentroCustoResponsavel", fields: [responsavelId], references: [id], onDelete: SetNull)
+
+  // Integrações
+  planoContaId    String?              @map("plano_conta_id")
+  planoConta      CategoriaFinanceira? @relation("CentroCustoPlanoConta", fields: [planoContaId], references: [id], onDelete: SetNull)
+  categoriaCompra String?              @map("categoria_compra") // 'Material' | 'Servico' | 'Equipamento'
+  contaContabil   String?              @map("conta_contabil")
+
+  // Controle de Produção
+  unidadeMedida String?  @map("unidade_medida") // m², m³, tonelada, un
+  metaFisica    Decimal? @db.Decimal(15, 2) @map("meta_fisica")
+
+  // Metadados Inteligentes
+  tags String? @map("tags")
+  cor  String? @map("cor")
+
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relações existentes mantidas
   lancamentos LancamentoFinanceiro[]
   regras      RegraClassificacao[]
-  obras       Obra[]
+  obras       Obra[]                 @relation("ObraMainCentroCusto")
 
   @@map("centros_custo")
 }
@@ -595,7 +657,8 @@ model Obra {
   cliente   Cliente? @relation(fields: [clienteId], references: [id])
 
   centroCustoId String?
-  centroCusto   CentroCusto? @relation(fields: [centroCustoId], references: [id])
+  centroCusto   CentroCusto? @relation("ObraMainCentroCusto", fields: [centroCustoId], references: [id])
+  centrosCustoRel CentroCusto[] @relation("CentroCustoObra")
 
   lancamentos LancamentoFinanceiro[]
 

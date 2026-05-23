@@ -7,7 +7,7 @@
         </ion-buttons>
         <div style="display: inline-block; vertical-align: middle; margin-left: 8px;">
           <h1 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Centros de Custo</h1>
-          <p style="margin: 0; font-size: 0.8rem; color: #666;">Gestão de Áreas e Departamentos</p>
+          <p style="margin: 0; font-size: 0.8rem; color: #666;">Gestão Hierárquica e Controle de Obras</p>
         </div>
       </div>
 
@@ -31,8 +31,8 @@
       <div class="search-box" style="flex: 1">
         <div class="label-text">Pesquisar</div>
         <div class="input-wrapper">
-          <input type="text" placeholder="Buscar centros de custo..." class="clean-search" />
-          <ion-icon name="search"></ion-icon>
+          <input type="text" placeholder="Buscar por código, nome ou descrição..." class="clean-search" [(ngModel)]="searchQuery" (input)="processTree()" />
+          <ion-icon name="search-outline"></ion-icon>
         </div>
       </div>
     </div>
@@ -46,29 +46,67 @@
 
   <div class="data-table-container">
     <div class="table-header">
-      <div class="col-nome">Nome do Centro</div>
+      <div class="col-nome">Estrutura / Nome do Centro</div>
       <div class="col-codigo">Código</div>
+      <div class="col-info">Informações</div>
+      <div class="col-orcamento">Orçamento Previsto</div>
       <div class="col-actions"></div>
     </div>
 
     <div class="table-body">
-      <div class="table-row" *ngFor="let cc of costCenters" [routerLink]="['/financial/cost-centers', cc.id]"
-        style="cursor: pointer;">
+      <div class="table-row" *ngFor="let cc of displayRows" [routerLink]="['/financial/cost-centers', cc.id]"
+        style="cursor: pointer;" [style.padding-left.px]="cc.level * 24 + 16" [class.inactive-row]="!cc.ativo">
+        
         <div class="col-nome">
-          <ion-icon name="business-outline" style="vertical-align: middle; margin-right: 8px; color: #888;"></ion-icon>
-          <span class="desc-main" style="vertical-align: middle;">{{ cc.nome }}</span>
+          <!-- Expand/Collapse toggle for parent nodes -->
+          <div class="toggle-button" *ngIf="cc.hasChildren" (click)="toggleNode(cc, $event)">
+            <ion-icon [name]="cc.expanded ? 'chevron-down-outline' : 'chevron-forward-outline'"></ion-icon>
+          </div>
+          <div class="toggle-placeholder" *ngIf="!cc.hasChildren"></div>
+
+          <!-- Specific icon depending on level and function -->
+          <ion-icon [name]="cc.hasChildren ? (cc.expanded ? 'folder-open-outline' : 'folder-outline') : (cc.aceitaLancamento ? 'document-text-outline' : 'layers-outline')" 
+            class="level-icon" [class.leaf-icon]="!cc.hasChildren" [style.color]="cc.cor || '#888'"></ion-icon>
+          
+          <div class="name-wrapper">
+            <span class="desc-main">{{ cc.nome }}</span>
+            <span class="tag-badge level-badge" [class]="cc.levelName.toLowerCase()">{{ cc.levelName }}</span>
+          </div>
         </div>
+
         <div class="col-codigo desc-main">
-          {{ cc.codigo || 'Sem código' }}
+          <code>{{ cc.codigo || 'Sem código' }}</code>
         </div>
+
+        <div class="col-info">
+          <div class="badges-row">
+            <span class="tag-badge type-badge" *ngIf="cc.tipo">{{ cc.tipo }}</span>
+            <span class="tag-badge category-badge" *ngIf="cc.categoriaFinanceira" [class]="cc.categoriaFinanceira.toLowerCase()">
+              {{ cc.categoriaFinanceira }}
+            </span>
+            <span class="tag-badge tracking-badge" [class.active]="cc.aceitaLancamento">
+              {{ cc.aceitaLancamento ? 'Lançamentos' : 'Agrupador' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="col-orcamento desc-main">
+          <span *ngIf="cc.orcamentoPrevisto" class="budget-value">
+            {{ cc.orcamentoPrevisto | currency:'BRL':'symbol':'1.2-2' }}
+          </span>
+          <span *ngIf="!cc.orcamentoPrevisto" class="budget-empty">
+            -
+          </span>
+        </div>
+
         <div class="col-actions">
-          <ion-button fill="clear" color="medium">
+          <ion-button fill="clear" color="medium" size="small">
             <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
           </ion-button>
         </div>
       </div>
 
-      <div class="empty-state" *ngIf="costCenters.length === 0">
+      <div class="empty-state" *ngIf="displayRows.length === 0">
         <p>Nenhum centro de custo encontrado.</p>
       </div>
     </div>

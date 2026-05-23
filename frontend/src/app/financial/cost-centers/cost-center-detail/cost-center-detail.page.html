@@ -1,60 +1,270 @@
 <ion-header class="ion-no-border">
-    <ion-toolbar>
+    <ion-toolbar class="detail-toolbar">
         <ion-buttons slot="start">
             <ion-back-button defaultHref="/financial/cost-centers" color="primary" icon="arrow-back-outline"
                 text=""></ion-back-button>
         </ion-buttons>
-        <ion-title color="primary">{{ isNew ? 'Novo Centro de Custo' : 'Editar Centro de Custo' }}</ion-title>
+        <ion-title color="dark">{{ isNew ? 'Novo Centro de Custo' : 'Editar Centro de Custo' }}</ion-title>
         <ion-buttons slot="end">
-            <ion-button *ngIf="!isNew" (click)="delete()" color="danger">
+            <ion-button *ngIf="!isNew" (click)="delete()" color="danger" class="delete-btn">
                 <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
             </ion-button>
         </ion-buttons>
     </ion-toolbar>
 </ion-header>
 
-<ion-content [fullscreen]="true" class="ion-padding">
+<ion-content [fullscreen]="true" class="light-bg ion-padding">
     <div class="form-wrapper">
         <div class="section-header">
-            <h2>Informações do Centro de Custo</h2>
-            <p>Defina o código e nome para organização financeira.</p>
+            <h2>{{ isNew ? 'Cadastro de Centro de Custo' : costCenter.nome }}</h2>
+            <p>{{ isNew ? 'Configure o novo centro para aprimorar o ERP e BI.' : 'Atualize as informações corporativas e financeiras.' }}</p>
         </div>
+
+        <!-- Segment Tabs for cognitive relief -->
+        <ion-segment [(ngModel)]="selectedTab" class="form-segment" mode="md">
+            <ion-segment-button value="basico">
+                <ion-label>Básico</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="hierarquia">
+                <ion-label>Hierarquia</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="financeiro">
+                <ion-label>Controle</ion-label>
+            </ion-segment-button>
+            <ion-segment-button value="producao">
+                <ion-label>Produção & Extras</ion-label>
+            </ion-segment-button>
+        </ion-segment>
 
         <ion-card class="form-card">
             <ion-card-content>
                 <form (ngSubmit)="save()">
-                    <ion-grid>
-                        <ion-row>
-                            <ion-col size="12" size-md="4">
-                                <div class="input-group">
-                                    <ion-label position="stacked">Código</ion-label>
-                                    <ion-input [(ngModel)]="costCenter.codigo" name="codigo" type="text"
-                                        placeholder="Ex: 001" required></ion-input>
-                                </div>
-                            </ion-col>
+                    <ion-grid class="ion-no-padding">
+                        <!-- TAB 1: BÁSICO -->
+                        <div *ngIf="selectedTab === 'basico'">
+                            <ion-row>
+                                <ion-col size="12">
+                                    <div class="input-group">
+                                        <ion-label>Nome do Centro de Custo</ion-label>
+                                        <ion-input [(ngModel)]="costCenter.nome" name="nome" type="text"
+                                            placeholder="Ex: Fundação, Alvenaria, Administrativo..." required></ion-input>
+                                    </div>
+                                </ion-col>
 
-                            <ion-col size="12" size-md="8">
-                                <div class="input-group">
-                                    <ion-label position="stacked">Nome</ion-label>
-                                    <ion-input [(ngModel)]="costCenter.nome" name="nome" type="text"
-                                        placeholder="Ex: Departamento de TI" required></ion-input>
-                                </div>
-                            </ion-col>
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Código</ion-label>
+                                        <div class="code-generator-wrapper">
+                                            <ion-input [(ngModel)]="costCenter.codigo" name="codigo" type="text"
+                                                placeholder="Ex: 1.01.03" required></ion-input>
+                                            <ion-button fill="clear" size="small" class="suggest-btn" (click)="generateSuggestedCode()" title="Auto-gerar código com base no Pai">
+                                                <ion-icon name="sparkles-outline" slot="icon-only"></ion-icon>
+                                            </ion-button>
+                                        </div>
+                                    </div>
+                                </ion-col>
 
-                            <ion-col size="12">
-                                <div class="input-group">
-                                    <ion-label position="stacked">Descrição (Opcional)</ion-label>
-                                    <ion-textarea [(ngModel)]="costCenter.descricao" name="descricao" rows="4"
-                                        placeholder="Detalhes adicionais..."></ion-textarea>
-                                </div>
-                            </ion-col>
-                        </ion-row>
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Tipo do Centro de Custo</ion-label>
+                                        <ion-select [(ngModel)]="costCenter.tipo" name="tipo" placeholder="Selecione o tipo" interface="popover">
+                                            <ion-select-option *ngFor="let opt of tipoOptions" [value]="opt.value">{{ opt.label }}</ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
 
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Categoria Financeira (DRE)</ion-label>
+                                        <ion-select [(ngModel)]="costCenter.categoriaFinanceira" name="categoriaFinanceira" placeholder="Selecione a categoria" interface="popover">
+                                            <ion-select-option *ngFor="let opt of categoriaFinanceiraOptions" [value]="opt.value">{{ opt.label }}</ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Cor de Destaque (BI)</ion-label>
+                                        <div class="color-picker-wrapper">
+                                            <input type="color" [(ngModel)]="costCenter.cor" name="cor" class="color-dot-picker" />
+                                            <ion-input [(ngModel)]="costCenter.cor" name="cor_hex" type="text" placeholder="#475569"></ion-input>
+                                        </div>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12">
+                                    <div class="input-group">
+                                        <ion-label>Descrição / Observações</ion-label>
+                                        <ion-textarea [(ngModel)]="costCenter.descricao" name="descricao" rows="3"
+                                            placeholder="Detalhes adicionais e finalidade deste centro de custo..."></ion-textarea>
+                                    </div>
+                                </ion-col>
+                            </ion-row>
+                        </div>
+
+                        <!-- TAB 2: HIERARQUIA & VÍNCULOS -->
+                        <div *ngIf="selectedTab === 'hierarquia'">
+                            <ion-row>
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Centro de Custo Pai (Estrutura)</ion-label>
+                                        <ion-select [(ngModel)]="costCenter.parentId" name="parentId" placeholder="Macro (Sem Pai)" interface="popover" (ionChange)="onParentChange()">
+                                            <ion-select-option value="">Macro (Nenhum)</ion-select-option>
+                                            <ion-select-option *ngFor="let opt of parentOptions" [value]="opt.id">
+                                                {{ opt.codigo ? opt.codigo + ' - ' : '' }}{{ opt.nome }}
+                                            </ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Obra Vinculada</ion-label>
+                                        <ion-select [(ngModel)]="costCenter.obraId" name="obraId" placeholder="Todas as Obras / Nenhuma" interface="popover">
+                                            <ion-select-option value="">Todas / Nenhuma</ion-select-option>
+                                            <ion-select-option *ngFor="let opt of obraOptions" [value]="opt.id">{{ opt.nome }}</ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Etapa da Obra</ion-label>
+                                        <ion-select [(ngModel)]="costCenter.etapaId" name="etapaId" placeholder="Selecione a etapa" interface="popover">
+                                            <ion-select-option value="">Nenhuma</ion-select-option>
+                                            <ion-select-option *ngFor="let opt of etapaOptions" [value]="opt.value">{{ opt.label }}</ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Responsável pelo Centro</ion-label>
+                                        <ion-select [(ngModel)]="costCenter.responsavelId" name="responsavelId" placeholder="Selecione o responsável" interface="popover">
+                                            <ion-select-option value="">Nenhum</ion-select-option>
+                                            <ion-select-option *ngFor="let opt of responsavelOptions" [value]="opt.id">{{ opt.nome }}</ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
+                            </ion-row>
+                        </div>
+
+                        <!-- TAB 3: CONTROLE FINANCEIRO -->
+                        <div *ngIf="selectedTab === 'financeiro'">
+                            <ion-row>
+                                <ion-col size="12" size-md="4">
+                                    <div class="toggle-group">
+                                        <ion-label>
+                                            <h3>Centro Ativo?</h3>
+                                            <p>Permite consultas e filtros</p>
+                                        </ion-label>
+                                        <ion-toggle [(ngModel)]="costCenter.ativo" name="ativo" color="success"></ion-toggle>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="4">
+                                    <div class="toggle-group">
+                                        <ion-label>
+                                            <h3>Permite Lançamento?</h3>
+                                            <p>Se desmarcado, vira "Agrupador"</p>
+                                        </ion-label>
+                                        <ion-toggle [(ngModel)]="costCenter.aceitaLancamento" name="aceitaLancamento" color="success"></ion-toggle>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="4">
+                                    <div class="toggle-group">
+                                        <ion-label>
+                                            <h3>Aprovação Exigida?</h3>
+                                            <p>Alerta aprovações manuais</p>
+                                        </ion-label>
+                                        <ion-toggle [(ngModel)]="costCenter.aprovacaoNecessaria" name="aprovacaoNecessaria" color="success"></ion-toggle>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6" class="ion-margin-top">
+                                    <div class="input-group">
+                                        <ion-label>Orçamento Previsto (R$)</ion-label>
+                                        <ion-input [(ngModel)]="costCenter.orcamentoPrevisto" name="orcamentoPrevisto" type="number"
+                                            placeholder="Ex: 250000.00"></ion-input>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6" class="ion-margin-top">
+                                    <div class="input-group">
+                                        <ion-label>Limite Máximo Alerta (R$)</ion-label>
+                                        <ion-input [(ngModel)]="costCenter.limiteMaximo" name="limiteMaximo" type="number"
+                                            placeholder="Ex: 300000.00"></ion-input>
+                                    </div>
+                                </ion-col>
+                            </ion-row>
+                        </div>
+
+                        <!-- TAB 4: PRODUÇÃO & EXTRAS -->
+                        <div *ngIf="selectedTab === 'producao'">
+                            <ion-row>
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Unidade de Medida Física</ion-label>
+                                        <ion-input [(ngModel)]="costCenter.unidadeMedida" name="unidadeMedida" type="text"
+                                            placeholder="Ex: m², m³, tonelada, un"></ion-input>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Meta Física Global</ion-label>
+                                        <ion-input [(ngModel)]="costCenter.metaFisica" name="metaFisica" type="number"
+                                            placeholder="Ex: 500"></ion-input>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Vincular ao Plano de Contas</ion-label>
+                                        <ion-select [(ngModel)]="costCenter.planoContaId" name="planoContaId" placeholder="Selecione a categoria contábil" interface="popover">
+                                            <ion-select-option value="">Nenhuma</ion-select-option>
+                                            <ion-select-option *ngFor="let opt of planoContaOptions" [value]="opt.id">
+                                                {{ opt.nome }} ({{ opt.tipo }})
+                                            </ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Categoria de Compra (Suprimentos)</ion-label>
+                                        <ion-select [(ngModel)]="costCenter.categoriaCompra" name="categoriaCompra" placeholder="Selecione a categoria" interface="popover">
+                                            <ion-select-option value="">Nenhuma</ion-select-option>
+                                            <ion-select-option *ngFor="let opt of categoriaCompraOptions" [value]="opt.value">{{ opt.label }}</ion-select-option>
+                                        </ion-select>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Conta Contábil / Chave</ion-label>
+                                        <ion-input [(ngModel)]="costCenter.contaContabil" name="contaContabil" type="text"
+                                            placeholder="Ex: 2.1.03 - Concreto Estrutural"></ion-input>
+                                    </div>
+                                </ion-col>
+
+                                <ion-col size="12" size-md="6">
+                                    <div class="input-group">
+                                        <ion-label>Tags (Separadas por vírgula)</ion-label>
+                                        <ion-input [(ngModel)]="costCenter.tags" name="tags" type="text"
+                                            placeholder="Ex: CAPEX, Crítico, Alto Custo"></ion-input>
+                                    </div>
+                                </ion-col>
+                            </ion-row>
+                        </div>
+
+                        <!-- Action row -->
                         <ion-row class="ion-margin-top">
                             <ion-col size="12">
                                 <ion-button expand="block" type="submit" class="save-btn" [disabled]="!costCenter.nome">
                                     <ion-icon name="save-outline" slot="start"></ion-icon>
-                                    Salvar
+                                    Salvar Alterações
                                 </ion-button>
                             </ion-col>
                         </ion-row>

@@ -5,9 +5,35 @@ import { Observable } from 'rxjs';
 export interface CostCenter {
     id?: string;
     nome: string;
-    codigo?: string;
-    descricao?: string;
+    codigo?: string | null;
+    descricao?: string | null;
+    tipo?: string | null;
+    categoriaFinanceira?: string | null;
+    parentId?: string | null;
+    parent?: CostCenter;
+    obraId?: string | null;
+    obra?: any;
+    etapaId?: string | null;
+    ativo?: boolean;
+    aceitaLancamento?: boolean;
+    orcamentoPrevisto?: number | null;
+    limiteMaximo?: number | null;
+    aprovacaoNecessaria?: boolean;
+    responsavelId?: string | null;
+    responsavel?: any;
+    planoContaId?: string | null;
+    planoConta?: any;
+    categoriaCompra?: string | null;
+    contaContabil?: string | null;
+    unidadeMedida?: string | null;
+    metaFisica?: number | null;
+    tags?: string | null;
+    cor?: string | null;
+    createdAt?: string;
+    updatedAt?: string;
 }
+
+
 
 @Injectable({
     providedIn: 'root'

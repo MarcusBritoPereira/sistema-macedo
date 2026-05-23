@@ -55,7 +55,14 @@ export interface OperationalDashboardResponse {
     dailyFlow: { date: string; label: string; recebimentos: number; pagamentos: number; saldo: number }[];
     monthlyHistory: { label: string; valor: number }[];
     lastUpdate: string;
+    costCenterKpis?: {
+        expensesByCostCenter: { id: string; nome: string; codigo: string | null; total: number; cor: string }[];
+        deviations: { id: string; nome: string; codigo: string | null; previsto: number; realizado: number; desvio: number; limiteMaximo: number | null }[];
+        productionTargets: { id: string; nome: string; codigo: string | null; metaFisica: number; realizado: number; unidadeMedida: string; custoUnitario: number; custoUnitarioPrevisto: number }[];
+        expensesByTag: { tag: string; total: number }[];
+    };
 }
+
 
 export interface CashFlowDashboardResponse {
     period: { month: number; year: number };

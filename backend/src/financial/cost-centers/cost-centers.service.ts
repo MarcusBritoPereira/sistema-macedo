@@ -9,9 +9,38 @@ import { Response } from 'express';
 export class CostCentersService {
   constructor(private prisma: PrismaService) {}
 
+  private sanitizeData(dto: any) {
+    const data = { ...dto };
+    const nullableStrings = [
+      'parentId',
+      'obraId',
+      'responsavelId',
+      'planoContaId',
+      'etapaId',
+      'tipo',
+      'categoriaFinanceira',
+      'categoriaCompra',
+      'cor',
+      'tags',
+      'descricao',
+      'codigo',
+      'contaContabil',
+      'unidadeMedida'
+    ];
+    
+    nullableStrings.forEach(field => {
+      if (data[field] === '' || data[field] === 'null' || data[field] === undefined) {
+        data[field] = null;
+      }
+    });
+
+    return data;
+  }
+
   create(createCostCenterDto: CreateCostCenterDto) {
+    const sanitized = this.sanitizeData(createCostCenterDto);
     return this.prisma.centroCusto.create({
-      data: createCostCenterDto,
+      data: sanitized,
     });
   }
 
@@ -50,19 +79,37 @@ export class CostCentersService {
   }
 
   findAll() {
-    return this.prisma.centroCusto.findMany();
+    return this.prisma.centroCusto.findMany({
+      include: {
+        parent: true,
+        obra: true,
+        responsavel: true,
+        planoConta: true,
+      },
+      orderBy: [
+        { codigo: 'asc' },
+        { nome: 'asc' }
+      ]
+    });
   }
 
   findOne(id: string) {
     return this.prisma.centroCusto.findUnique({
       where: { id },
+      include: {
+        parent: true,
+        obra: true,
+        responsavel: true,
+        planoConta: true,
+      },
     });
   }
 
   update(id: string, updateCostCenterDto: UpdateCostCenterDto) {
+    const sanitized = this.sanitizeData(updateCostCenterDto);
     return this.prisma.centroCusto.update({
       where: { id },
-      data: updateCostCenterDto,
+      data: sanitized,
     });
   }
 
@@ -72,3 +119,4 @@ export class CostCentersService {
     });
   }
 }
+

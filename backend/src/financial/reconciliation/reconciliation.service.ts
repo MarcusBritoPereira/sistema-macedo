@@ -355,6 +355,8 @@ export class ReconciliationService {
       let fornecedorId = sanitize(data.fornecedorId);
       let clienteId = sanitize(data.clienteId);
       const dataCompetencia = sanitize(data.dataCompetencia);
+      const obraId = sanitize(data.obraId);
+      const observacoes = data.observacoes || null;
       const competenciaDate = dataCompetencia
         ? new Date(dataCompetencia)
         : statement.data;
@@ -454,7 +456,8 @@ export class ReconciliationService {
             centroCustoId: centroCustoId,
             clienteId: clienteId,
             fornecedorId: fornecedorId, // Added missing mapping
-            observacoes: `Criado via conciliação bancária: ${statement.descricao}`,
+            obraId: obraId,
+            observacoes: observacoes || `Criado via conciliação bancária: ${statement.descricao}`,
           },
         });
 

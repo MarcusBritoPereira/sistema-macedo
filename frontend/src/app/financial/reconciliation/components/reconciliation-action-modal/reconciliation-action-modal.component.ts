@@ -6,14 +6,14 @@ import {
     IonIcon, IonList, IonItem, IonLabel, IonNote, IonSpinner, ModalController, AlertController,
     IonSearchbar, IonChip, IonFooter, IonSegment, IonSegmentButton,
     IonInput, IonSelect, IonSelectOption, IonRow, IonCol, IonGrid,
-    IonDatetime, IonDatetimeButton, IonModal
+    IonDatetime, IonDatetimeButton, IonModal, ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
     closeOutline, checkmarkCircleOutline, searchOutline, addOutline,
     linkOutline, warningOutline, calendarOutline, cashOutline,
     swapHorizontalOutline, documentTextOutline, chevronDownOutline,
-    businessOutline, cloudUploadOutline
+    businessOutline, cloudUploadOutline, trashOutline, constructOutline
 } from 'ionicons/icons';
 import { BankStatement, SuggestedMatch } from '../../../../services/financial/reconciliation';
 import { ReconciliationService } from '../../../../services/financial/reconciliation.service';
@@ -21,6 +21,7 @@ import { CategoriesService, Category } from '../../../../services/financial/cate
 import { SuppliersService, Supplier } from '../../../../services/suppliers/suppliers.service';
 import { CostCentersService, CostCenter } from '../../../../services/financial/cost-centers.service';
 import { FinancialService, BankAccount } from '../../../../services/financial/financial';
+import { ObrasService, Obra } from '../../../../services/financial/obras.service';
 import { format, parseISO } from 'date-fns';
 
 @Component({
@@ -47,6 +48,9 @@ export class ReconciliationActionModalComponent implements OnInit {
     costCenters: CostCenter[] = [];
     suggestions: SuggestedMatch[] = [];
     bankAccounts: BankAccount[] = [];
+    obras: Obra[] = [];
+
+    items: Array<{ descricao: string; quantidade: number; valorUnitario: number }> = [];
 
     form = {
         descricao: '',
@@ -56,7 +60,9 @@ export class ReconciliationActionModalComponent implements OnInit {
         valor: 0,
         dataVencimento: '',
         dataCompetencia: '',
-        contaDestinoId: ''
+        contaDestinoId: '',
+        classificacao: 'ADMINISTRATIVO', // 'ADMINISTRATIVO' or 'OBRAS'
+        obraId: ''
     };
 
     loadingSuggestions = true;
@@ -70,13 +76,15 @@ export class ReconciliationActionModalComponent implements OnInit {
         private suppliersService: SuppliersService,
         private costCentersService: CostCentersService,
         private financialService: FinancialService,
+        private obrasService: ObrasService,
+        private toastCtrl: ToastController,
         private alertCtrl: AlertController
     ) {
         addIcons({
             closeOutline, checkmarkCircleOutline, searchOutline, addOutline,
             linkOutline, warningOutline, calendarOutline, cashOutline,
             swapHorizontalOutline, documentTextOutline, chevronDownOutline,
-            businessOutline, cloudUploadOutline
+            businessOutline, cloudUploadOutline, trashOutline, constructOutline
         });
     }
 
@@ -108,6 +116,12 @@ export class ReconciliationActionModalComponent implements OnInit {
         this.costCentersService.findAll().subscribe(ccs => {
             this.costCenters = ccs;
             this.loadBankAccounts();
+        });
+
+        this.obrasService.getAll().subscribe({
+            next: (obras) => {
+                this.obras = obras.filter(o => o.ativo !== false);
+            }
         });
     }
 
@@ -154,6 +168,23 @@ export class ReconciliationActionModalComponent implements OnInit {
         this.mode = this.mode === 'FORM' ? 'SEARCH' : 'FORM';
     }
 
+    addItem() {
+        this.items.push({ descricao: '', quantidade: 1, valorUnitario: 0 });
+    }
+
+    removeItem(index: number) {
+        this.items.splice(index, 1);
+    }
+
+    get itemsTotal() {
+        return this.items.reduce((sum, item) => sum + (Number(item.quantidade || 0) * Number(item.valorUnitario || 0)), 0);
+    }
+
+    get isTotalMatching() {
+        if (this.items.length === 0) return true;
+        return Math.abs(this.itemsTotal - this.form.valor) < 0.05;
+    }
+
     async confirmCreation() {
         if (this.activeTab === 'TRANSFER') {
             if (!this.form.contaDestinoId || !this.form.dataCompetencia) return;
@@ -161,10 +192,23 @@ export class ReconciliationActionModalComponent implements OnInit {
             return;
         }
 
+        // Validate items sum
+        if (this.items.length > 0 && !this.isTotalMatching) {
+            this.showToast(`A soma dos itens (${this.formatCurrency(this.itemsTotal)}) deve ser igual ao valor do extrato (${this.formatCurrency(this.form.valor)})!`, 'warning');
+            return;
+        }
+
         const confirmed = await this.requestManualConfirmation('Confirmar conciliação', 'Deseja confirmar manualmente esta conciliação?');
         if (!confirmed) return;
 
         this.loadingAction = true;
+
+        // Generate observacoes from items
+        let compiledObservacoes = '';
+        if (this.items.length > 0) {
+            compiledObservacoes = `Detalhamento de Itens:\n` + this.items.map((item, idx) => `${idx + 1}. ${item.descricao} - Qtd: ${item.quantidade} x R$ ${item.valorUnitario.toFixed(2)} (Subtotal: R$ ${(item.quantidade * item.valorUnitario).toFixed(2)})`).join('\n');
+        }
+
         const payload = {
             descricao: this.form.descricao,
             categoriaId: this.form.categoriaId,
@@ -175,7 +219,9 @@ export class ReconciliationActionModalComponent implements OnInit {
             dataCompetencia: this.form.dataCompetencia,
             contaDestinoId: this.form.contaDestinoId,
             isTransfer: this.activeTab === 'TRANSFER',
-            tipo: this.statement.tipo
+            tipo: this.statement.tipo,
+            obraId: this.form.classificacao === 'OBRAS' ? this.form.obraId : null,
+            observacoes: compiledObservacoes || null
         };
 
         this.reconciliationService.createAndLink(this.statement.id, payload, true).subscribe({
@@ -188,6 +234,20 @@ export class ReconciliationActionModalComponent implements OnInit {
                 this.loadingAction = false;
             }
         });
+    }
+
+    async showToast(message: string, color: string = 'success') {
+        const toast = await this.toastCtrl.create({
+            message,
+            duration: 2500,
+            color,
+            position: 'top'
+        });
+        await toast.present();
+    }
+
+    formatCurrency(val: number) {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
     }
 
     async link(match: SuggestedMatch) {

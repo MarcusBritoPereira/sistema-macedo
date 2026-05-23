@@ -107,6 +107,25 @@
 
                     <div class="form-row" *ngIf="activeTab === 'NEW'">
                         <div class="input-group half-width">
+                            <label>Classificação *</label>
+                            <ion-select [(ngModel)]="form.classificacao" mode="md" fill="outline" interface="popover"
+                                placeholder="Selecione">
+                                <ion-select-option value="ADMINISTRATIVO">Administrativo (Escritório)</ion-select-option>
+                                <ion-select-option value="OBRAS">Obras</ion-select-option>
+                            </ion-select>
+                        </div>
+
+                        <div class="input-group half-width" *ngIf="form.classificacao === 'OBRAS'">
+                            <label>Obra *</label>
+                            <ion-select [(ngModel)]="form.obraId" mode="md" fill="outline" interface="popover"
+                                placeholder="Selecione">
+                                <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
+                            </ion-select>
+                        </div>
+                    </div>
+
+                    <div class="form-row" *ngIf="activeTab === 'NEW'">
+                        <div class="input-group half-width">
                             <label>Fornecedor/Cliente</label>
                             <ion-select [(ngModel)]="form.fornecedorId" mode="md" fill="outline" interface="popover"
                                 placeholder="Selecione">
@@ -122,6 +141,54 @@
                                 <ion-select-option *ngFor="let cc of costCenters" [value]="cc.id">{{ cc.nome
                                     }}</ion-select-option>
                             </ion-select>
+                        </div>
+                    </div>
+
+                    <!-- DETALHAMENTO DE ITENS -->
+                    <div class="items-breakdown-section" *ngIf="activeTab === 'NEW'">
+                        <div class="section-header-row">
+                            <span class="section-title-label">Detalhamento de Itens (Quantidade e Insumos)</span>
+                            <ion-button size="small" fill="clear" color="primary" (click)="addItem()">
+                                <ion-icon name="add-outline" slot="start"></ion-icon>
+                                Adicionar Item
+                            </ion-button>
+                        </div>
+
+                        <div class="items-list" *ngIf="items.length > 0">
+                            <div class="item-entry-row" *ngFor="let item of items; let idx = index">
+                                <div class="item-col desc-col">
+                                    <ion-input [(ngModel)]="item.descricao" placeholder="Descrição do item (ex: Cimento)" mode="md" fill="outline"></ion-input>
+                                </div>
+                                <div class="item-col qty-col">
+                                    <ion-input type="number" [(ngModel)]="item.quantidade" placeholder="Qtd" mode="md" fill="outline"></ion-input>
+                                </div>
+                                <div class="item-col val-col">
+                                    <ion-input type="number" [(ngModel)]="item.valorUnitario" placeholder="Valor Unitário" mode="md" fill="outline"></ion-input>
+                                </div>
+                                <div class="item-col total-col">
+                                    <span class="subtotal-label">{{ formatCurrency((item.quantidade || 0) * (item.valorUnitario || 0)) }}</span>
+                                </div>
+                                <div class="item-col del-col">
+                                    <ion-button fill="clear" color="danger" (click)="removeItem(idx)">
+                                        <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                                    </ion-button>
+                                </div>
+                            </div>
+
+                            <!-- VALIDAÇÃO DO TOTAL DOS ITENS -->
+                            <div class="items-matching-status-bar" [class.matching]="isTotalMatching">
+                                <div class="status-left">
+                                    <ion-icon [name]="isTotalMatching ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
+                                    <span class="status-msg">
+                                        {{ isTotalMatching ? 'Soma dos itens coincide com o extrato!' : 'Diferença pendente: ' + formatCurrency(form.valor - itemsTotal) }}
+                                    </span>
+                                </div>
+                                <div class="status-right">
+                                    <span class="sum-label">Soma: {{ formatCurrency(itemsTotal) }}</span>
+                                    <span class="divider">/</span>
+                                    <span class="total-label">Extrato: {{ formatCurrency(form.valor) }}</span>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

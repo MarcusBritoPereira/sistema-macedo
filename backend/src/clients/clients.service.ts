@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 import { CreateClientDto } from './dto/create-client.dto';
@@ -9,7 +9,25 @@ import { Response } from 'express';
 export class ClientsService {
   constructor(private prisma: PrismaService) {}
 
-  create(data: Prisma.ClienteCreateInput) {
+  async create(data: Prisma.ClienteCreateInput) {
+    if (data.cpf) {
+      const existingCpf = await this.prisma.cliente.findUnique({
+        where: { cpf: data.cpf },
+      });
+      if (existingCpf) {
+        throw new ConflictException('Já existe um cliente cadastrado com este CPF.');
+      }
+    }
+
+    if (data.cnpj) {
+      const existingCnpj = await this.prisma.cliente.findUnique({
+        where: { cnpj: data.cnpj },
+      });
+      if (existingCnpj) {
+        throw new ConflictException('Já existe um cliente cadastrado com este CNPJ.');
+      }
+    }
+
     return this.prisma.cliente.create({ data });
   }
 
@@ -145,7 +163,25 @@ export class ClientsService {
     });
   }
 
-  update(id: string, data: Prisma.ClienteUpdateInput) {
+  async update(id: string, data: Prisma.ClienteUpdateInput) {
+    if (data.cpf && typeof data.cpf === 'string') {
+      const existingCpf = await this.prisma.cliente.findFirst({
+        where: { cpf: data.cpf, NOT: { id } },
+      });
+      if (existingCpf) {
+        throw new ConflictException('Já existe um cliente cadastrado com este CPF.');
+      }
+    }
+
+    if (data.cnpj && typeof data.cnpj === 'string') {
+      const existingCnpj = await this.prisma.cliente.findFirst({
+        where: { cnpj: data.cnpj, NOT: { id } },
+      });
+      if (existingCnpj) {
+        throw new ConflictException('Já existe um cliente cadastrado com este CNPJ.');
+      }
+    }
+
     return this.prisma.cliente.update({
       where: { id },
       data,

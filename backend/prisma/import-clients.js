@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
@@ -93,7 +93,7 @@ async function main() {
   let ignoredCount = 0;
 
   for (const client of clientsToImport) {
-    let existing: any = null;
+    let existing = null;
 
     if (client.cpf) {
       existing = await prisma.cliente.findUnique({

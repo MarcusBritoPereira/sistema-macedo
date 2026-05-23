@@ -18,6 +18,8 @@ import { add, cloudUploadOutline, downloadOutline, search, chevronForwardOutline
 })
 export class UsersListPage implements OnInit {
   users: Usuario[] = [];
+  filteredUsers: Usuario[] = [];
+  searchTerm = "";
 
   constructor(
     private usersService: UsersService,
@@ -34,12 +36,39 @@ export class UsersListPage implements OnInit {
     this.usersService.findAll().subscribe({
       next: (data) => {
         this.users = data;
+        this.applyFilters();
         if (event) event.target.complete();
       },
       error: (err) => {
         console.error(err);
         if (event) event.target.complete();
       }
+    });
+  }
+
+  onSearchChange(event: Event) {
+    const target = event.target as HTMLInputElement;
+    this.searchTerm = target?.value || "";
+    this.applyFilters();
+  }
+
+  clearSearch() {
+    this.searchTerm = "";
+    this.applyFilters();
+  }
+
+  private applyFilters() {
+    const term = this.searchTerm.trim().toLowerCase();
+    if (!term) {
+      this.filteredUsers = [...this.users];
+      return;
+    }
+
+    this.filteredUsers = this.users.filter((user) => {
+      const nome = user.nome?.toLowerCase() || "";
+      const email = user.email?.toLowerCase() || "";
+      const perfil = this.getProfileName(user).toLowerCase();
+      return nome.includes(term) || email.includes(term) || perfil.includes(term);
     });
   }
 

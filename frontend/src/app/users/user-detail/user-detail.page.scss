@@ -92,3 +92,28 @@ ion-col {
         padding: 12px;
     }
 }
+
+.helper-text {
+  margin: 0;
+  color: var(--ion-color-medium-shade);
+  font-size: 0.85rem;
+}
+
+.danger-zone {
+  border: 1px solid #fecaca;
+  background: #fff1f2;
+  border-radius: 12px;
+  padding: 12px;
+
+  h3 {
+    margin: 0 0 6px;
+    color: #b91c1c;
+    font-size: 0.95rem;
+  }
+
+  p {
+    margin: 0 0 10px;
+    color: #7f1d1d;
+    font-size: 0.85rem;
+  }
+}

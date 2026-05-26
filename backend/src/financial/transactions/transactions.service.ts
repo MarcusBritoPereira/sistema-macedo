@@ -1,6 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma, TipoLancamento, StatusLancamento } from '@prisma/client';
+import {
+  Prisma,
+  TipoLancamento,
+  StatusLancamento,
+  TipoClassificacaoLancamento,
+} from '@prisma/client';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 
@@ -15,9 +20,22 @@ export class FinancialTransactionsService {
     contrato: true,
     fornecedor: true,
     contaBancaria: true,
+    obra: true,
   };
 
+  private validateBusinessRules(data: {
+    tipoLancamento?: TipoClassificacaoLancamento | null;
+    obraId?: string | null;
+  }) {
+    const requiresObra =
+      data.tipoLancamento === 'OBRA' || data.tipoLancamento === 'POS_OBRA';
+    if (requiresObra && !data.obraId) {
+      throw new BadRequestException("Obra vinculada é obrigatória para lançamentos de Obra e Pós-obra.");
+    }
+  }
+
   async create(data: CreateTransactionDto, usuarioId: string) {
+    this.validateBusinessRules(data);
     const createData = this.toCreateInput(data);
     return this.prisma.$transaction(async (tx) => {
       const transaction = await tx.lancamentoFinanceiro.create({
@@ -172,6 +190,16 @@ export class FinancialTransactionsService {
   }
 
   async update(id: string, data: UpdateTransactionDto, usuarioId: string) {
+    const existing = await this.prisma.lancamentoFinanceiro.findUnique({
+      where: { id },
+      select: { tipoLancamento: true, obraId: true },
+    });
+
+    this.validateBusinessRules({
+      tipoLancamento: data.tipoLancamento ?? existing?.tipoLancamento,
+      obraId: data.obraId ?? existing?.obraId,
+    });
+
     const updateData = this.toUpdateInput(data);
     return this.prisma.$transaction(async (tx) => {
       const oldTransaction = await tx.lancamentoFinanceiro.findUnique({
@@ -256,6 +284,10 @@ export class FinancialTransactionsService {
       fornecedor: data.fornecedorId
         ? { connect: { id: data.fornecedorId } }
         : undefined,
+      obra: data.obraId ? { connect: { id: data.obraId } } : undefined,
+      tipoLancamento: data.tipoLancamento,
+      tipoCusto: data.tipoCusto,
+      categoriaCusto: data.categoriaCusto,
     };
   }
 
@@ -279,6 +311,10 @@ export class FinancialTransactionsService {
       contratoId: data.contratoId || null,
       clienteId: data.clienteId || null,
       fornecedorId: data.fornecedorId || null,
+      obraId: data.obraId || null,
+      tipoLancamento: data.tipoLancamento || null,
+      tipoCusto: data.tipoCusto || null,
+      categoriaCusto: data.categoriaCusto || null,
     };
   }
 
@@ -316,6 +352,10 @@ export class FinancialTransactionsService {
       fornecedor: data.fornecedorId
         ? { connect: { id: data.fornecedorId } }
         : undefined,
+      obra: data.obraId ? { connect: { id: data.obraId } } : undefined,
+      tipoLancamento: data.tipoLancamento,
+      tipoCusto: data.tipoCusto,
+      categoriaCusto: data.categoriaCusto,
     };
   }
 }

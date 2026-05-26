@@ -8,7 +8,12 @@ import {
   IsString,
   IsUUID,
 } from 'class-validator';
-import { StatusLancamento, TipoLancamento } from '@prisma/client';
+import {
+  StatusLancamento,
+  TipoClassificacaoLancamento,
+  TipoCustoLancamento,
+  TipoLancamento,
+} from '@prisma/client';
 
 export class CreateTransactionDto {
   @IsString()
@@ -64,4 +69,21 @@ export class CreateTransactionDto {
   @IsUUID()
   @IsOptional()
   fornecedorId?: string;
+
+  @IsEnum(TipoClassificacaoLancamento)
+  @IsOptional()
+  tipoLancamento?: TipoClassificacaoLancamento;
+
+  @IsEnum(TipoCustoLancamento)
+  @IsOptional()
+  tipoCusto?: TipoCustoLancamento;
+
+  @IsString()
+  @IsOptional()
+  categoriaCusto?: string;
+
+  @IsUUID()
+  @IsOptional()
+  obraId?: string;
+
 }

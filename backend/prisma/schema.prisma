@@ -187,6 +187,10 @@ model LancamentoFinanceiro {
   obraId String?
   obra   Obra?   @relation(fields: [obraId], references: [id])
 
+  tipoLancamento TipoClassificacaoLancamento? @map("tipo_lancamento")
+  tipoCusto      TipoCustoLancamento?         @map("tipo_custo")
+  categoriaCusto String? @map("categoria_custo")
+
   recurrenciaId String?
   recurrencia   Recurrencia? @relation(fields: [recurrenciaId], references: [id])
 
@@ -211,6 +215,22 @@ model LancamentoFinanceiro {
 enum TipoLancamento {
   RECEITA
   DESPESA
+}
+
+
+enum TipoClassificacaoLancamento {
+  OBRA
+  POS_OBRA
+  ADMINISTRATIVO
+  ESCRITORIO
+}
+
+enum TipoCustoLancamento {
+  MATERIAL
+  MAO_DE_OBRA
+  SERVICO
+  EQUIPAMENTO
+  OUTROS
 }
 
 enum StatusLancamento {

@@ -187,6 +187,10 @@ model LancamentoFinanceiro {
   obraId String?
   obra   Obra?   @relation(fields: [obraId], references: [id])
 
+  tipoLancamento String? @map("tipo_lancamento") // OBRA | POS_OBRA | ADMINISTRATIVO | ESCRITORIO
+  tipoCusto      String? @map("tipo_custo") // MATERIAL | MAO_DE_OBRA | SERVICO | EQUIPAMENTO | OUTROS
+  categoriaCusto String? @map("categoria_custo")
+
   recurrenciaId String?
   recurrencia   Recurrencia? @relation(fields: [recurrenciaId], references: [id])
 

@@ -71,6 +71,40 @@
           </div>
         </div>
 
+
+        <div class="input-row">
+          <div class="input-group flex-1">
+            <label>Tipo de lançamento *</label>
+            <select formControlName="tipoLancamento" class="clean-input">
+              <option value="OBRA">Obra</option>
+              <option value="POS_OBRA">Pós-obra</option>
+              <option value="ADMINISTRATIVO">Administrativo</option>
+              <option value="ESCRITORIO">Escritório</option>
+            </select>
+          </div>
+          <div class="input-group flex-1" *ngIf="isObraTipoSelecionado()">
+            <label>Obra vinculada *</label>
+            <select formControlName="obraId" class="clean-input">
+              <option value="" disabled selected>Selecione</option>
+              <option *ngFor="let obra of obras" [value]="obra.id">{{ obra.nome }}</option>
+            </select>
+          </div>
+          <div class="input-group flex-1">
+            <label>Tipo de custo</label>
+            <select formControlName="tipoCusto" class="clean-input">
+              <option value="MATERIAL">Material</option>
+              <option value="MAO_DE_OBRA">Mão de obra</option>
+              <option value="SERVICO">Serviço</option>
+              <option value="EQUIPAMENTO">Equipamento</option>
+              <option value="OUTROS">Outros</option>
+            </select>
+          </div>
+          <div class="input-group flex-1">
+            <label>Categoria de custo</label>
+            <input type="text" formControlName="categoriaCusto" class="clean-input" placeholder="Ex: Cimento, Pedreiro, ISS">
+          </div>
+        </div>
+
         <!-- Categoria / CC -->
         <div class="input-row">
           <div class="input-group flex-1">

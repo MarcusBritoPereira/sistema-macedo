@@ -8,6 +8,7 @@ import { ClientsService, Cliente } from '../../services/clients/clients';
 import { CostCentersService, CostCenter } from '../../services/financial/cost-centers.service';
 import { SuppliersService, Supplier } from '../../services/suppliers/suppliers.service';
 import { RecurringService } from '../../services/financial/recurring.service';
+import { ObrasService, Obra } from '../../services/financial/obras.service';
 import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList, ModalController } from '@ionic/angular/standalone';
 import { RateioModalComponent } from '../../shared/components/rateio-modal/rateio-modal.component';
 import { addIcons } from 'ionicons';
@@ -35,6 +36,7 @@ export class FinancialDetailPage implements OnInit {
   costCenters: CostCenter[] = [];
   bankAccounts: BankAccount[] = [];
   suppliers: Supplier[] = [];
+  obras: Obra[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -46,6 +48,7 @@ export class FinancialDetailPage implements OnInit {
     private costCentersService: CostCentersService,
     private suppliersService: SuppliersService,
     private recurringService: RecurringService,
+    private obrasService: ObrasService,
     private alertController: AlertController,
     private modalCtrl: ModalController
   ) {
@@ -61,6 +64,10 @@ export class FinancialDetailPage implements OnInit {
 
       // Details
       habilitarRateio: [false],
+      tipoLancamento: ['ADMINISTRATIVO', [Validators.required]],
+      obraId: [''],
+      tipoCusto: ['OUTROS'],
+      categoriaCusto: [''],
       categoriaId: ['', [Validators.required]],
       subcategoriaId: [''],
       centroCustoId: [''],
@@ -103,7 +110,8 @@ export class FinancialDetailPage implements OnInit {
       this.loadClients(),
       this.loadCostCenters(),
       this.loadBankAccounts(),
-      this.loadSuppliers()
+      this.loadSuppliers(),
+      this.loadObras()
     ]).then(() => {
       if (this.itemId && this.itemId !== 'new') {
         this.isEditMode = true;
@@ -233,6 +241,20 @@ export class FinancialDetailPage implements OnInit {
     });
   }
 
+  loadObras() {
+    return new Promise<void>((resolve) => {
+      this.obrasService.getAll().subscribe({
+        next: (obras) => { this.obras = obras || []; resolve(); },
+        error: () => resolve()
+      });
+    });
+  }
+
+  isObraTipoSelecionado(): boolean {
+    const tipo = this.financialForm.get('tipoLancamento')?.value;
+    return tipo === "OBRA" || tipo === "POS_OBRA";
+  }
+
   async onSubmit() {
     if (this.financialForm.valid) {
       const formValue = this.financialForm.value;
@@ -247,6 +269,11 @@ export class FinancialDetailPage implements OnInit {
         // Send the subcategory ID if selected, otherwise parent category ID
         categoriaId: formValue.subcategoriaId || formValue.categoriaId
       };
+
+      if (this.isObraTipoSelecionado() && !formValue.obraId) {
+        this.showToast('Selecione a obra vinculada para lançamentos de Obra/Pós-obra.');
+        return;
+      }
 
       // Cleanup auxiliary fields if not part of DTO
       delete transactionData.subcategoriaId;
@@ -378,3 +405,5 @@ export class FinancialDetailPage implements OnInit {
     await modal.present();
   }
 }
+
+

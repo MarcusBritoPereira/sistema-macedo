@@ -50,6 +50,38 @@ async function main() {
   }
   console.log(`✅ ${usersCreated} novos usuários fictícios criados.`);
 
+  // 2.5 Criar Perfis e Usuários Reais Solicitados
+  const analistaProfile = await prisma.perfil.upsert({
+    where: { nome: 'ANALISTA' },
+    update: {},
+    create: { nome: 'ANALISTA', descricao: 'Perfil de Analista', permissoes: { readOnly: true } },
+  });
+
+  const passAdmin123 = await bcrypt.hash('admin123', salt);
+
+  const usuariosReais = [
+    { email: 'engjessicamiranda91@gmail.com', nome: 'Jessica Miranda', perfilId: analistaProfile.id, senha: passAdmin123 },
+    { email: 'jovanarodrigues41@gmail.com', nome: 'Jovana Rodrigues', perfilId: adminProfile.id, senha: passAdmin123 }
+  ];
+
+  let realUsersCreated = 0;
+  for (const u of usuariosReais) {
+    const exists = await prisma.usuario.findUnique({ where: { email: u.email } });
+    if (!exists) {
+      await prisma.usuario.create({
+        data: {
+          nome: u.nome,
+          email: u.email,
+          senha: u.senha,
+          perfilId: u.perfilId,
+          ativo: true
+        }
+      });
+      realUsersCreated++;
+    }
+  }
+  console.log(`✅ ${realUsersCreated} usuários reais criados.`);
+
   // 3. Criar Centros de Custo de Obras e Administrativos
   const ccData = [
     // Estrutura de Obras

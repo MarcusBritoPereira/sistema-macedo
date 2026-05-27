@@ -64,6 +64,7 @@ export class AuthService {
         nome: user.nome,
         email: user.email,
         perfil: user.perfil?.nome,
+        precisaTrocarSenha: user.precisaTrocarSenha,
       },
     };
   }
@@ -143,5 +144,14 @@ export class AuthService {
     } catch {
       // Ignora erros na verificação do token durante o logout
     }
+  }
+
+  async changePassword(userId: string, novaSenha: string) {
+    await this.usersService.update(userId, {
+      senha: novaSenha,
+      precisaTrocarSenha: false,
+    });
+    
+    return { ok: true };
   }
 }

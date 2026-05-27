@@ -6,7 +6,9 @@ import {
   UnauthorizedException,
   Req,
   Res,
+  Patch,
 } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { LoginDto } from './dto/login.dto';
@@ -97,5 +99,15 @@ export class AuthController {
     res.clearCookie('access_token', { path: '/' });
     res.clearCookie('refresh_token', { path: '/' });
     return { ok: true };
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Patch('change-password')
+  async changePassword(@Req() req: any, @Body('novaSenha') novaSenha: string) {
+    if (!novaSenha) {
+      throw new UnauthorizedException('A nova senha é obrigatória');
+    }
+    const userId = req.user.userId || req.user.sub;
+    return this.authService.changePassword(userId, novaSenha);
   }
 }

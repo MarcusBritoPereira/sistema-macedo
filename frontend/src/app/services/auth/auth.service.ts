@@ -34,8 +34,23 @@ export class AuthService {
                     sessionStorage.setItem('user', JSON.stringify(res.user));
                     this.userSubject.next(res.user);
                     this.isAuthenticated = true;
-                    // Force a hard redirect to bypass Ionic's ion-split-pane transition bugs
-                    window.location.href = '/financial/dashboard';
+                    // Só redireciona se não precisar trocar a senha
+                    if (!res.user.precisaTrocarSenha) {
+                        window.location.href = '/financial/dashboard';
+                    }
+                }
+            })
+        );
+    }
+
+    changePassword(novaSenha: string) {
+        return this.api.patch<any>('auth/change-password', { novaSenha }).pipe(
+            tap(() => {
+                const user = this.userSubject.value;
+                if (user) {
+                    user.precisaTrocarSenha = false;
+                    sessionStorage.setItem('user', JSON.stringify(user));
+                    this.userSubject.next(user);
                 }
             })
         );

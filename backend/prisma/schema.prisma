@@ -12,13 +12,14 @@ datasource db {
 // 3. Modelo de Domínio (ERD V2 - Unificado)
 
 model Usuario {
-  id        String   @id @default(uuid())
-  nome      String
-  email     String   @unique
-  senha     String
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                 String   @id @default(uuid())
+  nome               String
+  email              String   @unique
+  senha              String
+  ativo              Boolean  @default(true)
+  precisaTrocarSenha Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   perfilId String
   perfil   Perfil @relation(fields: [perfilId], references: [id])

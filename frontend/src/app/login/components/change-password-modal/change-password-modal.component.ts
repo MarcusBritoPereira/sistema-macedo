@@ -1,8 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { ModalController } from '@ionic/angular';
-import { IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton, IonText, IonSpinner, IonItem, IonLabel, IonNote } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonTitle, IonContent, IonInput, IonButton, IonText, IonSpinner, IonItem, IonLabel, IonNote, ModalController } from '@ionic/angular/standalone';
 import { AuthService } from '../../../services/auth/auth.service';
 
 @Component({

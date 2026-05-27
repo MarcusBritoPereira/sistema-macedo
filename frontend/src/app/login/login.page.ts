@@ -2,9 +2,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { IonicModule, ModalController } from '@ionic/angular'; // Use IonicModule for lazy loading or import specific components
 import { AuthService } from '../services/auth/auth.service';
-import { IonContent, IonInput, IonButton, IonText, IonSpinner, IonIcon } from '@ionic/angular/standalone';
+import { IonContent, IonInput, IonButton, IonText, IonSpinner, IonIcon, ModalController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { business, barChart } from 'ionicons/icons';
 import { ChangePasswordModalComponent } from './components/change-password-modal/change-password-modal.component';

@@ -306,4 +306,12 @@
     </div>
 
   </div>
+  <div class="empty-dashboard" *ngIf="!loading && !operationalData">
+    <div class="empty-state-content">
+      <ion-icon name="stats-chart-outline" class="empty-icon"></ion-icon>
+      <h2>Nenhum dado financeiro encontrado</h2>
+      <p>Ainda não há lançamentos financeiros registrados ou ocorreu um erro ao carregar o painel.</p>
+      <ion-button (click)="loadData()">Tentar Novamente</ion-button>
+    </div>
+  </div>
 </ion-content>

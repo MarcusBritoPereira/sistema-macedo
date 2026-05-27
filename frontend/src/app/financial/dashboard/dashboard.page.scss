@@ -812,4 +812,41 @@ $shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
       margin-bottom: 12px;
     }
   }
+}.empty-dashboard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  color: #64748B;
+  
+  .empty-state-content {
+    max-width: 400px;
+    padding: 2rem;
+    
+    .empty-icon {
+      font-size: 64px;
+      color: #CBD5E1;
+      margin-bottom: 1rem;
+    }
+    
+    h2 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      color: #334155;
+      margin-bottom: 0.5rem;
+    }
+    
+    p {
+      font-size: 1rem;
+      line-height: 1.5;
+      margin-bottom: 1.5rem;
+    }
+    
+    ion-button {
+      --background: #3B82F6;
+      --color: #fff;
+      --border-radius: 8px;
+    }
+  }
 }

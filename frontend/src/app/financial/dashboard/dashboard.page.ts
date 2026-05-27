@@ -10,7 +10,7 @@ import {
 import { FinancialDashboardService, OperationalDashboardResponse } from '../../services/financial/financial-dashboard.service';
 import { addIcons } from 'ionicons';
 import {
-  business, ellipsisHorizontal, alertCircleOutline, speedometerOutline, pieChartOutline, pricetagOutline, constructOutline, trendingUpOutline, trendingDownOutline, cashOutline
+  business, ellipsisHorizontal, alertCircleOutline, speedometerOutline, pieChartOutline, pricetagOutline, constructOutline, trendingUpOutline, trendingDownOutline, cashOutline, statsChartOutline
 } from 'ionicons/icons';
 import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -115,7 +115,8 @@ export class DashboardPage implements OnInit {
       constructOutline, 
       trendingUpOutline, 
       trendingDownOutline, 
-      cashOutline 
+      cashOutline,
+      statsChartOutline
     });
   }
 

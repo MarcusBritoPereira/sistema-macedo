@@ -12,12 +12,16 @@ $transition-speed: 0.2s;
 
 /* --- Header Styling --- */
 .main-header {
-    --background: #fff;
-    --border-color: #eaeaea;
-    border-bottom: 1px solid #eaeaea;
+    --background: #f4f6f8; /* Full width gray background from mockup */
+    --border-color: transparent;
+    border-bottom: none;
 
     .header-compact {
-        padding: 16px 32px; /* Matched 32px alignment line */
+        /* Magic padding to align with max-width: 1280px centered container */
+        padding-left: max(32px, calc((100% - 1280px) / 2 + 32px));
+        padding-right: max(32px, calc((100% - 1280px) / 2 + 32px));
+        padding-top: 16px;
+        padding-bottom: 16px;
     }
 
     .header-row-top {
@@ -29,29 +33,27 @@ $transition-speed: 0.2s;
         .bank-selector-compact {
             flex: 1;
             min-width: 0;
-            background: #f1f5f9; /* Gray background from mockup */
-            padding: 4px 12px;
-            border-radius: 0px; /* SHARP */
-            display: inline-flex;
-            max-width: 300px; /* Limit width like in mockup */
+            background: transparent;
+            padding: 0;
+            display: flex;
+            align-items: center;
 
             ion-select {
-                width: 100%;
+                width: auto;
                 font-weight: 700;
                 color: #1a1f24;
                 font-size: 0.95rem;
                 --padding-start: 0;
-                --padding-top: 4px;
-                --padding-bottom: 4px;
+                --padding-top: 0;
+                --padding-bottom: 0;
             }
         }
 
         .period-compact {
             display: flex;
             align-items: center;
-            background: #f1f5f9; /* Gray background from mockup */
-            border-radius: 0px; /* SHARP GEOMETRY */
-            padding: 4px 12px;
+            background: transparent;
+            padding: 0;
             flex-shrink: 0;
 
             ion-button {
@@ -76,14 +78,14 @@ $transition-speed: 0.2s;
 }
 
 .meta-accordion {
-    background: #f8fafc; /* Subtle gray background like mockup */
+    background: #f4f6f8; /* Match header gray */
     border-bottom: 1px solid #eaeaea;
 
     ion-item {
         --background: transparent;
         --min-height: 54px; 
-        --padding-start: 32px; /* Matched 32px alignment line */
-        --padding-end: 32px;
+        --padding-start: max(32px, calc((100% - 1280px) / 2 + 32px));
+        --padding-end: max(32px, calc((100% - 1280px) / 2 + 32px));
         font-size: 0.95rem;
     }
 
@@ -139,12 +141,15 @@ $transition-speed: 0.2s;
 .tabs-container {
     display: flex;
     background: #fff;
-    padding: 16px 32px 0 32px; /* Matched 32px alignment line */
+    padding-top: 16px;
+    padding-bottom: 0;
+    padding-left: max(32px, calc((100% - 1280px) / 2 + 32px));
+    padding-right: max(32px, calc((100% - 1280px) / 2 + 32px));
     border-bottom: 1px solid #eaeaea;
     gap: 32px;
 
     .tab {
-        padding: 12px 0 16px 0; /* No horizontal padding to align text perfectly with title */
+        padding: 8px 0 16px 0; /* Align text perfectly with title */
         color: #718096;
         font-weight: 600;
         font-size: 0.95rem;
@@ -332,9 +337,9 @@ $transition-speed: 0.2s;
             align-items: center;
             background: #fff;
             border: 1px solid #e2e8f0;
-            border-radius: 0px; /* SHARP GEOMETRY */
+            border-radius: 6px; /* Subtle modern rounding */
             padding: 0 16px;
-            height: 52px; /* Increased height for breathing room */
+            height: 48px; /* Restored elegant height */
             transition: box-shadow $transition-speed;
 
             &:focus-within {
@@ -368,10 +373,10 @@ $transition-speed: 0.2s;
             
             .custom-select {
                 width: 100%;
-                background: #fff;
+                background: #f8fafc; /* Slightly distinct from search */
                 border: 1px solid #e2e8f0;
-                border-radius: 0px; /* SHARP GEOMETRY */
-                height: 52px; /* Increased height to match search */
+                border-radius: 6px; /* Subtle modern rounding */
+                height: 48px; /* Restored elegant height */
                 --padding-start: 16px;
                 --padding-end: 16px;
                 font-size: 0.95rem;
@@ -411,11 +416,11 @@ $transition-speed: 0.2s;
         .pill {
             display: inline-flex;
             align-items: center;
-            padding: 8px 16px; 
-            border-radius: 0px; /* SHARP GEOMETRY */
+            padding: 6px 14px; 
+            border-radius: 6px; /* Subtle modern rounding */
             background: #fff;
             border: 1px solid #e2e8f0;
-            color: #718096;
+            color: #4a5568;
             font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;

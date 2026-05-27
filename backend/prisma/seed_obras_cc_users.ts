@@ -61,7 +61,8 @@ async function main() {
 
   const usuariosReais = [
     { email: 'engjessicamiranda91@gmail.com', nome: 'Jessica Miranda', perfilId: analistaProfile.id, senha: passAdmin123 },
-    { email: 'jovanarodrigues41@gmail.com', nome: 'Jovana Rodrigues', perfilId: adminProfile.id, senha: passAdmin123 }
+    { email: 'jovanarodrigues41@gmail.com', nome: 'Jovana Rodrigues', perfilId: adminProfile.id, senha: passAdmin123 },
+    { email: 'marcusrodrigo2@gmail.com', nome: 'Marcus Rodrigo', perfilId: adminProfile.id, senha: passAdmin123 }
   ];
 
   let realUsersCreated = 0;

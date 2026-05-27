@@ -17,7 +17,7 @@ $transition-speed: 0.2s;
     border-bottom: 1px solid #eaeaea;
 
     .header-compact {
-        padding: 16px 24px; /* Increased vertical and horizontal breathing room */
+        padding: 16px 32px; /* Matched 32px alignment line */
     }
 
     .header-row-top {
@@ -29,22 +29,29 @@ $transition-speed: 0.2s;
         .bank-selector-compact {
             flex: 1;
             min-width: 0;
+            background: #f1f5f9; /* Gray background from mockup */
+            padding: 4px 12px;
+            border-radius: 0px; /* SHARP */
+            display: inline-flex;
+            max-width: 300px; /* Limit width like in mockup */
 
             ion-select {
                 width: 100%;
                 font-weight: 700;
                 color: #1a1f24;
-                font-size: 1rem;
+                font-size: 0.95rem;
                 --padding-start: 0;
+                --padding-top: 4px;
+                --padding-bottom: 4px;
             }
         }
 
         .period-compact {
             display: flex;
             align-items: center;
-            background: #eef2f6; 
+            background: #f1f5f9; /* Gray background from mockup */
             border-radius: 0px; /* SHARP GEOMETRY */
-            padding: 6px 12px; /* Increased padding */
+            padding: 4px 12px;
             flex-shrink: 0;
 
             ion-button {
@@ -69,14 +76,14 @@ $transition-speed: 0.2s;
 }
 
 .meta-accordion {
-    background: #fff;
+    background: #f8fafc; /* Subtle gray background like mockup */
     border-bottom: 1px solid #eaeaea;
 
     ion-item {
-        --background: #fff;
-        --min-height: 60px; /* Increased min-height for breathing room */
-        --padding-start: 24px; /* Added left padding */
-        --padding-end: 24px; /* Added right padding */
+        --background: transparent;
+        --min-height: 54px; 
+        --padding-start: 32px; /* Matched 32px alignment line */
+        --padding-end: 32px;
         font-size: 0.95rem;
     }
 
@@ -132,12 +139,12 @@ $transition-speed: 0.2s;
 .tabs-container {
     display: flex;
     background: #fff;
-    padding: 16px 24px 0 24px; /* Added top padding for breathing room */
+    padding: 16px 32px 0 32px; /* Matched 32px alignment line */
     border-bottom: 1px solid #eaeaea;
-    gap: 32px; /* Increased gap */
+    gap: 32px;
 
     .tab {
-        padding: 12px 4px 16px 4px; /* More bottom padding to distance the active line */
+        padding: 12px 0 16px 0; /* No horizontal padding to align text perfectly with title */
         color: #718096;
         font-weight: 600;
         font-size: 0.95rem;
@@ -169,7 +176,7 @@ $transition-speed: 0.2s;
 .main-workspace {
     max-width: 1280px;
     margin: 0 auto;
-    padding: 32px;
+    padding: 32px; /* Provides the 32px alignment line for the body */
 
     @media (max-width: $breakpoint-mobile) {
         padding: 16px;
@@ -404,12 +411,12 @@ $transition-speed: 0.2s;
         .pill {
             display: inline-flex;
             align-items: center;
-            padding: 10px 20px; /* Increased padding */
+            padding: 8px 16px; 
             border-radius: 0px; /* SHARP GEOMETRY */
             background: #fff;
             border: 1px solid #e2e8f0;
             color: #718096;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 600;
             cursor: pointer;
             transition: all $transition-speed;
@@ -421,9 +428,9 @@ $transition-speed: 0.2s;
             }
 
             &.active {
-                background: #ebf8ff;
-                border-color: #bee3f8;
-                color: #2b6cb0;
+                background: #e6f0fa; /* Light blue background from mockup */
+                border-color: #e6f0fa;
+                color: #005bbf; /* Blue text from mockup */
             }
 
             .badge {

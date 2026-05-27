@@ -67,16 +67,17 @@ ion-item {
     --padding-start: 16px;
     --min-height: 48px;
     margin-bottom: 4px;
-    border-radius: 12px;
+    border-radius: 0px; /* SHARP GEOMETRY: 0px instead of 12px (Avoid Safe Zone 4-8px) */
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Fluid Animation */
 
     ion-icon {
         font-size: 22px;
         margin-right: 16px;
+        margin-left: 16px; /* BREATHING ROOM: Ensures space between icon and left edge of hover background */
         color: inherit;
         opacity: 0.8;
-        transition: margin 0.3s ease;
+        transition: transform 0.3s ease, color 0.3s ease;
     }
 
     &.selected {
@@ -84,15 +85,23 @@ ion-item {
         --color: #ffffff;
         font-weight: 600;
         backdrop-filter: blur(10px);
+        border-left: 4px solid #ffffff; /* Sharp accent mark */
 
         ion-icon {
             opacity: 1;
+            margin-left: 12px; /* Compensate for the 4px border */
+            transform: scale(1.1); /* Active Animation */
         }
     }
 
     /* Hover effect for top-level items only */
     &:not(.selected):hover {
         --background: rgba(255, 255, 255, 0.05);
+        transform: translateX(4px); /* Micro-interaction movement */
+        
+        ion-icon {
+            opacity: 1;
+        }
     }
 }
 
@@ -107,7 +116,7 @@ ion-accordion-group {
         ion-item[slot="header"] {
             --background: transparent;
             --color: rgba(255, 255, 255, 0.8);
-            border-radius: 12px;
+            border-radius: 0px;
 
             &.accordion-expanded {
                 --background: rgba(255, 255, 255, 0.1);
@@ -137,6 +146,13 @@ ion-accordion-group {
         ion-icon {
             font-size: 18px;
             margin-right: 12px;
+            margin-left: 12px; /* BREATHING ROOM for nested items */
+        }
+        
+        &.selected {
+            ion-icon {
+                margin-left: 8px; /* Compensate for the 4px border */
+            }
         }
     }
 }

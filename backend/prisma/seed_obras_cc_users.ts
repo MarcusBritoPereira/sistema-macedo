@@ -201,6 +201,38 @@ async function main() {
   }
   console.log(`✅ ${obrasCreated} novas Obras fictícias integradas com sucesso.`);
 
+  // 6. Cadastrar Conta Bancária Sicredi (Macedo Construtora)
+  const contaSicrediExists = await prisma.contaBancaria.findFirst({ where: { conta: '08039-3' } });
+  if (!contaSicrediExists) {
+    await prisma.contaBancaria.create({
+      data: {
+        nome: 'MACEDO CONSTRUTORA LTDA (Sicredi)',
+        banco: 'Banco Cooperativo Sicredi S.A. - Bansicredi',
+        codigoBanco: '748',
+        agencia: '0818',
+        conta: '08039-3',
+        saldoInicial: 0
+      }
+    });
+    console.log('✅ Conta Bancária do Sicredi criada com sucesso.');
+  }
+
+  // 7. Cadastrar Caixinha (Dinheiro em Espécie)
+  const caixinhaExists = await prisma.contaBancaria.findFirst({ where: { nome: 'Caixinha (Dinheiro em Espécie)' } });
+  if (!caixinhaExists) {
+    await prisma.contaBancaria.create({
+      data: {
+        nome: 'Caixinha (Dinheiro em Espécie)',
+        banco: 'Caixa Interno',
+        codigoBanco: '999',
+        agencia: '',
+        conta: '',
+        saldoInicial: 0
+      }
+    });
+    console.log('✅ Caixinha (Dinheiro em Espécie) criada com sucesso.');
+  }
+
   console.log('🚀 CARGA DE DADOS CONCLUÍDA SEM PERDA DE DADOS EXISTENTES!');
 }
 

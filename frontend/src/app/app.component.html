@@ -4,6 +4,12 @@
     <ion-menu contentId="main-content" type="overlay" [disabled]="!auth.isAuthenticated"
       [class.menu-collapsed]="isMenuCollapsed">
       <ion-content>
+        <div class="brand-logo-menu" *ngIf="!isMenuCollapsed">
+          <img src="assets/logo/logo-white.png" alt="Sistema Macedo Logo" />
+        </div>
+        <div class="brand-logo-menu-collapsed" *ngIf="isMenuCollapsed">
+          <img src="assets/logo/logo-white.png" alt="Logo" />
+        </div>
         <div class="menu-header">
           <ng-container *ngIf="auth.user$ | async as user">
             <div class="user-avatar">

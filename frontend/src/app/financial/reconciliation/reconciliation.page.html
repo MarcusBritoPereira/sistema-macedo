@@ -258,7 +258,7 @@
             <!-- Empty State -->
             <div *ngIf="!loading && filteredStatements.length === 0" class="empty-state">
                 <div class="empty-illustration">
-                    <img src="assets/imgs/reconciliation-empty.svg" alt="Sem dados" (error)="showDefaultIcon($event)">
+                    <img src="assets/logo/logo_colorido.png" alt="Sem dados" (error)="showDefaultIcon($event)" style="max-width: 150px; height: auto;">
                     <ion-icon name="receipt-outline" *ngIf="!illustrationLoaded"></ion-icon>
                 </div>
                 <h2>Não existem conciliações pendentes no mês selecionado.</h2>

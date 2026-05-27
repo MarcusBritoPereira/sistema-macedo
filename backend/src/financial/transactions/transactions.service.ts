@@ -1,6 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { Prisma, TipoLancamento, StatusLancamento } from '@prisma/client';
+import {
+  Prisma,
+  TipoLancamento,
+  StatusLancamento,
+  TipoClassificacaoLancamento,
+} from '@prisma/client';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 
@@ -18,8 +23,12 @@ export class FinancialTransactionsService {
     obra: true,
   };
 
-  private validateBusinessRules(data: CreateTransactionDto | UpdateTransactionDto) {
-    const requiresObra = data.tipoLancamento === "OBRA" || data.tipoLancamento === "POS_OBRA";
+  private validateBusinessRules(data: {
+    tipoLancamento?: TipoClassificacaoLancamento | null;
+    obraId?: string | null;
+  }) {
+    const requiresObra =
+      data.tipoLancamento === 'OBRA' || data.tipoLancamento === 'POS_OBRA';
     if (requiresObra && !data.obraId) {
       throw new BadRequestException("Obra vinculada é obrigatória para lançamentos de Obra e Pós-obra.");
     }
@@ -181,7 +190,15 @@ export class FinancialTransactionsService {
   }
 
   async update(id: string, data: UpdateTransactionDto, usuarioId: string) {
-    this.validateBusinessRules(data);
+    const existing = await this.prisma.lancamentoFinanceiro.findUnique({
+      where: { id },
+      select: { tipoLancamento: true, obraId: true },
+    });
+
+    this.validateBusinessRules({
+      tipoLancamento: data.tipoLancamento ?? existing?.tipoLancamento,
+      obraId: data.obraId ?? existing?.obraId,
+    });
     const updateData = this.toUpdateInput(data);
     return this.prisma.$transaction(async (tx) => {
       const oldTransaction = await tx.lancamentoFinanceiro.findUnique({

@@ -15,20 +15,22 @@
                 <ion-popover trigger="new-transaction-trigger" triggerAction="click" placement="bottom" mode="ios"
                     #newPopover>
                     <ng-template>
-                        <ion-list lines="none" class="new-transaction-list">
-                            <ion-item button (click)="addReceita()">
-                                <ion-label>Receita</ion-label>
-                                <ion-note slot="end" class="shortcut-badge">Alt+R</ion-note>
-                            </ion-item>
-                            <ion-item button (click)="addDespesa()">
-                                <ion-label>Despesa</ion-label>
-                                <ion-note slot="end" class="shortcut-badge">Alt+D</ion-note>
-                            </ion-item>
-                            <ion-item button (click)="addTransferencia()">
-                                <ion-label>Transferência</ion-label>
-                                <ion-note slot="end" class="shortcut-badge">Alt+T</ion-note>
-                            </ion-item>
-                        </ion-list>
+                        <ion-content class="ion-no-padding">
+                            <ion-list lines="none" class="new-transaction-list">
+                                <ion-item button (click)="addReceita()">
+                                    <ion-label>Receita</ion-label>
+                                    <ion-note slot="end" class="shortcut-badge">Alt+R</ion-note>
+                                </ion-item>
+                                <ion-item button (click)="addDespesa()">
+                                    <ion-label>Despesa</ion-label>
+                                    <ion-note slot="end" class="shortcut-badge">Alt+D</ion-note>
+                                </ion-item>
+                                <ion-item button (click)="addTransferencia()">
+                                    <ion-label>Transferência</ion-label>
+                                    <ion-note slot="end" class="shortcut-badge">Alt+T</ion-note>
+                                </ion-item>
+                            </ion-list>
+                        </ion-content>
                     </ng-template>
                 </ion-popover>
             </div>

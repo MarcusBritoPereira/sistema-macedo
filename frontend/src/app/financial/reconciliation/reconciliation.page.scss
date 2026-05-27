@@ -17,7 +17,7 @@ $transition-speed: 0.2s;
     border-bottom: 1px solid #eaeaea;
 
     .header-compact {
-        padding: 8px 0;
+        padding: 16px 24px; /* Increased vertical and horizontal breathing room */
     }
 
     .header-row-top {
@@ -42,9 +42,9 @@ $transition-speed: 0.2s;
         .period-compact {
             display: flex;
             align-items: center;
-            background: #eef2f6; /* Softer pill background */
-            border-radius: 20px;
-            padding: 4px 10px;
+            background: #eef2f6; 
+            border-radius: 0px; /* SHARP GEOMETRY */
+            padding: 6px 12px; /* Increased padding */
             flex-shrink: 0;
 
             ion-button {
@@ -74,8 +74,10 @@ $transition-speed: 0.2s;
 
     ion-item {
         --background: #fff;
-        --min-height: 48px;
-        font-size: 0.9rem;
+        --min-height: 60px; /* Increased min-height for breathing room */
+        --padding-start: 24px; /* Added left padding */
+        --padding-end: 24px; /* Added right padding */
+        font-size: 0.95rem;
     }
 
     .header-summary {
@@ -130,12 +132,12 @@ $transition-speed: 0.2s;
 .tabs-container {
     display: flex;
     background: #fff;
-    padding: 0 24px;
+    padding: 16px 24px 0 24px; /* Added top padding for breathing room */
     border-bottom: 1px solid #eaeaea;
-    gap: 24px;
+    gap: 32px; /* Increased gap */
 
     .tab {
-        padding: 16px 4px;
+        padding: 12px 4px 16px 4px; /* More bottom padding to distance the active line */
         color: #718096;
         font-weight: 600;
         font-size: 0.95rem;
@@ -179,7 +181,8 @@ $transition-speed: 0.2s;
     display: flex;
     justify-content: space-between;
     align-items: flex-end;
-    margin-bottom: 32px;
+    margin-top: 16px; /* Added top breathing room */
+    margin-bottom: 40px; /* Increased bottom breathing room */
 
     .intro-left {
         .page-title {
@@ -322,9 +325,9 @@ $transition-speed: 0.2s;
             align-items: center;
             background: #fff;
             border: 1px solid #e2e8f0;
-            border-radius: 8px;
+            border-radius: 0px; /* SHARP GEOMETRY */
             padding: 0 16px;
-            height: 48px;
+            height: 52px; /* Increased height for breathing room */
             transition: box-shadow $transition-speed;
 
             &:focus-within {
@@ -360,8 +363,8 @@ $transition-speed: 0.2s;
                 width: 100%;
                 background: #fff;
                 border: 1px solid #e2e8f0;
-                border-radius: 8px;
-                height: 48px;
+                border-radius: 0px; /* SHARP GEOMETRY */
+                height: 52px; /* Increased height to match search */
                 --padding-start: 16px;
                 --padding-end: 16px;
                 font-size: 0.95rem;
@@ -380,7 +383,8 @@ $transition-speed: 0.2s;
     .status-pills {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 12px; /* Increased gap */
+        margin-top: 8px; /* Added top breathing room */
         flex-wrap: wrap;
 
         @media (max-width: $breakpoint-mobile) {
@@ -400,8 +404,8 @@ $transition-speed: 0.2s;
         .pill {
             display: inline-flex;
             align-items: center;
-            padding: 8px 16px;
-            border-radius: 20px;
+            padding: 10px 20px; /* Increased padding */
+            border-radius: 0px; /* SHARP GEOMETRY */
             background: #fff;
             border: 1px solid #e2e8f0;
             color: #718096;

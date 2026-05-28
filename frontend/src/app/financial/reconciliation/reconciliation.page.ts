@@ -211,6 +211,10 @@ export class ReconciliationPage implements OnInit, OnDestroy {
                 this.totalItems = response.pagination?.total || 0;
                 this.totalPages = response.pagination?.totalPages || 1;
                 this.page = response.pagination?.page || this.page;
+                
+                // Use the backend's aggregate sum which ignores pagination limits
+                this.summary.totalPendingValue = response.summary?.totalPendingValue || 0;
+
                 this.calculateSummary();
                 this.applySearch(); // Apply type filter
                 this.collapseAll(); // DO NOT expand all by default for large datasets (3,000+ rows) to avoid massive rendering freeze
@@ -231,9 +235,7 @@ export class ReconciliationPage implements OnInit, OnDestroy {
         this.summary.totalCount = this.totalItems;
         this.summary.receivablesCount = this.statements.filter(s => s.tipo === 'CREDIT').length;
         this.summary.payablesCount = this.statements.filter(s => s.tipo === 'DEBIT').length;
-        this.summary.totalPendingValue = this.statements
-            .filter(s => !s.conciliado)
-            .reduce((acc, s) => acc + Math.abs(Number(s.valor)), 0);
+        // totalPendingValue is now set directly from the backend response in loadStatements
     }
 
     setFilterType(type: 'ALL' | 'CREDIT' | 'DEBIT') {

@@ -39,6 +39,9 @@ export interface SuggestedMatch {
 
 export interface PaginatedStatementsResponse {
     data: BankStatement[];
+    summary?: {
+        totalPendingValue: number;
+    };
     pagination: {
         page: number;
         pageSize: number;

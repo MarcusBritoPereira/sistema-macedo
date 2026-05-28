@@ -190,7 +190,9 @@ export class ReconciliationService {
       };
     }
 
-    const [total, statements] = await this.prisma.$transaction([
+    const aggregateWhere = { ...where, conciliado: false };
+
+    const [total, statements, pendingAgg] = await this.prisma.$transaction([
       this.prisma.extratoBancario.count({ where }),
       this.prisma.extratoBancario.findMany({
         where,
@@ -206,7 +208,13 @@ export class ReconciliationService {
         skip,
         take: pageSize,
       }),
+      this.prisma.extratoBancario.aggregate({
+        _sum: { valor: true },
+        where: aggregateWhere,
+      }),
     ]);
+
+    const totalPendingValue = Math.abs(Number(pendingAgg._sum.valor || 0));
 
     const enrichedStatements = await Promise.all(
       statements.map(async (statement) => {
@@ -224,6 +232,9 @@ export class ReconciliationService {
 
     return {
       data: enrichedStatements,
+      summary: {
+        totalPendingValue,
+      },
       pagination: {
         page,
         pageSize,

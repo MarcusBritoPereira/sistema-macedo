@@ -84,8 +84,8 @@ $transition-speed: 0.2s;
     ion-item {
         --background: transparent;
         --min-height: 54px; 
-        --padding-start: max(32px, calc((100% - 1280px) / 2 + 32px));
-        --padding-end: max(32px, calc((100% - 1280px) / 2 + 32px));
+        --padding-start: max(32px, calc((100% - 1280px) / 2 + 32px)) !important;
+        --padding-end: max(32px, calc((100% - 1280px) / 2 + 32px)) !important;
         font-size: 0.95rem;
     }
 

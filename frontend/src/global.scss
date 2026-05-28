@@ -345,7 +345,15 @@ ion-button {
         }
 
         ion-radio {
-            display: none; /* Hide the radio button so it looks like a clean list */
+            --color: inherit;
+            width: 100%;
+            
+            &::part(container) {
+                display: none;
+            }
+            &::part(mark) {
+                display: none;
+            }
         }
     }
 }

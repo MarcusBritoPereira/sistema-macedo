@@ -318,3 +318,34 @@ ion-button {
         scroll-behavior: auto !important;
     }
 }
+
+/* ============================================
+   CUSTOM POPOVER SELECT
+   ================================================ */
+.custom-modern-popover {
+    --width: 240px;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    ion-item {
+        --background: transparent;
+        --color: #4a5568;
+        --padding-start: 12px;
+        --inner-padding-end: 12px;
+        margin: 4px 8px; /* Breathing room / margins like the screenshot */
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+
+        &.item-radio-checked {
+            --background: #e6f0fa;
+            --color: #005bbf;
+            font-weight: 600;
+        }
+
+        ion-radio {
+            display: none; /* Hide the radio button so it looks like a clean list */
+        }
+    }
+}

@@ -80,7 +80,7 @@
 
                     <div class="field-item">
                         <label>Classificação</label>
-                        <ion-select [(ngModel)]="form.classificacao" interface="popover" class="custom-select-trigger select-box">
+                        <ion-select [(ngModel)]="form.classificacao" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
                             <ion-select-option value="RECEITA">Receita</ion-select-option>
                             <ion-select-option value="DESPESA">Despesa</ion-select-option>
                             <ion-select-option value="INVESTIMENTO">Investimento</ion-select-option>
@@ -90,7 +90,7 @@
 
                     <div class="field-item">
                         <label>Tipo de Lançamento</label>
-                        <ion-select [(ngModel)]="form.tipoLancamento" interface="popover" class="custom-select-trigger select-box">
+                        <ion-select [(ngModel)]="form.tipoLancamento" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
                             <ion-select-option value="ADMINISTRATIVO">Administrativo</ion-select-option>
                             <ion-select-option value="OBRA">De Obras</ion-select-option>
                         </ion-select>
@@ -98,7 +98,7 @@
 
                     <div class="field-item" *ngIf="form.tipoLancamento === 'OBRA'">
                         <label>Obra Destino</label>
-                        <ion-select [(ngModel)]="form.obraId" placeholder="Selecione a Obra" interface="popover" class="custom-select-trigger select-box">
+                        <ion-select [(ngModel)]="form.obraId" placeholder="Selecione a Obra" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
                             <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
                         </ion-select>
                     </div>

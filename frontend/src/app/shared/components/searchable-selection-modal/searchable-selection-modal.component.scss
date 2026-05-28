@@ -13,6 +13,7 @@ ion-searchbar {
     --background: var(--ion-color-primary-contrast);
     --border-radius: 12px;
     --min-height: 56px;
+    --padding-start: 16px;
     margin-top: 8px;
     border: 1px dashed var(--ion-color-primary);
     font-weight: 600;
@@ -22,6 +23,7 @@ ion-searchbar {
     --background: var(--ion-color-light);
     --border-radius: 12px;
     --min-height: 56px;
+    --padding-start: 16px;
     --inner-padding-end: 16px;
     margin-bottom: 8px;
     

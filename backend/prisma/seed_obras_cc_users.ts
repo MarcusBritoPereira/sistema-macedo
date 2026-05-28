@@ -206,7 +206,7 @@ async function main() {
   if (!contaSicrediExists) {
     await prisma.contaBancaria.create({
       data: {
-        nome: 'MACEDO CONSTRUTORA LTDA (Sicredi)',
+        nome: 'Sicredi',
         banco: 'Banco Cooperativo Sicredi S.A. - Bansicredi',
         codigoBanco: '748',
         agencia: '0818',

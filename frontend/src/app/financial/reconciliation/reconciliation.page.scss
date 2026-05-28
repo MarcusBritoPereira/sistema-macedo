@@ -84,8 +84,6 @@ $transition-speed: 0.2s;
     ion-item {
         --background: transparent;
         --min-height: 54px; 
-        --padding-start: max(32px, calc((100% - 1280px) / 2 + 32px)) !important;
-        --padding-end: max(32px, calc((100% - 1280px) / 2 + 32px)) !important;
         font-size: 0.95rem;
     }
 
@@ -94,6 +92,12 @@ $transition-speed: 0.2s;
         align-items: center;
         flex-wrap: wrap;
         gap: 8px;
+        /* Bypassing ion-item's shadow DOM by applying padding here. 
+           We need 32px total minimum, and ion-item natively gives 16px. */
+        padding-left: max(16px, calc((100% - 1280px) / 2 + 16px));
+        padding-right: max(16px, calc((100% - 1280px) / 2 + 16px));
+        width: 100%;
+        box-sizing: border-box;
 
         .summary-label {
             color: #718096;

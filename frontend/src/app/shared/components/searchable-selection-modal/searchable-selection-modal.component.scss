@@ -64,8 +64,9 @@ ion-searchbar.premium-modal-searchbar {
     --background: #ffffff !important;
     --border-radius: 12px !important;
     --min-height: 52px !important;
-    --padding-start: 16px !important;
-    --padding-end: 16px !important;
+    --padding-start: 24px !important; /* Premium left breathing room (minimum 15px) */
+    --inner-padding-start: 0px !important;
+    --padding-end: 24px !important;
     margin-bottom: 12px !important;
     border: 1.5px dashed #3880ff !important; /* dashed blue border as in print */
     font-weight: 700 !important;
@@ -95,7 +96,8 @@ ion-searchbar.premium-modal-searchbar {
     --background: #f4f5f8 !important; /* Soft lavender/gray background as seen in print */
     --border-radius: 12px !important;
     --min-height: 52px !important;
-    --padding-start: 16px !important;
+    --padding-start: 24px !important; /* Premium left breathing room (minimum 15px) */
+    --inner-padding-start: 0px !important;
     --inner-padding-end: 16px !important;
     margin-bottom: 10px !important;
     --color: #2d3748 !important;

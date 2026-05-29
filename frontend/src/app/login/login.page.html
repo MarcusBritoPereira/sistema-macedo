@@ -12,26 +12,28 @@
         <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
           <div class="input-group">
             <label for="email">E-mail corporativo <span class="required">*</span></label>
-            <ion-input
+            <input
               id="email"
-              class="custom-input"
               type="email"
+              class="clean-input"
               formControlName="email"
+              placeholder="admin@macedo.com.br"
               autocomplete="email"
-              [class.ion-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
-            ></ion-input>
+              [class.invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+            />
           </div>
 
           <div class="input-group">
             <label for="senha">Senha <span class="required">*</span></label>
-            <ion-input
+            <input
               id="senha"
-              class="custom-input"
               type="password"
+              class="clean-input"
               formControlName="senha"
+              placeholder="••••••••"
               autocomplete="current-password"
-              [class.ion-invalid]="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched"
-            ></ion-input>
+              [class.invalid]="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched"
+            />
           </div>
 
           <ion-text color="danger" *ngIf="errorMessage" class="error-text" role="alert">

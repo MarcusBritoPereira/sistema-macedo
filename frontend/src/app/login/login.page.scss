@@ -84,24 +84,45 @@
     }
   }
 
-  .custom-input {
-    --background: #f1f5f9;
-    --padding-start: 16px;
-    --padding-end: 16px;
-    --border-radius: 4px;
+  .clean-input {
+    background: #ffffff;
     border: 1px solid #cbd5e1;
-    border-radius: 4px;
+    border-radius: 6px;
     height: 48px;
-    font-size: 1rem;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    padding: 0 16px;
+    font-size: 1.05rem;
+    color: #0f172a;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
     
-    &.ion-focused {
-      border-color: #0f172a;
-      box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.1);
+    &::placeholder {
+      color: #94a3b8;
     }
 
-    &.ion-invalid.ion-touched {
+    &:focus {
+      border-color: #1ea54b;
+      box-shadow: 0 0 0 4px rgba(30, 165, 75, 0.15);
+    }
+
+    &.invalid {
       border-color: #ef4444;
+      
+      &:focus {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+      }
+    }
+
+    // Prevents squeezed inputs or default grey/yellow backgrounds when autofilled
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus,
+    &:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+      box-shadow: 0 0 0 30px #ffffff inset !important;
+      -webkit-text-fill-color: #0f172a !important;
+      transition: background-color 5000s ease-in-out 0s;
     }
   }
 }

@@ -67,10 +67,11 @@
                             <div class="form-column">
                                 <h3 class="column-title">Dados de Identificação</h3>
 
-                                <!-- Descrição -->
+                                <!-- Descrição (Textarea) -->
                                 <div class="premium-field-wrapper">
                                     <label class="premium-label">Descrição *</label>
-                                    <input type="text" [(ngModel)]="form.descricao" class="premium-input" placeholder="Ex: Compra de cimento">
+                                    <textarea [(ngModel)]="form.descricao" class="premium-textarea" [placeholder]="statement.tipo === 'CREDIT' ? 'Descrição do recebimento' : 'Descrição do pagamento'" maxlength="500"></textarea>
+                                    <div class="char-counter">{{ form.descricao?.length || 0 }} / 500 caracteres</div>
                                 </div>
 
                                 <!-- Fornecedor / Cliente -->

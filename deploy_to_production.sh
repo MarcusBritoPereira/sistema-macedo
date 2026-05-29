@@ -22,6 +22,9 @@ ssh sistema-macedo << 'EOF'
   echo "🔨 Reconstruindo containers (Backend + Frontend)..."
   docker compose -f docker-compose.prod.yml up -d --build
   
+  echo "🗄️ Sincronizando o banco de dados com o Prisma..."
+  docker exec -i macedo_backend_prod npx prisma db push
+  
   echo "✅ Deploy concluído com sucesso no servidor!"
 EOF
 

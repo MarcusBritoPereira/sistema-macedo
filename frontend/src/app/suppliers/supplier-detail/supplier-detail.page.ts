@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { IonicModule, ToastController, AlertController } from '@ionic/angular';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { saveOutline, trashOutline, arrowBackOutline } from 'ionicons/icons';
+import { saveOutline, trashOutline, arrowBackOutline, storefrontOutline } from 'ionicons/icons';
 import { SuppliersService, Supplier } from '../../services/suppliers/suppliers.service';
 import { CategoriesService, Category } from '../../services/financial/categories.service';
 
@@ -30,7 +30,7 @@ export class SupplierDetailPage implements OnInit {
         private toastCtrl: ToastController,
         private alertCtrl: AlertController
     ) {
-        addIcons({ saveOutline, trashOutline, arrowBackOutline });
+        addIcons({ saveOutline, trashOutline, arrowBackOutline, storefrontOutline });
         this.supplierForm = this.fb.group({
             nomeFantasia: ['', [Validators.required]],
             razaoSocial: [''],

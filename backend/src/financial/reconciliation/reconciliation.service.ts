@@ -374,6 +374,10 @@ export class ReconciliationService {
       const isTransfer =
         data?.isTransfer === true || data?.isTransfer === 'true';
       const contaDestinoId = sanitize(data.contaDestinoId);
+      
+      const tipoLancamento = sanitize(data.tipoLancamento);
+      const tipoCusto = sanitize(data.tipoCusto);
+      const categoriaCusto = sanitize(data.categoriaCusto);
 
       if (!isTransfer && !fornecedorId && !clienteId) {
         const suggestion = await this.suggestEntityForStatement({
@@ -468,6 +472,9 @@ export class ReconciliationService {
             clienteId: clienteId,
             fornecedorId: fornecedorId, // Added missing mapping
             obraId: obraId,
+            tipoLancamento: tipoLancamento,
+            tipoCusto: tipoCusto,
+            categoriaCusto: categoriaCusto,
             observacoes: observacoes || `Criado via conciliação bancária: ${statement.descricao}`,
           },
         });

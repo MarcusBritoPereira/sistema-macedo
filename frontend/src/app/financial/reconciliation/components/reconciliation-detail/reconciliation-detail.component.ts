@@ -16,6 +16,7 @@ import {
 import { BankStatement, SuggestedMatch } from '../../../../services/financial/reconciliation';
 import { ReconciliationService } from '../../../../services/financial/reconciliation.service';
 import { CategoriesService, Category } from '../../../../services/financial/categories.service';
+import { FinancialService, BankAccount } from '../../../../services/financial/financial';
 import { ClientsService, Cliente } from '../../../../services/clients/clients';
 import { SuppliersService, Supplier } from '../../../../services/suppliers/suppliers.service';
 import { CostCentersService, CostCenter } from '../../../../services/financial/cost-centers.service';
@@ -47,6 +48,8 @@ export class ReconciliationDetailComponent implements OnInit {
     @Input() costCenters: CostCenter[] = [];
 
     obras: Obra[] = [];
+    bankAccounts: BankAccount[] = [];
+    allCategories: Category[] = [];
 
     loadingAux = false;
     loadingAction = false;
@@ -67,6 +70,9 @@ export class ReconciliationDetailComponent implements OnInit {
         centroCustoId: '',
         classificacao: '',
         tipoLancamento: 'ADMINISTRATIVO',
+        tipoCusto: 'OUTROS',
+        categoriaCusto: '',
+        contaDestinoId: '',
         obraId: '',
         items: []
     };
@@ -78,6 +84,7 @@ export class ReconciliationDetailComponent implements OnInit {
         private clientsService: ClientsService,
         private costCentersService: CostCentersService,
         private obrasService: ObrasService,
+        private financialService: FinancialService,
         private toastCtrl: ToastController,
         private modalCtrl: ModalController,
         private alertCtrl: AlertController
@@ -152,8 +159,8 @@ export class ReconciliationDetailComponent implements OnInit {
         const targetType = this.statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
 
         const processData = () => {
-            // Filter local copy by type
-            this.categories = this.categories.filter(c => c.tipo === targetType);
+            this.allCategories = [...this.categories];
+            this.filterCategoriesByClassification();
 
             // Default to "Geral" if not set
             if (!this.form.centroCustoId && this.costCenters.length > 0) {
@@ -162,7 +169,20 @@ export class ReconciliationDetailComponent implements OnInit {
                     this.form.centroCustoId = geral.id;
                 }
             }
-            this.loadingAux = false;
+
+            // Load bank accounts for transfers
+            this.financialService.getBankAccounts().subscribe({
+                next: (accounts: BankAccount[]) => {
+                    const originAccountId = this.statement.importacao?.contaBancariaId;
+                    this.bankAccounts = originAccountId
+                        ? accounts.filter((acc: BankAccount) => acc.id !== originAccountId)
+                        : accounts;
+                    this.loadingAux = false;
+                },
+                error: () => {
+                    this.loadingAux = false;
+                }
+            });
         };
 
         // Fallback: If for some reason lists were not passed from parent, fetch them
@@ -192,16 +212,101 @@ export class ReconciliationDetailComponent implements OnInit {
         }
     }
 
+    filterCategoriesByClassification() {
+        const currentClassification = this.form.classificacao; // RECEITA or DESPESA
+        const targetType = currentClassification === 'RECEITA' ? 'RECEITA' : 'DESPESA';
+        this.categories = this.allCategories.filter(c => c.tipo === targetType);
+        
+        // If the currently selected category doesn't belong to the new list, clear it
+        if (this.form.categoriaId) {
+            const exists = this.categories.some(c => c.id === this.form.categoriaId);
+            if (!exists) {
+                this.form.categoriaId = '';
+            }
+        }
+    }
+
+    onClassificationChange() {
+        this.filterCategoriesByClassification();
+    }
+
     addItem() {
         this.form.items.push({
             descricao: '',
             quantidade: 1,
-            valorUnitario: 0
+            valorUnitario: 0,
+            valorUnitarioStr: ''
         });
     }
 
     removeItem(index: number) {
         this.form.items.splice(index, 1);
+    }
+
+    formatValorUnitario(value: number | undefined | null): string {
+        if (value === undefined || value === null || value === 0) return '';
+        return new Intl.NumberFormat('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
+    }
+
+    onValorUnitarioInput(event: any, item: any) {
+        const val = event.target.value;
+        item.valorUnitarioStr = val;
+        
+        if (!val) {
+            item.valorUnitario = 0;
+            return;
+        }
+
+        let cleaned = val.replace(/\s/g, '').replace('R$', '');
+        const hasComma = cleaned.includes(',');
+        const hasDot = cleaned.includes('.');
+
+        if (hasComma && hasDot) {
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else if (hasComma) {
+            cleaned = cleaned.replace(',', '.');
+        }
+
+        const parsed = parseFloat(cleaned);
+        item.valorUnitario = isNaN(parsed) ? 0 : parsed;
+    }
+
+    onValorUnitarioBlur(event: any, item: any) {
+        item.valorUnitarioStr = this.formatValorUnitario(item.valorUnitario);
+        event.target.value = item.valorUnitarioStr;
+    }
+
+    onValorUnitarioFocus(event: any, item: any) {
+        if (item.valorUnitario > 0) {
+            item.valorUnitarioStr = item.valorUnitario.toString().replace('.', ',');
+            event.target.value = item.valorUnitarioStr;
+        }
+    }
+
+    isFormValid(): boolean {
+        if (this.activeTab === 'TRANSFER') {
+            return !!this.form.contaDestinoId && !!this.form.dataCompetencia;
+        }
+        
+        // Tab is 'NEW'
+        if (!this.form.descricao || !this.form.categoriaId || !this.form.dataCompetencia || !this.form.centroCustoId || !this.form.classificacao || !this.form.tipoLancamento) {
+            return false;
+        }
+
+        // If Obra/Pos-Obra is selected as tipoLancamento, obraId is required
+        if ((this.form.tipoLancamento === 'OBRA' || this.form.tipoLancamento === 'POS_OBRA') && !this.form.obraId) {
+            return false;
+        }
+
+        // Items must match sum
+        if (this.form.items && this.form.items.length > 0 && !this.isItemsTotalMatching()) {
+            return false;
+        }
+
+        return true;
     }
 
     getItemsTotal(): number {
@@ -225,12 +330,8 @@ export class ReconciliationDetailComponent implements OnInit {
     }
 
     async confirmCreation() {
-        if (!this.form.descricao) {
-            return;
-        }
-
-        if (this.form.items && this.form.items.length > 0 && !this.isItemsTotalMatching()) {
-            this.presentToast('O valor total dos itens deve corresponder exatamente ao valor do extrato.', 'warning');
+        if (!this.isFormValid()) {
+            this.presentToast('Por favor, preencha todos os campos obrigatórios corretamente.', 'warning');
             return;
         }
 
@@ -245,23 +346,34 @@ export class ReconciliationDetailComponent implements OnInit {
         const isCredit = this.statement.tipo === 'CREDIT';
 
         let observacoes = '';
-        if (this.form.items && this.form.items.length > 0) {
+        if (this.activeTab === 'NEW' && this.form.items && this.form.items.length > 0) {
             observacoes = 'Itens Detalhados:\n' + this.form.items
                 .map((it: any) => `- ${it.descricao || 'Item'}: ${it.quantidade} x ${it.valorUnitario.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })} = ${(it.quantidade * it.valorUnitario).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`)
                 .join('\n');
         }
 
         const payload = {
-            descricao: this.form.descricao,
-            categoriaId: this.form.categoriaId,
-            fornecedorId: isCredit ? null : entityId,
-            clienteId: isCredit ? entityId : null,
-            centroCustoId: this.form.centroCustoId,
+            descricao: this.activeTab === 'TRANSFER' 
+                ? `Transferência entre contas: ${this.statement.descricao}`
+                : this.form.descricao,
+            categoriaId: this.activeTab === 'TRANSFER' ? null : this.form.categoriaId,
+            fornecedorId: this.activeTab === 'TRANSFER' ? null : (isCredit ? null : entityId),
+            clienteId: this.activeTab === 'TRANSFER' ? null : (isCredit ? entityId : null),
+            centroCustoId: this.activeTab === 'TRANSFER' ? null : this.form.centroCustoId,
             valor: this.form.valor,
             dataVencimento: this.form.dataVencimento,
             dataCompetencia: this.form.dataCompetencia,
-            tipo: this.form.classificacao, // Use the user selected classification
-            obraId: this.form.tipoLancamento === 'OBRA' ? this.form.obraId : null,
+            tipo: this.activeTab === 'TRANSFER'
+                ? (isCredit ? 'RECEITA' : 'DESPESA')
+                : this.form.classificacao,
+            tipoLancamento: this.activeTab === 'TRANSFER' ? null : this.form.tipoLancamento,
+            tipoCusto: this.activeTab === 'TRANSFER' ? null : this.form.tipoCusto,
+            categoriaCusto: this.activeTab === 'TRANSFER' ? null : this.form.categoriaCusto,
+            obraId: (this.activeTab === 'NEW' && (this.form.tipoLancamento === 'OBRA' || this.form.tipoLancamento === 'POS_OBRA'))
+                ? this.form.obraId
+                : null,
+            contaDestinoId: this.activeTab === 'TRANSFER' ? this.form.contaDestinoId : null,
+            isTransfer: this.activeTab === 'TRANSFER',
             observacoes: observacoes || undefined
         };
 
@@ -273,6 +385,8 @@ export class ReconciliationDetailComponent implements OnInit {
             error: (err: any) => {
                 console.error(err);
                 this.loadingAction = false;
+                const errorMsg = err.error?.message || 'Erro ao realizar conciliação.';
+                this.presentToast(errorMsg, 'danger');
             }
         });
     }

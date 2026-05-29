@@ -22,22 +22,6 @@ async function bootstrap() {
     await prisma.rateioLancamento.deleteMany({ where: { observacao: 'TEST_RATEIO_VERIFICATION' } });
     await prisma.lancamentoFinanceiro.deleteMany({ where: { observacoes: 'TEST_RATEIO_VERIFICATION' } });
 
-    /*
-    ### 3. Sync with GitHub (PR #14)
-    O sistema foi sincronizado com as melhorias de UI e tratamento de erros do PR #14.
-    - **Melhorias:** Estados de erro em formulários, padronização de feedbacks e ajustes na Conciliação.
-    - **Status:** Branches `main` e `pr-14` unificadas e enviadas ao GitHub.
-
-    ### 4. Production Deployment
-    O stack completo foi reiniciado e reconstruído via Docker Compose:
-    - **Backend:** Atualizado com DRE, Rateio e correções de segurança.
-    - **Frontend:** Nova DRE e melhorias do PR #14 integradas.
-    - **Login:** Acesso restabelecido com a senha temporária `123456`.
-
-    ### 5. DRE Granularity & UI Fixes
-    - **Granularidade:** O intervalo padrão foi alterado para 6 meses.
-    - **Campos de Data:** Estilos corrigidos para fundo branco e texto legível.
-    */
     // Find or Create a valid bank account and category for the base transaction
     let conta = await prisma.contaBancaria.findFirst();
     if (!conta) {
@@ -51,12 +35,8 @@ async function bootstrap() {
     if (!categoriaBase) {
         console.log('--- Creating Test Category ---');
         categoriaBase = await prisma.categoriaFinanceira.create({
-            data: { nome: 'Categoria Teste', tipo: TipoLancamento.RECEITA === 'RECEITA' ? 'RECEITA' as any : 'DESPESA' as any }
+            data: { nome: 'Categoria Teste', tipo: 'DESPESA' }
         });
-    }
-
-    if (!conta || !categoriaBase) {
-        throw new Error('Could not find or create base data (bank account or category) to run test.');
     }
 
     console.log('--- Creating Test Transaction (R$ 1000.00) ---');
@@ -105,16 +85,18 @@ async function bootstrap() {
       granularidade: 'mensal' as any,
     });
 
-    // 3. Assertions
-    const pKey = dre.periodos[0];
-    const valAdmin = dre.data[ClassificacaoDRE.DESPESA_ADMINISTRATIVA].periodos[pKey];
-    const valComercial = dre.data[ClassificacaoDRE.DESPESA_COMERCIAL].periodos[pKey];
+    console.log('Available periods in DRE:', dre.periodos);
+
+    // May 2026 is 'mai/26'
+    const pKey = dre.periodos.find(p => p.includes('mai')) || dre.periodos[0];
+    const valAdmin = dre.data[ClassificacaoDRE.DESPESA_ADMINISTRATIVA].periodos[pKey] || 0;
+    const valComercial = dre.data[ClassificacaoDRE.DESPESA_COMERCIAL].periodos[pKey] || 0;
 
     console.log(`Results for ${pKey}:`);
     console.log(`- DESPESA_ADMINISTRATIVA: R$ ${valAdmin}`);
     console.log(`- DESPESA_COMERCIAL: R$ ${valComercial}`);
 
-    if (valAdmin >= 600 && valComercial >= 400) {
+    if (Number(valAdmin) >= 600 && Number(valComercial) >= 400) {
       console.log('✅ SUCCESS: Rateio values correctly reflected in DRE!');
     } else {
       console.log('❌ FAILURE: Rateio values do not match expected sum.');

@@ -58,67 +58,127 @@
             <!-- FORM VIEW -->
             <div class="form-view" *ngIf="mode === 'FORM'">
                 <div class="form-grid">
-                    <div class="field-item description-field">
-                        <label>Descrição</label>
-                        <ion-input [(ngModel)]="form.descricao" class="custom-input"></ion-input>
-                    </div>
-
-                    <div class="field-item">
-                        <label>Data de Competência</label>
-                        <div class="date-picker-wrapper">
-                            <ion-datetime-button datetime="datetime-competence"></ion-datetime-button>
-                            <ion-modal [keepContentsMounted]="true">
-                                <ng-template>
-                                    <ion-datetime id="datetime-competence" presentation="date"
-                                        [(ngModel)]="form.dataCompetencia" [showDefaultButtons]="true"
-                                        doneText="Confirmar" cancelText="Cancelar">
-                                    </ion-datetime>
-                                </ng-template>
-                            </ion-modal>
+                    
+                    <!-- NEW LAUNCH FIELDS -->
+                    <ng-container *ngIf="activeTab === 'NEW'">
+                        <div class="field-item description-field">
+                            <label>Descrição *</label>
+                            <ion-input [(ngModel)]="form.descricao" class="custom-input" placeholder="Ex: Compra de cimento"></ion-input>
                         </div>
-                    </div>
 
-                    <div class="field-item">
-                        <label>Classificação</label>
-                        <ion-select [(ngModel)]="form.classificacao" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
-                            <ion-select-option value="RECEITA">Receita</ion-select-option>
-                            <ion-select-option value="DESPESA">Despesa</ion-select-option>
-                            <ion-select-option value="INVESTIMENTO">Investimento</ion-select-option>
-                            <ion-select-option value="OUTRO">Outro</ion-select-option>
-                        </ion-select>
-                    </div>
-
-                    <div class="field-item">
-                        <label>Tipo de Lançamento</label>
-                        <ion-select [(ngModel)]="form.tipoLancamento" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
-                            <ion-select-option value="ADMINISTRATIVO">Administrativo</ion-select-option>
-                            <ion-select-option value="OBRA">De Obras</ion-select-option>
-                        </ion-select>
-                    </div>
-
-                    <div class="field-item" *ngIf="form.tipoLancamento === 'OBRA'">
-                        <label>Obra Destino</label>
-                        <ion-select [(ngModel)]="form.obraId" placeholder="Selecione a Obra" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
-                            <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
-                        </ion-select>
-                    </div>
-
-                    <div class="field-item">
-                        <label>{{ statement.tipo === 'CREDIT' ? 'Cliente' : 'Fornecedor' }}</label>
-                        <div class="custom-select-trigger" (click)="openSelection('ENTITY')">
-                            <span [class.placeholder]="!form.fornecedorId">{{ getEntityName() || 'Selecione' }}</span>
-                            <ion-icon name="chevron-down-outline"></ion-icon>
+                        <div class="field-item">
+                            <label>Data de Competência *</label>
+                            <div class="date-picker-wrapper">
+                                <ion-datetime-button datetime="datetime-competence"></ion-datetime-button>
+                                <ion-modal [keepContentsMounted]="true">
+                                    <ng-template>
+                                        <ion-datetime id="datetime-competence" presentation="date"
+                                            [(ngModel)]="form.dataCompetencia" [showDefaultButtons]="true"
+                                            doneText="Confirmar" cancelText="Cancelar">
+                                        </ion-datetime>
+                                    </ng-template>
+                                </ion-modal>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="field-item">
-                        <label>Centro de Custo</label>
-                        <div class="custom-select-trigger" (click)="openSelection('COST_CENTER')">
-                            <span [class.placeholder]="!form.centroCustoId">{{ getCostCenterName() || 'Selecione'
-                                }}</span>
-                            <ion-icon name="chevron-down-outline"></ion-icon>
+                        <div class="field-item">
+                            <label>Classificação *</label>
+                            <ion-select [(ngModel)]="form.classificacao" (ionChange)="onClassificationChange()" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
+                                <ion-select-option value="RECEITA">Receita</ion-select-option>
+                                <ion-select-option value="DESPESA">Despesa</ion-select-option>
+                                <ion-select-option value="INVESTIMENTO">Investimento</ion-select-option>
+                                <ion-select-option value="OUTRO">Outro</ion-select-option>
+                            </ion-select>
                         </div>
-                    </div>
+
+                        <!-- Categoria Field (NEW tab only) -->
+                        <div class="field-item">
+                            <label>Categoria *</label>
+                            <div class="custom-select-trigger" (click)="openSelection('CATEGORY')">
+                                <span [class.placeholder]="!form.categoriaId">{{ getCategoryName() || 'Selecione a Categoria' }}</span>
+                                <ion-icon name="chevron-down-outline"></ion-icon>
+                            </div>
+                        </div>
+
+                        <div class="field-item">
+                            <label>Tipo de Lançamento *</label>
+                            <ion-select [(ngModel)]="form.tipoLancamento" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
+                                <ion-select-option value="OBRA">De Obras</ion-select-option>
+                                <ion-select-option value="POS_OBRA">Pós-obra</ion-select-option>
+                                <ion-select-option value="ADMINISTRATIVO">Administrativo</ion-select-option>
+                                <ion-select-option value="ESCRITORIO">Escritório</ion-select-option>
+                            </ion-select>
+                        </div>
+
+                        <div class="field-item" *ngIf="form.tipoLancamento === 'OBRA' || form.tipoLancamento === 'POS_OBRA'">
+                            <label>Obra Destino *</label>
+                            <ion-select [(ngModel)]="form.obraId" placeholder="Selecione a Obra" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
+                                <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
+                            </ion-select>
+                        </div>
+
+                        <div class="field-item">
+                            <label>{{ statement.tipo === 'CREDIT' ? 'Cliente' : 'Fornecedor' }}</label>
+                            <div class="custom-select-trigger" (click)="openSelection('ENTITY')">
+                                <span [class.placeholder]="!form.fornecedorId">{{ getEntityName() || 'Selecione' }}</span>
+                                <ion-icon name="chevron-down-outline"></ion-icon>
+                            </div>
+                        </div>
+
+                        <div class="field-item">
+                            <label>Centro de Custo *</label>
+                            <div class="custom-select-trigger" (click)="openSelection('COST_CENTER')">
+                                <span [class.placeholder]="!form.centroCustoId">{{ getCostCenterName() || 'Selecione' }}</span>
+                                <ion-icon name="chevron-down-outline"></ion-icon>
+                            </div>
+                        </div>
+
+                        <!-- Tipo de Custo -->
+                        <div class="field-item">
+                            <label>Tipo de Custo</label>
+                            <ion-select [(ngModel)]="form.tipoCusto" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box" placeholder="Selecione">
+                                <ion-select-option value="MATERIAL">Material</ion-select-option>
+                                <ion-select-option value="MAO_DE_OBRA">Mão de Obra</ion-select-option>
+                                <ion-select-option value="SERVICO">Serviço</ion-select-option>
+                                <ion-select-option value="EQUIPAMENTO">Equipamento</ion-select-option>
+                                <ion-select-option value="OUTROS">Outros</ion-select-option>
+                            </ion-select>
+                        </div>
+
+                        <!-- Classificações Adicionais -->
+                        <div class="field-item">
+                            <label>Classificações Adicionais (Insumo)</label>
+                            <ion-input [(ngModel)]="form.categoriaCusto" placeholder="Ex: Cimento, Pedreiro, ISS" class="custom-input"></ion-input>
+                        </div>
+                    </ng-container>
+
+                    <!-- TRANSFER FIELDS -->
+                    <ng-container *ngIf="activeTab === 'TRANSFER'">
+                        <div class="field-item">
+                            <label>Data de Competência *</label>
+                            <div class="date-picker-wrapper">
+                                <ion-datetime-button datetime="datetime-competence-transfer"></ion-datetime-button>
+                                <ion-modal [keepContentsMounted]="true">
+                                    <ng-template>
+                                        <ion-datetime id="datetime-competence-transfer" presentation="date"
+                                            [(ngModel)]="form.dataCompetencia" [showDefaultButtons]="true"
+                                            doneText="Confirmar" cancelText="Cancelar">
+                                        </ion-datetime>
+                                    </ng-template>
+                                </ion-modal>
+                            </div>
+                        </div>
+
+                        <div class="field-item">
+                            <label>Conta de Destino *</label>
+                            <ion-select [(ngModel)]="form.contaDestinoId" placeholder="Selecione a conta destino" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
+                                <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">
+                                    {{ acc.nome }} - {{ acc.banco }}
+                                </ion-select-option>
+                            </ion-select>
+                        </div>
+                    </ng-container>
+
                 </div>
 
                 <!-- ITEMS SECTION -->
@@ -153,7 +213,14 @@
                                 <ion-input type="number" [(ngModel)]="item.quantidade" class="item-input"></ion-input>
                             </div>
                             <div class="col-price">
-                                <ion-input type="number" [(ngModel)]="item.valorUnitario" class="item-input"></ion-input>
+                                <ion-input type="text"
+                                    [value]="item.valorUnitarioStr"
+                                    (ionInput)="onValorUnitarioInput($event, item)"
+                                    (ionBlur)="onValorUnitarioBlur($event, item)"
+                                    (ionFocus)="onValorUnitarioFocus($event, item)"
+                                    placeholder="0,00"
+                                    class="item-input">
+                                </ion-input>
                             </div>
                             <div class="col-total">
                                 <span>{{ (item.quantidade * item.valorUnitario) | currency:'BRL' }}</span>
@@ -193,7 +260,7 @@
 
                 <div class="form-actions">
                     <ion-button fill="clear" color="medium" (click)="cancel()">Cancelar</ion-button>
-                    <ion-button class="confirm-btn" (click)="confirmCreation()" [disabled]="loadingAction || (form.items && form.items.length > 0 && !isItemsTotalMatching())">
+                    <ion-button class="confirm-btn" (click)="confirmCreation()" [disabled]="loadingAction || !isFormValid()">
                         <ion-spinner *ngIf="loadingAction" name="crescent"></ion-spinner>
                         <span *ngIf="!loadingAction">Conciliar Lançamento</span>
                     </ion-button>

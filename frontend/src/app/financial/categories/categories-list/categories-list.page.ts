@@ -19,6 +19,27 @@ export class CategoriesListPage implements OnInit {
   categories: Category[] = [];
   filteredCategories: Category[] = [];
 
+  dreOptions = [
+    { value: 'RECEITA_RECORRENTE', label: 'Receita Recorrente' },
+    { value: 'RECEITA_NAO_RECORRENTE', label: 'Receita Não Recorrente' },
+    { value: 'DEDUCOES_RECEITA', label: 'Deduções da Receita' },
+    { value: 'CUSTO_SERVICOS_PRESTADOS', label: 'Custo dos Serviços Prestados' },
+    { value: 'DESPESA_ADMINISTRATIVA', label: 'Despesa Administrativa' },
+    { value: 'DESPESA_COMERCIAL', label: 'Despesa Comercial' },
+    { value: 'DESPESA_ESTRUTURAL', label: 'Despesa Estrutural' },
+    { value: 'DESPESA_SOCIOS', label: 'Despesa Sócios' },
+    { value: 'DESPESA_FINANCEIRA', label: 'Despesa Financeira' },
+    { value: 'RECEITA_FINANCEIRA', label: 'Receita Financeira' },
+    { value: 'IMPOSTOS_LUCRO', label: 'Impostos s/ Lucro' },
+    { value: 'OUTROS', label: 'Outros' }
+  ];
+
+  getDRELabel(value?: string): string {
+    if (!value) return '-';
+    const option = this.dreOptions.find(o => o.value === value);
+    return option ? option.label : value;
+  }
+
   constructor(
     private categoriesService: CategoriesService,
     private modalCtrl: ModalController

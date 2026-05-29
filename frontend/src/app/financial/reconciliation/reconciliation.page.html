@@ -40,6 +40,12 @@
                         <span class="summary-divider">|</span>
                         <span class="summary-label">Pendente:</span>
                         <span class="summary-value pending">{{ summary.totalPendingValue | currency:'BRL' }}</span>
+                        <span class="summary-divider">|</span>
+                        <span class="summary-label">Conciliado:</span>
+                        <span class="summary-value success" style="color: #2e7d32; font-weight: 600;">{{ summary.totalConciliatedValue | currency:'BRL' }}</span>
+                        <span class="summary-divider">|</span>
+                        <span class="summary-label">Total do Período:</span>
+                        <span class="summary-value period" style="color: #1976d2; font-weight: 600;">{{ summary.totalPeriodValue | currency:'BRL' }}</span>
                     </div>
                 </ion-label>
             </ion-item>
@@ -167,6 +173,10 @@
                 </div>
             </div>
             <div class="ops-right">
+                <ion-button fill="clear" size="small" color="warning" (click)="zeroPendingMonth()" *ngIf="summary.totalCount > 0 && viewMode === 'PENDING'">
+                    <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
+                    Zerar Pendentes
+                </ion-button>
                 <ion-button fill="clear" size="small" (click)="toggleExpandAll()">
                     {{ areAllExpanded() ? 'Recolher Tudo' : 'Expandir Tudo' }}
                     <ion-icon slot="end"

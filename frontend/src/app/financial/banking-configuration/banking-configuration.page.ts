@@ -45,7 +45,8 @@ export class BankingConfigurationPage implements OnInit {
             codigoBanco: [''],
             clientId: ['', [Validators.required]],
             clientSecret: ['', [Validators.required]],
-            contaBancariaId: [''] // Hidden field for ID
+            contaBancariaId: [''], // Hidden field for ID
+            dataInicioAutomacao: ['']
         });
 
         // Check if we have navigation params (e.g. redirected from dashboard)
@@ -71,7 +72,8 @@ export class BankingConfigurationPage implements OnInit {
             codigoBanco: acc.codigoBanco || '',
             contaBancariaId: acc.id,
             clientId: '******',
-            clientSecret: '******'
+            clientSecret: '******',
+            dataInicioAutomacao: acc.integracao?.dataInicioAutomacao ? acc.integracao.dataInicioAutomacao.substring(0, 10) : ''
         });
 
         // Load detailed status (including last sync which might not be in the list view)
@@ -100,6 +102,15 @@ export class BankingConfigurationPage implements OnInit {
         this.bankingService.getStatus(accountId).subscribe({
             next: (status) => {
                 this.status = status;
+                if (status.dataInicioAutomacao) {
+                    this.integrationForm.patchValue({
+                        dataInicioAutomacao: status.dataInicioAutomacao.substring(0, 10)
+                    });
+                } else {
+                    this.integrationForm.patchValue({
+                        dataInicioAutomacao: ''
+                    });
+                }
                 this.loadingStatus = false;
             },
             error: () => {
@@ -203,6 +214,7 @@ export class BankingConfigurationPage implements OnInit {
         formData.append('codigoBanco', config.codigoBanco || '');
         formData.append('clientId', config.clientId);
         formData.append('clientSecret', config.clientSecret);
+        formData.append('dataInicioAutomacao', config.dataInicioAutomacao || '');
         if (config.contaBancariaId) {
             formData.append('contaBancariaId', config.contaBancariaId);
         }

@@ -274,6 +274,7 @@ model IntegracaoBancaria {
 
   status   StatusIntegracao @default(DISCONNECTED)
   lastSync DateTime?
+  dataInicioAutomacao DateTime? @map("data_inicio_automacao")
 
   contaBancariaId String        @unique
   contaBancaria   ContaBancaria @relation(fields: [contaBancariaId], references: [id])

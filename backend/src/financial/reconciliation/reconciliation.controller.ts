@@ -75,4 +75,22 @@ export class ReconciliationController {
   unlink(@Param('conciliacaoId') conciliacaoId: string, @Req() req: any) {
     return this.service.unlink(conciliacaoId, req.user?.id);
   }
+
+  @Post('zero-pending')
+  zeroPending(
+    @Body()
+    data: {
+      contaBancariaId: string;
+      year: number;
+      month: number;
+    },
+    @Req() req: any,
+  ) {
+    return this.service.zeroPendingStatements(
+      data.contaBancariaId,
+      Number(data.year),
+      Number(data.month),
+      req.user?.id,
+    );
+  }
 }

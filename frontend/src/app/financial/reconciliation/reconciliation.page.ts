@@ -89,7 +89,9 @@ export class ReconciliationPage implements OnInit, OnDestroy {
         totalCount: 0,
         receivablesCount: 0,
         payablesCount: 0,
-        totalPendingValue: 0
+        totalPendingValue: 0,
+        totalConciliatedValue: 0,
+        totalPeriodValue: 0
     };
 
     illustrationLoaded = true;
@@ -214,6 +216,8 @@ export class ReconciliationPage implements OnInit, OnDestroy {
                 
                 // Use the backend's aggregate sum which ignores pagination limits
                 this.summary.totalPendingValue = response.summary?.totalPendingValue || 0;
+                this.summary.totalConciliatedValue = response.summary?.totalConciliatedValue || 0;
+                this.summary.totalPeriodValue = response.summary?.totalPeriodValue || 0;
 
                 this.calculateSummary();
                 this.applySearch(); // Apply type filter
@@ -657,5 +661,47 @@ export class ReconciliationPage implements OnInit, OnDestroy {
             position: 'bottom'
         });
         toast.present();
+    }
+
+    async zeroPendingMonth() {
+        if (!this.selectedAccountId) return;
+        const periodLabel = this.getPeriodLabel();
+        const alert = await this.alertCtrl.create({
+            header: 'Zerar Pendências',
+            message: `Tem certeza que deseja marcar como conciliados todos os lançamentos ainda pendentes do mês de <b>${periodLabel}</b>?<br><br>Esta ação não criará lançamentos financeiros, apenas limpará as pendências do período.`,
+            buttons: [
+                { text: 'Cancelar', role: 'cancel' },
+                {
+                    text: 'Confirmar e Zerar',
+                    role: 'confirm',
+                    handler: () => {
+                        this.executeZeroPending();
+                    }
+                }
+            ]
+        });
+        await alert.present();
+    }
+
+    async executeZeroPending() {
+        const loader = await this.loadingCtrl.create({ message: 'Limpando pendências...' });
+        await loader.present();
+
+        const year = this.currentDate.getFullYear();
+        const month = this.currentDate.getMonth() + 1; // getMonth is 0-indexed
+
+        this.reconciliationService.zeroPending(this.selectedAccountId, year, month).subscribe({
+            next: (res) => {
+                loader.dismiss();
+                this.showToast(`Sucesso! ${res.count} lançamentos pendentes foram zerados.`, 'success');
+                this.loadStatements();
+            },
+            error: (err) => {
+                loader.dismiss();
+                console.error(err);
+                const msg = err.error?.message || 'Erro ao zerar pendências do período.';
+                this.showToast(msg, 'danger');
+            }
+        });
     }
 }

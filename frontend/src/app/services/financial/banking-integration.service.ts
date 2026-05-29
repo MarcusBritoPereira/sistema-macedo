@@ -15,6 +15,7 @@ export interface BankingStatus {
     status: 'CONNECTED' | 'DISCONNECTED' | 'ERROR' | 'NOT_CONFIGURED';
     lastSync?: string;
     banco?: string;
+    dataInicioAutomacao?: string;
 }
 
 @Injectable({

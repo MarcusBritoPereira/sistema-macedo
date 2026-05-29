@@ -48,6 +48,7 @@ export interface BankAccount {
   statusIntegracao?: string;
   integracao?: {
     status: 'CONNECTED' | 'DISCONNECTED' | 'ERROR';
+    dataInicioAutomacao?: string;
   };
 }
 

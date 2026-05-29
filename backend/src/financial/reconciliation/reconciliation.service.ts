@@ -190,9 +190,13 @@ export class ReconciliationService {
       };
     }
 
-    const aggregateWhere = { ...where, conciliado: false };
+    const baseAggregateWhere = { ...where };
+    delete baseAggregateWhere.conciliado;
 
-    const [total, statements, pendingAgg] = await this.prisma.$transaction([
+    const pendingAggWhere = { ...baseAggregateWhere, conciliado: false };
+    const conciliatedAggWhere = { ...baseAggregateWhere, conciliado: true };
+
+    const [total, statements, pendingAgg, conciliatedAgg] = await this.prisma.$transaction([
       this.prisma.extratoBancario.count({ where }),
       this.prisma.extratoBancario.findMany({
         where,
@@ -210,11 +214,17 @@ export class ReconciliationService {
       }),
       this.prisma.extratoBancario.aggregate({
         _sum: { valor: true },
-        where: aggregateWhere,
+        where: pendingAggWhere,
+      }),
+      this.prisma.extratoBancario.aggregate({
+        _sum: { valor: true },
+        where: conciliatedAggWhere,
       }),
     ]);
 
     const totalPendingValue = Math.abs(Number(pendingAgg._sum.valor || 0));
+    const totalConciliatedValue = Math.abs(Number(conciliatedAgg._sum.valor || 0));
+    const totalPeriodValue = totalPendingValue + totalConciliatedValue;
 
     const enrichedStatements = await Promise.all(
       statements.map(async (statement) => {
@@ -223,9 +233,48 @@ export class ReconciliationService {
           descricao: statement.descricao,
         });
 
+        // Learn dynamically from past reconciliations with same description
+        let learnedSuggestion: any = null;
+        if (!statement.conciliado) {
+          const pastReconciled = await this.prisma.extratoBancario.findFirst({
+            where: {
+              descricao: statement.descricao,
+              conciliado: true,
+              conciliacoes: {
+                some: {},
+              },
+            },
+            include: {
+              conciliacoes: {
+                include: {
+                  lancamentoFinanceiro: true,
+                },
+              },
+            },
+            orderBy: {
+              data: 'desc',
+            },
+          });
+
+          const linkedLancamento = pastReconciled?.conciliacoes?.[0]?.lancamentoFinanceiro;
+          if (linkedLancamento) {
+            learnedSuggestion = {
+              categoriaId: linkedLancamento.categoriaId,
+              centroCustoId: linkedLancamento.centroCustoId,
+              fornecedorId: linkedLancamento.fornecedorId,
+              clienteId: linkedLancamento.clienteId,
+              tipoLancamento: linkedLancamento.tipoLancamento,
+              tipoCusto: linkedLancamento.tipoCusto,
+              categoriaCusto: linkedLancamento.categoriaCusto,
+              obraId: linkedLancamento.obraId,
+            };
+          }
+        }
+
         return {
           ...statement,
           suggestedEntity: suggestion,
+          learnedSuggestion,
         };
       }),
     );
@@ -234,6 +283,8 @@ export class ReconciliationService {
       data: enrichedStatements,
       summary: {
         totalPendingValue,
+        totalConciliatedValue,
+        totalPeriodValue,
       },
       pagination: {
         page,
@@ -614,5 +665,60 @@ export class ReconciliationService {
     }
 
     return results;
+  }
+
+  async zeroPendingStatements(
+    contaBancariaId: string,
+    year: number,
+    month: number,
+    userId?: string,
+  ) {
+    const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      const pendingStatements = await tx.extratoBancario.findMany({
+        where: {
+          importacao: { contaBancariaId },
+          conciliado: false,
+          data: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      });
+
+      if (pendingStatements.length === 0) {
+        return { success: true, count: 0 };
+      }
+
+      const ids = pendingStatements.map((s) => s.id);
+
+      await tx.extratoBancario.updateMany({
+        where: {
+          id: { in: ids },
+        },
+        data: {
+          conciliado: true,
+        },
+      });
+
+      // Audit log
+      if (userId) {
+        await this.auditLogService.createLog({
+          acao: 'CONCILIACAO_MANUAL',
+          tabela: 'extratos_bancarios',
+          registroId: contaBancariaId,
+          motivo: `Zerou ${ids.length} lançamentos pendentes em lote para o mês ${month}/${year}`,
+          usuarioId: userId,
+          valorAntigo: 'PENDENTE',
+          valorNovo: 'CONCILIADO',
+        });
+      }
+
+      return { success: true, count: ids.length };
+    });
+
+    return result;
   }
 }

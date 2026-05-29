@@ -23,6 +23,7 @@ export interface BankStatement {
             confidence: number;
         };
     };
+    learnedSuggestion?: any;
     conciliacoes?: any[];
 }
 
@@ -41,6 +42,8 @@ export interface PaginatedStatementsResponse {
     data: BankStatement[];
     summary?: {
         totalPendingValue: number;
+        totalConciliatedValue: number;
+        totalPeriodValue: number;
     };
     pagination: {
         page: number;

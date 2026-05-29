@@ -45,4 +45,8 @@ export class ReconciliationService {
     sync(contaId: string): Observable<any> {
         return this.api.post(`financial/banking/sync/${contaId}`, {});
     }
+
+    zeroPending(contaBancariaId: string, year: number, month: number): Observable<any> {
+        return this.api.post('financial/reconciliation/zero-pending', { contaBancariaId, year, month });
+    }
 }

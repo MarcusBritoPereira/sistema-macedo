@@ -118,6 +118,12 @@ export class BankingIntegrationService {
         updateData.clientSecret = this.cryptoService.encrypt(dto.clientSecret);
       }
 
+      if (dto.dataInicioAutomacao) {
+        updateData.dataInicioAutomacao = new Date(dto.dataInicioAutomacao);
+      } else if (dto.dataInicioAutomacao === '') {
+        updateData.dataInicioAutomacao = null;
+      }
+
       if ((dto as any).apiKey && (dto as any).apiKey !== '******') {
         updateData.apiKey = this.cryptoService.encrypt((dto as any).apiKey);
       }
@@ -175,6 +181,7 @@ export class BankingIntegrationService {
       status: integration.status,
       lastSync: integration.lastSync,
       banco: integration.banco,
+      dataInicioAutomacao: integration.dataInicioAutomacao,
     };
   }
 
@@ -226,10 +233,14 @@ export class BankingIntegrationService {
 
       log('[Sync] Authenticated. Fetching pages...');
 
-      // Range: 60 days to cover a full history and within the 90-day bank limit
+      // Range: Use dataInicioAutomacao if configured, fallback to 60 days to cover a full history and within the 90-day bank limit
       const today = new Date();
-      const startLimit = new Date();
-      startLimit.setDate(today.getDate() - 60);
+      let startLimit = new Date();
+      if (integration.dataInicioAutomacao) {
+        startLimit = new Date(integration.dataInicioAutomacao);
+      } else {
+        startLimit.setDate(today.getDate() - 60);
+      }
 
       const dataInicio = startLimit.toISOString().split('T')[0];
       const dataFim = today.toISOString().split('T')[0];

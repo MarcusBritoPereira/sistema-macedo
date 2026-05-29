@@ -40,4 +40,8 @@ export class ConfigureBankingDto {
   @IsString()
   @IsOptional()
   privateKey?: string; // Content of .key
+
+  @IsString()
+  @IsOptional()
+  dataInicioAutomacao?: string;
 }

@@ -122,6 +122,23 @@ export class ReconciliationDetailComponent implements OnInit {
                 this.form.fornecedorId = this.statement.suggestedEntity.fornecedor.id;
             }
 
+            // Apply dynamically learned suggestions from past identical statements
+            if (this.statement.learnedSuggestion) {
+                const ls = this.statement.learnedSuggestion;
+                if (ls.categoriaId) this.form.categoriaId = ls.categoriaId;
+                if (ls.centroCustoId) this.form.centroCustoId = ls.centroCustoId;
+                if (ls.fornecedorId) this.form.fornecedorId = ls.fornecedorId;
+                if (ls.clienteId) this.form.fornecedorId = ls.clienteId;
+                if (ls.tipoLancamento) this.form.tipoLancamento = ls.tipoLancamento;
+                if (ls.tipoCusto) this.form.tipoCusto = ls.tipoCusto;
+                if (ls.categoriaCusto) this.form.categoriaCusto = ls.categoriaCusto;
+                if (ls.obraId) this.form.obraId = ls.obraId;
+
+                setTimeout(() => {
+                    this.presentToast('Preenchido automaticamente com base em conciliações anteriores!', 'success');
+                }, 600);
+            }
+
             this.loadAuxData();
 
             // Load active obras

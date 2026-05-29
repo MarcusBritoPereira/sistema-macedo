@@ -217,6 +217,22 @@ async function main() {
     console.log('✅ Conta Bancária do Sicredi criada com sucesso.');
   }
 
+  // 6.5 Cadastrar Conta Bancária Inter Macedo
+  const contaInterExists = await prisma.contaBancaria.findFirst({ where: { conta: '1234567-8' } });
+  if (!contaInterExists) {
+    await prisma.contaBancaria.create({
+      data: {
+        nome: 'Inter Macedo',
+        banco: 'Banco Inter',
+        codigoBanco: '077',
+        agencia: '12345',
+        conta: '1234567-8',
+        saldoInicial: 0
+      }
+    });
+    console.log('✅ Conta Bancária Inter Macedo criada com sucesso.');
+  }
+
   // 7. Cadastrar Caixinha (Dinheiro em Espécie)
   const caixinhaExists = await prisma.contaBancaria.findFirst({ where: { nome: 'Caixinha (Dinheiro em Espécie)' } });
   if (!caixinhaExists) {

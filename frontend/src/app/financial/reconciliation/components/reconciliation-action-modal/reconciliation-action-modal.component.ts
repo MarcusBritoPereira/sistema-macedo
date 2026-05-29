@@ -50,7 +50,7 @@ export class ReconciliationActionModalComponent implements OnInit {
     bankAccounts: BankAccount[] = [];
     obras: Obra[] = [];
 
-    items: Array<{ descricao: string; quantidade: number; valorUnitario: number }> = [];
+    items: Array<{ descricao: string; quantidade: number; valorUnitario: number; valorUnitarioStr?: string }> = [];
 
     form = {
         descricao: '',
@@ -169,7 +169,7 @@ export class ReconciliationActionModalComponent implements OnInit {
     }
 
     addItem() {
-        this.items.push({ descricao: '', quantidade: 1, valorUnitario: 0 });
+        this.items.push({ descricao: '', quantidade: 1, valorUnitario: 0, valorUnitarioStr: '' });
     }
 
     removeItem(index: number) {
@@ -280,5 +280,48 @@ export class ReconciliationActionModalComponent implements OnInit {
         await alert.present();
         const { role } = await alert.onDidDismiss();
         return role === 'confirm';
+    }
+
+    formatValorUnitario(value: number | undefined | null): string {
+        if (value === undefined || value === null || value === 0) return '';
+        return new Intl.NumberFormat('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
+    }
+
+    onValorUnitarioInput(event: any, item: any) {
+        const val = event.target.value;
+        item.valorUnitarioStr = val;
+        
+        if (!val) {
+            item.valorUnitario = 0;
+            return;
+        }
+
+        let cleaned = val.replace(/\s/g, '').replace('R$', '');
+        const hasComma = cleaned.includes(',');
+        const hasDot = cleaned.includes('.');
+
+        if (hasComma && hasDot) {
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else if (hasComma) {
+            cleaned = cleaned.replace(',', '.');
+        }
+
+        const parsed = parseFloat(cleaned);
+        item.valorUnitario = isNaN(parsed) ? 0 : parsed;
+    }
+
+    onValorUnitarioBlur(event: any, item: any) {
+        item.valorUnitarioStr = this.formatValorUnitario(item.valorUnitario);
+        event.target.value = item.valorUnitarioStr;
+    }
+
+    onValorUnitarioFocus(event: any, item: any) {
+        if (item.valorUnitario > 0) {
+            item.valorUnitarioStr = item.valorUnitario.toString().replace('.', ',');
+            event.target.value = item.valorUnitarioStr;
+        }
     }
 }

@@ -160,11 +160,18 @@
                                     <ion-input [(ngModel)]="item.descricao" placeholder="Descrição do item (ex: Cimento)" mode="md" fill="outline"></ion-input>
                                 </div>
                                 <div class="item-col qty-col">
-                                    <ion-input type="number" [(ngModel)]="item.quantidade" placeholder="Qtd" mode="md" fill="outline"></ion-input>
-                                </div>
-                                <div class="item-col val-col">
-                                    <ion-input type="number" [(ngModel)]="item.valorUnitario" placeholder="Valor Unitário" mode="md" fill="outline"></ion-input>
-                                </div>
+                                     <ion-input type="number" [(ngModel)]="item.quantidade" placeholder="Qtd" mode="md" fill="outline"></ion-input>
+                                 </div>
+                                 <div class="item-col val-col">
+                                     <ion-input type="text"
+                                                [value]="item.valorUnitarioStr"
+                                                (ionInput)="onValorUnitarioInput($event, item)"
+                                                (ionBlur)="onValorUnitarioBlur($event, item)"
+                                                (ionFocus)="onValorUnitarioFocus($event, item)"
+                                                placeholder="Valor Unitário"
+                                                mode="md"
+                                                fill="outline"></ion-input>
+                                 </div>
                                 <div class="item-col total-col">
                                     <span class="subtotal-label">{{ formatCurrency((item.quantidade || 0) * (item.valorUnitario || 0)) }}</span>
                                 </div>

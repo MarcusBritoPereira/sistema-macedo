@@ -56,11 +56,15 @@ export class AuthService {
         );
     }
 
-    logout() {
-        this.api.post('auth/logout', {}).subscribe({ error: () => null });
+    clearSessionState() {
         sessionStorage.removeItem('user');
         this.isAuthenticated = false;
         this.userSubject.next(null);
+    }
+
+    logout() {
+        this.api.post('auth/logout', {}).subscribe({ error: () => null });
+        this.clearSessionState();
         this.router.navigate(['/login']);
     }
 }

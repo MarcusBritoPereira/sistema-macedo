@@ -2,9 +2,11 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
+import { AuthService } from '../services/auth/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
     const router = inject(Router);
+    const authService = inject(AuthService);
 
     const authReq = req.clone({
         withCredentials: true
@@ -15,7 +17,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
             if (error.status === 401) {
                 // To avoid infinite loops, if the error comes from /refresh or /login, we don't try to refresh again
                 if (req.url.includes('/auth/refresh') || req.url.includes('/auth/login')) {
-                    sessionStorage.removeItem('user');
+                    authService.clearSessionState();
                     router.navigate(['/login']);
                     return throwError(() => error);
                 }
@@ -24,7 +26,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
                 // but since we want to keep it simple as a starting point and we rely on backend automatic cookies, 
                 // we can just force the user to login again for now or trigger a reload that checks session.
                 // For a complete flow, we'd inject HttpClient and call POST /auth/refresh here.
-                sessionStorage.removeItem('user');
+                authService.clearSessionState();
                 router.navigate(['/login']);
             }
             return throwError(() => error);

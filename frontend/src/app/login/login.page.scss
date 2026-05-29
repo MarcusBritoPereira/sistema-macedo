@@ -96,6 +96,10 @@
     outline: none;
     width: 100%;
     box-sizing: border-box;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    cursor: text;
+    caret-color: #1ea54b;
     
     &::placeholder {
       color: #94a3b8;

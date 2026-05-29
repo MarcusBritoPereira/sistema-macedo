@@ -60,7 +60,7 @@
             Adicionar Nova Conexão
         </ion-button>
 
-        <div style="width: 100%; height: 1px; background: #eee; margin-bottom: 32px;"></div>
+        <div style="width: 100%; height: 1px; background: #eee; margin-bottom: 32px;" *ngIf="showForm"></div>
 
         <!-- Status Block (Only if selected) -->
         <div class="status-card" *ngIf="selectedAccountId"
@@ -90,7 +90,7 @@
             </div>
         </div>
 
-        <form [formGroup]="integrationForm" (ngSubmit)="onConnect()">
+        <form [formGroup]="integrationForm" (ngSubmit)="onConnect()" *ngIf="showForm">
 
             <!-- Block 1: Bank Info -->
             <div class="form-block">
@@ -187,15 +187,18 @@
             </div>
 
             <!-- Botão de Ação -->
-            <div style="margin-top: 32px; text-align: center;">
-                <ion-button type="submit" expand="block" color="primary" class="add-btn"
-                    style="--border-radius: 8px; text-transform: none; font-weight: 600;"
-                    [disabled]="integrationForm.invalid || loadingStatus">
-                    {{ loadingStatus ? 'Processando...' : (selectedAccountId ? 'Atualizar Conexão' : 'Conectar ao
-                    Banco') }}
+            <div style="margin-top: 32px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center;">
+              <div style="display: flex; gap: 12px; width: 100%; max-width: 400px; justify-content: center;">
+                <ion-button fill="outline" color="medium" style="--border-radius: 8px; text-transform: none; font-weight: 600; flex: 1; margin: 0;" (click)="hideForm()">
+                  Cancelar
                 </ion-button>
-                <p style="font-size: 0.85rem; color: #666; margin-top: 12px;">Após a configuração, a sincronização será
-                    automática.</p>
+                <ion-button type="submit" color="primary" class="add-btn"
+                    style="--border-radius: 8px; text-transform: none; font-weight: 600; flex: 1; margin: 0;"
+                    [disabled]="integrationForm.invalid || loadingStatus">
+                    {{ loadingStatus ? 'Processando...' : (selectedAccountId ? 'Atualizar Conexão' : 'Conectar ao Banco') }}
+                </ion-button>
+              </div>
+              <p style="font-size: 0.85rem; color: #666; margin-top: 12px;">Após a configuração, a sincronização será automática.</p>
             </div>
 
         </form>

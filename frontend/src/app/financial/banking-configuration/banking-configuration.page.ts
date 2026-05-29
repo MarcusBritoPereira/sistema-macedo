@@ -23,6 +23,7 @@ export class BankingConfigurationPage implements OnInit {
     loadingStatus = false;
     syncing = false;
     selectedAccountId: string | null = null;
+    showForm = false;
 
     certificateFile: File | null = null;
     privateKeyFile: File | null = null;
@@ -65,6 +66,7 @@ export class BankingConfigurationPage implements OnInit {
 
     selectAccount(acc: BankAccount) {
         this.selectedAccountId = acc.id;
+        this.showForm = true;
         this.integrationForm.patchValue({
             banco: acc.banco,
             agencia: acc.agencia || '',
@@ -85,6 +87,18 @@ export class BankingConfigurationPage implements OnInit {
     }
 
     clearSelection() {
+        this.selectedAccountId = null;
+        this.status = { status: 'NOT_CONFIGURED' };
+        this.integrationForm.reset();
+        this.certificateFile = null;
+        this.privateKeyFile = null;
+        this.certificateFileName = '';
+        this.privateKeyFileName = '';
+        this.showForm = true;
+    }
+
+    hideForm() {
+        this.showForm = false;
         this.selectedAccountId = null;
         this.status = { status: 'NOT_CONFIGURED' };
         this.integrationForm.reset();
@@ -193,6 +207,7 @@ export class BankingConfigurationPage implements OnInit {
                 this.loadBankAccounts();
                 if (this.selectedAccountId === id) {
                     this.clearSelection();
+                    this.showForm = false;
                 }
                 this.loadingStatus = false;
             },
@@ -246,6 +261,8 @@ export class BankingConfigurationPage implements OnInit {
                 this.certificateFileName = '';
                 this.privateKeyFileName = '';
                 this.loadingStatus = false;
+                this.loadBankAccounts();
+                this.showForm = false;
             },
             error: (err) => {
                 console.error(err);

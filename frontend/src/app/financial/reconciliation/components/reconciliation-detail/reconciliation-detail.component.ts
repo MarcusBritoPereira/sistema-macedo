@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import {
     IonButton, IonIcon, IonSpinner, IonSearchbar, IonChip,
     IonInput, IonSelect, IonSelectOption, IonDatetime, IonModal, IonContent, IonDatetimeButton,
+    IonItem, IonLabel,
     ModalController, AlertController, ToastController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -33,6 +34,7 @@ import { SearchableSelectionModalComponent, SelectionItem } from '../../../../sh
         CommonModule, FormsModule,
         IonButton, IonIcon, IonSpinner, IonSearchbar, IonChip,
         IonInput, IonSelect, IonSelectOption, IonDatetime, IonModal, IonContent, IonDatetimeButton,
+        IonItem, IonLabel,
         QuickCreateModalComponent
     ]
 })

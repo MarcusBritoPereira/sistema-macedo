@@ -57,125 +57,109 @@
 
             <!-- FORM VIEW -->
             <div class="form-view" *ngIf="mode === 'FORM'">
-                <div class="form-grid">
+                <div class="form-container">
                     
                     <!-- NEW LAUNCH FIELDS -->
                     <ng-container *ngIf="activeTab === 'NEW'">
-                        <div class="field-item description-field">
-                            <label>Descrição *</label>
-                            <input [(ngModel)]="form.descricao" class="custom-input native-input" placeholder="Ex: Compra de cimento" />
+                        <!-- Descrição (Full Width) -->
+                        <ion-item fill="outline" class="input-item full-width">
+                            <ion-label position="stacked">Descrição *</ion-label>
+                            <ion-input [(ngModel)]="form.descricao" placeholder="Ex: Compra de cimento"></ion-input>
+                        </ion-item>
+
+                        <!-- Row 1: Competência & Classificação -->
+                        <div class="row-duo">
+                            <ion-item fill="outline" class="input-item">
+                                <ion-label position="stacked">Data de Competência *</ion-label>
+                                <ion-input type="date" [(ngModel)]="form.dataCompetencia"></ion-input>
+                            </ion-item>
+
+                            <ion-item fill="outline" class="input-item">
+                                <ion-label position="stacked">Classificação *</ion-label>
+                                <ion-select [(ngModel)]="form.classificacao" (ionChange)="onClassificationChange()" interface="popover">
+                                    <ion-select-option value="RECEITA">Receita</ion-select-option>
+                                    <ion-select-option value="DESPESA">Despesa</ion-select-option>
+                                    <ion-select-option value="INVESTIMENTO">Investimento</ion-select-option>
+                                    <ion-select-option value="OUTRO">Outro</ion-select-option>
+                                </ion-select>
+                            </ion-item>
                         </div>
 
-                        <div class="field-item">
-                            <label>Data de Competência *</label>
-                            <div class="date-picker-wrapper">
-                                <ion-datetime-button datetime="datetime-competence"></ion-datetime-button>
-                                <ion-modal [keepContentsMounted]="true">
-                                    <ng-template>
-                                        <ion-datetime id="datetime-competence" presentation="date"
-                                            [(ngModel)]="form.dataCompetencia" [showDefaultButtons]="true"
-                                            doneText="Confirmar" cancelText="Cancelar">
-                                        </ion-datetime>
-                                    </ng-template>
-                                </ion-modal>
-                            </div>
+                        <!-- Row 2: Categoria & Tipo de Lançamento -->
+                        <div class="row-duo">
+                            <ion-item fill="outline" class="input-item clickable-item" (click)="openSelection('CATEGORY')">
+                                <ion-label position="stacked">Categoria *</ion-label>
+                                <ion-input [value]="getCategoryName() || 'Selecione a Categoria'" readonly placeholder="Selecione"></ion-input>
+                            </ion-item>
+
+                            <ion-item fill="outline" class="input-item">
+                                <ion-label position="stacked">Tipo de Lançamento *</ion-label>
+                                <ion-select [(ngModel)]="form.tipoLancamento" interface="popover">
+                                    <ion-select-option value="OBRA">De Obras</ion-select-option>
+                                    <ion-select-option value="POS_OBRA">Pós-obra</ion-select-option>
+                                    <ion-select-option value="ADMINISTRATIVO">Administrativo</ion-select-option>
+                                    <ion-select-option value="ESCRITORIO">Escritório</ion-select-option>
+                                </ion-select>
+                            </ion-item>
                         </div>
 
-                        <div class="field-item">
-                            <label>Classificação *</label>
-                            <ion-select [(ngModel)]="form.classificacao" (ionChange)="onClassificationChange()" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
-                                <ion-select-option value="RECEITA">Receita</ion-select-option>
-                                <ion-select-option value="DESPESA">Despesa</ion-select-option>
-                                <ion-select-option value="INVESTIMENTO">Investimento</ion-select-option>
-                                <ion-select-option value="OUTRO">Outro</ion-select-option>
-                            </ion-select>
+                        <!-- Row 3: Fornecedor/Cliente & Centro de Custo -->
+                        <div class="row-duo">
+                            <ion-item fill="outline" class="input-item clickable-item" (click)="openSelection('ENTITY')">
+                                <ion-label position="stacked">{{ statement.tipo === 'CREDIT' ? 'Cliente' : 'Fornecedor' }}</ion-label>
+                                <ion-input [value]="getEntityName() || 'Selecione'" readonly placeholder="Selecione"></ion-input>
+                            </ion-item>
+
+                            <ion-item fill="outline" class="input-item clickable-item" (click)="openSelection('COST_CENTER')">
+                                <ion-label position="stacked">Centro de Custo *</ion-label>
+                                <ion-input [value]="getCostCenterName() || 'Selecione'" readonly placeholder="Selecione"></ion-input>
+                            </ion-item>
                         </div>
 
-                        <!-- Categoria Field (NEW tab only) -->
-                        <div class="field-item">
-                            <label>Categoria *</label>
-                            <div class="custom-select-trigger" (click)="openSelection('CATEGORY')">
-                                <span [class.placeholder]="!form.categoriaId">{{ getCategoryName() || 'Selecione a Categoria' }}</span>
-                                <ion-icon name="chevron-down-outline"></ion-icon>
-                            </div>
+                        <!-- Row 4: Tipo de Custo & Obra Destino (Condicional) -->
+                        <div class="row-duo">
+                            <ion-item fill="outline" class="input-item">
+                                <ion-label position="stacked">Tipo de Custo</ion-label>
+                                <ion-select [(ngModel)]="form.tipoCusto" interface="popover" placeholder="Selecione">
+                                    <ion-select-option value="MATERIAL">Material</ion-select-option>
+                                    <ion-select-option value="MAO_DE_OBRA">Mão de Obra</ion-select-option>
+                                    <ion-select-option value="SERVICO">Serviço</ion-select-option>
+                                    <ion-select-option value="EQUIPAMENTO">Equipamento</ion-select-option>
+                                    <ion-select-option value="OUTROS">Outros</ion-select-option>
+                                </ion-select>
+                            </ion-item>
+
+                            <ion-item fill="outline" class="input-item" *ngIf="form.tipoLancamento === 'OBRA' || form.tipoLancamento === 'POS_OBRA'">
+                                <ion-label position="stacked">Obra Destino *</ion-label>
+                                <ion-select [(ngModel)]="form.obraId" placeholder="Selecione a Obra" interface="popover">
+                                    <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
+                                </ion-select>
+                            </ion-item>
                         </div>
 
-                        <div class="field-item">
-                            <label>Tipo de Lançamento *</label>
-                            <ion-select [(ngModel)]="form.tipoLancamento" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
-                                <ion-select-option value="OBRA">De Obras</ion-select-option>
-                                <ion-select-option value="POS_OBRA">Pós-obra</ion-select-option>
-                                <ion-select-option value="ADMINISTRATIVO">Administrativo</ion-select-option>
-                                <ion-select-option value="ESCRITORIO">Escritório</ion-select-option>
-                            </ion-select>
-                        </div>
-
-                        <div class="field-item" *ngIf="form.tipoLancamento === 'OBRA' || form.tipoLancamento === 'POS_OBRA'">
-                            <label>Obra Destino *</label>
-                            <ion-select [(ngModel)]="form.obraId" placeholder="Selecione a Obra" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
-                                <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
-                            </ion-select>
-                        </div>
-
-                        <div class="field-item">
-                            <label>{{ statement.tipo === 'CREDIT' ? 'Cliente' : 'Fornecedor' }}</label>
-                            <div class="custom-select-trigger" (click)="openSelection('ENTITY')">
-                                <span [class.placeholder]="!form.fornecedorId">{{ getEntityName() || 'Selecione' }}</span>
-                                <ion-icon name="chevron-down-outline"></ion-icon>
-                            </div>
-                        </div>
-
-                        <div class="field-item">
-                            <label>Centro de Custo *</label>
-                            <div class="custom-select-trigger" (click)="openSelection('COST_CENTER')">
-                                <span [class.placeholder]="!form.centroCustoId">{{ getCostCenterName() || 'Selecione' }}</span>
-                                <ion-icon name="chevron-down-outline"></ion-icon>
-                            </div>
-                        </div>
-
-                        <!-- Tipo de Custo -->
-                        <div class="field-item">
-                            <label>Tipo de Custo</label>
-                            <ion-select [(ngModel)]="form.tipoCusto" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box" placeholder="Selecione">
-                                <ion-select-option value="MATERIAL">Material</ion-select-option>
-                                <ion-select-option value="MAO_DE_OBRA">Mão de Obra</ion-select-option>
-                                <ion-select-option value="SERVICO">Serviço</ion-select-option>
-                                <ion-select-option value="EQUIPAMENTO">Equipamento</ion-select-option>
-                                <ion-select-option value="OUTROS">Outros</ion-select-option>
-                            </ion-select>
-                        </div>
-
-                        <!-- Classificações Adicionais -->
-                        <div class="field-item">
-                            <label>Classificações Adicionais (Insumo)</label>
-                            <input [(ngModel)]="form.categoriaCusto" placeholder="Ex: Cimento, Pedreiro, ISS" class="custom-input native-input" />
-                        </div>
+                        <!-- Classificações Adicionais (Full Width) -->
+                        <ion-item fill="outline" class="input-item full-width">
+                            <ion-label position="stacked">Classificações Adicionais (Insumo)</ion-label>
+                            <ion-input [(ngModel)]="form.categoriaCusto" placeholder="Ex: Cimento, Pedreiro, ISS"></ion-input>
+                        </ion-item>
                     </ng-container>
 
                     <!-- TRANSFER FIELDS -->
                     <ng-container *ngIf="activeTab === 'TRANSFER'">
-                        <div class="field-item">
-                            <label>Data de Competência *</label>
-                            <div class="date-picker-wrapper">
-                                <ion-datetime-button datetime="datetime-competence-transfer"></ion-datetime-button>
-                                <ion-modal [keepContentsMounted]="true">
-                                    <ng-template>
-                                        <ion-datetime id="datetime-competence-transfer" presentation="date"
-                                            [(ngModel)]="form.dataCompetencia" [showDefaultButtons]="true"
-                                            doneText="Confirmar" cancelText="Cancelar">
-                                        </ion-datetime>
-                                    </ng-template>
-                                </ion-modal>
-                            </div>
-                        </div>
+                        <div class="row-duo">
+                            <ion-item fill="outline" class="input-item">
+                                <ion-label position="stacked">Data de Competência *</ion-label>
+                                <ion-input type="date" [(ngModel)]="form.dataCompetencia"></ion-input>
+                            </ion-item>
 
-                        <div class="field-item">
-                            <label>Conta de Destino *</label>
-                            <ion-select [(ngModel)]="form.contaDestinoId" placeholder="Selecione a conta destino" interface="popover" [interfaceOptions]="{cssClass: 'custom-modern-popover'}" class="custom-select-trigger select-box">
-                                <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">
-                                    {{ acc.nome }} - {{ acc.banco }}
-                                </ion-select-option>
-                            </ion-select>
+                            <ion-item fill="outline" class="input-item">
+                                <ion-label position="stacked">Conta de Destino *</ion-label>
+                                <ion-select [(ngModel)]="form.contaDestinoId" placeholder="Selecione a conta destino" interface="popover">
+                                    <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">
+                                        {{ acc.nome }} - {{ acc.banco }}
+                                    </ion-select-option>
+                                </ion-select>
+                            </ion-item>
                         </div>
                     </ng-container>
 

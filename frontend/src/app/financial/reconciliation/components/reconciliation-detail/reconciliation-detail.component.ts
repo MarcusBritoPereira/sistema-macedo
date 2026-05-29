@@ -103,8 +103,10 @@ export class ReconciliationDetailComponent implements OnInit {
         if (this.statement) {
             this.form.descricao = this.statement.descricao;
             this.form.valor = Math.abs(Number(this.statement.valor));
-            this.form.dataVencimento = this.statement.data;
-            this.form.dataCompetencia = this.statement.data; // Default to statement date
+            
+            const dateStr = this.statement.data ? this.statement.data.substring(0, 10) : new Date().toISOString().substring(0, 10);
+            this.form.dataVencimento = dateStr;
+            this.form.dataCompetencia = dateStr; // Default to statement date
 
             this.form.classificacao = this.statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
             this.form.tipoLancamento = 'ADMINISTRATIVO';

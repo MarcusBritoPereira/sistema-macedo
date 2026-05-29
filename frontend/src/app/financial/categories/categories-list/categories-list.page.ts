@@ -1,12 +1,11 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonButton, IonIcon, IonSearchbar, IonCard, IonFab, IonFabButton, IonRefresher, IonRefresherContent } from '@ionic/angular/standalone';
+import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonButton, IonIcon, IonSearchbar, IonCard, IonFab, IonFabButton, IonRefresher, IonRefresherContent, ModalController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { searchOutline, pricetagOutline, chevronForwardOutline, pricetagsOutline, add, arrowDownCircleOutline, arrowUpCircleOutline, cloudUploadOutline, downloadOutline } from 'ionicons/icons';
 import { CategoriesService, Category } from '../../../services/financial/categories.service';
 import { RouterModule } from '@angular/router';
-import { ModalController } from '@ionic/angular';
 import { ImportModalComponent } from '../../../shared/components/import-modal/import-modal.component';
 
 @Component({

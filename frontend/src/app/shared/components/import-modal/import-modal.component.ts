@@ -1,17 +1,17 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
-import { ModalController, ToastController } from '@ionic/angular';
+import { Component, Input } from '@angular/core';
+import { IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon, IonContent, IonFooter, IonSpinner, ModalController, ToastController } from '@ionic/angular/standalone';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
-
 import { CommonModule } from '@angular/common';
-import { IonicModule } from '@ionic/angular';
+import { addIcons } from 'ionicons';
+import { closeOutline, downloadOutline, cloudUploadOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-import-modal',
   templateUrl: './import-modal.component.html',
   styleUrls: ['./import-modal.component.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule]
+  imports: [CommonModule, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonIcon, IonContent, IonFooter, IonSpinner]
 })
 export class ImportModalComponent {
   @Input() title: string = 'Importar Dados';
@@ -24,7 +24,9 @@ export class ImportModalComponent {
     private modalCtrl: ModalController,
     private http: HttpClient,
     private toastCtrl: ToastController
-  ) {}
+  ) {
+    addIcons({ closeOutline, downloadOutline, cloudUploadOutline });
+  }
 
   dismiss(result?: any) {
     this.modalCtrl.dismiss(result);

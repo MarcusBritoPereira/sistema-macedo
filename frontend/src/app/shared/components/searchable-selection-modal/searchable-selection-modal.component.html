@@ -1,14 +1,14 @@
 <ion-header>
-    <ion-toolbar>
+    <ion-toolbar class="modal-header-toolbar">
         <ion-title>{{ title }}</ion-title>
         <ion-buttons slot="end">
-            <ion-button (click)="cancel()">
+            <ion-button (click)="cancel()" class="close-btn">
                 <ion-icon name="close-outline"></ion-icon>
             </ion-button>
         </ion-buttons>
     </ion-toolbar>
-    <ion-toolbar>
-        <ion-searchbar placeholder="Buscar..." (ionInput)="filterItems($event)" [debounce]="200" animated="true">
+    <ion-toolbar class="modal-search-toolbar">
+        <ion-searchbar placeholder="Buscar..." (ionInput)="filterItems($event)" [debounce]="200" animated="false" class="premium-modal-searchbar">
         </ion-searchbar>
     </ion-toolbar>
 </ion-header>

@@ -30,6 +30,7 @@ export class TransactionModalComponent implements OnInit {
 
     title: string = 'Nova Transação';
     mode: 'CREATE' | 'EDIT' = 'CREATE';
+    valorStr: string = '';
 
     // Form Data
     formData: Partial<Transaction> = {
@@ -63,6 +64,7 @@ export class TransactionModalComponent implements OnInit {
             this.mode = 'EDIT';
             this.title = 'Editar Transação';
             this.formData = { ...this.transaction };
+            this.valorStr = this.formatValor(this.formData.valor);
             // Ensure date is ISO string for ionic components
             if (this.formData.dataVencimento && !this.formData.dataVencimento.includes('T')) {
                 this.formData.dataVencimento = new Date(this.formData.dataVencimento).toISOString();
@@ -71,6 +73,7 @@ export class TransactionModalComponent implements OnInit {
             this.mode = 'CREATE';
             this.title = this.type === 'RECEITA' ? 'Nova Receita' : 'Nova Despesa';
             this.formData.tipo = this.type;
+            this.valorStr = '';
         }
     }
 
@@ -97,5 +100,48 @@ export class TransactionModalComponent implements OnInit {
 
     cancel() {
         this.modalCtrl.dismiss(null, 'cancel');
+    }
+
+    formatValor(value: number | undefined | null): string {
+        if (value === undefined || value === null || value === 0) return '';
+        return new Intl.NumberFormat('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(value);
+    }
+
+    onValorInput(event: any) {
+        const val = event.target.value;
+        this.valorStr = val;
+        
+        if (!val) {
+            this.formData.valor = 0;
+            return;
+        }
+
+        let cleaned = val.replace(/\s/g, '').replace('R$', '');
+        const hasComma = cleaned.includes(',');
+        const hasDot = cleaned.includes('.');
+
+        if (hasComma && hasDot) {
+            cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+        } else if (hasComma) {
+            cleaned = cleaned.replace(',', '.');
+        }
+
+        const parsed = parseFloat(cleaned);
+        this.formData.valor = isNaN(parsed) ? 0 : parsed;
+    }
+
+    onValorBlur(event: any) {
+        this.valorStr = this.formatValor(this.formData.valor);
+        event.target.value = this.valorStr;
+    }
+
+    onValorFocus(event: any) {
+        if (this.formData.valor && this.formData.valor > 0) {
+            this.valorStr = this.formData.valor.toString().replace('.', ',');
+            event.target.value = this.valorStr;
+        }
     }
 }

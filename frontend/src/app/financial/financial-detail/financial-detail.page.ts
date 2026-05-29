@@ -29,6 +29,7 @@ export class FinancialDetailPage implements OnInit {
   toastMessage = '';
   isToastOpen = false;
   activeTab = 'observacoes';
+  valorStr = '';
 
   categories: Category[] = [];
   filteredSubcategories: Subcategory[] = [];
@@ -238,6 +239,8 @@ export class FinancialDetailPage implements OnInit {
         fornecedorId: item.fornecedorId,
         contaBancariaId: item.contaBancariaId // Ensure backend returns this
       });
+      
+      this.valorStr = this.formatValor(item.valor);
     });
   }
 
@@ -403,6 +406,52 @@ export class FinancialDetailPage implements OnInit {
     });
 
     await modal.present();
+  }
+
+  formatValor(value: number | undefined | null): string {
+    if (value === undefined || value === null || value === 0) return '';
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(value);
+  }
+
+  onValorInput(event: any) {
+    const val = event.target.value;
+    this.valorStr = val;
+    
+    if (!val) {
+      this.financialForm.get('valor')?.setValue(0);
+      return;
+    }
+
+    let cleaned = val.replace(/\s/g, '').replace('R$', '');
+    const hasComma = cleaned.includes(',');
+    const hasDot = cleaned.includes('.');
+
+    if (hasComma && hasDot) {
+      cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+    } else if (hasComma) {
+      cleaned = cleaned.replace(',', '.');
+    }
+
+    const parsed = parseFloat(cleaned);
+    const finalVal = isNaN(parsed) ? 0 : parsed;
+    this.financialForm.get('valor')?.setValue(finalVal);
+  }
+
+  onValorBlur(event: any) {
+    const currentVal = this.financialForm.get('valor')?.value || 0;
+    this.valorStr = this.formatValor(currentVal);
+    event.target.value = this.valorStr;
+  }
+
+  onValorFocus(event: any) {
+    const currentVal = this.financialForm.get('valor')?.value || 0;
+    if (currentVal > 0) {
+      this.valorStr = currentVal.toString().replace('.', ',');
+      event.target.value = this.valorStr;
+    }
   }
 }
 

@@ -22,7 +22,12 @@
             <!-- Valor -->
             <ion-item fill="outline" class="input-item">
                 <ion-label position="stacked">Valor (R$) *</ion-label>
-                <ion-input type="number" [(ngModel)]="formData.valor" placeholder="0,00"></ion-input>
+                <ion-input type="text"
+                           [value]="valorStr"
+                           (ionInput)="onValorInput($event)"
+                           (ionBlur)="onValorBlur($event)"
+                           (ionFocus)="onValorFocus($event)"
+                           placeholder="0,00"></ion-input>
             </ion-item>
 
             <!-- Tipo -->

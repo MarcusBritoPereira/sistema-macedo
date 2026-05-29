@@ -63,7 +63,7 @@
                     <ng-container *ngIf="activeTab === 'NEW'">
                         <div class="field-item description-field">
                             <label>Descrição *</label>
-                            <ion-input [(ngModel)]="form.descricao" class="custom-input" placeholder="Ex: Compra de cimento"></ion-input>
+                            <input [(ngModel)]="form.descricao" class="custom-input native-input" placeholder="Ex: Compra de cimento" />
                         </div>
 
                         <div class="field-item">
@@ -148,7 +148,7 @@
                         <!-- Classificações Adicionais -->
                         <div class="field-item">
                             <label>Classificações Adicionais (Insumo)</label>
-                            <ion-input [(ngModel)]="form.categoriaCusto" placeholder="Ex: Cimento, Pedreiro, ISS" class="custom-input"></ion-input>
+                            <input [(ngModel)]="form.categoriaCusto" placeholder="Ex: Cimento, Pedreiro, ISS" class="custom-input native-input" />
                         </div>
                     </ng-container>
 

@@ -27,12 +27,10 @@
 
         <ion-item class="input-item" *ngIf="entityType === 'CATEGORY'">
             <ion-label position="stacked">Classificação DRE</ion-label>
-            <ion-select [(ngModel)]="form.classificacaoDRE" name="classificacaoDRE" placeholder="Selecione">
-                <ion-select-option value="VENDAS">Vendas</ion-select-option>
-                <ion-select-option value="CUSTO_VARIAVEL">Custo Variável</ion-select-option>
-                <ion-select-option value="DESPESA_FIXA">Despesa Fixa</ion-select-option>
-                <ion-select-option value="INVESTIMENTO">Investimento</ion-select-option>
-                <ion-select-option value="NAO_OPERACIONAL">Não Operacional</ion-select-option>
+            <ion-select [(ngModel)]="form.classificacao" name="classificacao" placeholder="Selecione">
+                <ion-select-option *ngFor="let opt of dreOptions" [value]="opt.value">
+                    {{ opt.label }}
+                </ion-select-option>
             </ion-select>
         </ion-item>
 

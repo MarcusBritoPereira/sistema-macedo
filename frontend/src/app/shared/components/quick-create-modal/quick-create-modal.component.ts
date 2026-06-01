@@ -29,7 +29,7 @@ export class QuickCreateModalComponent implements OnInit {
         nome: '',
         descricao: '', // Optional
         tipo: 'DESPESA', // Only for Category
-        classificacaoDRE: '', // New field
+        classificacao: '', // New field
         cpfCnpj: '' // Optional for Supplier/Client
     };
 
@@ -54,6 +54,29 @@ export class QuickCreateModalComponent implements OnInit {
             case 'SUPPLIER': this.title = 'Novo Fornecedor'; break;
             case 'CLIENT': this.title = 'Novo Cliente'; break;
             case 'COST_CENTER': this.title = 'Novo Centro de Custo'; break;
+        }
+    }
+
+    get dreOptions() {
+        if (this.form.tipo === 'RECEITA') {
+            return [
+                { value: 'RECEITA_RECORRENTE', label: 'Receita Recorrente' },
+                { value: 'RECEITA_NAO_RECORRENTE', label: 'Receita Não Recorrente' },
+                { value: 'RECEITA_FINANCEIRA', label: 'Receita Financeira' },
+                { value: 'OUTROS', label: 'Outros' }
+            ];
+        } else {
+            return [
+                { value: 'DESPESA_ADMINISTRATIVA', label: 'Despesa Administrativa' },
+                { value: 'CUSTO_SERVICOS_PRESTADOS', label: 'Custo dos Serviços Prestados' },
+                { value: 'DEDUCOES_RECEITA', label: 'Deduções da Receita' },
+                { value: 'DESPESA_COMERCIAL', label: 'Despesa Comercial' },
+                { value: 'DESPESA_ESTRUTURAL', label: 'Despesa Estrutural' },
+                { value: 'DESPESA_SOCIOS', label: 'Despesa Sócios' },
+                { value: 'DESPESA_FINANCEIRA', label: 'Despesa Financeira' },
+                { value: 'IMPOSTOS_LUCRO', label: 'Impostos s/ Lucro' },
+                { value: 'OUTROS', label: 'Outros' }
+            ];
         }
     }
 
@@ -87,7 +110,7 @@ export class QuickCreateModalComponent implements OnInit {
             nome: this.form.nome,
             tipo: this.form.tipo as 'RECEITA' | 'DESPESA',
             descricao: this.form.descricao,
-            classificacaoDRE: this.form.classificacaoDRE
+            classificacao: this.form.classificacao
         };
         this.categoriesService.create(payload).subscribe({
             next: (res) => this.modalCtrl.dismiss(res),

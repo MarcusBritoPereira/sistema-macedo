@@ -33,7 +33,7 @@ export class UsersService {
   }
 
   update(id: string, usuario: Usuario): Observable<Usuario> {
-    return this.api.put<Usuario>(`users/${id}`, usuario);
+    return this.api.patch<Usuario>(`users/${id}`, usuario);
   }
 
   delete(id: string): Observable<any> {

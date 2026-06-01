@@ -546,7 +546,7 @@ export class ReconciliationPage implements OnInit, OnDestroy {
         });
 
         await modal.present();
-        const { data } = await modal.onWillDismiss();
+        const { data } = await modal.onDidDismiss();
 
         if (data) {
             let categoryId = data.id;

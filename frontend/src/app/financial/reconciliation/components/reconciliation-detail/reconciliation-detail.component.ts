@@ -519,7 +519,7 @@ export class ReconciliationDetailComponent implements OnInit {
 
         await modal.present();
 
-        const { data } = await modal.onWillDismiss();
+        const { data } = await modal.onDidDismiss();
 
         if (data) {
             if (data.id === '_NEW_') {
@@ -578,7 +578,7 @@ export class ReconciliationDetailComponent implements OnInit {
 
         await modal.present();
 
-        const { data } = await modal.onWillDismiss();
+        const { data } = await modal.onDidDismiss();
 
         if (data) {
             // New item created!

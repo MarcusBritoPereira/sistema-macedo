@@ -208,12 +208,29 @@ export class CostCenterDetailPage implements OnInit {
         const loading = await this.loadingCtrl.create({ message: 'Salvando...' });
         await loading.present();
 
-        // Convert number properties or leave as null for blank
+        // Build clean payload with only whitelisted DTO properties
         const payload = {
-            ...this.costCenter,
+            nome: this.costCenter.nome,
+            codigo: this.costCenter.codigo || null,
+            descricao: this.costCenter.descricao || null,
+            tipo: this.costCenter.tipo || null,
+            categoriaFinanceira: this.costCenter.categoriaFinanceira || null,
+            parentId: this.costCenter.parentId || null,
+            obraId: this.costCenter.obraId || null,
+            etapaId: this.costCenter.etapaId || null,
+            ativo: this.costCenter.ativo,
+            aceitaLancamento: this.costCenter.aceitaLancamento,
             orcamentoPrevisto: this.costCenter.orcamentoPrevisto ? Number(this.costCenter.orcamentoPrevisto) : null,
             limiteMaximo: this.costCenter.limiteMaximo ? Number(this.costCenter.limiteMaximo) : null,
-            metaFisica: this.costCenter.metaFisica ? Number(this.costCenter.metaFisica) : null
+            aprovacaoNecessaria: this.costCenter.aprovacaoNecessaria,
+            responsavelId: this.costCenter.responsavelId || null,
+            planoContaId: this.costCenter.planoContaId || null,
+            categoriaCompra: this.costCenter.categoriaCompra || null,
+            contaContabil: this.costCenter.contaContabil || null,
+            unidadeMedida: this.costCenter.unidadeMedida || null,
+            metaFisica: this.costCenter.metaFisica ? Number(this.costCenter.metaFisica) : null,
+            tags: this.costCenter.tags || null,
+            cor: this.costCenter.cor || null
         };
 
         if (this.isNew) {

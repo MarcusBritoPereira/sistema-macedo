@@ -1,0 +1,101 @@
+<ion-header class="ion-no-border">
+    <ion-toolbar class="top-toolbar">
+        <ion-buttons slot="start">
+            <ion-back-button defaultHref="/suppliers" color="primary"></ion-back-button>
+        </ion-buttons>
+        <ion-title color="primary">{{ isEditMode ? 'Editar Fornecedor' : 'Novo Fornecedor' }}</ion-title>
+        <ion-buttons slot="end" *ngIf="isEditMode">
+            <ion-button (click)="onDelete()" color="danger">
+                <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ion-button>
+        </ion-buttons>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+    <div class="form-wrapper">
+        <form [formGroup]="supplierForm" (ngSubmit)="onSave()">
+            <div class="form-card">
+                <div class="form-card-header">
+                    <ion-icon name="storefront-outline" color="primary"></ion-icon>
+                    <div>
+                        <h2>{{ isEditMode ? 'Editar Fornecedor' : 'Novo Fornecedor' }}</h2>
+                        <p>Preencha os campos abaixo para {{ isEditMode ? 'atualizar' : 'cadastrar' }} o fornecedor</p>
+                    </div>
+                </div>
+
+                <div class="form-card-body">
+                    <ion-grid>
+                        <ion-row>
+                            <!-- Nome Fantasia -->
+                            <ion-col size="12">
+                                <div class="field-group">
+                                    <label>Nome Fantasia <span class="required-asterisk">*</span></label>
+                                    <ion-item lines="none" class="input-item">
+                                        <ion-input formControlName="nomeFantasia" placeholder="Nome comercial"></ion-input>
+                                    </ion-item>
+                                    <div class="error-message"
+                                        *ngIf="supplierForm.get('nomeFantasia')?.invalid && supplierForm.get('nomeFantasia')?.touched">
+                                        Campo obrigatório
+                                    </div>
+                                </div>
+                            </ion-col>
+
+                            <!-- Razão Social -->
+                            <ion-col size="12">
+                                <div class="field-group">
+                                    <label>Razão Social</label>
+                                    <ion-item lines="none" class="input-item">
+                                        <ion-input formControlName="razaoSocial" placeholder="Razão social completa"></ion-input>
+                                    </ion-item>
+                                </div>
+                            </ion-col>
+
+                            <!-- CNPJ -->
+                            <ion-col size="12" size-md="6">
+                                <div class="field-group">
+                                    <label>CNPJ</label>
+                                    <ion-item lines="none" class="input-item">
+                                        <ion-input formControlName="cnpj" placeholder="00.000.000/0000-00"></ion-input>
+                                    </ion-item>
+                                </div>
+                            </ion-col>
+
+                            <!-- Telefone -->
+                            <ion-col size="12" size-md="6">
+                                <div class="field-group">
+                                    <label>Telefone</label>
+                                    <ion-item lines="none" class="input-item">
+                                        <ion-input formControlName="telefone" type="tel" placeholder="(00) 00000-0000"></ion-input>
+                                    </ion-item>
+                                </div>
+                            </ion-col>
+
+                            <!-- Email -->
+                            <ion-col size="12">
+                                <div class="field-group">
+                                    <label>Email</label>
+                                    <ion-item lines="none" class="input-item">
+                                        <ion-input formControlName="email" type="email" placeholder="contato@empresa.com"></ion-input>
+                                    </ion-item>
+                                    <div class="error-message"
+                                        *ngIf="supplierForm.get('email')?.invalid && supplierForm.get('email')?.touched">
+                                        Formato de email inválido
+                                    </div>
+                                </div>
+                            </ion-col>
+                        </ion-row>
+                    </ion-grid>
+
+                    <!-- Save button integrated inside card -->
+                    <div class="form-actions-inline">
+                        <ion-button expand="block" type="submit" class="save-btn" [disabled]="supplierForm.invalid">
+                            <ion-icon slot="start" name="save-outline"></ion-icon>
+                            Salvar
+                        </ion-button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</ion-content>

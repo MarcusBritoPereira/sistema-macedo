@@ -1,0 +1,85 @@
+<ion-content [fullscreen]="true" class="login-page">
+  <div class="split-layout">
+    <aside class="split-layout__form-panel">
+      <div class="form-wrapper">
+        <header class="form-header">
+          <div class="brand-logo">
+            <img src="assets/logo/logo_colorido.png" alt="Sistema Macedo Logo" />
+          </div>
+          <h1 class="form-title">Acesso Restrito</h1>
+        </header>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+          <div class="input-group">
+            <label for="email">E-mail corporativo <span class="required">*</span></label>
+            <input
+              id="email"
+              type="email"
+              class="clean-input"
+              formControlName="email"
+              placeholder="admin@macedo.com.br"
+              autocomplete="email"
+              [class.invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched"
+            />
+          </div>
+
+          <div class="input-group">
+            <label for="senha">Senha <span class="required">*</span></label>
+            <input
+              id="senha"
+              type="password"
+              class="clean-input"
+              formControlName="senha"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              [class.invalid]="loginForm.get('senha')?.invalid && loginForm.get('senha')?.touched"
+            />
+          </div>
+
+          <ion-text color="danger" *ngIf="errorMessage" class="error-text" role="alert">
+            <p>{{ errorMessage }}</p>
+          </ion-text>
+
+          <div class="form-links">
+            <a href="mailto:suporte@macedoengenharia.com.br" aria-label="Recuperar senha">Esqueci minha senha</a>
+          </div>
+
+          <ion-button expand="block" type="submit" [disabled]="!loginForm.valid || isSubmitting" class="btn-primary">
+            <ion-spinner *ngIf="isSubmitting" name="crescent" aria-label="Carregando"></ion-spinner>
+            <span>{{ isSubmitting ? 'Autenticando...' : 'Entrar no Sistema' }}</span>
+          </ion-button>
+        </form>
+      </div>
+    </aside>
+
+    <main class="split-layout__marketing-panel">
+      <div class="marketing-content">
+        <h2 class="marketing-headline">
+          Gestão financeira e<br/>controle de <strong>obras</strong><br/>em um <strong>único lugar</strong>
+        </h2>
+        <p class="marketing-subheadline">
+          O ERP exclusivo da <strong>Macedo Engenharia</strong> para o gerenciamento administrativo e visibilidade total dos projetos.
+        </p>
+      </div>
+
+      <!-- decorative elements imitating the UI cards on the right -->
+      <div class="marketing-graphics">
+        <div class="graphic-card">
+          <div class="graphic-header">
+            <span>Visão Geral - Obras</span>
+            <span class="badge">Ativo</span>
+          </div>
+          <div class="graphic-body">
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line"></div>
+            <div class="skeleton-line short"></div>
+            <div class="skeleton-line"></div>
+          </div>
+          <div class="floating-bubble">
+            <ion-icon name="bar-chart"></ion-icon>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</ion-content>

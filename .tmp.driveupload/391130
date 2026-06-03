@@ -1,0 +1,87 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/clients" color="primary"></ion-back-button>
+    </ion-buttons>
+    <ion-title color="primary">{{ isEditMode ? 'Editar Cliente' : 'Novo Cliente' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="form-wrapper">
+    <form [formGroup]="clientForm" (ngSubmit)="onSubmit()">
+      
+      <div class="form-card">
+        <div class="form-card-header">
+          <ion-icon name="person-outline" color="primary"></ion-icon>
+          <div>
+            <h2>Informações do Cliente</h2>
+            <p>Preencha os campos abaixo para {{ isEditMode ? 'atualizar' : 'cadastrar' }} o cliente</p>
+          </div>
+        </div>
+
+        <div class="form-card-body">
+          <ion-grid>
+            <ion-row>
+              <!-- Nome -->
+              <ion-col size="12">
+                <div class="field-group">
+                  <label>Nome *</label>
+                  <ion-item lines="none" class="input-item">
+                    <ion-input formControlName="razaoSocial" placeholder="Ex: João da Silva ou Tech Solutions Ltda"></ion-input>
+                  </ion-item>
+                </div>
+              </ion-col>
+
+              <!-- CPF -->
+              <ion-col size="12" size-md="6">
+                <div class="field-group">
+                  <label>CPF</label>
+                  <ion-item lines="none" class="input-item">
+                    <ion-input formControlName="cpf" placeholder="000.000.000-00"></ion-input>
+                  </ion-item>
+                </div>
+              </ion-col>
+
+
+              <!-- Número de contato -->
+              <ion-col size="12" size-md="6">
+                <div class="field-group">
+                  <label>Número de Contato</label>
+                  <ion-item lines="none" class="input-item">
+                    <ion-input type="tel" formControlName="telefone" placeholder="(00) 00000-0000"></ion-input>
+                  </ion-item>
+                </div>
+              </ion-col>
+
+              <!-- Endereço -->
+              <ion-col size="12">
+                <div class="field-group">
+                  <label>Endereço</label>
+                  <ion-item lines="none" class="input-item">
+                    <ion-textarea formControlName="endereco" rows="2"
+                      placeholder="Rua, Número, Bairro, Cidade - UF"></ion-textarea>
+                  </ion-item>
+                </div>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <ion-button expand="block" type="submit" [disabled]="!clientForm.valid" class="save-btn" shape="round">
+          {{ isEditMode ? 'Salvar Alterações' : 'Cadastrar Cliente' }}
+        </ion-button>
+
+        <ion-button *ngIf="isEditMode" expand="block" fill="clear" color="danger" (click)="onDelete()">
+          <ion-icon name="trash-outline" slot="start"></ion-icon>
+          Excluir Cliente
+        </ion-button>
+      </div>
+    </form>
+  </div>
+
+  <ion-toast [isOpen]="isToastOpen" [message]="toastMessage" [duration]="2000" (didDismiss)="setToastOpen(false)"
+    position="top" color="dark"></ion-toast>
+</ion-content>

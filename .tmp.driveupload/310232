@@ -1,0 +1,34 @@
+export declare enum TipoClassificacaoLancamento {
+    OBRA = "OBRA",
+    POS_OBRA = "POS_OBRA",
+    ADMINISTRATIVO = "ADMINISTRATIVO",
+    ESCRITORIO = "ESCRITORIO"
+}
+export declare enum TipoCustoLancamento {
+    MATERIAL = "MATERIAL",
+    MAO_DE_OBRA = "MAO_DE_OBRA",
+    SERVICO = "SERVICO",
+    EQUIPAMENTO = "EQUIPAMENTO",
+    OUTROS = "OUTROS"
+}
+import { StatusLancamento, TipoLancamento } from '@prisma/client';
+export declare class CreateTransactionDto {
+    descricao: string;
+    valor: number;
+    dataVencimento: string;
+    dataPagamento?: string;
+    dataCompetencia?: string;
+    tipo: TipoLancamento;
+    status?: StatusLancamento;
+    observacoes?: string;
+    contaBancariaId?: string;
+    categoriaId?: string;
+    centroCustoId?: string;
+    contratoId?: string;
+    clienteId?: string;
+    fornecedorId?: string;
+    tipoLancamento?: TipoClassificacaoLancamento;
+    tipoCusto?: TipoCustoLancamento;
+    categoriaCusto?: string;
+    obraId?: string;
+}

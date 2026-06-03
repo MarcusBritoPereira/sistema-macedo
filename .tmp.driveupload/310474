@@ -1,0 +1,327 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.DreService = void 0;
+const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const prisma_service_1 = require("../../prisma/prisma.service");
+const gerar_dre_dto_1 = require("./dto/gerar-dre.dto");
+const date_fns_1 = require("date-fns");
+const locale_1 = require("date-fns/locale");
+let DreService = class DreService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async obterIdsHierarquia(centroCustoId) {
+        const ccs = await this.prisma.centroCusto.findMany({
+            select: { id: true, parentId: true }
+        });
+        const filhos = [centroCustoId];
+        const processar = (id) => {
+            const directChildren = ccs.filter(c => c.parentId === id);
+            directChildren.forEach(child => {
+                filhos.push(child.id);
+                processar(child.id);
+            });
+        };
+        processar(centroCustoId);
+        return filhos;
+    }
+    async gerar(dto) {
+        const cacheKey = this.getCacheKey('principal', dto);
+        const cached = await this.prisma.dreCache.findUnique({
+            where: { chave: cacheKey },
+        });
+        if (cached) {
+            return cached.payload;
+        }
+        const { regime, dataInicio, dataFim, granularidade, centroCustoId, contaBancariaId, } = dto;
+        console.time(`DRE_Generation:${regime}:${granularidade}`);
+        console.log(`[DRE] Iniciando geração: ${regime} ${granularidade} [${dataInicio} - ${dataFim}]`);
+        const start = (0, date_fns_1.startOfDay)(new Date(dataInicio));
+        const end = (0, date_fns_1.endOfDay)(new Date(dataFim));
+        const dateField = regime === gerar_dre_dto_1.DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
+        const costCenterIds = centroCustoId ? await this.obterIdsHierarquia(centroCustoId) : undefined;
+        const rateiosRaw = await this.prisma.rateioLancamento.findMany({
+            where: {
+                ...(costCenterIds ? { centroCustoId: { in: costCenterIds } } : {}),
+                lancamento: {
+                    [dateField]: {
+                        gte: start,
+                        lte: end,
+                    },
+                    status: regime === gerar_dre_dto_1.DRERegime.CAIXA ? 'REALIZADO' : { not: 'CANCELADO' },
+                    ...(contaBancariaId ? { contaBancariaId } : {}),
+                },
+            },
+            include: {
+                lancamento: true,
+            },
+        });
+        const lancamentosSemRateio = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                [dateField]: {
+                    gte: start,
+                    lte: end,
+                },
+                status: regime === gerar_dre_dto_1.DRERegime.CAIXA ? 'REALIZADO' : { not: 'CANCELADO' },
+                rateios: { none: {} },
+                ...(costCenterIds ? { centroCustoId: { in: costCenterIds } } : {}),
+                ...(contaBancariaId ? { contaBancariaId } : {}),
+            },
+            include: {
+                categoria: true,
+            },
+        });
+        const classificationKeys = Object.values(client_1.ClassificacaoDRE);
+        const normalizedData = [
+            ...rateiosRaw.map((r) => ({
+                valor: Number(r.valor),
+                categoria: (classificationKeys.includes(r.categoria)
+                    ? r.categoria
+                    : 'OUTROS'),
+                subcategoria: r.subcategoria || 'Outros',
+                data: r.lancamento[dateField],
+            })),
+            ...lancamentosSemRateio.map((l) => ({
+                valor: Number(l.valor),
+                categoria: (l.categoria?.classificacao &&
+                    classificationKeys.includes(l.categoria.classificacao)
+                    ? l.categoria.classificacao
+                    : 'OUTROS'),
+                subcategoria: l.categoria?.nome || 'Não categorizado',
+                data: l[dateField],
+            })),
+        ];
+        const periodos = this.getPeriodKeys(start, end, granularidade);
+        const result = this.initializeResultStructure(periodos, dto);
+        for (const item of normalizedData) {
+            const pKey = this.getPeriodKey(item.data, granularidade);
+            const cat = result.data[item.categoria] ? item.categoria : 'OUTROS';
+            if (!result.data[cat])
+                continue;
+            result.data[cat].periodos[pKey] =
+                (result.data[cat].periodos[pKey] || 0) + item.valor;
+            result.data[cat].total += item.valor;
+            result.data[cat].detalhes.quantidade_lancamentos += 1;
+            if (!result.data[cat].subcategorias[item.subcategoria]) {
+                result.data[cat].subcategorias[item.subcategoria] = {
+                    total: 0,
+                    periodos: this.initializePeriodValues(periodos),
+                };
+            }
+            result.data[cat].subcategorias[item.subcategoria].periodos[pKey] +=
+                item.valor;
+            result.data[cat].subcategorias[item.subcategoria].total += item.valor;
+        }
+        const final = this.calculateFinalDRE(result, periodos);
+        await this.prisma.dreCache.upsert({
+            where: { chave: cacheKey },
+            update: { payload: final },
+            create: { chave: cacheKey, payload: final },
+        });
+        return final;
+    }
+    async obterDetalhesDRE(dto) {
+        const cacheKey = this.getCacheKey('detalhes', dto);
+        const cached = await this.prisma.dreCache.findUnique({
+            where: { chave: cacheKey },
+        });
+        if (cached) {
+            return cached.payload;
+        }
+        const start = (0, date_fns_1.startOfDay)(new Date(dto.dataInicio));
+        const end = (0, date_fns_1.endOfDay)(new Date(dto.dataFim));
+        const dateField = dto.regime === gerar_dre_dto_1.DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
+        const costCenterIds = dto.centroCustoId ? await this.obterIdsHierarquia(dto.centroCustoId) : undefined;
+        const where = {
+            categoria: dto.categoria,
+            ...(dto.subcategoria ? { subcategoria: dto.subcategoria } : {}),
+            ...(costCenterIds ? { centroCustoId: { in: costCenterIds } } : {}),
+            lancamento: {
+                [dateField]: {
+                    gte: start,
+                    lte: end,
+                },
+                ...(dto.contaBancariaId
+                    ? { contaBancariaId: dto.contaBancariaId }
+                    : {}),
+            },
+        };
+        const itens = await this.prisma.rateioLancamento.findMany({
+            where,
+            include: {
+                lancamento: {
+                    include: {
+                        cliente: true,
+                        centroCusto: true,
+                    },
+                },
+            },
+            orderBy: {
+                lancamento: {
+                    [dateField]: 'asc',
+                },
+            },
+        });
+        const detalhes = itens.map((item) => ({
+            id: item.lancamento.id,
+            data: item.lancamento[dateField],
+            descricao: item.lancamento.descricao,
+            valor: Number(item.valor),
+            cliente: item.lancamento.cliente?.nomeFantasia ||
+                item.lancamento.cliente?.razaoSocial ||
+                null,
+            centro_custo: item.lancamento.centroCusto?.nome || null,
+        }));
+        const detalhesFinais = detalhes;
+        await this.prisma.dreCache.upsert({
+            where: { chave: cacheKey },
+            update: { payload: detalhesFinais },
+            create: { chave: cacheKey, payload: detalhesFinais },
+        });
+        return detalhesFinais;
+    }
+    async invalidarCacheDRE() {
+        await this.prisma.dreCache.deleteMany({});
+    }
+    getCacheKey(prefix, dto) {
+        return `${prefix}:${JSON.stringify(dto)}`;
+    }
+    getPeriodKeys(start, end, gran) {
+        const keys = [];
+        let current = start;
+        while ((0, date_fns_1.isBefore)(current, end) || (0, date_fns_1.isSameDay)(current, end)) {
+            keys.push(this.getPeriodKey(current, gran));
+            if (gran === gerar_dre_dto_1.DREGranularidade.MENSAL)
+                current = (0, date_fns_1.addMonths)(current, 1);
+            else if (gran === gerar_dre_dto_1.DREGranularidade.TRIMESTRAL)
+                current = (0, date_fns_1.addQuarters)(current, 1);
+            else
+                current = (0, date_fns_1.addYears)(current, 1);
+        }
+        return Array.from(new Set(keys));
+    }
+    getPeriodKey(date, gran) {
+        const d = new Date(date);
+        if (gran === gerar_dre_dto_1.DREGranularidade.MENSAL)
+            return (0, date_fns_1.format)(d, 'MMM/yy', { locale: locale_1.ptBR });
+        if (gran === gerar_dre_dto_1.DREGranularidade.TRIMESTRAL)
+            return `Q${(0, date_fns_1.getQuarter)(d)}/${(0, date_fns_1.format)(d, 'yy')}`;
+        return (0, date_fns_1.format)(d, 'yyyy');
+    }
+    initializeResultStructure(periodos, dto) {
+        const categories = Object.values(client_1.ClassificacaoDRE);
+        const data = {};
+        for (const cat of categories) {
+            data[cat] = {
+                total: 0,
+                periodos: this.initializePeriodValues(periodos),
+                subcategorias: {},
+                detalhes: {
+                    url: `/dre/detalhes?categoria=${encodeURIComponent(cat)}&inicio=${dto.dataInicio}&fim=${dto.dataFim}&regime=${dto.regime}`,
+                    quantidade_lancamentos: 0,
+                },
+            };
+        }
+        return {
+            periodos,
+            data,
+            totais: {
+                receitaBruta: {
+                    total: 0,
+                    periodos: this.initializePeriodValues(periodos),
+                },
+                receitaLiquida: {
+                    total: 0,
+                    periodos: this.initializePeriodValues(periodos),
+                },
+                lucroBruto: {
+                    total: 0,
+                    periodos: this.initializePeriodValues(periodos),
+                },
+                lair: { total: 0, periodos: this.initializePeriodValues(periodos) },
+                resultadoLiquido: {
+                    total: 0,
+                    periodos: this.initializePeriodValues(periodos),
+                },
+            },
+            margens: {
+                receitaLiquida: {
+                    total: 0,
+                    periodos: this.initializePeriodValues(periodos),
+                },
+                bruta: { total: 0, periodos: this.initializePeriodValues(periodos) },
+                lair: { total: 0, periodos: this.initializePeriodValues(periodos) },
+                liquida: { total: 0, periodos: this.initializePeriodValues(periodos) },
+            },
+        };
+    }
+    initializePeriodValues(periodos) {
+        const obj = {};
+        for (const p of periodos)
+            obj[p] = 0;
+        return obj;
+    }
+    calculateFinalDRE(result, periodos) {
+        for (const p of periodos) {
+            const data = result.data;
+            const recRec = data.RECEITA_RECORRENTE.periodos[p];
+            const recNaoRec = data.RECEITA_NAO_RECORRENTE.periodos[p];
+            const deducoes = data.DEDUCOES_RECEITA.periodos[p];
+            const recBruta = recRec + recNaoRec;
+            const recLiquida = recBruta - deducoes;
+            result.totais.receitaBruta.periodos[p] = recBruta;
+            result.totais.receitaLiquida.periodos[p] = recLiquida;
+            result.margens.receitaLiquida.periodos[p] =
+                recBruta > 0 ? (recLiquida / recBruta) * 100 : 0;
+            const custos = data.CUSTO_SERVICOS_PRESTADOS.periodos[p];
+            const lucroBruto = recLiquida - custos;
+            result.totais.lucroBruto.periodos[p] = lucroBruto;
+            result.margens.bruta.periodos[p] =
+                recLiquida > 0 ? (lucroBruto / recLiquida) * 100 : 0;
+            const despesasOp = data.DESPESA_ADMINISTRATIVA.periodos[p] +
+                data.DESPESA_COMERCIAL.periodos[p] +
+                data.DESPESA_ESTRUTURAL.periodos[p] +
+                data.DESPESA_SOCIOS.periodos[p];
+            const despesasFin = data.DESPESA_FINANCEIRA.periodos[p];
+            const recFin = data.RECEITA_FINANCEIRA.periodos[p];
+            const lucroOperacional = lucroBruto - despesasOp;
+            const lair = lucroOperacional - despesasFin + recFin;
+            result.totais.lair.periodos[p] = lair;
+            result.margens.lair.periodos[p] =
+                recLiquida > 0 ? (lair / recLiquida) * 100 : 0;
+            const impostos = data.IMPOSTOS_LUCRO.periodos[p];
+            const resLiq = lair - impostos;
+            result.totais.resultadoLiquido.periodos[p] = resLiq;
+            result.margens.liquida.periodos[p] =
+                recLiquida > 0 ? (resLiq / recLiquida) * 100 : 0;
+        }
+        for (const key of Object.keys(result.totais)) {
+            result.totais[key].total = Object.values(result.totais[key].periodos).reduce((a, b) => a + Number(b), 0);
+        }
+        for (const key of Object.keys(result.margens)) {
+            const avg = Object.values(result.margens[key].periodos).reduce((a, b) => a + Number(b), 0);
+            result.margens[key].total =
+                periodos.length > 0 ? avg / periodos.length : 0;
+        }
+        console.log(`[DRE] Finalizando: ${periodos.length} períodos calculados`);
+        console.timeEnd(`DRE_Generation:${result.regime || ''}:${result.granularidade || ''}`);
+        return result;
+    }
+};
+exports.DreService = DreService;
+exports.DreService = DreService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], DreService);
+//# sourceMappingURL=dre.service.js.map

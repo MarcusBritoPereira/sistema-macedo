@@ -1,0 +1,52 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
+async function main() {
+    const accounts = await prisma.contaBancaria.findMany({
+        include: {
+            integracao: true
+        }
+    });
+    console.log(`Found ${accounts.length} bank accounts.`);
+    for (const acc of accounts) {
+        const latestExtrato = await prisma.extratoBancario.findFirst({
+            where: {
+                importacao: {
+                    contaBancariaId: acc.id
+                }
+            },
+            orderBy: {
+                data: 'desc'
+            }
+        });
+        const latestStatement = await prisma.extratoBancario.findFirst({
+            where: {
+                importacao: {
+                    contaBancariaId: acc.id
+                }
+            },
+            orderBy: {
+                data: 'desc'
+            }
+        });
+        console.log(`\nAccount: ${acc.nome} (${acc.banco})`);
+        if (latestStatement) {
+            console.log(`Latest Statement Date: ${latestStatement.data.toISOString().split('T')[0]}`);
+            console.log(`Balance Recorded: ${latestStatement.balance ?? 'N/A'}`);
+        }
+        else {
+            console.log('No statements found.');
+            console.log(`Initial Balance: ${acc.saldoInicial}`);
+        }
+    }
+}
+main()
+    .catch(e => {
+    console.error(e);
+    process.exit(1);
+})
+    .finally(async () => {
+    await prisma.$disconnect();
+});
+//# sourceMappingURL=check-balance.js.map

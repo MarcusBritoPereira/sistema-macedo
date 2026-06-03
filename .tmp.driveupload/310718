@@ -1,0 +1,43 @@
+import { PrismaService } from '../../prisma/prisma.service';
+import { CreateFiscalParamDto } from './dto/create-param.dto';
+import { UpdateFiscalParamDto } from './dto/update-param.dto';
+export declare class ParametroFiscalService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    create(createDto: CreateFiscalParamDto): Promise<{
+        id: string;
+        nome: string;
+        descricao: string | null;
+        valor: string;
+    }>;
+    findAll(): import(".prisma/client").Prisma.PrismaPromise<{
+        id: string;
+        nome: string;
+        descricao: string | null;
+        valor: string;
+    }[]>;
+    findOne(id: string): import(".prisma/client").Prisma.Prisma__ParametroFiscalClient<{
+        id: string;
+        nome: string;
+        descricao: string | null;
+        valor: string;
+    } | null, null, import("@prisma/client/runtime/library").DefaultArgs>;
+    findByNome(nome: string): import(".prisma/client").Prisma.Prisma__ParametroFiscalClient<{
+        id: string;
+        nome: string;
+        descricao: string | null;
+        valor: string;
+    } | null, null, import("@prisma/client/runtime/library").DefaultArgs>;
+    update(id: string, updateDto: UpdateFiscalParamDto): import(".prisma/client").Prisma.Prisma__ParametroFiscalClient<{
+        id: string;
+        nome: string;
+        descricao: string | null;
+        valor: string;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+    remove(id: string): import(".prisma/client").Prisma.Prisma__ParametroFiscalClient<{
+        id: string;
+        nome: string;
+        descricao: string | null;
+        valor: string;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+}

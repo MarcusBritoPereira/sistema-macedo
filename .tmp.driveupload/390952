@@ -1,0 +1,22 @@
+.valor-acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+
+  .valor {
+    font-weight: bold;
+    font-size: 1rem;
+  }
+
+  .text-danger {
+    color: var(--ion-color-danger);
+  }
+}
+
+.lancamento-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #eee;
+}

@@ -1,0 +1,1 @@
+import{g as r,h as i}from"./chunk-XC2POY23.js";function f(a,o,n){let[t,e]=r(n?.in,a,o);return+i(t)==+i(e)}function s(a,o,n){let[t,e]=r(n?.in,a,o);return t.getFullYear()===e.getFullYear()&&t.getMonth()===e.getMonth()}export{f as a,s as b};

@@ -42,6 +42,8 @@ export class QuickCreateModalComponent implements OnInit {
         private costCentersService: CostCentersService
     ) { }
 
+    dreOptions: any[] = [];
+
     ngOnInit() {
         this.form.nome = this.initialName || '';
 
@@ -50,23 +52,26 @@ export class QuickCreateModalComponent implements OnInit {
         }
 
         switch (this.entityType) {
-            case 'CATEGORY': this.title = 'Nova Categoria'; break;
+            case 'CATEGORY': 
+                this.title = 'Nova Categoria'; 
+                this.updateDreOptions();
+                break;
             case 'SUPPLIER': this.title = 'Novo Fornecedor'; break;
             case 'CLIENT': this.title = 'Novo Cliente'; break;
             case 'COST_CENTER': this.title = 'Novo Centro de Custo'; break;
         }
     }
 
-    get dreOptions() {
+    updateDreOptions() {
         if (this.form.tipo === 'RECEITA') {
-            return [
+            this.dreOptions = [
                 { value: 'RECEITA_RECORRENTE', label: 'Receita Recorrente' },
                 { value: 'RECEITA_NAO_RECORRENTE', label: 'Receita Não Recorrente' },
                 { value: 'RECEITA_FINANCEIRA', label: 'Receita Financeira' },
                 { value: 'OUTROS', label: 'Outros' }
             ];
         } else {
-            return [
+            this.dreOptions = [
                 { value: 'DESPESA_ADMINISTRATIVA', label: 'Despesa Administrativa' },
                 { value: 'CUSTO_SERVICOS_PRESTADOS', label: 'Custo dos Serviços Prestados' },
                 { value: 'DEDUCOES_RECEITA', label: 'Deduções da Receita' },

@@ -48,7 +48,8 @@ import { SuppliersService } from '../../services/suppliers/suppliers.service';
         IonCardContent, IonNote, IonChip, IonRefresher, IonRefresherContent,
         IonInput, IonSelect, IonSelectOption, IonSpinner, IonSearchbar,
         IonCheckbox, IonAccordion, IonAccordionGroup,
-        ReconciliationDetailComponent
+        ReconciliationDetailComponent,
+        SearchableSelectionModalComponent
     ]
 })
 export class ReconciliationPage implements OnInit, OnDestroy {

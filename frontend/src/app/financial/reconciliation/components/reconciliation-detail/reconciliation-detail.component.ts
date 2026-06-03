@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, ViewChild, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -39,7 +39,7 @@ import { SearchableSelectionModalComponent, SelectionItem } from '../../../../sh
         SearchableSelectionModalComponent
     ]
 })
-export class ReconciliationDetailComponent implements OnInit {
+export class ReconciliationDetailComponent implements OnInit, OnChanges {
     @Input() statement!: BankStatement;
     @Input() suggestions: SuggestedMatch[] = [];
     @Output() close = new EventEmitter<void>();
@@ -49,6 +49,12 @@ export class ReconciliationDetailComponent implements OnInit {
     @Input() suppliers: Supplier[] = [];
     @Input() clients: Cliente[] = [];
     @Input() costCenters: CostCenter[] = [];
+
+    localCategories: Category[] = [];
+    localSuppliers: Supplier[] = [];
+    localClients: Cliente[] = [];
+    localCostCenters: CostCenter[] = [];
+    filteredCategories: Category[] = [];
 
     obras: Obra[] = [];
     bankAccounts: BankAccount[] = [];
@@ -101,6 +107,23 @@ export class ReconciliationDetailComponent implements OnInit {
     }
 
     @ViewChild('searchBar') searchBar!: IonSearchbar;
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes['categories']) {
+            this.localCategories = [...(this.categories || [])];
+            this.allCategories = [...this.localCategories];
+            this.filterCategoriesByClassification();
+        }
+        if (changes['suppliers']) {
+            this.localSuppliers = [...(this.suppliers || [])];
+        }
+        if (changes['clients']) {
+            this.localClients = [...(this.clients || [])];
+        }
+        if (changes['costCenters']) {
+            this.localCostCenters = [...(this.costCenters || [])];
+        }
+    }
 
     ngOnInit() {
         if (this.statement) {
@@ -181,12 +204,12 @@ export class ReconciliationDetailComponent implements OnInit {
         const targetType = this.statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
 
         const processData = () => {
-            this.allCategories = [...(this.categories || [])];
+            this.allCategories = [...(this.localCategories || [])];
             this.filterCategoriesByClassification();
 
             // Default to "Geral" if not set
-            if (!this.form.centroCustoId && this.costCenters.length > 0) {
-                const geral = this.costCenters.find(c => c.nome.toLowerCase() === 'geral');
+            if (!this.form.centroCustoId && this.localCostCenters.length > 0) {
+                const geral = this.localCostCenters.find(c => c.nome.toLowerCase() === 'geral');
                 if (geral) {
                     this.form.centroCustoId = geral.id;
                 }
@@ -208,22 +231,23 @@ export class ReconciliationDetailComponent implements OnInit {
         };
 
         // Fallback: If for some reason lists were not passed from parent, fetch them
-        if ((!this.categories || this.categories.length === 0) && (!this.costCenters || this.costCenters.length === 0)) {
+        if ((!this.localCategories || this.localCategories.length === 0) && (!this.localCostCenters || this.localCostCenters.length === 0)) {
             this.categoriesService.findAll().subscribe(cats => {
-                this.categories = cats;
+                this.localCategories = cats;
+                this.allCategories = [...this.localCategories];
                 if (targetType === 'DESPESA') {
                     this.suppliersService.findAll().subscribe(sups => {
-                        this.suppliers = sups;
+                        this.localSuppliers = sups;
                         this.costCentersService.findAll().subscribe(ccs => {
-                            this.costCenters = ccs;
+                            this.localCostCenters = ccs;
                             processData();
                         });
                     });
                 } else {
                     this.clientsService.findAll().subscribe(clients => {
-                        this.clients = clients;
+                        this.localClients = clients;
                         this.costCentersService.findAll().subscribe(ccs => {
-                            this.costCenters = ccs;
+                            this.localCostCenters = ccs;
                             processData();
                         });
                     });
@@ -237,11 +261,11 @@ export class ReconciliationDetailComponent implements OnInit {
     filterCategoriesByClassification() {
         const currentClassification = this.form.classificacao; // RECEITA or DESPESA
         const targetType = currentClassification === 'RECEITA' ? 'RECEITA' : 'DESPESA';
-        this.categories = (this.allCategories || []).filter(c => c && c.tipo === targetType);
+        this.filteredCategories = (this.allCategories || []).filter(c => c && c.tipo === targetType);
         
         // If the currently selected category doesn't belong to the new list, clear it
         if (this.form.categoriaId) {
-            const exists = (this.categories || []).some(c => c && c.id === this.form.categoriaId);
+            const exists = (this.filteredCategories || []).some(c => c && c.id === this.form.categoriaId);
             if (!exists) {
                 this.form.categoriaId = '';
             }
@@ -486,7 +510,7 @@ export class ReconciliationDetailComponent implements OnInit {
             title = 'Selecione a Categoria';
             createLabel = 'Nova Categoria';
             selectedId = this.form.categoriaId;
-            items = (this.categories || []).map(c => ({ id: c?.id || '', label: c?.nome || '' }));
+            items = (this.filteredCategories || []).map(c => ({ id: c?.id || '', label: c?.nome || '' }));
         } else if (type === 'ENTITY') {
             // Supplier or Client
             const isCredit = this.statement?.tipo === 'CREDIT';
@@ -495,15 +519,15 @@ export class ReconciliationDetailComponent implements OnInit {
             selectedId = this.form.fornecedorId;
 
             if (isCredit) {
-                items = (this.clients || []).map(c => ({ id: c?.id || '', label: c?.nomeFantasia || c?.razaoSocial || '', subLabel: c?.cnpj || c?.cpf || '' }));
+                items = (this.localClients || []).map(c => ({ id: c?.id || '', label: c?.nomeFantasia || c?.razaoSocial || '', subLabel: c?.cnpj || c?.cpf || '' }));
             } else {
-                items = (this.suppliers || []).map(s => ({ id: s?.id || '', label: s?.nomeFantasia || '', subLabel: s?.cnpj || '' }));
+                items = (this.localSuppliers || []).map(s => ({ id: s?.id || '', label: s?.nomeFantasia || '', subLabel: s?.cnpj || '' }));
             }
         } else if (type === 'COST_CENTER') {
             title = 'Selecione o Centro de Custo';
             createLabel = 'Novo Centro de Custo';
             selectedId = this.form.centroCustoId;
-            items = (this.costCenters || []).map(cc => ({ id: cc?.id || '', label: cc?.nome || '' }));
+            items = (this.localCostCenters || []).map(cc => ({ id: cc?.id || '', label: cc?.nome || '' }));
         }
 
         const modal = await this.modalCtrl.create({
@@ -543,27 +567,27 @@ export class ReconciliationDetailComponent implements OnInit {
     // --- Helpers for Display ---
 
     getCategoryName(): string {
-        if (!this.categories) return '';
-        const c = this.categories.find(x => x && x.id === this.form.categoriaId);
+        if (!this.localCategories) return '';
+        const c = this.localCategories.find(x => x && x.id === this.form.categoriaId);
         return c ? c.nome : '';
     }
 
     getEntityName(): string {
         const isCredit = this.statement?.tipo === 'CREDIT';
         if (isCredit) {
-            if (!this.clients) return '';
-            const c = this.clients.find(x => x && x.id === this.form.fornecedorId);
+            if (!this.localClients) return '';
+            const c = this.localClients.find(x => x && x.id === this.form.fornecedorId);
             return c ? (c.nomeFantasia || c.razaoSocial) : '';
         } else {
-            if (!this.suppliers) return '';
-            const s = this.suppliers.find(x => x && x.id === this.form.fornecedorId);
+            if (!this.localSuppliers) return '';
+            const s = this.localSuppliers.find(x => x && x.id === this.form.fornecedorId);
             return s ? s.nomeFantasia : '';
         }
     }
 
     getCostCenterName(): string {
-        if (!this.costCenters) return '';
-        const c = this.costCenters.find(x => x && x.id === this.form.centroCustoId);
+        if (!this.localCostCenters) return '';
+        const c = this.localCostCenters.find(x => x && x.id === this.form.centroCustoId);
         return c ? c.nome : '';
     }
 
@@ -588,16 +612,18 @@ export class ReconciliationDetailComponent implements OnInit {
         if (data) {
             // New item created!
             if (type === 'CATEGORY') {
-                this.categories.push(data);
+                this.localCategories.push(data);
+                this.allCategories = [...this.localCategories];
+                this.filterCategoriesByClassification();
                 this.form.categoriaId = data.id;
             } else if (type === 'SUPPLIER') {
-                this.suppliers.push(data);
+                this.localSuppliers.push(data);
                 this.form.fornecedorId = data.id;
             } else if (type === 'CLIENT') {
-                this.clients.push(data);
+                this.localClients.push(data);
                 this.form.fornecedorId = data.id;
             } else if (type === 'COST_CENTER') {
-                this.costCenters.push(data);
+                this.localCostCenters.push(data);
                 this.form.centroCustoId = data.id;
             }
         }

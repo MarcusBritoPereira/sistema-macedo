@@ -1,9 +1,0 @@
-import { DreService } from './dre.service';
-import { GerarDreDto } from './dto/gerar-dre.dto';
-import { DREDetalhesDto } from './dto/dre-detalhes.dto';
-export declare class DreController {
-    private readonly dreService;
-    constructor(dreService: DreService);
-    gerar(dto: GerarDreDto): Promise<any>;
-    obterDetalhes(dto: DREDetalhesDto): Promise<any>;
-}

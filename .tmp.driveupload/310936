@@ -1,1 +1,0 @@
-import{c as s,d as i}from"./chunk-XC2POY23.js";function u(e,r,n){let t=i(e,n?.in);if(isNaN(r))return s(n?.in||e,NaN);if(!r)return t;let f=t.getDate(),o=s(n?.in||e,t.getTime());o.setMonth(t.getMonth()+r+1,0);let a=o.getDate();return f>=a?o:(t.setFullYear(o.getFullYear(),o.getMonth(),f),t)}function l(e,r,n){return u(e,-r,n)}export{u as a,l as b};

@@ -1,0 +1,206 @@
+<ion-header>
+    <ion-toolbar class="top-toolbar">
+        <div class="header-content">
+            <div class="left-actions">
+                <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
+                    <ion-back-button defaultHref="/financial/dashboard" text=""></ion-back-button>
+                </ion-buttons>
+                <div style="display: inline-block; vertical-align: middle; margin-left: 8px;">
+                    <h1 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Integração Bancária</h1>
+                    <p style="margin: 0; font-size: 0.8rem; color: #666;">Configure as contas sincronizadas</p>
+                </div>
+            </div>
+        </div>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="light-bg">
+    <div class="container" style="max-width: 800px; margin: 0 auto; padding: 24px 16px;">
+        <!-- Bank Accounts Table -->
+        <h2 style="font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 12px; padding-left: 8px;">Contas
+            Vinculadas</h2>
+
+        <div class="data-table-container" style="margin: 0 0 24px 0;">
+            <div class="table-header">
+                <div class="col-bank">Banco</div>
+                <div class="col-status">Status</div>
+                <div class="col-actions"></div>
+            </div>
+
+            <div class="table-body">
+                <div class="table-row" *ngFor="let acc of bankAccounts"
+                    [class.active-row]="selectedAccountId === acc.id" (click)="selectAccount(acc)"
+                    style="cursor: pointer;">
+                    <div class="col-bank desc-main">
+                        {{ acc.nome }}
+                        <span class="desc-sub">{{ acc.banco }}</span>
+                    </div>
+
+                    <div class="col-status">
+                        <span class="status-badge"
+                            [ngClass]="acc.integracao?.status === 'CONNECTED' ? 'good' : (acc.integracao?.status === 'ERROR' ? 'risk' : 'attention')">
+                            {{ acc.integracao?.status === 'CONNECTED' ? 'CONECTADO' : (acc.integracao?.status ===
+                            'ERROR' ? 'ERRO' : 'DESCONECTADO') }}
+                        </span>
+                    </div>
+
+                    <div class="col-actions">
+                        <ion-button fill="clear" color="danger" (click)="deleteAccount($event, acc)">
+                            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                        </ion-button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <ion-button expand="block" fill="outline"
+            style="--border-style: dashed; --border-color: #ccc; --color: #333; margin-bottom: 32px; text-transform: none; --border-radius: 8px;"
+            (click)="clearSelection()">
+            <ion-icon name="add-circle-outline" slot="start"></ion-icon>
+            Adicionar Nova Conexão
+        </ion-button>
+
+        <div style="width: 100%; height: 1px; background: #eee; margin-bottom: 32px;" *ngIf="showForm"></div>
+
+        <!-- Status Block (Only if selected) -->
+        <div class="status-card" *ngIf="selectedAccountId"
+            [ngClass]="{'status-connected': status.status === 'CONNECTED', 'status-error': status.status === 'ERROR'}"
+            style="background: white; padding: 16px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 24px; display: flex; align-items: center; gap: 16px;">
+
+            <div class="status-icon" style="font-size: 32px;">
+                <ion-icon [name]="status.status === 'CONNECTED' ? 'checkmark-circle' : 'alert-circle'"
+                    [color]="status.status === 'CONNECTED' ? 'success' : 'danger'"></ion-icon>
+            </div>
+            <div class="status-info" style="flex: 1;">
+                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: #333;">
+                    {{ status.status === 'CONNECTED' ? 'Conectado com Sucesso' : 'Não Conectado / Erro' }}
+                </h3>
+                <p style="margin: 4px 0 0; font-size: 0.85rem; color: #666;" *ngIf="status.status === 'CONNECTED'">Banco
+                    integrado.</p>
+                <p style="margin: 4px 0 0; font-size: 0.85rem; color: #666;" *ngIf="status.status !== 'CONNECTED'">
+                    Verifique as credenciais.</p>
+            </div>
+            <!-- Sync Button if connected -->
+            <div class="actions" *ngIf="status.status === 'CONNECTED'">
+                <ion-button color="primary" fill="outline" style="text-transform: none; --border-radius: 4px;"
+                    (click)="executeSync()" [disabled]="syncing">
+                    <ion-icon slot="start" name="refresh-outline"></ion-icon>
+                    {{ syncing ? 'Sincronizando...' : 'Sincronizar' }}
+                </ion-button>
+            </div>
+        </div>
+
+        <form [formGroup]="integrationForm" (ngSubmit)="onConnect()" *ngIf="showForm">
+
+            <!-- Block 1: Bank Info -->
+            <div class="form-block">
+                <h2 class="block-title">1. Informações do Banco</h2>
+                <p class="block-desc">Selecione a instituição financeira que deseja conectar.</p>
+
+                <div class="input-group">
+                    <label>Banco</label>
+                    <input formControlName="banco" type="text" class="clean-input"
+                        placeholder="Digite o nome do banco (Ex: Banco Inter)" />
+                </div>
+
+                <div class="input-row">
+                    <div class="input-group flex-1">
+                        <label>Agência</label>
+                        <input formControlName="agencia" type="text" class="clean-input" placeholder="Ex: 0001" />
+                    </div>
+                    <div class="input-group flex-2">
+                        <label>Conta Corrente</label>
+                        <input formControlName="conta" type="text" class="clean-input" placeholder="Ex: 123456-7" />
+                    </div>
+                    <div class="input-group flex-1">
+                        <label>Código Banco</label>
+                        <input formControlName="codigoBanco" type="text" class="clean-input" placeholder="Ex: 077" />
+                    </div>
+                </div>
+
+                <div class="info-alert">
+                    <ion-icon name="information-circle-outline"></ion-icon>
+                    Você precisa das credenciais de API (Client ID, Secret) para completar.
+                </div>
+            </div>
+
+            <!-- Block 2: API Credentials -->
+            <div class="form-block">
+                <h2 class="block-title">2. Credenciais de API</h2>
+                <p class="block-desc">Insira as chaves fornecidas pelo Internet Banking.</p>
+
+                <div class="input-group">
+                    <label>Client ID <span style="color: #ef4444">*</span></label>
+                    <input formControlName="clientId" type="text" class="clean-input"
+                        placeholder="Insira o Client ID" />
+                    <span class="input-helper">Identificador único da aplicação.</span>
+                </div>
+
+                <div class="input-group">
+                    <label>Client Secret <span style="color: #ef4444">*</span></label>
+                    <input formControlName="clientSecret" type="password" class="clean-input"
+                        placeholder="Insira o Client Secret" />
+                    <span class="input-helper">Chave secreta para autenticação.</span>
+                </div>
+            </div>
+
+            <!-- Block 3: Certificates -->
+            <div class="form-block">
+                <h2 class="block-title">3. Certificado Digital</h2>
+                <p class="block-desc">Faça o upload do certificado e chave para segurança.</p>
+
+                <div class="input-row" style="gap: 16px;">
+                    <div class="input-group flex-1">
+                        <label>Certificado (.crt)</label>
+                        <input type="file" id="certInput" hidden (change)="onFileSelected($event, 'certificate')"
+                            accept=".crt">
+                        <ion-button fill="outline" expand="block" color="medium"
+                            style="text-transform: none; --border-radius: 4px;" (click)="triggerFileInput('certInput')">
+                            <ion-icon name="document-attach-outline" slot="start"></ion-icon>
+                            {{ certificateFileName || 'Arquivo .crt' }}
+                        </ion-button>
+                    </div>
+
+                    <div class="input-group flex-1">
+                        <label>Chave Privada (.key)</label>
+                        <input type="file" id="keyInput" hidden (change)="onFileSelected($event, 'privateKey')"
+                            accept=".key">
+                        <ion-button fill="outline" expand="block" color="medium"
+                            style="text-transform: none; --border-radius: 4px;" (click)="triggerFileInput('keyInput')">
+                            <ion-icon name="key-outline" slot="start"></ion-icon>
+                            {{ privateKeyFileName || 'Arquivo .key' }}
+                        </ion-button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Block 4: Início da Integração -->
+            <div class="form-block">
+                <h2 class="block-title">4. Início da Integração Automática</h2>
+                <p class="block-desc">Defina a data a partir da qual o sistema deve buscar movimentações automaticamente.</p>
+
+                <div class="input-group">
+                    <label>Data de Início da Automação</label>
+                    <input formControlName="dataInicioAutomacao" type="date" class="clean-input" />
+                    <span class="input-helper">Deixe em branco para importar os últimos 60 dias por padrão.</span>
+                </div>
+            </div>
+
+            <!-- Botão de Ação -->
+            <div style="margin-top: 32px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center;">
+              <div style="display: flex; gap: 12px; width: 100%; max-width: 400px; justify-content: center;">
+                <ion-button fill="outline" color="medium" style="--border-radius: 8px; text-transform: none; font-weight: 600; flex: 1; margin: 0;" (click)="hideForm()">
+                  Cancelar
+                </ion-button>
+                <ion-button type="submit" color="primary" class="add-btn"
+                    style="--border-radius: 8px; text-transform: none; font-weight: 600; flex: 1; margin: 0;"
+                    [disabled]="integrationForm.invalid || loadingStatus">
+                    {{ loadingStatus ? 'Processando...' : (selectedAccountId ? 'Atualizar Conexão' : 'Conectar ao Banco') }}
+                </ion-button>
+              </div>
+              <p style="font-size: 0.85rem; color: #666; margin-top: 12px;">Após a configuração, a sincronização será automática.</p>
+            </div>
+
+        </form>
+    </div>
+</ion-content>

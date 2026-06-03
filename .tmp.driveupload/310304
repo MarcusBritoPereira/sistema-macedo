@@ -1,0 +1,99 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BankingIntegrationController = void 0;
+const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
+const passport_1 = require("@nestjs/passport");
+const banking_integration_service_1 = require("./banking-integration.service");
+const configure_banking_dto_1 = require("./dto/configure-banking.dto");
+const permissions_guard_1 = require("../../auth/permissions.guard");
+const permissions_decorator_1 = require("../../auth/permissions.decorator");
+let BankingIntegrationController = class BankingIntegrationController {
+    service;
+    constructor(service) {
+        this.service = service;
+    }
+    uploadOfx(file, contaId) {
+        return this.service.importOfx(file.buffer, contaId);
+    }
+    uploadCsv(file, contaId) {
+        return this.service.importCsv(file.buffer, contaId);
+    }
+    configure(dto, files) {
+        return this.service.configure(dto, files);
+    }
+    getStatus(contaId) {
+        return this.service.getStatus(contaId);
+    }
+    sync(contaId) {
+        return this.service.syncStatements(contaId);
+    }
+};
+exports.BankingIntegrationController = BankingIntegrationController;
+__decorate([
+    (0, common_1.Post)('upload-ofx'),
+    (0, permissions_decorator_1.RequirePermissions)('can_reconcile'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Body)('contaId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], BankingIntegrationController.prototype, "uploadOfx", null);
+__decorate([
+    (0, common_1.Post)('upload-csv'),
+    (0, permissions_decorator_1.RequirePermissions)('can_reconcile'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, common_1.Body)('contaId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], BankingIntegrationController.prototype, "uploadCsv", null);
+__decorate([
+    (0, common_1.Post)('configure'),
+    (0, permissions_decorator_1.RequirePermissions)('can_manage_banking'),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileFieldsInterceptor)([
+        { name: 'certificate', maxCount: 1 },
+        { name: 'privateKey', maxCount: 1 },
+    ])),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [configure_banking_dto_1.ConfigureBankingDto, Object]),
+    __metadata("design:returntype", void 0)
+], BankingIntegrationController.prototype, "configure", null);
+__decorate([
+    (0, common_1.Get)('status/:contaId'),
+    (0, permissions_decorator_1.RequirePermissions)('can_manage_banking'),
+    __param(0, (0, common_1.Param)('contaId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], BankingIntegrationController.prototype, "getStatus", null);
+__decorate([
+    (0, common_1.Post)('sync/:contaId'),
+    (0, permissions_decorator_1.RequirePermissions)('can_manage_banking'),
+    __param(0, (0, common_1.Param)('contaId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], BankingIntegrationController.prototype, "sync", null);
+exports.BankingIntegrationController = BankingIntegrationController = __decorate([
+    (0, common_1.Controller)('financial/banking'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), permissions_guard_1.PermissionsGuard),
+    __metadata("design:paramtypes", [banking_integration_service_1.BankingIntegrationService])
+], BankingIntegrationController);
+//# sourceMappingURL=banking-integration.controller.js.map

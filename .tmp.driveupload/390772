@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Sistema Macedo</title>
+
+  <base href="/" />
+
+  <meta name="description" content="Sistema Macedo - O Sistema de Gestão Financeira inteligente e integrado." />
+
+  <!-- Open Graph / Social Tags -->
+  <meta property="og:title" content="Sistema Macedo - Gestão Inteligente" />
+  <meta property="og:description"
+    content="Controle seu fluxo de caixa, emita extratos e gerencie suas categorias com facilidade." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://sistemamacedo.cloud" />
+
+  <meta name="color-scheme" content="light dark" />
+  <meta name="viewport"
+    content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="format-detection" content="telephone=no" />
+  <meta name="msapplication-tap-highlight" content="no" />
+
+  <link rel="icon" type="image/png" href="assets/icon/favicon.png" />
+
+  <!-- add to homescreen for ios -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+</head>
+
+<body>
+  <app-root></app-root>
+</body>
+
+</html>

@@ -1,0 +1,341 @@
+@import "../../../theme/variables.scss";
+
+// Reusing design system from statements
+$border-color: #E2E8F0;
+$text-dark: #1E293B;
+$text-muted: #64748B;
+$primary-blue: #0082FF;
+$bg-light: #F8FAFC;
+
+:host {
+    display: block;
+    --background: #FFFFFF;
+}
+
+ion-toolbar {
+    --padding-top: 8px;
+    --padding-bottom: 8px;
+    --padding-start: 16px;
+    --padding-end: 24px;
+}
+
+ion-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: $text-dark;
+}
+
+.new-btn {
+    --border-radius: 8px;
+    font-weight: 600;
+    height: 36px;
+    --background: var(--ion-color-primary);
+    text-transform: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+// Filter Bar
+.filter-bar {
+    display: flex;
+    gap: 24px;
+    padding: 16px 24px;
+    border-bottom: 1px solid $border-color;
+    background: white;
+
+    .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+
+        .filter-label {
+            font-size: 13px;
+            font-weight: 600;
+            color: $text-muted;
+        }
+    }
+
+    .search-group {
+        flex: 1;
+        max-width: 400px;
+    }
+}
+
+.period-selector {
+    display: flex;
+    align-items: center;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    height: 36px;
+    overflow: hidden;
+    width: 220px;
+
+    ion-select {
+        --padding-start: 12px;
+        --padding-end: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        min-height: 36px;
+        flex: 1;
+    }
+}
+
+.search-box {
+    position: relative;
+    display: flex;
+    align-items: center;
+    border: 1px solid #CBD5E1;
+    border-radius: 8px;
+    height: 36px;
+    padding: 0 12px;
+
+    ion-input {
+        --padding-start: 0;
+        font-size: 13px;
+    }
+
+    ion-icon {
+        color: $text-muted;
+        font-size: 18px;
+    }
+}
+
+// Table Style
+.table-responsive {
+    padding: 24px;
+    overflow-x: auto;
+}
+
+.statement-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    color: $text-dark;
+
+    thead th {
+        background: #F8FAFC;
+        padding: 12px 16px;
+        text-align: left;
+        font-weight: 600;
+        color: $text-muted;
+        border-bottom: 2px solid $border-color;
+        white-space: nowrap;
+
+        ion-icon {
+            font-size: 14px;
+            vertical-align: middle;
+            margin-left: 4px;
+        }
+
+        &.text-right {
+            text-align: right;
+        }
+    }
+
+    tbody tr {
+        border-bottom: 1px solid $border-color;
+
+        &:hover {
+            background-color: #F1F5F9;
+        }
+    }
+
+    td {
+        padding: 14px 16px;
+        vertical-align: middle;
+
+        &.text-right {
+            text-align: right;
+        }
+    }
+
+    .date-cell {
+        color: $text-muted;
+        white-space: nowrap;
+        width: 180px;
+    }
+
+    .user-cell {
+        font-weight: 500;
+        width: 150px;
+    }
+
+    .action-cell {
+        font-weight: 500;
+    }
+
+    .value-cell {
+        font-weight: 600;
+        width: 150px;
+
+        &.empty {
+            color: #CBD5E1;
+            font-weight: 400;
+        }
+    }
+}
+
+// Pagination Footer
+.table-footer {
+    background: white;
+    border-top: 1px solid $border-color;
+    padding: 16px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+
+    .pagination-container {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        gap: 16px;
+    }
+
+    .limit-selector {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: $text-muted;
+
+        ion-select {
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            height: 32px;
+            --padding-start: 8px;
+            --padding-end: 4px;
+            min-height: 32px;
+            font-weight: 600;
+        }
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+
+        ion-button {
+            --padding-start: 12px;
+            --padding-end: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            margin: 0;
+            --color: #64748B;
+        }
+
+        .page-numbers {
+            display: flex;
+            gap: 4px;
+
+            ion-button {
+                --padding-start: 8px;
+                --padding-end: 8px;
+                min-width: 32px;
+                height: 32px;
+                --border-radius: 6px;
+            }
+        }
+    }
+
+    .goto-page {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: $text-muted;
+
+        ion-input {
+            border: 1px solid #CBD5E1;
+            border-radius: 6px;
+            width: 45px;
+            height: 32px;
+            --padding-start: 4px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        ion-button {
+            height: 32px;
+            --border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 0;
+        }
+    }
+
+    .results-info {
+        font-size: 12px;
+        color: $text-muted;
+        font-weight: 500;
+    }
+}
+
+// New Transaction Popover
+.new-transaction-list {
+    --ion-safe-area-top: 0px;
+    --ion-safe-area-bottom: 0px;
+    padding: 8px 0;
+    min-width: 220px;
+
+    ion-item {
+        --background: white;
+        --color: #334155;
+        --padding-start: 16px;
+        --padding-end: 16px;
+        --inner-padding-end: 0;
+        --min-height: 48px;
+        font-size: 14px;
+        font-weight: 500;
+        cursor: pointer;
+
+        &:hover {
+            --background: #F1F5F9;
+        }
+
+        ion-label {
+            margin: 0;
+        }
+    }
+}
+
+.shortcut-badge {
+    background: #F8FAFC;
+    color: #64748B;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid #E2E8F0;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    text-transform: uppercase;
+    font-family: monospace;
+}
+
+.loading-row {
+    padding: 40px !important;
+    text-align: center;
+    color: $text-muted;
+
+    ion-spinner {
+        margin-bottom: 8px;
+    }
+}
+
+.empty-state-row {
+    padding: 60px !important;
+    text-align: center;
+    color: $text-muted;
+
+    .empty-msg {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+
+        ion-icon {
+            font-size: 48px;
+            opacity: 0.3;
+        }
+    }
+}

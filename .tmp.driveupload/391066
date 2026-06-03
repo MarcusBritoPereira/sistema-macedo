@@ -1,0 +1,53 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Alteração Obrigatória de Senha</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="header-info">
+    <p>Por questões de segurança, você precisa alterar sua senha padrão no primeiro acesso.</p>
+  </div>
+
+  <form [formGroup]="passwordForm" (ngSubmit)="onSubmit()">
+    
+    <ion-item>
+      <ion-label position="stacked">Nova Senha</ion-label>
+      <ion-input type="password" formControlName="novaSenha" placeholder="Digite sua nova senha"></ion-input>
+      <ion-note slot="error" *ngIf="passwordForm.get('novaSenha')?.touched && passwordForm.get('novaSenha')?.hasError('required')">A nova senha é obrigatória.</ion-note>
+      <ion-note slot="error" *ngIf="passwordForm.get('novaSenha')?.touched && passwordForm.get('novaSenha')?.hasError('minlength')">A senha deve ter pelo menos 6 caracteres.</ion-note>
+    </ion-item>
+
+    <ion-item>
+      <ion-label position="stacked">Confirmar Nova Senha</ion-label>
+      <ion-input type="password" formControlName="confirmarSenha" placeholder="Confirme a nova senha"></ion-input>
+      <ion-note slot="error" *ngIf="passwordForm.get('confirmarSenha')?.touched && passwordForm.hasError('mismatch')">As senhas não conferem.</ion-note>
+    </ion-item>
+
+    <ion-text color="danger" *ngIf="errorMessage" class="ion-text-center">
+      <p>{{ errorMessage }}</p>
+    </ion-text>
+
+    <div class="actions">
+      <ion-button type="button" fill="clear" color="medium" (click)="cancel()">Cancelar e Sair</ion-button>
+      <ion-button type="submit" [disabled]="!passwordForm.valid || isSubmitting">
+        <ion-spinner *ngIf="isSubmitting" name="crescent"></ion-spinner>
+        <span *ngIf="!isSubmitting">Salvar e Entrar</span>
+      </ion-button>
+    </div>
+
+  </form>
+</ion-content>
+
+<style>
+  .header-info {
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: var(--ion-color-medium);
+  }
+  .actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 30px;
+  }
+</style>

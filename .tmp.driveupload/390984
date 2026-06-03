@@ -1,0 +1,338 @@
+<div class="detail-container">
+
+    <!-- RECONCILED VIEW -->
+    <div class="reconciled-view" *ngIf="statement.conciliado">
+        <div class="r-header">
+            <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
+            <h3>Lançamento Conciliado</h3>
+        </div>
+
+        <div class="r-info" *ngIf="statement.conciliacoes && statement.conciliacoes[0]?.lancamentoFinanceiro as linked">
+            <div class="info-row">
+                <label>Descrição</label>
+                <span>{{ linked.descricao }}</span>
+            </div>
+            <div class="info-row">
+                <label>Data Vencimento</label>
+                <span>{{ formatDate(linked.dataVencimento) }}</span>
+            </div>
+            <div class="info-row">
+                <label>Valor</label>
+                <span [class.credit]="linked.tipo === 'RECEITA'" [class.debit]="linked.tipo === 'DESPESA'">
+                    {{ linked.valor | currency:'BRL' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <ion-button fill="clear" color="medium" (click)="cancel()">Fechar</ion-button>
+            <ion-button color="danger" fill="outline" (click)="unreconcile()" [disabled]="loadingAction">
+                <ion-spinner *ngIf="loadingAction" name="crescent"></ion-spinner>
+                <span *ngIf="!loadingAction">Desconciliar Lançamento</span>
+            </ion-button>
+        </div>
+    </div>
+
+    <!-- UNRECONCILED VIEW -->
+    <ng-container *ngIf="!statement.conciliado">
+        <!-- Header / Tabs -->
+        <div class="detail-header">
+            <div class="tabs">
+                <div class="tab" [class.active]="activeTab === 'NEW'" (click)="activeTab = 'NEW'">
+                    Novo {{ statement.tipo === 'CREDIT' ? 'Recebimento' : 'Pagamento' }}
+                </div>
+                <div class="tab" [class.active]="activeTab === 'TRANSFER'" (click)="activeTab = 'TRANSFER'">
+                    Transferência
+                </div>
+            </div>
+            <div class="actions">
+                <div class="search-toggle" (click)="toggleMode()">
+                    <ion-icon name="search-outline"></ion-icon>
+                    {{ mode === 'FORM' ? 'Buscar existente' : 'Novo lançamento' }}
+                </div>
+            </div>
+        </div>
+
+        <div class="detail-body">
+
+            <!-- FORM VIEW -->
+            <div class="form-view" *ngIf="mode === 'FORM'">
+                <div class="form-container">
+                    
+                    <!-- NEW LAUNCH FIELDS -->
+                    <ng-container *ngIf="activeTab === 'NEW'">
+                        <div class="premium-form-grid">
+                            
+                            <!-- LEFT COLUMN: IDENTIFICAÇÃO E CLASSIFICAÇÕES -->
+                            <div class="form-column">
+                                <h3 class="column-title">Dados de Identificação</h3>
+
+                                <!-- Descrição (Textarea) -->
+                                <div class="premium-field-wrapper">
+                                    <label class="premium-label">Descrição *</label>
+                                    <textarea [(ngModel)]="form.descricao" class="premium-textarea" [placeholder]="statement.tipo === 'CREDIT' ? 'Descrição do recebimento' : 'Descrição do pagamento'" maxlength="500"></textarea>
+                                    <div class="char-counter">{{ form.descricao?.length || 0 }} / 500 caracteres</div>
+                                </div>
+
+                                <!-- Fornecedor / Cliente -->
+                                <div class="premium-field-wrapper clickable" (click)="openSelection('ENTITY')">
+                                    <label class="premium-label">{{ statement.tipo === 'CREDIT' ? 'Cliente' : 'Fornecedor' }}</label>
+                                    <div class="premium-input-container">
+                                        <input type="text" [value]="getEntityName() || 'Selecione'" readonly class="premium-input read-only" placeholder="Selecione">
+                                        <ion-icon name="chevron-down-outline" class="input-icon"></ion-icon>
+                                    </div>
+                                </div>
+
+                                <!-- Obra Destino (Condicional) -->
+                                <div class="premium-field-wrapper" *ngIf="form.tipoLancamento === 'OBRA' || form.tipoLancamento === 'POS_OBRA'">
+                                    <label class="premium-label">Obra Destino *</label>
+                                    <div class="premium-input-container">
+                                        <select [(ngModel)]="form.obraId" class="premium-select">
+                                            <option value="" disabled selected>Selecione a Obra</option>
+                                            <option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</option>
+                                        </select>
+                                        <ion-icon name="chevron-down-outline" class="input-icon select-arrow"></ion-icon>
+                                    </div>
+                                </div>
+
+                                <!-- Centro de Custo -->
+                                <div class="premium-field-wrapper clickable" (click)="openSelection('COST_CENTER')">
+                                    <label class="premium-label">Centro de Custo *</label>
+                                    <div class="premium-input-container">
+                                        <input type="text" [value]="getCostCenterName() || 'Selecione'" readonly class="premium-input read-only" placeholder="Selecione">
+                                        <ion-icon name="chevron-down-outline" class="input-icon"></ion-icon>
+                                    </div>
+                                </div>
+
+                                <!-- Classificações Adicionais (Insumo) -->
+                                <div class="premium-field-wrapper">
+                                    <label class="premium-label">Classificações Adicionais (Insumo)</label>
+                                    <input type="text" [(ngModel)]="form.categoriaCusto" class="premium-input" placeholder="Ex: Cimento, Pedreiro, ISS">
+                                </div>
+                            </div>
+
+                            <!-- RIGHT COLUMN: PARÂMETROS FINANCEIROS -->
+                            <div class="form-column">
+                                <h3 class="column-title">Valores e Parâmetros</h3>
+
+                                <!-- Data de Competência -->
+                                <div class="premium-field-wrapper">
+                                    <label class="premium-label">Data de Competência *</label>
+                                    <div class="premium-input-container">
+                                        <input type="date" [(ngModel)]="form.dataCompetencia" class="premium-input date-input">
+                                        <ion-icon name="calendar-outline" class="input-icon calendar-icon"></ion-icon>
+                                    </div>
+                                </div>
+
+                                <!-- Classificação -->
+                                <div class="premium-field-wrapper">
+                                    <label class="premium-label">Classificação *</label>
+                                    <div class="premium-input-container">
+                                        <select [(ngModel)]="form.classificacao" (change)="onClassificationChange()" class="premium-select">
+                                            <option value="RECEITA">Receita</option>
+                                            <option value="DESPESA">Despesa</option>
+                                            <option value="INVESTIMENTO">Investimento</option>
+                                            <option value="OUTRO">Outro</option>
+                                        </select>
+                                        <ion-icon name="chevron-down-outline" class="input-icon select-arrow"></ion-icon>
+                                    </div>
+                                </div>
+
+                                <!-- Categoria -->
+                                <div class="premium-field-wrapper clickable" (click)="openSelection('CATEGORY')">
+                                    <label class="premium-label">Categoria *</label>
+                                    <div class="premium-input-container">
+                                        <input type="text" [value]="getCategoryName() || 'Selecione a Categoria'" readonly class="premium-input read-only" placeholder="Selecione">
+                                        <ion-icon name="chevron-down-outline" class="input-icon"></ion-icon>
+                                    </div>
+                                </div>
+
+                                <!-- Tipo de Lançamento -->
+                                <div class="premium-field-wrapper">
+                                    <label class="premium-label">Tipo de Lançamento *</label>
+                                    <div class="premium-input-container">
+                                        <select [(ngModel)]="form.tipoLancamento" class="premium-select">
+                                            <option value="OBRA">De Obras</option>
+                                            <option value="POS_OBRA">Pós-obra</option>
+                                            <option value="ADMINISTRATIVO">Administrativo</option>
+                                            <option value="ESCRITORIO">Escritório</option>
+                                        </select>
+                                        <ion-icon name="chevron-down-outline" class="input-icon select-arrow"></ion-icon>
+                                    </div>
+                                </div>
+
+                                <!-- Tipo de Custo -->
+                                <div class="premium-field-wrapper">
+                                    <label class="premium-label">Tipo de Custo</label>
+                                    <div class="premium-input-container">
+                                        <select [(ngModel)]="form.tipoCusto" class="premium-select">
+                                            <option value="" disabled selected>Selecione</option>
+                                            <option value="MATERIAL">Material</option>
+                                            <option value="MAO_DE_OBRA">Mão de Obra</option>
+                                            <option value="SERVICO">Serviço</option>
+                                            <option value="EQUIPAMENTO">Equipamento</option>
+                                            <option value="OUTROS">Outros</option>
+                                        </select>
+                                        <ion-icon name="chevron-down-outline" class="input-icon select-arrow"></ion-icon>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+                    </ng-container>
+
+                    <!-- TRANSFER FIELDS -->
+                    <ng-container *ngIf="activeTab === 'TRANSFER'">
+                        <div class="premium-form-grid">
+                            
+                            <!-- LEFT COLUMN: COMPETÊNCIA -->
+                            <div class="form-column">
+                                <h3 class="column-title">Dados da Transferência</h3>
+                                <div class="premium-field-wrapper">
+                                    <label class="premium-label">Data de Competência *</label>
+                                    <div class="premium-input-container">
+                                        <input type="date" [(ngModel)]="form.dataCompetencia" class="premium-input date-input">
+                                        <ion-icon name="calendar-outline" class="input-icon calendar-icon"></ion-icon>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- RIGHT COLUMN: CONTA DESTINO -->
+                            <div class="form-column">
+                                <h3 class="column-title">Destino</h3>
+                                <div class="premium-field-wrapper">
+                                    <label class="premium-label">Conta de Destino *</label>
+                                    <div class="premium-input-container">
+                                        <select [(ngModel)]="form.contaDestinoId" class="premium-select">
+                                            <option value="" disabled selected>Selecione a conta destino</option>
+                                            <option *ngFor="let acc of bankAccounts" [value]="acc.id">
+                                                {{ acc.nome }} - {{ acc.banco }}
+                                            </option>
+                                        </select>
+                                        <ion-icon name="chevron-down-outline" class="input-icon select-arrow"></ion-icon>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </ng-container>
+
+                </div>
+
+                <!-- ITEMS SECTION -->
+                <div class="items-section">
+                    <div class="section-header">
+                        <h4>Detalhamento de Itens e Quantidades</h4>
+                        <ion-button fill="outline" size="small" (click)="addItem()">
+                            <ion-icon name="add-outline" slot="start"></ion-icon>
+                            Adicionar Item
+                        </ion-button>
+                    </div>
+
+                    <!-- Empty state -->
+                    <div class="empty-items" *ngIf="!form.items || form.items.length === 0">
+                        Nenhum item detalhado. Clique em "Adicionar Item" se precisar discriminar itens e quantidades.
+                    </div>
+
+                    <!-- Items List -->
+                    <div class="items-list-wrapper" *ngIf="form.items && form.items.length > 0">
+                        <div class="items-header-row">
+                            <span class="col-desc">Descrição do Item</span>
+                            <span class="col-qty">Qtd</span>
+                            <span class="col-price">Valor Unitário</span>
+                            <span class="col-total">Subtotal</span>
+                            <span class="col-action"></span>
+                        </div>
+                        <div class="item-input-row" *ngFor="let item of form.items; let i = index">
+                            <div class="col-desc">
+                                <ion-input [(ngModel)]="item.descricao" placeholder="Ex: Areia grossa, Cimento..." class="item-input"></ion-input>
+                            </div>
+                            <div class="col-qty">
+                                <ion-input type="number" [(ngModel)]="item.quantidade" class="item-input"></ion-input>
+                            </div>
+                            <div class="col-price">
+                                <ion-input type="text"
+                                    [value]="item.valorUnitarioStr"
+                                    (ionInput)="onValorUnitarioInput($event, item)"
+                                    (ionBlur)="onValorUnitarioBlur($event, item)"
+                                    (ionFocus)="onValorUnitarioFocus($event, item)"
+                                    placeholder="0,00"
+                                    class="item-input">
+                                </ion-input>
+                            </div>
+                            <div class="col-total">
+                                <span>{{ (item.quantidade * item.valorUnitario) | currency:'BRL' }}</span>
+                            </div>
+                            <div class="col-action">
+                                <ion-button fill="clear" color="danger" size="small" (click)="removeItem(i)">
+                                    <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+                                </ion-button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Verification Status Bar -->
+                    <div class="validation-status-bar" *ngIf="form.items && form.items.length > 0"
+                        [class.matching]="isItemsTotalMatching()"
+                        [class.divergent]="!isItemsTotalMatching()">
+                        <div class="status-indicator">
+                            <ion-icon [name]="isItemsTotalMatching() ? 'checkmark-circle-outline' : 'warning-outline'"></ion-icon>
+                            <span>{{ isItemsTotalMatching() ? 'Valores Conciliados!' : 'Valores Divergentes' }}</span>
+                        </div>
+                        <div class="status-details">
+                            <div class="status-val-block">
+                                <label>Total Itens:</label>
+                                <strong>{{ getItemsTotal() | currency:'BRL' }}</strong>
+                            </div>
+                            <div class="status-val-block">
+                                <label>Total Extrato:</label>
+                                <strong>{{ form.valor | currency:'BRL' }}</strong>
+                            </div>
+                            <div class="status-val-block difference" *ngIf="!isItemsTotalMatching()">
+                                <label>Diferença:</label>
+                                <strong>{{ (form.valor - getItemsTotal()) | currency:'BRL' }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <ion-button fill="clear" color="medium" (click)="cancel()">Cancelar</ion-button>
+                    <ion-button class="confirm-btn" (click)="confirmCreation()" [disabled]="loadingAction || !isFormValid()">
+                        <ion-spinner *ngIf="loadingAction" name="crescent"></ion-spinner>
+                        <span *ngIf="!loadingAction">Conciliar Lançamento</span>
+                    </ion-button>
+                </div>
+            </div>
+
+            <!-- SEARCH VIEW (SUGGESTIONS) -->
+
+
+            <div class="suggestions-list" *ngIf="!loadingSuggestions">
+                <div *ngFor="let match of suggestions" class="suggestion-row" (click)="link(match)">
+                    <div class="s-info">
+                        <span class="s-date">{{ formatDate(match.dataVencimento) }}</span>
+                        <span class="s-desc">{{ match.descricao }}</span>
+                        <span class="s-cat" *ngIf="match.categoria">{{ match.categoria.nome }}</span>
+                    </div>
+                    <div class="s-val">
+                        {{ match.valor | currency:'BRL' }}
+                        <ion-chip color="success" outline="true" *ngIf="(match.confidence || 0) > 80">High
+                            Match</ion-chip>
+                    </div>
+                    <ion-button fill="clear" size="small">
+                        <ion-icon name="link-outline" slot="icon-only"></ion-icon>
+                    </ion-button>
+                </div>
+                <div class="no-results" *ngIf="suggestions.length === 0">
+                    Nenhuma sugestão encontrada para este valor e data.
+                </div>
+            </div>
+            <div class="form-actions">
+                <ion-button fill="clear" color="medium" (click)="cancel()">Cancelar</ion-button>
+            </div>
+        </div>
+
+
+    </ng-container>
+</div>

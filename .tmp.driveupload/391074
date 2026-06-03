@@ -1,0 +1,328 @@
+/* Side Menu Modernization */
+
+ion-menu {
+    --width: 280px;
+    transition: width 0.3s ease;
+}
+
+ion-content {
+    --background: var(--ion-color-secondary);
+    /* Black Sidebar */
+}
+
+.menu-header {
+    padding: 40px 20px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    transition: padding 0.3s ease;
+
+    .user-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        overflow: hidden;
+        margin-bottom: 15px;
+        border: 3px solid rgba(255, 255, 255, 0.2);
+        box-shadow: none !important;
+        transition: all 0.3s ease;
+
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    }
+
+    .user-info {
+        transition: opacity 0.2s ease;
+
+        h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.025em;
+        }
+
+        p {
+            margin: 4px 0 0 0;
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+        }
+    }
+}
+
+ion-list {
+    background: transparent;
+    padding: 0 10px;
+}
+
+/* Base Item Styles */
+ion-item {
+    --background: transparent;
+    --color: rgba(255, 255, 255, 0.8);
+    --padding-start: 16px;
+    --min-height: 48px;
+    margin-bottom: 4px;
+    border-radius: 0px; /* SHARP GEOMETRY: 0px instead of 12px (Avoid Safe Zone 4-8px) */
+    font-weight: 500;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Fluid Animation */
+
+    ion-icon {
+        font-size: 22px;
+        margin-right: 16px;
+        margin-left: 16px; /* BREATHING ROOM: Ensures space between icon and left edge of hover background */
+        color: inherit;
+        opacity: 0.8;
+        transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+    &.selected {
+        --background: rgba(255, 255, 255, 0.15);
+        --color: #ffffff;
+        font-weight: 600;
+        backdrop-filter: blur(10px);
+        border-left: 4px solid #ffffff; /* Sharp accent mark */
+
+        ion-icon {
+            opacity: 1;
+            margin-left: 12px; /* Compensate for the 4px border */
+            transform: scale(1.1); /* Active Animation */
+        }
+    }
+
+    /* Hover effect for top-level items only */
+    &:not(.selected):hover {
+        --background: rgba(255, 255, 255, 0.05);
+        transform: translateX(4px); /* Micro-interaction movement */
+        
+        ion-icon {
+            opacity: 1;
+        }
+    }
+}
+
+/* Accordion Specifics */
+ion-accordion-group {
+    margin-bottom: 4px;
+
+    ion-accordion {
+        background: transparent;
+
+        /* The header item */
+        ion-item[slot="header"] {
+            --background: transparent;
+            --color: rgba(255, 255, 255, 0.8);
+            border-radius: 0px;
+
+            &.accordion-expanded {
+                --background: rgba(255, 255, 255, 0.1);
+            }
+        }
+
+        /* The content container */
+        div[slot="content"] {
+            background: transparent;
+            padding-top: 4px;
+        }
+    }
+}
+
+/* Nested Items (Sub-menu) */
+.ion-padding-start {
+
+    /* Target items inside the accordion content */
+    ion-item {
+        --padding-start: 16px;
+        /* Reset padding for indentation control */
+        margin-left: 16px;
+        /* Indent the whole item */
+        font-size: 0.9rem;
+        --min-height: 40px;
+
+        ion-icon {
+            font-size: 18px;
+            margin-right: 12px;
+            margin-left: 12px; /* BREATHING ROOM for nested items */
+        }
+        
+        &.selected {
+            ion-icon {
+                margin-left: 8px; /* Compensate for the 4px border */
+            }
+        }
+    }
+}
+
+.logout-item {
+    margin-top: 20px;
+    --color: rgba(255, 100, 100, 0.9);
+
+    ion-icon {
+        color: inherit;
+    }
+}
+
+/* --- Footer Toggle --- */
+/* We target the container directly to ensure positioning */
+ion-footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    background: var(--ion-color-secondary);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+
+    &.menu-collapsed {
+        --width: 80px !important;
+        width: 80px !important;
+    }
+}
+
+.menu-footer {
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .toggle-btn {
+        --color: #ffffff;
+        margin: 0;
+        height: 44px;
+        width: 44px;
+        --padding-start: 0;
+        --padding-end: 0;
+
+        ion-icon {
+            font-size: 24px;
+        }
+    }
+}
+
+/* --- Collapsed State --- */
+ion-menu.menu-collapsed {
+    --width: 80px !important;
+
+    .menu-header {
+        padding: 40px 10px 20px 10px;
+        align-items: center;
+
+        .user-info {
+            display: none;
+            opacity: 0;
+        }
+
+        .user-avatar {
+            margin-bottom: 0;
+            width: 44px;
+            height: 44px;
+        }
+    }
+
+    ion-item {
+        --padding-start: 16px;
+        justify-content: center;
+        margin-left: 0 !important;
+        border-radius: 8px;
+
+        ion-icon {
+            margin-right: 0;
+            font-size: 24px;
+        }
+
+        ion-label {
+            display: none;
+        }
+    }
+
+    ion-accordion {
+        ion-item[slot="header"] {
+            ion-label {
+                display: none;
+            }
+
+            &::after {
+                display: none;
+            }
+        }
+
+        div[slot="content"] {
+            display: none;
+        }
+    }
+
+    .logout-item {
+        margin-top: 10px;
+    }
+}
+
+ion-split-pane.menu-collapsed {
+    --side-width: 80px !important;
+    --side-min-width: 80px !important;
+}
+
+@media (max-width: 768px) {
+    ion-menu {
+        --width: 85vw;
+    }
+
+    .menu-header {
+        padding: 24px 16px 12px 16px;
+
+        .user-avatar {
+            width: 52px;
+            height: 52px;
+        }
+
+        .user-info {
+            h2 {
+                font-size: 1.1rem;
+            }
+
+            p {
+                font-size: 0.8rem;
+            }
+        }
+    }
+
+    ion-item {
+        --padding-start: 12px;
+
+        ion-icon {
+            margin-right: 12px;
+        }
+    }
+
+    ion-footer {
+        position: sticky;
+    }
+
+    ion-menu.menu-collapsed {
+        --width: 85vw !important;
+    }
+}
+.brand-logo-menu {
+  padding: 30px 20px 0;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  
+  img {
+    max-height: 40px;
+    width: auto;
+  }
+}
+
+.brand-logo-menu-collapsed {
+  padding: 30px 0 0;
+  text-align: center;
+  
+  img {
+    max-height: 24px;
+    width: auto;
+  }
+}

@@ -1,0 +1,324 @@
+.login-page {
+  --background: #ffffff;
+  color: #1e293b;
+}
+
+.split-layout {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  flex-direction: column;
+
+  @media (min-width: 992px) {
+    flex-direction: row;
+  }
+}
+
+.split-layout__form-panel {
+  flex: 0 0 100%;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px 24px;
+  position: relative;
+  z-index: 10;
+
+  @media (min-width: 992px) {
+    flex: 0 0 420px;
+    padding: 60px 48px;
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.05);
+  }
+  
+  @media (min-width: 1200px) {
+    flex: 0 0 480px;
+  }
+}
+
+.form-wrapper {
+  max-width: 360px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.form-header {
+  margin-bottom: 40px;
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    margin-bottom: 48px;
+
+    img {
+      max-height: 50px;
+      width: auto;
+    }
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333333;
+    margin: 0;
+  }
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+
+    .required {
+      color: #ef4444;
+    }
+  }
+
+  .clean-input {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    height: 48px;
+    padding: 0 16px;
+    font-size: 1.05rem;
+    color: #0f172a;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    cursor: text;
+    caret-color: #1ea54b;
+    
+    &::placeholder {
+      color: #94a3b8;
+    }
+
+    &:focus {
+      border-color: #1ea54b;
+      box-shadow: 0 0 0 4px rgba(30, 165, 75, 0.15);
+    }
+
+    &.invalid {
+      border-color: #ef4444;
+      
+      &:focus {
+        box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.15);
+      }
+    }
+
+    // Prevents squeezed inputs or default grey/yellow backgrounds when autofilled
+    &:-webkit-autofill,
+    &:-webkit-autofill:hover,
+    &:-webkit-autofill:focus,
+    &:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px #ffffff inset !important;
+      box-shadow: 0 0 0 30px #ffffff inset !important;
+      -webkit-text-fill-color: #0f172a !important;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+  }
+}
+
+.error-text {
+  font-size: 0.85rem;
+  margin-top: -12px;
+}
+
+.form-links {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  a {
+    color: #0f172a;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.btn-primary {
+  margin-top: 16px;
+  --background: #1ea54b;
+  --background-hover: #168a3e;
+  --background-activated: #127533;
+  --border-radius: 4px;
+  --box-shadow: none;
+  font-weight: 600;
+  height: 48px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-size: 1rem;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 16px;
+  
+  a {
+    color: #0f172a;
+    text-decoration: none;
+    font-size: 0.875rem;
+    
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.split-layout__marketing-panel {
+  flex: 1;
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  position: relative;
+  overflow: hidden;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px;
+  color: white;
+
+  @media (min-width: 992px) {
+    display: flex;
+  }
+}
+
+.marketing-content {
+  max-width: 540px;
+  position: relative;
+  z-index: 2;
+
+  .marketing-headline {
+    font-size: clamp(2rem, 3.5vw, 3rem);
+    font-weight: 400;
+    line-height: 1.2;
+    margin-bottom: 24px;
+    letter-spacing: -0.02em;
+
+    strong {
+      font-weight: 800;
+    }
+  }
+
+  .marketing-subheadline {
+    font-size: 1.25rem;
+    line-height: 1.5;
+    margin-bottom: 40px;
+    opacity: 0.9;
+
+    strong {
+      font-weight: 700;
+    }
+  }
+}
+
+.marketing-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 99px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+/* Decorative graphics */
+.marketing-graphics {
+  position: absolute;
+  right: -5%;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 45%;
+  min-width: 400px;
+  z-index: 1;
+  perspective: 1000px;
+}
+
+.graphic-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+  transform: rotateY(-15deg) rotateX(5deg);
+  transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  &:hover {
+    transform: rotateY(-5deg) rotateX(2deg) translateY(-10px);
+  }
+
+  .graphic-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    font-weight: 600;
+    font-size: 0.9rem;
+
+    .badge {
+      background: #ea580c;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.7rem;
+    }
+  }
+
+  .skeleton-line {
+    height: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    margin-bottom: 12px;
+    width: 100%;
+
+    &.short {
+      width: 60%;
+    }
+  }
+
+  .floating-bubble {
+    position: absolute;
+    bottom: -20px;
+    right: -20px;
+    width: 64px;
+    height: 64px;
+    background: #ea580c;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    animation: float 6s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-15px); }
+  100% { transform: translateY(0); }
+}

@@ -1,0 +1,48 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>{{ title }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="import-container">
+    <div class="instructions">
+      <p>1. Baixe o modelo CSV para ver as colunas corretas.</p>
+      <ion-button fill="outline" color="primary" (click)="downloadTemplate()" class="download-btn">
+        <ion-icon name="download-outline" slot="start"></ion-icon>
+        Baixar Modelo (CSV)
+      </ion-button>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="instructions">
+      <p>2. Envie o seu arquivo preenchido.</p>
+      
+      <div class="upload-area" (click)="fileInput.click()">
+        <ion-icon name="cloud-upload-outline"></ion-icon>
+        <p *ngIf="!selectedFile">Clique para selecionar um arquivo CSV</p>
+        <p *ngIf="selectedFile" class="file-name">Arquivo selecionado: <strong>{{ selectedFile.name }}</strong></p>
+      </div>
+      <label for="csvFileInput" class="sr-only" style="display: none;">Selecione o arquivo CSV</label>
+      <input id="csvFileInput" #fileInput type="file" accept=".csv,text/csv" (change)="onFileSelected($event)" style="display: none;">
+    </div>
+  </div>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="end" class="ion-padding-horizontal">
+      <ion-button color="medium" (click)="dismiss()">Cancelar</ion-button>
+      <ion-button color="primary" fill="solid" (click)="upload()" [disabled]="!selectedFile || loading" class="save-btn">
+        <ion-spinner *ngIf="loading" name="crescent" slot="start"></ion-spinner>
+        {{ loading ? 'Importando...' : 'Importar Dados' }}
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>

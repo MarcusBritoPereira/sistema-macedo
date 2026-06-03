@@ -1,0 +1,452 @@
+// Variables
+$color-green: #16A34A;
+$color-green-light: #F0FDF4;
+$color-red: #DC2626;
+$color-red-light: #FEF2F2;
+$color-blue: #2563EB;
+$color-blue-dark: #1E40AF;
+$color-blue-light: #EFF6FF;
+$color-text: #0F172A;
+$color-sub: #64748B;
+$color-bg: #F8FAFC;
+$color-surface: #FFFFFF;
+$border-radius: 12px;
+$shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+
+ion-header {
+    background: $color-surface;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.header-toolbar {
+    --background: #FFFFFF;
+    --min-height: 80px;
+    padding: 0 16px;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.header-title-group h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: $color-text;
+    margin: 0;
+}
+
+.header-title-group p {
+    color: $color-sub;
+    margin: 4px 0 0 0;
+    font-size: 14px;
+}
+
+.month-selector {
+    display: flex;
+    align-items: center;
+    background: $color-bg;
+    padding: 4px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+}
+
+.current-month {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 16px;
+    font-weight: 600;
+    color: $color-text;
+
+    ion-icon {
+        font-size: 18px;
+        color: $color-blue;
+    }
+}
+
+.header-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-primary {
+    --background: #{$color-blue}; // Blue primary as requested
+    --border-radius: 8px;
+    text-transform: none;
+    font-weight: 600;
+}
+
+.btn-secondary {
+    --color: #{$color-text};
+    --border-color: #cbd5e1;
+    --border-radius: 8px;
+    text-transform: none;
+    font-weight: 500;
+}
+
+.dashboard-content {
+    --background: #{$color-bg};
+}
+
+.dashboard-wrapper {
+    max-width: 1200px;
+    margin: 24px auto;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+// KPI GRID
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+
+    @media (max-width: 992px) {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    @media (max-width: 576px) {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 12px;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        
+        &::-webkit-scrollbar {
+            display: none;
+        }
+
+        .kpi-card {
+            flex: 0 0 85%;
+            scroll-snap-align: start;
+        }
+    }
+}
+
+.kpi-card {
+    margin: 0;
+    border-radius: $border-radius;
+    box-shadow: $shadow;
+    border: 1px solid transparent;
+
+    &.bg-neutral {
+        background: $color-surface;
+        border-top: 4px solid $color-blue;
+    }
+
+    &.bg-green-light {
+        background: $color-green-light;
+        border: 1px solid rgba($color-green, 0.1);
+    }
+
+    &.bg-red-light {
+        background: $color-red-light;
+        border: 1px solid rgba($color-red, 0.1);
+    }
+
+    &.bg-blue-light {
+        background: $color-blue-light;
+        border: 1px solid rgba($color-blue, 0.1);
+    }
+}
+
+.kpi-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: $color-sub;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.kpi-value {
+    font-size: 26px;
+    font-weight: 700;
+    margin-bottom: 8px;
+
+    &.text-blue {
+        color: $color-blue-dark;
+    }
+
+    &.text-green {
+        color: $color-green;
+    }
+
+    &.text-red {
+        color: $color-red;
+    }
+
+    &.text-blue-dark {
+        color: $color-blue-dark;
+    }
+}
+
+.kpi-sub {
+    font-size: 13px;
+    color: $color-sub;
+}
+
+.kpi-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 13px;
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        color: $color-sub;
+
+        .val {
+            font-weight: 500;
+            color: $color-text;
+        }
+    }
+}
+
+// SECTION BLOCKS
+.section-block {
+    background: $color-surface;
+    border-radius: $border-radius;
+    box-shadow: $shadow;
+    padding: 24px;
+}
+
+.section-header {
+    margin-bottom: 24px;
+
+    h2 {
+        font-size: 18px;
+        font-weight: 700;
+        color: $color-text;
+        margin: 0;
+    }
+
+    p {
+        font-size: 14px;
+        color: $color-sub;
+        margin: 4px 0 0 0;
+    }
+}
+
+.chart-container {
+    height: 350px;
+    width: 100%;
+}
+
+// TRANSACTIONS
+.block-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 16px;
+}
+
+.table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.custom-table {
+    width: 100%;
+    border-collapse: collapse;
+
+    th {
+        text-align: left;
+        padding: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        color: $color-sub;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    td {
+        padding: 16px 12px;
+        font-size: 14px;
+        color: $color-text;
+        border-bottom: 1px solid #e2e8f0;
+    }
+}
+
+.text-green {
+    color: $color-green !important;
+    font-weight: 600;
+}
+
+.text-red {
+    color: $color-red !important;
+    font-weight: 600;
+}
+
+.status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+
+    &.done {
+        background: $color-green-light;
+        color: $color-green;
+    }
+
+    &.pending {
+        background: #f3f4f6;
+        color: $color-sub;
+    }
+}
+
+// ACCOUNTS
+.accounts-block {
+    background: linear-gradient(to right, $color-surface, #F8FAFC);
+}
+
+.collapsible-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+
+    .flex-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+
+        h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: $color-text;
+        }
+    }
+}
+
+.accounts-list {
+    margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.account-item {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .acc-info {
+        display: flex;
+        flex-direction: column;
+
+        .acc-name {
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .acc-bank {
+            font-size: 12px;
+            color: $color-sub;
+        }
+    }
+
+    .acc-val {
+        font-weight: 600;
+        font-size: 15px;
+        color: $color-blue-dark;
+    }
+}
+
+/* Mobile Card Layout */
+.mobile-list-container {
+    padding: 0;
+    margin-top: 16px;
+    
+    .empty-state {
+        text-align: center;
+        padding: 32px 16px;
+        color: $color-sub;
+    }
+    
+    .mobile-item-card {
+        margin: 0 0 12px 0;
+        border-radius: $border-radius;
+        box-shadow: $shadow;
+        border: 1px solid #e2e8f0;
+        background: $color-surface;
+        
+        ion-card-content {
+            padding: 16px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+
+            .card-title-row {
+                flex: 1;
+
+                .card-title {
+                    font-weight: 600;
+                    font-size: 1.05rem;
+                    color: $color-text;
+                }
+            }
+
+            .actions-btn {
+                margin: -8px -8px 0 0;
+                --color: #888;
+            }
+        }
+
+        .card-subtitle {
+            font-size: 0.85rem;
+            color: $color-sub;
+            margin-bottom: 12px;
+        }
+
+        .card-details {
+            background: $color-bg;
+            border-radius: 6px;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+
+            .detail-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+                font-size: 0.85rem;
+
+                &.mb-2 {
+                    margin-bottom: 0;
+                }
+
+                .detail-label {
+                    color: $color-sub;
+                }
+
+                .detail-value {
+                    color: $color-text;
+
+                    &.text-bold {
+                        font-weight: 700;
+                        font-family: monospace;
+                        font-size: 1rem;
+                    }
+                }
+            }
+        }
+    }
+}

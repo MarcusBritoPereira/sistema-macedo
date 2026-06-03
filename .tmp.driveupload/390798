@@ -1,0 +1,126 @@
+<ion-header>
+    <ion-toolbar class="top-toolbar ion-hide-md-down">
+        <div class="header-content">
+            <div class="left-actions">
+                <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
+                    <ion-menu-button color="primary"></ion-menu-button>
+                </ion-buttons>
+                <div style="display: inline-block; vertical-align: middle; margin-left: 8px;">
+                    <h1 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Fornecedores</h1>
+                    <p style="margin: 0; font-size: 0.8rem; color: #666;">Gestão de Parceiros e Serviços</p>
+                </div>
+            </div>
+
+            <div class="right-actions">
+                <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="openImportModal()">
+                    <ion-icon name="cloud-upload-outline" slot="start"></ion-icon> Importar
+                </ion-button>
+                <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="exportCSV()">
+                    <ion-icon name="download-outline" slot="start"></ion-icon> Exportar
+                </ion-button>
+                <ion-button color="primary" class="add-btn" routerLink="/suppliers/new">
+                    <ion-icon name="add" slot="start"></ion-icon>
+                    Novo Fornecedor
+                </ion-button>
+            </div>
+        </div>
+    </ion-toolbar>
+
+    <ion-toolbar class="filter-toolbar">
+        <div class="filter-row">
+            <div class="search-box" style="flex: 1">
+                <div class="label-text">Pesquisar</div>
+                <div class="input-wrapper">
+                    <input type="text" placeholder="Nome, CNPJ ou Email..." class="clean-search"
+                        [(ngModel)]="searchTerm" (input)="filterSuppliers()" />
+                    <ion-icon name="search"></ion-icon>
+                </div>
+            </div>
+        </div>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content class="light-bg">
+    <div class="data-table-container ion-hide-md-down">
+        <div class="table-header">
+            <div class="col-name">Fornecedor</div>
+            <div class="col-doc">CNPJ</div>
+            <div class="col-contact">Contato</div>
+            <div class="col-actions"></div>
+        </div>
+
+        <div class="table-body">
+            <div class="table-row" *ngFor="let supplier of filteredSuppliers" [routerLink]="['/suppliers', supplier.id]"
+                style="cursor: pointer;">
+                <div class="col-name desc-main">
+                    {{ supplier.nomeFantasia }}
+                    <span class="desc-sub" *ngIf="supplier.razaoSocial">{{ supplier.razaoSocial }}</span>
+                </div>
+
+                <div class="col-doc desc-main">
+                    {{ supplier.cnpj || '-' }}
+                </div>
+
+                <div class="col-contact">
+                    <span class="desc-main">{{ supplier.email || '-' }}</span>
+                    <span class="desc-sub">{{ supplier.telefone || '' }}</span>
+                </div>
+
+                <div class="col-actions">
+                    <ion-button fill="clear" color="medium">
+                        <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+                    </ion-button>
+                </div>
+            </div>
+
+            <div class="empty-state" *ngIf="filteredSuppliers.length === 0">
+                <p>Nenhum fornecedor encontrado para sua busca.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Card List (Mobile) -->
+    <div class="mobile-list-container ion-hide-md-up">
+        <div class="empty-state" *ngIf="filteredSuppliers.length === 0">
+            <p>Nenhum fornecedor encontrado para sua busca.</p>
+        </div>
+
+        <ion-card class="mobile-item-card" *ngFor="let supplier of filteredSuppliers" [routerLink]="['/suppliers', supplier.id]">
+            <ion-card-content>
+                <div class="card-header">
+                    <div class="card-title-row">
+                        <span class="card-title">{{ supplier.nomeFantasia || supplier.razaoSocial || 'Fornecedor sem nome' }}</span>
+                    </div>
+                    <ion-button fill="clear" size="small" color="medium" class="actions-btn">
+                        <ion-icon name="chevron-forward-outline"></ion-icon>
+                    </ion-button>
+                </div>
+
+                <div class="card-subtitle">{{ supplier.razaoSocial || 'Sem Razão Social' }}</div>
+
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">CNPJ:</span>
+                        <span class="detail-value">{{ supplier.cnpj || '-' }}</span>
+                    </div>
+                    <div class="detail-row align-center">
+                        <span class="detail-label">Email:</span>
+                        <span class="detail-value text-right" style="word-break: break-all;">{{ supplier.email || '-' }}</span>
+                    </div>
+                    <div class="detail-row align-center">
+                        <span class="detail-label">Telefone:</span>
+                        <span class="detail-value text-right">{{ supplier.telefone || '-' }}</span>
+                    </div>
+                </div>
+            </ion-card-content>
+        </ion-card>
+    </div>
+
+    <!-- Mobile FAB for adding new records -->
+    <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="ion-hide-md-up" style="margin-bottom: 20px;">
+        <ion-fab-button color="primary" routerLink="/suppliers/new">
+            <ion-icon name="add"></ion-icon>
+        </ion-fab-button>
+    </ion-fab>
+
+</ion-content>

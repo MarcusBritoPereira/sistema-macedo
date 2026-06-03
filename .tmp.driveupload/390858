@@ -1,0 +1,92 @@
+<ion-header>
+  <ion-toolbar class="top-toolbar">
+    <div class="header-content">
+      <div class="left-actions">
+        <ion-buttons slot="start" style="display:inline-block; vertical-align: middle;">
+          <ion-menu-button color="primary"></ion-menu-button>
+        </ion-buttons>
+        <div style="display: inline-block; vertical-align: middle; margin-left: 8px;">
+          <h1 style="margin: 0; font-size: 1.1rem; font-weight: 600;">Gestão de Obras</h1>
+          <p style="margin: 0; font-size: 0.8rem; color: #666;">Gerencie e acompanhe seus projetos</p>
+        </div>
+      </div>
+
+      <div class="right-actions">
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="openImportModal()">
+            <ion-icon name="cloud-upload-outline" slot="start"></ion-icon> Importar
+        </ion-button>
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="exportCSV()">
+            <ion-icon name="download-outline" slot="start"></ion-icon> Exportar
+        </ion-button>
+        <ion-button color="primary" class="add-btn" (click)="addObra()">
+          <ion-icon name="add" slot="start"></ion-icon>
+          Nova Obra
+        </ion-button>
+      </div>
+    </div>
+  </ion-toolbar>
+
+  <ion-toolbar class="filter-toolbar">
+    <div class="filter-row">
+      <div class="search-box" style="flex: 1">
+        <div class="label-text">Pesquisar</div>
+        <div class="input-wrapper">
+          <input type="text" placeholder="Buscar obras..." class="clean-search" />
+          <ion-icon name="search"></ion-icon>
+        </div>
+      </div>
+    </div>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="light-bg">
+  <ion-refresher slot="fixed" (ionRefresh)="loadObras($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div *ngIf="loading" style="text-align: center; padding: 40px;">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+  </div>
+
+  <div class="data-table-container" *ngIf="!loading">
+    <div class="table-header">
+      <div class="col-nome">Nome da Obra</div>
+      <div class="col-status">Status</div>
+      <div class="col-orcamento">Orçamento Previsto</div>
+      <div class="col-data">Data de Início</div>
+      <div class="col-actions"></div>
+    </div>
+
+    <div class="table-body">
+      <div class="table-row" *ngFor="let obra of obras" (click)="editObra(obra)" style="cursor: pointer;">
+        <div class="col-nome">
+          <ion-icon name="construct-outline" style="vertical-align: middle; margin-right: 8px; color: #888;"></ion-icon>
+          <span class="desc-main" style="vertical-align: middle;">{{ obra.nome }}</span>
+          <div style="font-size: 0.75rem; color: #888; margin-left: 24px;" *ngIf="obra.cliente">
+            Cliente: {{ obra.cliente.nomeFantasia || obra.cliente.razaoSocial }}
+          </div>
+        </div>
+        <div class="col-status">
+          <ion-badge [color]="getStatusColor(obra.status)">
+            {{ obra.status | titlecase }}
+          </ion-badge>
+        </div>
+        <div class="col-orcamento desc-main">
+          {{ formatCurrency(obra.orcamentoPrevisto) }}
+        </div>
+        <div class="col-data desc-main">
+          {{ obra.dataInicio ? (obra.dataInicio | date:'dd/MM/yyyy') : '-' }}
+        </div>
+        <div class="col-actions">
+          <ion-button fill="clear" color="medium">
+            <ion-icon slot="icon-only" name="chevron-forward-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="obras.length === 0">
+        <p>Nenhuma obra encontrada.</p>
+      </div>
+    </div>
+  </div>
+</ion-content>

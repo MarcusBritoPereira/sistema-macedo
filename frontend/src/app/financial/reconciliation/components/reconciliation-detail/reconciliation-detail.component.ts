@@ -35,7 +35,8 @@ import { SearchableSelectionModalComponent, SelectionItem } from '../../../../sh
         IonButton, IonIcon, IonSpinner, IonSearchbar, IonChip,
         IonInput, IonSelect, IonSelectOption, IonDatetime, IonModal, IonContent, IonDatetimeButton,
         IonItem, IonLabel,
-        QuickCreateModalComponent
+        QuickCreateModalComponent,
+        SearchableSelectionModalComponent
     ]
 })
 export class ReconciliationDetailComponent implements OnInit {
@@ -180,7 +181,7 @@ export class ReconciliationDetailComponent implements OnInit {
         const targetType = this.statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
 
         const processData = () => {
-            this.allCategories = [...this.categories];
+            this.allCategories = [...(this.categories || [])];
             this.filterCategoriesByClassification();
 
             // Default to "Geral" if not set
@@ -207,7 +208,7 @@ export class ReconciliationDetailComponent implements OnInit {
         };
 
         // Fallback: If for some reason lists were not passed from parent, fetch them
-        if (this.categories.length === 0 && this.costCenters.length === 0) {
+        if ((!this.categories || this.categories.length === 0) && (!this.costCenters || this.costCenters.length === 0)) {
             this.categoriesService.findAll().subscribe(cats => {
                 this.categories = cats;
                 if (targetType === 'DESPESA') {
@@ -236,11 +237,11 @@ export class ReconciliationDetailComponent implements OnInit {
     filterCategoriesByClassification() {
         const currentClassification = this.form.classificacao; // RECEITA or DESPESA
         const targetType = currentClassification === 'RECEITA' ? 'RECEITA' : 'DESPESA';
-        this.categories = this.allCategories.filter(c => c.tipo === targetType);
+        this.categories = (this.allCategories || []).filter(c => c && c.tipo === targetType);
         
         // If the currently selected category doesn't belong to the new list, clear it
         if (this.form.categoriaId) {
-            const exists = this.categories.some(c => c.id === this.form.categoriaId);
+            const exists = (this.categories || []).some(c => c && c.id === this.form.categoriaId);
             if (!exists) {
                 this.form.categoriaId = '';
             }
@@ -485,24 +486,24 @@ export class ReconciliationDetailComponent implements OnInit {
             title = 'Selecione a Categoria';
             createLabel = 'Nova Categoria';
             selectedId = this.form.categoriaId;
-            items = this.categories.map(c => ({ id: c.id || '', label: c.nome }));
+            items = (this.categories || []).map(c => ({ id: c?.id || '', label: c?.nome || '' }));
         } else if (type === 'ENTITY') {
             // Supplier or Client
-            const isCredit = this.statement.tipo === 'CREDIT';
+            const isCredit = this.statement?.tipo === 'CREDIT';
             title = isCredit ? 'Selecione o Cliente' : 'Selecione o Fornecedor';
             createLabel = isCredit ? 'Novo Cliente' : 'Novo Fornecedor';
             selectedId = this.form.fornecedorId;
 
             if (isCredit) {
-                items = this.clients.map(c => ({ id: c.id || '', label: c.nomeFantasia || c.razaoSocial, subLabel: c.cnpj || c.cpf }));
+                items = (this.clients || []).map(c => ({ id: c?.id || '', label: c?.nomeFantasia || c?.razaoSocial || '', subLabel: c?.cnpj || c?.cpf || '' }));
             } else {
-                items = this.suppliers.map(s => ({ id: s.id || '', label: s.nomeFantasia, subLabel: s.cnpj }));
+                items = (this.suppliers || []).map(s => ({ id: s?.id || '', label: s?.nomeFantasia || '', subLabel: s?.cnpj || '' }));
             }
         } else if (type === 'COST_CENTER') {
             title = 'Selecione o Centro de Custo';
             createLabel = 'Novo Centro de Custo';
             selectedId = this.form.centroCustoId;
-            items = this.costCenters.map(cc => ({ id: cc.id || '', label: cc.nome }));
+            items = (this.costCenters || []).map(cc => ({ id: cc?.id || '', label: cc?.nome || '' }));
         }
 
         const modal = await this.modalCtrl.create({
@@ -526,7 +527,7 @@ export class ReconciliationDetailComponent implements OnInit {
                 // Trigger quick create
                 const qTypeMap: any = {
                     'CATEGORY': 'CATEGORY',
-                    'ENTITY': this.statement.tipo === 'CREDIT' ? 'CLIENT' : 'SUPPLIER',
+                    'ENTITY': (this.statement?.tipo === 'CREDIT') ? 'CLIENT' : 'SUPPLIER',
                     'COST_CENTER': 'COST_CENTER'
                 };
                 await this.openQuickCreate(qTypeMap[type]);
@@ -542,30 +543,34 @@ export class ReconciliationDetailComponent implements OnInit {
     // --- Helpers for Display ---
 
     getCategoryName(): string {
-        const c = this.categories.find(x => x.id === this.form.categoriaId);
+        if (!this.categories) return '';
+        const c = this.categories.find(x => x && x.id === this.form.categoriaId);
         return c ? c.nome : '';
     }
 
     getEntityName(): string {
-        const isCredit = this.statement.tipo === 'CREDIT';
+        const isCredit = this.statement?.tipo === 'CREDIT';
         if (isCredit) {
-            const c = this.clients.find(x => x.id === this.form.fornecedorId);
+            if (!this.clients) return '';
+            const c = this.clients.find(x => x && x.id === this.form.fornecedorId);
             return c ? (c.nomeFantasia || c.razaoSocial) : '';
         } else {
-            const s = this.suppliers.find(x => x.id === this.form.fornecedorId);
+            if (!this.suppliers) return '';
+            const s = this.suppliers.find(x => x && x.id === this.form.fornecedorId);
             return s ? s.nomeFantasia : '';
         }
     }
 
     getCostCenterName(): string {
-        const c = this.costCenters.find(x => x.id === this.form.centroCustoId);
+        if (!this.costCenters) return '';
+        const c = this.costCenters.find(x => x && x.id === this.form.centroCustoId);
         return c ? c.nome : '';
     }
 
     // --- Quick Create Logic (Existing) ---
 
     async openQuickCreate(type: EntityType) {
-        const targetType = this.statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';
+        const targetType = (this.statement?.tipo === 'CREDIT') ? 'RECEITA' : 'DESPESA';
 
         const modal = await this.modalCtrl.create({
             component: QuickCreateModalComponent,

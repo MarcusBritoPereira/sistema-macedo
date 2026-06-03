@@ -1,0 +1,81 @@
+
+import { PrismaClient, TipoLancamento } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function main() {
+    console.log('🔍 Finding Category "Advogado"...');
+    const category = await prisma.categoriaFinanceira.findFirst({
+        where: { nome: 'Advogado' }
+    });
+
+    if (!category) {
+        console.error('❌ Category "Advogado" not found.');
+        return;
+    }
+    console.log(`✅ Found Category: ${category.id}`);
+
+    console.log('🔍 Finding FRESH Statement...');
+    const statement = await prisma.extratoBancario.findFirst({
+        where: { conciliado: false }
+    });
+
+    if (!statement) {
+        console.error('❌ Statement not found or already conciliated.');
+        return;
+    }
+    console.log(`✅ Found Statement: ${statement.id} (${statement.descricao})`);
+
+    const data = {
+        descricao: 'Teste Accordion Nulls',
+        categoriaId: category.id,
+        centroCustoId: null,
+        clienteId: null
+    };
+
+    console.log('🚀 Attempting CreateAndLink...');
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            // Replicating service logic
+            const lancamento = await tx.lancamentoFinanceiro.create({
+                data: {
+                    descricao: data.descricao || statement.descricao,
+                    valor: statement.valor,
+                    tipo: statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA',
+                    dataVencimento: statement.data,
+                    dataPagamento: statement.data,
+                    status: 'CONCILIADO',
+                    categoriaId: data.categoriaId,
+                    centroCustoId: data.centroCustoId,
+                    clienteId: data.clienteId,
+                    observacoes: `Criado via conciliação bancária: ${statement.descricao}`
+                }
+            });
+
+            console.log(`✅ Lancamento Created: ${lancamento.id}`);
+
+            await tx.conciliacaoBancaria.create({
+                data: {
+                    extratoBancarioId: statement.id,
+                    lancamentoFinanceiroId: lancamento.id,
+                    type: 'MANUAL_CREATE'
+                }
+            });
+            console.log(`✅ Link Created`);
+
+            await tx.extratoBancario.update({
+                where: { id: statement.id },
+                data: { conciliado: true }
+            });
+            console.log(`✅ Statement Updated`);
+        });
+        console.log('🎉 Transaction Success!');
+    } catch (error) {
+        console.error('❌ Transaction Failed:', error);
+    }
+}
+
+main()
+    .catch(e => console.error(e))
+    .finally(async () => await prisma.$disconnect());

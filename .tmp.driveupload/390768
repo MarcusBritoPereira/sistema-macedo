@@ -1,0 +1,364 @@
+/*
+ * App Global CSS
+ */
+
+@import "@ionic/angular/css/core.css";
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/* Fonte externa removida para evitar falha de build por bloqueio de rede. */
+/* Global Overrides */
+* {
+    font-family: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+}
+
+body {
+    color: var(--ion-text-color);
+    background-color: var(--ion-background-color);
+}
+
+input, textarea, [contenteditable] {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+}
+
+/* Modern Card Style */
+ion-card {
+    border-radius: var(--bor-radius);
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+
+    &.high-elevation {
+        box-shadow: none !important;
+        border: 1px solid #cbd5e1 !important;
+    }
+}
+
+ion-card-header {
+    padding-bottom: 8px;
+}
+
+ion-card-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    letter-spacing: -0.025em;
+}
+
+/* Modern Inputs (Floating / Rounded) */
+ion-item {
+    --border-radius: var(--radius-md);
+    --background: transparent;
+    --padding-start: 0;
+    --inner-padding-end: 0;
+    margin-bottom: var(--space-3);
+
+    &::part(native) {
+        padding: 0;
+    }
+}
+
+ion-input,
+ion-select,
+ion-textarea {
+    --padding-start: var(--space-4);
+    --padding-end: var(--space-4);
+    --padding-top: var(--space-3);
+    --padding-bottom: var(--space-3);
+    --background: #f1f5f9;
+    /* Slate 100 */
+    border-radius: var(--radius-md);
+    margin-top: var(--space-1);
+}
+
+/* Explicit Searchbar Styling */
+ion-searchbar {
+    --background: #f1f5f9;
+    --box-shadow: none;
+    --border-radius: var(--radius-md);
+    padding-top: 0;
+    padding-bottom: 0;
+    margin-bottom: var(--space-3);
+}
+
+/* Checkbox Styling */
+ion-checkbox {
+    --background: #ffffff;
+    --border-color: #cbd5e1;
+    --border-radius: 4px;
+    --checkmark-color: var(--ion-color-primary);
+
+    &::part(container) {
+        border-radius: 4px;
+        border: 2px solid #cbd5e1;
+    }
+}
+
+/* Remove default item lines */
+ion-item {
+    --border-width: 0;
+    --inner-border-width: 0;
+}
+
+/* Buttons */
+ion-button {
+    --border-radius: var(--radius-md);
+    --box-shadow: none !important;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: none;
+    /* No CAPS */
+
+    &.secondary {
+        --box-shadow: none !important;
+    }
+}
+
+/* Header & Toolbar */
+/* Header & Toolbar (Fixed White) */
+/* Header & Toolbar (Fixed White) */
+ion-header {
+    box-shadow: none !important;
+
+    ion-toolbar {
+        --background: #ffffff;
+        --border-color: rgba(0, 0, 0, 0.05);
+        --border-width: 0 0 1px 0;
+        --border-style: solid;
+    }
+}
+
+ion-title {
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    font-size: 1.25rem;
+}
+
+@media (max-width: 768px) {
+    ion-title {
+        font-size: 1.05rem;
+    }
+
+    ion-card {
+        border-radius: 12px;
+    }
+}
+
+/* Split Pane Menu - Brand Electric Blue Sidebar */
+ion-menu {
+    --width: 280px;
+
+    ion-content {
+        --background: var(--ion-color-primary);
+        /* Electric Blue */
+        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        /* Subtle divider */
+    }
+
+    ion-list {
+        background: transparent;
+        padding-top: 16px;
+    }
+
+    ion-item {
+        --background: transparent;
+        --color: rgba(255, 255, 255, 0.85);
+        /* Light Grey/White for inactive */
+        margin: var(--space-1) var(--space-3);
+        border-radius: var(--radius-sm);
+        font-weight: 500;
+
+        &.selected {
+            --background: var(--ion-color-secondary);
+            /* Deep Navy */
+            --color: #ffffff;
+            /* White Text for Contrast */
+            font-weight: 700;
+        }
+
+        &:hover:not(.selected) {
+            --background: rgba(255, 255, 255, 0.15);
+            --color: #ffffff;
+            cursor: pointer;
+        }
+
+        ion-icon {
+            color: inherit;
+            margin-right: 8px;
+        }
+    }
+}
+
+/* Wizard Modal Sizes */
+.wizard-modal {
+    --width: 90%;
+    --max-width: 1200px;
+    --height: 90%;
+    --max-height: 800px;
+    --border-radius: 12px;
+
+    &::part(content) {
+        border-radius: 12px;
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+}
+
+// Custom Modal for Reconciliation
+.reconciliation-modal {
+    --width: 95%;
+    --max-width: 1100px;
+    --height: 90%;
+    --max-height: 800px;
+    --border-radius: 16px;
+    --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+
+    @media (max-width: 768px) {
+        --width: 100%;
+        --height: 100%;
+        --border-radius: 0;
+    }
+}
+
+/* Centered Selection Modal */
+.centered-selection-modal {
+    --height: 70vh;
+    --min-height: 400px;
+    --width: 90%;
+    --max-width: 600px;
+    --border-radius: 16px;
+    --box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+
+    /* Enforce centering */
+    align-items: center;
+    justify-content: center;
+
+    /* Ensure ion-content takes available space */
+    ion-content {
+        --padding-bottom: 20px;
+    }
+}
+
+/* ============================================
+   ACCESSIBILITY GOVERNANCE
+   Focus-visible: keyboard navigation ring
+   ================================================ */
+*:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
+/* Screen-reader only utility */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* ============================================
+   STATUS BADGE SYSTEM (Component-agnostic)
+   Usage: <span class="status-badge status-previsto">Previsto</span>
+   ================================================ */
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    transition: background var(--transition-fast);
+
+    &.status-previsto    { background: var(--status-previsto-bg);   color: var(--status-previsto-text); }
+    &.status-realizado   { background: var(--status-realizado-bg);  color: var(--status-realizado-text); }
+    &.status-conciliado  { background: var(--status-conciliado-bg); color: var(--status-conciliado-text); }
+    &.status-cancelado   { background: var(--status-cancelado-bg);  color: var(--status-cancelado-text); }
+}
+
+/* ============================================
+   INTERACTION TOKENS - Button micro-animation
+   ================================================ */
+ion-button {
+    transition: transform var(--transition-fast), opacity var(--transition-fast);
+
+    &:not([disabled]):hover {
+        transform: translateY(-1px);
+    }
+
+    &:not([disabled]):active {
+        transform: scale(0.97);
+    }
+}
+
+/* Smooth card hover (desktop)
+   @media hover:hover ensures no effect on touch */
+@media (hover: hover) {
+    ion-card {
+        transition: box-shadow var(--transition-base), transform var(--transition-base);
+
+        &:hover {
+            box-shadow: var(--shadow-md) !important;
+            transform: translateY(-1px);
+        }
+    }
+}
+
+/* Reduced motion: respect user preference */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* ============================================
+   CUSTOM POPOVER SELECT
+   ================================================ */
+.custom-modern-popover {
+    --width: 240px;
+    --border-radius: 8px;
+    --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+
+    ion-item {
+        --background: transparent;
+        --color: #4a5568;
+        --padding-start: 12px;
+        --inner-padding-end: 12px;
+        margin: 4px 8px; /* Breathing room / margins like the screenshot */
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+
+        &.item-radio-checked {
+            --background: #e6f0fa;
+            --color: #005bbf;
+            font-weight: 600;
+        }
+
+        ion-radio {
+            --color: inherit;
+            width: 100%;
+            
+            &::part(container) {
+                display: none;
+            }
+            &::part(mark) {
+                display: none;
+            }
+        }
+    }
+}

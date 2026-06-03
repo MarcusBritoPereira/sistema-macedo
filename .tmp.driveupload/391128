@@ -1,0 +1,234 @@
+/* Modern & Professional Client Detail Styles */
+
+ion-content {
+    --background: #f4f6f8;
+    /* Soft gray/blue background for better contrast with white cards */
+}
+
+/* Form Container */
+.form-wrapper {
+    max-width: 900px;
+    margin: 20px auto;
+    padding-bottom: 60px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+/* Section Header (Title hidden in HTML but if used externally) */
+.section-header {
+    display: none;
+}
+
+/* Premium Form Card */
+.form-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.04);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    overflow: hidden;
+    margin-bottom: 20px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
+    }
+
+    .form-card-header {
+        display: flex;
+        align-items: center;
+        padding: 24px 24px 20px 24px;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+        gap: 16px;
+
+        ion-icon {
+            font-size: 24px;
+            color: var(--ion-color-primary);
+            background: rgba(var(--ion-color-primary-rgb), 0.08);
+            padding: 12px;
+            border-radius: 12px;
+        }
+
+        h2 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+
+        p {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #94a3b8;
+            margin: 4px 0 0 0;
+        }
+    }
+
+    .form-card-body {
+        padding: 24px 24px 32px 24px;
+    }
+}
+
+/* Form Inputs & Grid */
+ion-grid {
+    --ion-grid-padding: 0;
+}
+
+ion-col {
+    padding: 8px 12px;
+}
+
+/* Custom Field Group for Perfect Spacing */
+.field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 4px;
+
+    label {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #64748b;
+        margin-left: 4px;
+        letter-spacing: 0.01em;
+
+        /* Optional: Add asterisk color if needed */
+        &::after {
+            content: attr(data-required);
+            color: var(--ion-color-danger);
+            margin-left: 2px;
+        }
+    }
+}
+
+/* The actual input container */
+ion-item.input-item {
+    --background: #f8fafc;
+    --border-radius: 12px;
+    --padding-start: 22px;
+    /* Increased from 16px for better breathing room */
+    --inner-padding-end: 22px;
+    --min-height: 56px;
+    /* Slightly taller for premium feel */
+    --highlight-height: 0;
+    --border-width: 1px;
+    --border-color: #e2e8f0;
+    --ripple-color: transparent;
+
+    margin: 0;
+    box-shadow: none !important;
+    transition: all 0.2s ease;
+
+    /* Focus State within Item */
+    &.item-has-focus {
+        --background: #ffffff;
+        --border-color: var(--ion-color-primary);
+        box-shadow: none !important;
+    }
+
+    /* Input text styling */
+    ion-input,
+    ion-textarea,
+    ion-select {
+        font-size: 0.95rem;
+        font-weight: 500;
+        color: #1e293b;
+        --padding-top: 16px;
+        /* Increased vertical spacing */
+        --padding-bottom: 16px;
+        --padding-start: 16px !important;
+        /* Ensure no double padding */
+        margin: 0;
+    }
+}
+
+/* Toggle & Checkbox Styling adjustments */
+ion-toggle {
+    padding-right: 16px;
+}
+
+ion-checkbox {
+    --size: 20px;
+    --border-radius: 6px;
+    margin-right: 12px;
+}
+
+/* Action Buttons */
+.form-actions {
+    margin-top: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0 10px;
+}
+
+.save-btn {
+    --background: var(--ion-color-primary);
+    --background-hover: var(--ion-color-primary-shade);
+    --border-radius: 14px;
+    --box-shadow: none !important;
+    height: 56px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    text-transform: none;
+}
+
+.delete-btn {
+    --color: #ef4444;
+    font-weight: 500;
+    height: 48px;
+
+    ion-icon {
+        font-size: 20px;
+        margin-right: 8px;
+    }
+}
+
+@media (max-width: 768px) {
+    .form-wrapper {
+        margin: 12px auto;
+        padding-bottom: 40px;
+    }
+
+    ion-accordion-group {
+        gap: 12px;
+
+        ion-accordion {
+            .accordion-custom-header {
+                --min-height: 64px;
+                --padding-start: 12px;
+                --inner-padding-end: 12px;
+
+                ion-icon.header-icon {
+                    font-size: 20px;
+                    padding: 8px;
+                    margin-right: 12px;
+                }
+
+                ion-label.header-info {
+                    h2 {
+                        font-size: 0.95rem;
+                    }
+
+                    p {
+                        font-size: 0.75rem;
+                    }
+                }
+            }
+
+            div[slot="content"] {
+                padding: 16px 16px 24px 16px;
+            }
+        }
+    }
+
+    ion-col {
+        padding: 6px 0;
+    }
+
+    .form-actions {
+        padding: 0;
+    }
+}

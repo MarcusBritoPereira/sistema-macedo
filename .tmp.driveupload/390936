@@ -1,0 +1,207 @@
+<ion-header>
+  <!-- Mobile Navigation Bar -->
+  <ion-toolbar class="ion-hide-md-up dashboard-bg">
+    <ion-buttons slot="start">
+      <ion-menu-button color="primary"></ion-menu-button>
+    </ion-buttons>
+    <ion-title>Lançamentos</ion-title>
+  </ion-toolbar>
+
+  <!-- Top Bar: Title & Primary Actions -->
+  <ion-toolbar class="top-toolbar ion-hide-md-down">
+    <div class="header-content">
+      <div class="left-actions">
+        <ion-button color="primary" class="add-btn" routerLink="/financial/new">
+          <ion-icon name="add" slot="start"></ion-icon>
+          Nova
+        </ion-button>
+      </div>
+
+      <div class="right-actions">
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="downloadCsvTemplate()"
+          [disabled]="isImporting">Modelo CSV</ion-button>
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="csvInput.click()"
+          [disabled]="isImporting">Importar planilha</ion-button>
+        <input #csvInput type="file" (change)="onCsvSelected($event)" accept=".csv" style="display: none;">
+        <ion-button fill="outline" size="small" color="medium" class="action-btn" (click)="exportCSV()"
+          [disabled]="isImporting">Exportar</ion-button>
+        <ion-button fill="outline" size="small" color="medium" class="action-btn">Imprimir</ion-button>
+        <div class="pagination-controls">
+          <ion-button fill="clear" size="small" [disabled]="currentPage === 1" (click)="changePage(currentPage - 1)">
+            <ion-icon name="chevron-back"></ion-icon>
+          </ion-button>
+          <span>Pág {{ currentPage }} ({{ (currentPage - 1) * pageSize + 1 }} - {{ (currentPage - 1) * pageSize +
+            displayedItems.length }} de {{ totalItems }})</span>
+          <ion-button fill="clear" size="small" [disabled]="(currentPage * pageSize) >= totalItems"
+            (click)="changePage(currentPage + 1)">
+            <ion-icon name="chevron-forward"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+    </div>
+  </ion-toolbar>
+
+  <!-- Period Navigation & Filters -->
+  <ion-toolbar class="filter-toolbar">
+    <div class="filter-row">
+      <!-- Date Pickers: Side-by-side -->
+      <div class="period-selector">
+        <div class="date-input-group">
+          <div class="label-text">Início</div>
+          <input type="date" class="compact-date-input" [(ngModel)]="startDate" (change)="onFilterChange()" />
+        </div>
+        <div class="date-input-group">
+          <div class="label-text">Fim</div>
+          <input type="date" class="compact-date-input" [(ngModel)]="endDate" (change)="onFilterChange()" />
+        </div>
+      </div>
+
+      <!-- Categories & Search -->
+      <div class="utility-wrap">
+          <div class="category-selector">
+            <div class="label-text">Categoria</div>
+            <select class="compact-select" [(ngModel)]="selectedCategoryId" (change)="onFilterChange()">
+              <option value="">Todas</option>
+              <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</option>
+            </select>
+          </div>
+
+      <div class="search-box">
+        <div class="label-text">Período Selecionado</div>
+        <div class="input-wrapper">
+          <input type="text" placeholder="Buscar..." class="clean-search" [(ngModel)]="searchTerm"
+            (change)="onSearchChange()">
+          <ion-icon name="search"></ion-icon>
+        </div>
+      </div>
+     </div>
+    </div>
+  </ion-toolbar>
+
+  <!-- KPI Cards -->
+  <div class="kpi-container">
+    <div class="kpi-card blue-text clickable" [class.active]="selectedType === 'RECEITA'"
+      (click)="toggleTypeFilter('RECEITA')">
+      <span class="label">Receitas (R$)</span>
+      <span class="value">{{ kpis.receivables | number:'1.2-2' }}</span>
+    </div>
+    <div class="kpi-card red-text clickable" [class.active]="selectedType === 'DESPESA'"
+      (click)="toggleTypeFilter('DESPESA')">
+      <span class="label">Despesas (R$)</span>
+      <span class="value">-{{ kpis.payables | number:'1.2-2' }}</span>
+    </div>
+    <div class="kpi-card border-blue">
+      <span class="label">Total do período (R$) <ion-icon name="help-circle-outline"></ion-icon></span>
+      <span class="value">{{ kpis.balance | number:'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <div class="bulk-actions-bar" *ngIf="selectedIds.size > 0">
+    <span>{{ selectedIds.size }} registro(s) selecionado(s)</span>
+    <ion-button fill="clear" size="small" class="link-btn">Editar lançamento(s)</ion-button>
+    <ion-button fill="clear" size="small" class="link-btn" (click)="processBulkDelete()">Excluir
+      lançamento(s)</ion-button>
+  </div>
+
+</ion-header>
+
+<ion-content class="light-bg">
+  <ion-refresher slot="fixed" (ionRefresh)="loadData($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <!-- Data Table (Desktop) -->
+  <div class="data-table-container ion-hide-md-down">
+    <div class="table-header">
+      <div class="col-check"><input type="checkbox" [checked]="allSelected" (change)="toggleAll()"></div>
+      <div class="col-date">Competência</div>
+      <div class="col-type">Tipo</div>
+      <div class="col-desc">Descrição</div>
+      <div class="col-entity">Cliente/Fornecedor</div>
+      <div class="col-category">Categoria</div>
+      <div class="col-paymethod">Cond. pagto</div>
+      <div class="col-value">Valor (R$)</div>
+      <div class="col-actions"></div>
+    </div>
+
+    <div class="table-body">
+      <div class="table-row" *ngFor="let item of displayedItems">
+        <div class="col-check"><input type="checkbox" [checked]="isSelected(item.id!)"
+            (change)="toggleSelection(item.id!)"></div>
+        <div class="col-date">{{ item.dataVencimento | date:'dd/MM/yyyy' }}</div>
+        <div class="col-type">{{ item.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }}</div>
+        <div class="col-desc">
+          <span class="desc-main">{{ item.descricao }}</span>
+        </div>
+        <div class="col-entity">{{ item.clienteId ? 'Cliente' : (item.fornecedor || '-') }}</div>
+        <div class="col-category">{{ item.categoria?.nome || 'Sem categoria' }}</div>
+        <div class="col-paymethod">{{ item.formaPagamento || 'À vista' }}</div>
+        <div class="col-value" [class.text-danger]="item.tipo === 'DESPESA'">
+          {{ item.valor | number:'1.2-2' }}
+        </div>
+        <div class="col-actions">
+          <ion-button fill="outline" size="small" class="actions-dropdown-btn" (click)="openItemActions($event, item)">
+            Ações <ion-icon name="chevron-down" slot="end"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="displayedItems.length === 0">
+        <p>Nenhum lançamento neste período.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Card List (Mobile) -->
+  <div class="mobile-list-container ion-hide-md-up">
+      <div class="empty-state" *ngIf="displayedItems.length === 0">
+          <p>Nenhum lançamento neste período.</p>
+      </div>
+      
+      <ion-card class="mobile-item-card" *ngFor="let item of displayedItems">
+          <ion-card-content>
+              <div class="card-header">
+                  <div class="card-title-row">
+                      <ion-checkbox [checked]="isSelected(item.id!)" (ionChange)="toggleSelection(item.id!)"></ion-checkbox>
+                      <span class="card-title">{{ item.descricao }}</span>
+                  </div>
+                  <ion-button fill="clear" size="small" class="actions-btn" (click)="openItemActions($event, item)">
+                      <ion-icon name="ellipsis-vertical"></ion-icon>
+                  </ion-button>
+              </div>
+              
+              <div class="card-subtitle">{{ item.clienteId ? 'Cliente' : (item.fornecedor || '-') }}</div>
+              
+              <div class="card-details">
+                  <div class="detail-row">
+                      <span class="detail-label">Competência:</span>
+                      <span class="detail-value">{{ item.dataVencimento | date:'shortDate' }}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">Tipo:</span>
+                      <span class="detail-value" [class.text-danger]="item.tipo === 'DESPESA'" [class.text-success]="item.tipo === 'RECEITA'">{{ item.tipo === 'RECEITA' ? 'Receita' : 'Despesa' }}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">Pagamento:</span>
+                      <span class="detail-value">{{ item.formaPagamento || 'À vista' }}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">Categoria:</span>
+                      <span class="detail-value">{{ item.categoria?.nome || 'Sem categoria' }}</span>
+                  </div>
+                  <div class="detail-row">
+                      <span class="detail-label">Valor:</span>
+                      <span class="detail-value text-bold" [class.text-danger]="item.tipo === 'DESPESA'">R$ {{ item.valor | number:'1.2-2' }}</span>
+                  </div>
+              </div>
+          </ion-card-content>
+      </ion-card>
+  </div>
+  <!-- Mobile FAB for adding new records -->
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="ion-hide-md-up" style="margin-bottom: 20px;">
+      <ion-fab-button color="primary" routerLink="/financial/new">
+          <ion-icon name="add"></ion-icon>
+      </ion-fab-button>
+  </ion-fab>
+
+</ion-content>

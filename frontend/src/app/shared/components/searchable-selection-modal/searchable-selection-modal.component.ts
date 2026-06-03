@@ -7,7 +7,7 @@ import {
     IonIcon, IonSearchbar, IonList, IonItem, IonLabel, ModalController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { closeOutline, addCircleOutline, checkmarkOutline } from 'ionicons/icons';
+import { closeOutline, addCircleOutline, checkmarkOutline, checkmarkCircle, searchOutline } from 'ionicons/icons';
 
 export interface SelectionItem {
     id: string;
@@ -39,7 +39,7 @@ export class SearchableSelectionModalComponent implements OnInit {
     filteredItems: SelectionItem[] = [];
 
     constructor(private modalCtrl: ModalController) {
-        addIcons({ closeOutline, addCircleOutline, checkmarkOutline });
+        addIcons({ closeOutline, addCircleOutline, checkmarkOutline, checkmarkCircle, searchOutline });
     }
 
     @ViewChild(IonSearchbar) searchbar!: IonSearchbar;

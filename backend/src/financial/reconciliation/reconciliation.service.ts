@@ -196,34 +196,37 @@ export class ReconciliationService {
     const pendingAggWhere = { ...baseAggregateWhere, conciliado: false };
     const conciliatedAggWhere = { ...baseAggregateWhere, conciliado: true };
 
-    const [total, statements, pendingAgg, conciliatedAgg] = await this.prisma.$transaction([
-      this.prisma.extratoBancario.count({ where }),
-      this.prisma.extratoBancario.findMany({
-        where,
-        include: {
-          conciliacoes: {
-            include: {
-              lancamentoFinanceiro: true,
+    const [total, statements, pendingAgg, conciliatedAgg] =
+      await this.prisma.$transaction([
+        this.prisma.extratoBancario.count({ where }),
+        this.prisma.extratoBancario.findMany({
+          where,
+          include: {
+            conciliacoes: {
+              include: {
+                lancamentoFinanceiro: true,
+              },
             },
+            importacao: true,
           },
-          importacao: true,
-        },
-        orderBy: [{ data: 'desc' }, { id: 'desc' }],
-        skip,
-        take: pageSize,
-      }),
-      this.prisma.extratoBancario.aggregate({
-        _sum: { valor: true },
-        where: pendingAggWhere,
-      }),
-      this.prisma.extratoBancario.aggregate({
-        _sum: { valor: true },
-        where: conciliatedAggWhere,
-      }),
-    ]);
+          orderBy: [{ data: 'desc' }, { id: 'desc' }],
+          skip,
+          take: pageSize,
+        }),
+        this.prisma.extratoBancario.aggregate({
+          _sum: { valor: true },
+          where: pendingAggWhere,
+        }),
+        this.prisma.extratoBancario.aggregate({
+          _sum: { valor: true },
+          where: conciliatedAggWhere,
+        }),
+      ]);
 
     const totalPendingValue = Math.abs(Number(pendingAgg._sum.valor || 0));
-    const totalConciliatedValue = Math.abs(Number(conciliatedAgg._sum.valor || 0));
+    const totalConciliatedValue = Math.abs(
+      Number(conciliatedAgg._sum.valor || 0),
+    );
     const totalPeriodValue = totalPendingValue + totalConciliatedValue;
 
     const enrichedStatements = await Promise.all(
@@ -256,7 +259,8 @@ export class ReconciliationService {
             },
           });
 
-          const linkedLancamento = pastReconciled?.conciliacoes?.[0]?.lancamentoFinanceiro;
+          const linkedLancamento =
+            pastReconciled?.conciliacoes?.[0]?.lancamentoFinanceiro;
           if (linkedLancamento) {
             learnedSuggestion = {
               categoriaId: linkedLancamento.categoriaId,
@@ -425,10 +429,97 @@ export class ReconciliationService {
       const isTransfer =
         data?.isTransfer === true || data?.isTransfer === 'true';
       const contaDestinoId = sanitize(data.contaDestinoId);
-      
+
       const tipoLancamento = sanitize(data.tipoLancamento);
       const tipoCusto = sanitize(data.tipoCusto);
       const categoriaCusto = sanitize(data.categoriaCusto);
+      const rateios = Array.isArray(data.rateios) ? data.rateios : [];
+      const normalizedRateios = rateios.map((rateio: any, index: number) => ({
+        valor: Number(rateio.valor),
+        categoria: sanitize(rateio.categoria) || 'OUTROS',
+        subcategoria: sanitize(rateio.subcategoria),
+        categoriaFinanceiraId: sanitize(rateio.categoriaFinanceiraId),
+        obraId: sanitize(rateio.obraId),
+        centroCustoId: sanitize(rateio.centroCustoId),
+        tipoDestino: sanitize(rateio.tipoDestino) || 'CENTRO_CUSTO',
+        tipoCusto: sanitize(rateio.tipoCusto),
+        categoriaCusto: sanitize(rateio.categoriaCusto),
+        descricaoItem: sanitize(rateio.descricaoItem),
+        quantidade: rateio.quantidade ? Number(rateio.quantidade) : null,
+        valorUnitario: rateio.valorUnitario
+          ? Number(rateio.valorUnitario)
+          : null,
+        recorrente: Boolean(rateio.recorrente),
+        observacao: sanitize(rateio.observacao),
+        index,
+      }));
+
+      if (!isTransfer && normalizedRateios.length > 0) {
+        const invalid = normalizedRateios.find(
+          (rateio: any) =>
+            !Number.isFinite(rateio.valor) ||
+            rateio.valor <= 0 ||
+            !rateio.categoriaFinanceiraId ||
+            (rateio.tipoDestino === 'OBRA' && !rateio.obraId) ||
+            (rateio.tipoDestino === 'CENTRO_CUSTO' && !rateio.centroCustoId) ||
+            (rateio.tipoCusto === 'MATERIAL' && !rateio.categoriaCusto),
+        );
+        if (invalid) {
+          throw new BadRequestException(
+            `Rateio ${invalid.index + 1} incompleto. Informe destino, categoria, valor e material quando aplicável.`,
+          );
+        }
+
+        const totalRateado = normalizedRateios.reduce(
+          (total: number, rateio: any) => total + rateio.valor,
+          0,
+        );
+        const valorExtrato = Math.abs(Number(statement.valor));
+        if (Math.abs(totalRateado - valorExtrato) > 0.01) {
+          throw new BadRequestException(
+            `A soma dos rateios (R$ ${totalRateado.toFixed(2)}) deve ser igual ao valor do extrato (R$ ${valorExtrato.toFixed(2)}).`,
+          );
+        }
+
+        const obraIds = [
+          ...new Set(
+            normalizedRateios.map((r: any) => r.obraId).filter(Boolean),
+          ),
+        ] as string[];
+        const centroCustoIds = [
+          ...new Set(
+            normalizedRateios.map((r: any) => r.centroCustoId).filter(Boolean),
+          ),
+        ] as string[];
+        const categoriaIds = [
+          ...new Set(
+            normalizedRateios.map((r: any) => r.categoriaFinanceiraId),
+          ),
+        ] as string[];
+        const [obrasValidas, centrosValidos, categoriasValidas] =
+          await Promise.all([
+            tx.obra.count({ where: { id: { in: obraIds }, ativo: true } }),
+            tx.centroCusto.count({
+              where: {
+                id: { in: centroCustoIds },
+                ativo: true,
+                aceitaLancamento: true,
+              },
+            }),
+            tx.categoriaFinanceira.count({
+              where: { id: { in: categoriaIds } },
+            }),
+          ]);
+        if (
+          obrasValidas !== obraIds.length ||
+          centrosValidos !== centroCustoIds.length ||
+          categoriasValidas !== categoriaIds.length
+        ) {
+          throw new BadRequestException(
+            'Um dos destinos ou categorias do rateio é inválido ou está inativo.',
+          );
+        }
+      }
 
       if (!isTransfer && !fornecedorId && !clienteId) {
         const suggestion = await this.suggestEntityForStatement({
@@ -518,17 +609,42 @@ export class ReconciliationService {
             dataPagamento: statement.data,
             dataCompetencia: competenciaDate,
             status: 'CONCILIADO',
-            categoriaId: categoriaId,
-            centroCustoId: centroCustoId,
+            categoriaId:
+              normalizedRateios.length === 1
+                ? normalizedRateios[0].categoriaFinanceiraId
+                : categoriaId,
+            centroCustoId:
+              normalizedRateios.length === 1
+                ? normalizedRateios[0].centroCustoId
+                : normalizedRateios.length > 1
+                  ? null
+                  : centroCustoId,
             clienteId: clienteId,
-            fornecedorId: fornecedorId, // Added missing mapping
-            obraId: obraId,
+            fornecedorId: fornecedorId,
+            obraId:
+              normalizedRateios.length === 1
+                ? normalizedRateios[0].obraId
+                : normalizedRateios.length > 1
+                  ? null
+                  : obraId,
             tipoLancamento: tipoLancamento,
             tipoCusto: tipoCusto,
             categoriaCusto: categoriaCusto,
-            observacoes: observacoes || `Criado via conciliação bancária: ${statement.descricao}`,
+            observacoes:
+              observacoes ||
+              `Criado via conciliação bancária: ${statement.descricao}`,
           },
         });
+
+        if (normalizedRateios.length > 0) {
+          await tx.rateioLancamento.createMany({
+            data: normalizedRateios.map(({ index, ...rateio }: any) => ({
+              ...rateio,
+              lancamentoId: lancamento.id,
+              updatedBy: userId,
+            })),
+          });
+        }
 
         // 2. Create link
         await tx.conciliacaoBancaria.create({

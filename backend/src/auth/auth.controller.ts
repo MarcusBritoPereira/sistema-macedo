@@ -14,6 +14,9 @@ import { ThrottlerGuard } from '@nestjs/throttler';
 import { LoginDto } from './dto/login.dto';
 import type { Request, Response } from 'express';
 
+const accessTokenMaxAge =
+  Number(process.env.JWT_ACCESS_MAX_AGE_MS) || 2 * 60 * 60 * 1000;
+
 function getCookie(req: Request, name: string): string | null {
   const rawCookie = req.headers.cookie;
   if (!rawCookie) return null;
@@ -52,7 +55,7 @@ export class AuthController {
 
     res.cookie('access_token', auth.access_token, {
       ...cookieBase,
-      maxAge: 60 * 60 * 1000,
+      maxAge: accessTokenMaxAge,
     });
     res.cookie('refresh_token', auth.refresh_token, {
       ...cookieBase,
@@ -81,7 +84,7 @@ export class AuthController {
     };
     res.cookie('access_token', auth.access_token, {
       ...cookieBase,
-      maxAge: 60 * 60 * 1000,
+      maxAge: accessTokenMaxAge,
     });
     res.cookie('refresh_token', auth.refresh_token, {
       ...cookieBase,

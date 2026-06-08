@@ -17,7 +17,9 @@ if (!jwtSecret) {
     PassportModule,
     JwtModule.register({
       secret: jwtSecret,
-      signOptions: { expiresIn: '60m' },
+      signOptions: {
+        expiresIn: (process.env.JWT_ACCESS_EXPIRES_IN || '120m') as any,
+      },
     }),
   ],
   providers: [AuthService, JwtStrategy],

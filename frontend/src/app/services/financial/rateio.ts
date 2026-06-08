@@ -8,6 +8,16 @@ export interface RateioLancamento {
   lancamentoId?: string;
   categoriaFinanceiraId?: string;
   categoriaFinanceira?: any;
+  tipoDestino?: 'OBRA' | 'CENTRO_CUSTO';
+  obraId?: string;
+  obra?: any;
+  centroCustoId?: string;
+  centroCusto?: any;
+  tipoCusto?: 'MATERIAL' | 'MAO_DE_OBRA' | 'SERVICO' | 'EQUIPAMENTO' | 'OUTROS';
+  categoriaCusto?: string;
+  descricaoItem?: string;
+  quantidade?: number;
+  valorUnitario?: number;
 }
 
 export interface RateioBatch {

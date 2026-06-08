@@ -74,6 +74,10 @@ describe('ReconciliationService - Business Logic', () => {
       },
       cliente: { findMany: jest.fn().mockResolvedValue([]) },
       fornecedor: { findMany: jest.fn().mockResolvedValue([]) },
+      obra: { count: jest.fn() },
+      centroCusto: { count: jest.fn() },
+      categoriaFinanceira: { count: jest.fn() },
+      rateioLancamento: { createMany: jest.fn() },
       $transaction: jest.fn((fn) => fn(mockPrisma)),
     } as any;
 
@@ -215,6 +219,86 @@ describe('ReconciliationService - Business Logic', () => {
           data: { status: 'REALIZADO' },
         }),
       );
+    });
+  });
+
+  describe('createAndLink with destination allocations', () => {
+    const baseData = {
+      descricao: 'Compra rateada',
+      clienteId: 'cliente-01',
+      categoriaId: 'cat-01',
+      centroCustoId: 'cc-01',
+      tipoLancamento: 'OBRA',
+      tipoCusto: 'MATERIAL',
+      rateios: [
+        {
+          valor: 900,
+          categoria: 'OUTROS',
+          categoriaFinanceiraId: 'cat-01',
+          tipoDestino: 'OBRA',
+          obraId: 'obra-01',
+          tipoCusto: 'MATERIAL',
+          categoriaCusto: 'Cimento',
+        },
+        {
+          valor: 600,
+          categoria: 'OUTROS',
+          categoriaFinanceiraId: 'cat-02',
+          tipoDestino: 'CENTRO_CUSTO',
+          centroCustoId: 'deposito-01',
+          tipoCusto: 'MATERIAL',
+          categoriaCusto: 'Ferragens',
+        },
+      ],
+    };
+
+    it('creates the launch and all allocations atomically', async () => {
+      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(
+        mockStatement,
+      );
+      (prisma.obra.count as jest.Mock).mockResolvedValue(1);
+      (prisma.centroCusto.count as jest.Mock).mockResolvedValue(1);
+      (prisma.categoriaFinanceira.count as jest.Mock).mockResolvedValue(2);
+      (prisma.lancamentoFinanceiro.create as jest.Mock).mockResolvedValue({
+        id: 'lanc-rateado',
+      });
+      (prisma.rateioLancamento.createMany as jest.Mock).mockResolvedValue({
+        count: 2,
+      });
+      (prisma.conciliacaoBancaria.create as jest.Mock).mockResolvedValue({
+        id: 'conc-rateada',
+      });
+      (prisma.extratoBancario.update as jest.Mock).mockResolvedValue({});
+
+      await expect(
+        service.createAndLink('stmt-001', baseData, true, 'user-01'),
+      ).resolves.toEqual({ id: 'lanc-rateado' });
+      expect(prisma.rateioLancamento.createMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.arrayContaining([
+            expect.objectContaining({ obraId: 'obra-01', valor: 900 }),
+            expect.objectContaining({
+              centroCustoId: 'deposito-01',
+              valor: 600,
+            }),
+          ]),
+        }),
+      );
+    });
+
+    it('rejects allocations whose sum differs from the statement', async () => {
+      (prisma.extratoBancario.findUnique as jest.Mock).mockResolvedValue(
+        mockStatement,
+      );
+      const invalidData = {
+        ...baseData,
+        rateios: [{ ...baseData.rateios[0], valor: 100 }],
+      };
+
+      await expect(
+        service.createAndLink('stmt-001', invalidData, true, 'user-01'),
+      ).rejects.toThrow('deve ser igual ao valor do extrato');
+      expect(prisma.lancamentoFinanceiro.create).not.toHaveBeenCalled();
     });
   });
 });

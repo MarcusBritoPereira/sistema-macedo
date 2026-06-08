@@ -13,7 +13,11 @@ export class RateioService {
   async findByLancamento(lancamentoId: string) {
     return this.prisma.rateioLancamento.findMany({
       where: { lancamentoId },
-      include: { categoriaFinanceira: true },
+      include: {
+        categoriaFinanceira: true,
+        obra: true,
+        centroCusto: true,
+      },
     });
   }
 

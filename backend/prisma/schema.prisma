@@ -24,8 +24,8 @@ model Usuario {
   perfilId String
   perfil   Perfil @relation(fields: [perfilId], references: [id])
 
-  logs LogAuditoria[]
-  centrosCustoResponsavel CentroCusto[] @relation("CentroCustoResponsavel")
+  logs                    LogAuditoria[]
+  centrosCustoResponsavel CentroCusto[]  @relation("CentroCustoResponsavel")
 
   @@map("usuarios")
 }
@@ -190,7 +190,7 @@ model LancamentoFinanceiro {
 
   tipoLancamento TipoClassificacaoLancamento? @map("tipo_lancamento")
   tipoCusto      TipoCustoLancamento?         @map("tipo_custo")
-  categoriaCusto String? @map("categoria_custo")
+  categoriaCusto String?                      @map("categoria_custo")
 
   recurrenciaId String?
   recurrencia   Recurrencia? @relation(fields: [recurrenciaId], references: [id])
@@ -217,7 +217,6 @@ enum TipoLancamento {
   RECEITA
   DESPESA
 }
-
 
 enum TipoClassificacaoLancamento {
   OBRA
@@ -272,9 +271,9 @@ model IntegracaoBancaria {
   crtFile      String? // Path to certificate file if needed
   keyFile      String? // Path to key file if needed
 
-  status   StatusIntegracao @default(DISCONNECTED)
-  lastSync DateTime?
-  dataInicioAutomacao DateTime? @map("data_inicio_automacao")
+  status              StatusIntegracao @default(DISCONNECTED)
+  lastSync            DateTime?
+  dataInicioAutomacao DateTime?        @map("data_inicio_automacao")
 
   contaBancariaId String        @unique
   contaBancaria   ContaBancaria @relation(fields: [contaBancariaId], references: [id])
@@ -397,10 +396,10 @@ model CategoriaFinanceira {
   parent   CategoriaFinanceira?  @relation("CategoriaHierarchy", fields: [parentId], references: [id])
   children CategoriaFinanceira[] @relation("CategoriaHierarchy")
 
-  lancamentos LancamentoFinanceiro[]
-  rateios     RateioLancamento[]
-  regras      RegraClassificacao[]
-  centrosCusto CentroCusto[] @relation("CentroCustoPlanoConta")
+  lancamentos  LancamentoFinanceiro[]
+  rateios      RateioLancamento[]
+  regras       RegraClassificacao[]
+  centrosCusto CentroCusto[]          @relation("CentroCustoPlanoConta")
 
   @@map("categorias_financeiras")
 }
@@ -419,13 +418,33 @@ model RateioLancamento {
   categoriaFinanceiraId String?
   categoriaFinanceira   CategoriaFinanceira? @relation(fields: [categoriaFinanceiraId], references: [id])
 
+  obraId String?
+  obra   Obra?   @relation(fields: [obraId], references: [id], onDelete: SetNull)
+
+  centroCustoId String?
+  centroCusto   CentroCusto? @relation(fields: [centroCustoId], references: [id], onDelete: SetNull)
+
+  tipoDestino    TipoDestinoRateio?   @map("tipo_destino")
+  tipoCusto      TipoCustoLancamento? @map("tipo_custo")
+  categoriaCusto String?              @map("categoria_custo")
+  descricaoItem  String?              @map("descricao_item")
+  quantidade     Decimal?             @db.Decimal(12, 3)
+  valorUnitario  Decimal?             @map("valor_unitario") @db.Decimal(10, 2)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   updatedBy String?
 
   historicos RateioHistorico[]
 
+  @@index([obraId])
+  @@index([centroCustoId])
   @@map("rateios_lancamento")
+}
+
+enum TipoDestinoRateio {
+  OBRA
+  CENTRO_CUSTO
 }
 
 model RateioHistorico {
@@ -495,11 +514,11 @@ enum CategoriaFinanceiraCentro {
 }
 
 model CentroCusto {
-  id                 String                     @id @default(uuid())
-  nome               String
-  codigo             String?                    @unique
-  descricao          String?
-  tipo               TipoCentroCusto?
+  id                  String                     @id @default(uuid())
+  nome                String
+  codigo              String?                    @unique
+  descricao           String?
+  tipo                TipoCentroCusto?
   categoriaFinanceira CategoriaFinanceiraCentro? @map("categoria_financeira")
 
   // Hierarquia (Auto-relacionamento)
@@ -515,8 +534,8 @@ model CentroCusto {
   // Controle Financeiro
   ativo               Boolean  @default(true)
   aceitaLancamento    Boolean  @default(true) @map("aceita_lancamento")
-  orcamentoPrevisto   Decimal? @db.Decimal(15, 2) @map("orcamento_previsto")
-  limiteMaximo        Decimal? @db.Decimal(15, 2) @map("limite_maximo")
+  orcamentoPrevisto   Decimal? @map("orcamento_previsto") @db.Decimal(15, 2)
+  limiteMaximo        Decimal? @map("limite_maximo") @db.Decimal(15, 2)
   aprovacaoNecessaria Boolean  @default(false) @map("aprovacao_necessaria")
 
   responsavelId String?  @map("responsavel_id")
@@ -530,7 +549,7 @@ model CentroCusto {
 
   // Controle de Produção
   unidadeMedida String?  @map("unidade_medida") // m², m³, tonelada, un
-  metaFisica    Decimal? @db.Decimal(15, 2) @map("meta_fisica")
+  metaFisica    Decimal? @map("meta_fisica") @db.Decimal(15, 2)
 
   // Metadados Inteligentes
   tags String? @map("tags")
@@ -541,6 +560,7 @@ model CentroCusto {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relações existentes mantidas
+  rateios     RateioLancamento[]
   lancamentos LancamentoFinanceiro[]
   regras      RegraClassificacao[]
   obras       Obra[]                 @relation("ObraMainCentroCusto")
@@ -678,11 +698,12 @@ model Obra {
   clienteId String?
   cliente   Cliente? @relation(fields: [clienteId], references: [id])
 
-  centroCustoId String?
-  centroCusto   CentroCusto? @relation("ObraMainCentroCusto", fields: [centroCustoId], references: [id])
+  centroCustoId   String?
+  centroCusto     CentroCusto?  @relation("ObraMainCentroCusto", fields: [centroCustoId], references: [id])
   centrosCustoRel CentroCusto[] @relation("CentroCustoObra")
 
   lancamentos LancamentoFinanceiro[]
+  rateios     RateioLancamento[]
 
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now())

@@ -13,6 +13,22 @@ type EntitySuggestion = {
   confidence: number;
 };
 
+const lancamentoDetailInclude = {
+  categoria: true,
+  centroCusto: true,
+  cliente: true,
+  fornecedor: true,
+  obra: true,
+  rateios: {
+    include: {
+      categoriaFinanceira: true,
+      obra: true,
+      centroCusto: true,
+    },
+    orderBy: { createdAt: 'asc' as const },
+  },
+};
+
 @Injectable()
 export class ReconciliationService {
   constructor(
@@ -204,7 +220,9 @@ export class ReconciliationService {
           include: {
             conciliacoes: {
               include: {
-                lancamentoFinanceiro: true,
+                lancamentoFinanceiro: {
+                  include: lancamentoDetailInclude,
+                },
               },
             },
             importacao: true,
@@ -229,59 +247,142 @@ export class ReconciliationService {
     );
     const totalPeriodValue = totalPendingValue + totalConciliatedValue;
 
-    const enrichedStatements = await Promise.all(
-      statements.map(async (statement) => {
-        const suggestion = await this.suggestEntityForStatement({
-          tipo: statement.tipo,
-          descricao: statement.descricao,
-        });
+    const statementsNeedingSuggestion = statements.filter(
+      (statement) => !statement.conciliado,
+    );
+    const hasCreditStatements = statementsNeedingSuggestion.some(
+      (statement) => statement.tipo === 'CREDIT',
+    );
+    const hasDebitStatements = statementsNeedingSuggestion.some(
+      (statement) => statement.tipo === 'DEBIT',
+    );
 
-        // Learn dynamically from past reconciliations with same description
-        let learnedSuggestion: any = null;
-        if (!statement.conciliado) {
-          const pastReconciled = await this.prisma.extratoBancario.findFirst({
-            where: {
-              descricao: statement.descricao,
-              conciliado: true,
-              conciliacoes: {
-                some: {},
+    const [clients, suppliers, pastReconciledStatements] =
+      await this.prisma.$transaction([
+        hasCreditStatements
+          ? this.prisma.cliente.findMany({
+              where: { ativo: true },
+              select: {
+                id: true,
+                nomeFantasia: true,
+                razaoSocial: true,
+                cnpj: true,
+                cpf: true,
               },
-            },
-            include: {
-              conciliacoes: {
-                include: {
-                  lancamentoFinanceiro: true,
+            })
+          : this.prisma.cliente.findMany({ where: { id: { in: [] } } }),
+        hasDebitStatements
+          ? this.prisma.fornecedor.findMany({
+              where: { ativo: true },
+              select: {
+                id: true,
+                nomeFantasia: true,
+                razaoSocial: true,
+                cnpj: true,
+              },
+            })
+          : this.prisma.fornecedor.findMany({ where: { id: { in: [] } } }),
+        statementsNeedingSuggestion.length > 0
+          ? this.prisma.extratoBancario.findMany({
+              where: {
+                descricao: {
+                  in: [
+                    ...new Set(
+                      statementsNeedingSuggestion.map(
+                        (statement) => statement.descricao,
+                      ),
+                    ),
+                  ],
+                },
+                conciliado: true,
+                conciliacoes: { some: {} },
+              },
+              include: {
+                conciliacoes: {
+                  include: {
+                    lancamentoFinanceiro: {
+                      include: lancamentoDetailInclude,
+                    },
+                  },
                 },
               },
-            },
-            orderBy: {
-              data: 'desc',
-            },
-          });
+              orderBy: { data: 'desc' },
+            })
+          : this.prisma.extratoBancario.findMany({ where: { id: { in: [] } } }),
+      ]);
 
-          const linkedLancamento =
-            pastReconciled?.conciliacoes?.[0]?.lancamentoFinanceiro;
-          if (linkedLancamento) {
-            learnedSuggestion = {
-              categoriaId: linkedLancamento.categoriaId,
-              centroCustoId: linkedLancamento.centroCustoId,
-              fornecedorId: linkedLancamento.fornecedorId,
-              clienteId: linkedLancamento.clienteId,
-              tipoLancamento: linkedLancamento.tipoLancamento,
-              tipoCusto: linkedLancamento.tipoCusto,
-              categoriaCusto: linkedLancamento.categoriaCusto,
-              obraId: linkedLancamento.obraId,
-            };
-          }
+    const pastByDescription = new Map<string, any>();
+    for (const past of pastReconciledStatements) {
+      if (!pastByDescription.has(past.descricao)) {
+        pastByDescription.set(past.descricao, past);
+      }
+    }
+
+    const getSuggestion = (statement: {
+      tipo: 'CREDIT' | 'DEBIT';
+      descricao: string;
+    }): { cliente?: EntitySuggestion; fornecedor?: EntitySuggestion } => {
+      if (statement.tipo === 'CREDIT') {
+        const ranked = clients
+          .map((client) => ({
+            id: client.id,
+            nome: client.nomeFantasia || client.razaoSocial,
+            confidence: this.scoreMatch(
+              statement.descricao,
+              [client.nomeFantasia || '', client.razaoSocial || ''],
+              [client.cnpj || '', client.cpf || ''],
+            ),
+          }))
+          .filter((client) => client.confidence >= 40)
+          .sort((a, b) => b.confidence - a.confidence);
+        return ranked.length > 0 ? { cliente: ranked[0] } : {};
+      }
+
+      const ranked = suppliers
+        .map((supplier) => ({
+          id: supplier.id,
+          nome: supplier.nomeFantasia,
+          confidence: this.scoreMatch(
+            statement.descricao,
+            [supplier.nomeFantasia || '', supplier.razaoSocial || ''],
+            [supplier.cnpj || ''],
+          ),
+        }))
+        .filter((supplier) => supplier.confidence >= 40)
+        .sort((a, b) => b.confidence - a.confidence);
+      return ranked.length > 0 ? { fornecedor: ranked[0] } : {};
+    };
+
+    const enrichedStatements = statements.map((statement) => {
+      const suggestion = getSuggestion({
+        tipo: statement.tipo,
+        descricao: statement.descricao,
+      });
+
+      let learnedSuggestion: any = null;
+      if (!statement.conciliado) {
+        const linkedLancamento = pastByDescription.get(statement.descricao)
+          ?.conciliacoes?.[0]?.lancamentoFinanceiro;
+        if (linkedLancamento) {
+          learnedSuggestion = {
+            categoriaId: linkedLancamento.categoriaId,
+            centroCustoId: linkedLancamento.centroCustoId,
+            fornecedorId: linkedLancamento.fornecedorId,
+            clienteId: linkedLancamento.clienteId,
+            tipoLancamento: linkedLancamento.tipoLancamento,
+            tipoCusto: linkedLancamento.tipoCusto,
+            categoriaCusto: linkedLancamento.categoriaCusto,
+            obraId: linkedLancamento.obraId,
+          };
         }
+      }
 
-        return {
-          ...statement,
-          suggestedEntity: suggestion,
-          learnedSuggestion,
-        };
-      }),
-    );
+      return {
+        ...statement,
+        suggestedEntity: suggestion,
+        learnedSuggestion,
+      };
+    });
 
     return {
       data: enrichedStatements,

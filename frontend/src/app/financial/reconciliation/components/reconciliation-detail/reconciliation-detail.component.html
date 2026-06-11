@@ -22,6 +22,12 @@
         <span>{{ formatDate(linked.dataVencimento) }}</span>
       </div>
       <div class="info-row">
+        <label>Data Competência</label>
+        <span>{{
+          formatDate(linked.dataCompetencia || linked.dataVencimento)
+        }}</span>
+      </div>
+      <div class="info-row">
         <label>Valor</label>
         <span
           [class.credit]="linked.tipo === 'RECEITA'"
@@ -30,6 +36,88 @@
           {{ linked.valor | currency: "BRL" }}
         </span>
       </div>
+      <div class="info-row" *ngIf="linked.categoria?.nome">
+        <label>Categoria</label>
+        <span>{{ linked.categoria.nome }}</span>
+      </div>
+      <div class="info-row" *ngIf="linked.centroCusto?.nome">
+        <label>Centro de custo</label>
+        <span>{{ linked.centroCusto.nome }}</span>
+      </div>
+      <div class="info-row" *ngIf="linked.obra?.nome">
+        <label>Obra</label>
+        <span>{{ linked.obra.nome }}</span>
+      </div>
+      <div
+        class="info-row"
+        *ngIf="
+          linked.fornecedor?.nomeFantasia ||
+          linked.cliente?.nomeFantasia ||
+          linked.cliente?.razaoSocial
+        "
+      >
+        <label>{{
+          linked.tipo === "RECEITA" ? "Cliente" : "Fornecedor"
+        }}</label>
+        <span>{{
+          linked.fornecedor?.nomeFantasia ||
+            linked.cliente?.nomeFantasia ||
+            linked.cliente?.razaoSocial
+        }}</span>
+      </div>
+      <div class="info-row" *ngIf="linked.tipoLancamento">
+        <label>Tipo de lançamento</label>
+        <span>{{ getLancamentoTipoLabel(linked.tipoLancamento) }}</span>
+      </div>
+      <div class="info-row" *ngIf="linked.tipoCusto">
+        <label>Tipo de custo</label>
+        <span>{{ getTipoCustoLabel(linked.tipoCusto) }}</span>
+      </div>
+      <div class="info-row multiline" *ngIf="linked.observacoes">
+        <label>Observações</label>
+        <span>{{ linked.observacoes }}</span>
+      </div>
+    </div>
+
+    <div class="r-info rateio-info" *ngIf="getLinkedRateios().length">
+      <div class="rateio-title">Rateios do lançamento</div>
+      <article
+        class="rateio-row"
+        *ngFor="let rateio of getLinkedRateios(); let i = index"
+      >
+        <div class="rateio-row-header">
+          <strong>Destino {{ i + 1 }}</strong>
+          <span>{{ rateio.valor | currency: "BRL" }}</span>
+        </div>
+        <div class="rateio-grid">
+          <div>
+            <label>Destino</label>
+            <span>{{ getRateioDestination(rateio) }}</span>
+          </div>
+          <div>
+            <label>Categoria</label>
+            <span>{{
+              rateio.categoriaFinanceira?.nome || rateio.categoria
+            }}</span>
+          </div>
+          <div>
+            <label>Tipo de custo</label>
+            <span>{{ getTipoCustoLabel(rateio.tipoCusto) }}</span>
+          </div>
+          <div *ngIf="rateio.categoriaCusto">
+            <label>Classificação / Insumo</label>
+            <span>{{ rateio.categoriaCusto }}</span>
+          </div>
+          <div *ngIf="rateio.quantidade">
+            <label>Quantidade</label>
+            <span>{{ rateio.quantidade }}</span>
+          </div>
+          <div *ngIf="rateio.descricaoItem">
+            <label>Descrição</label>
+            <span>{{ rateio.descricaoItem }}</span>
+          </div>
+        </div>
+      </article>
     </div>
 
     <div class="form-actions">
@@ -406,9 +494,9 @@
                     class="premium-select compact"
                   >
                     <option value="OBRA">Obra</option>
-                    <option value="CENTRO_CUSTO">
-                      Depósito / Centro de custo
-                    </option>
+                    <option value="DEPOSITO">Depósito</option>
+                    <option value="ESCRITORIO">Escritório</option>
+                    <option value="CENTRO_CUSTO">Centro de custo</option>
                   </select>
                 </div>
 
@@ -431,17 +519,22 @@
 
                 <div
                   class="premium-field-wrapper"
-                  *ngIf="item.tipoDestino === 'CENTRO_CUSTO'"
+                  *ngIf="isCostCenterDestination(item)"
                 >
-                  <label class="premium-label"
-                    >Depósito / Centro de custo *</label
-                  >
+                  <label class="premium-label">{{
+                    getDestinationFieldLabel(item)
+                  }}</label>
                   <select
                     [(ngModel)]="item.centroCustoId"
                     class="premium-select compact"
                   >
-                    <option value="" disabled>Selecione o destino</option>
-                    <option *ngFor="let cc of localCostCenters" [value]="cc.id">
+                    <option value="" disabled>
+                      {{ getDestinationPlaceholder(item) }}
+                    </option>
+                    <option
+                      *ngFor="let cc of getCostCentersForAllocation(item)"
+                      [value]="cc.id"
+                    >
                       {{ cc.nome }}
                     </option>
                   </select>

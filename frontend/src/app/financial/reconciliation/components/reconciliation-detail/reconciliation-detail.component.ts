@@ -405,8 +405,18 @@ export class ReconciliationDetailComponent
   }
 
   onAllocationDestinationChange(item: any) {
-    if (item.tipoDestino === 'OBRA') item.centroCustoId = '';
-    else item.obraId = '';
+    if (item.tipoDestino === 'OBRA') {
+      item.centroCustoId = '';
+    } else {
+      item.obraId = '';
+      const availableCenters = this.getCostCentersForAllocation(item);
+      if (
+        item.centroCustoId &&
+        !availableCenters.some((center) => center.id === item.centroCustoId)
+      ) {
+        item.centroCustoId = '';
+      }
+    }
     this.saveDraft();
   }
 
@@ -534,9 +544,93 @@ export class ReconciliationDetailComponent
       !!item.categoriaId &&
       Number(item.valor) > 0 &&
       ((item.tipoDestino === 'OBRA' && !!item.obraId) ||
-        (item.tipoDestino === 'CENTRO_CUSTO' && !!item.centroCustoId)) &&
+        (this.isCostCenterDestination(item) && !!item.centroCustoId)) &&
       (item.tipoCusto !== 'MATERIAL' || !!item.categoriaCusto?.trim())
     );
+  }
+
+  isCostCenterDestination(item: any): boolean {
+    return ['CENTRO_CUSTO', 'DEPOSITO', 'ESCRITORIO'].includes(
+      item?.tipoDestino,
+    );
+  }
+
+  private normalizeLabel(value?: string | null): string {
+    return (value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
+  }
+
+  getCostCentersForAllocation(item: any): CostCenter[] {
+    const centers = this.localCostCenters || [];
+    const filterByText = (needle: string) =>
+      centers.filter((center) => {
+        const text = this.normalizeLabel(
+          [center.nome, center.codigo, center.tags, center.descricao]
+            .filter(Boolean)
+            .join(' '),
+        );
+        return text.includes(needle);
+      });
+
+    if (item?.tipoDestino === 'DEPOSITO') {
+      const filtered = filterByText('deposito');
+      return filtered.length ? filtered : centers;
+    }
+
+    if (item?.tipoDestino === 'ESCRITORIO') {
+      const filtered = filterByText('escritorio');
+      return filtered.length ? filtered : centers;
+    }
+
+    return centers;
+  }
+
+  getDestinationFieldLabel(item: any): string {
+    if (item?.tipoDestino === 'DEPOSITO') return 'Depósito *';
+    if (item?.tipoDestino === 'ESCRITORIO') return 'Escritório *';
+    return 'Centro de custo *';
+  }
+
+  getDestinationPlaceholder(item: any): string {
+    if (item?.tipoDestino === 'DEPOSITO') return 'Selecione o depósito';
+    if (item?.tipoDestino === 'ESCRITORIO') return 'Selecione o escritório';
+    return 'Selecione o destino';
+  }
+
+  getLinkedLaunch(): any {
+    return this.statement.conciliacoes?.[0]?.lancamentoFinanceiro || null;
+  }
+
+  getLinkedRateios(): any[] {
+    return this.getLinkedLaunch()?.rateios || [];
+  }
+
+  getRateioDestination(rateio: any): string {
+    if (rateio?.tipoDestino === 'OBRA') return rateio.obra?.nome || 'Obra';
+    return rateio?.centroCusto?.nome || 'Centro de custo';
+  }
+
+  getTipoCustoLabel(tipo?: string): string {
+    const labels: Record<string, string> = {
+      MATERIAL: 'Material',
+      MAO_DE_OBRA: 'Mão de obra',
+      SERVICO: 'Serviço',
+      EQUIPAMENTO: 'Equipamento',
+      OUTROS: 'Outros',
+    };
+    return tipo ? labels[tipo] || tipo : '-';
+  }
+
+  getLancamentoTipoLabel(tipo?: string): string {
+    const labels: Record<string, string> = {
+      OBRA: 'De Obras',
+      POS_OBRA: 'Pós-obra',
+      ADMINISTRATIVO: 'Administrativo',
+      ESCRITORIO: 'Escritório',
+    };
+    return tipo ? labels[tipo] || tipo : '-';
   }
 
   getItemsTotal(): number {
@@ -641,7 +735,8 @@ export class ReconciliationDetailComponent
               valor: Number(item.valor),
               categoria: 'OUTROS',
               categoriaFinanceiraId: item.categoriaId,
-              tipoDestino: item.tipoDestino,
+              tipoDestino:
+                item.tipoDestino === 'OBRA' ? 'OBRA' : 'CENTRO_CUSTO',
               obraId: item.tipoDestino === 'OBRA' ? item.obraId : null,
               centroCustoId: item.centroCustoId || null,
               tipoCusto: item.tipoCusto,

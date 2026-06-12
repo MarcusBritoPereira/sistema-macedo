@@ -76,20 +76,20 @@
                       <ion-label>Extrato de movimentação</ion-label>
                     </ion-item>
 
-                    <ion-item routerDirection="root" routerLink="/financial/cash-flow" lines="none" detail="false"
+                    <ion-item *ngIf="!auth.isJessicaUser()" routerDirection="root" routerLink="/financial/cash-flow" lines="none" detail="false"
                       routerLinkActive="selected">
                       <ion-icon slot="start" ios="trending-up-outline" md="trending-up-sharp"></ion-icon>
                       <ion-label>Fluxo de caixa</ion-label>
                     </ion-item>
 
 
-                    <ion-item routerDirection="root" routerLink="/financial/reports" lines="none" detail="false"
+                    <ion-item *ngIf="!auth.isJessicaUser()" routerDirection="root" routerLink="/financial/reports" lines="none" detail="false"
                       routerLinkActive="selected">
                       <ion-icon slot="start" ios="pie-chart-outline" md="pie-chart-sharp"></ion-icon>
                       <ion-label>Relatório</ion-label>
                     </ion-item>
 
-                    <ion-item routerDirection="root" routerLink="/financial/dre" lines="none" detail="false"
+                    <ion-item *ngIf="!auth.isJessicaUser()" routerDirection="root" routerLink="/financial/dre" lines="none" detail="false"
                       routerLinkActive="selected">
                       <ion-icon slot="start" ios="analytics-outline" md="analytics-sharp"></ion-icon>
                       <ion-label>DRE Gerencial</ion-label>

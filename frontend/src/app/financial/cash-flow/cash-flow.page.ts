@@ -104,6 +104,8 @@ export class CashFlowPage implements OnInit {
 
   // Transaction Filters
   filterPeriod: 'today' | 'week' | 'month' = 'month';
+  readonly pageSize = 50;
+  currentPage = 1;
   showAccounts = false; // Collapsible
 
   constructor(
@@ -132,6 +134,7 @@ export class CashFlowPage implements OnInit {
     this.dashboardService.getCashFlowDashboard(m, y).subscribe({
       next: (data) => {
         this.operationalData = data;
+        this.currentPage = 1;
         this.updateChart(data.chart);
         this.loading = false;
       },
@@ -167,14 +170,63 @@ export class CashFlowPage implements OnInit {
     this.showAccounts = !this.showAccounts;
   }
 
+  selectFilter(period: 'today' | 'week' | 'month') {
+    this.filterPeriod = period;
+    this.currentPage = 1;
+  }
+
   get filteredTransactions() {
     if (!this.operationalData?.transactions) return [];
 
-    const now = new Date();
-    // Normalize now to start of day? No, keep it simple.
+    const transactions = this.operationalData.transactions;
+    if (this.filterPeriod === 'month') return transactions;
 
-    // ... filtering logic later ...
-    return this.operationalData.transactions;
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+
+    if (this.filterPeriod === 'today') {
+      return transactions.filter((t: any) => {
+        const date = new Date(t.data);
+        return date >= startOfToday && date <= endOfToday;
+      });
+    }
+
+    const dayOfWeek = startOfToday.getDay();
+    const startOfWeek = new Date(startOfToday);
+    startOfWeek.setDate(startOfToday.getDate() - dayOfWeek);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    return transactions.filter((t: any) => {
+      const date = new Date(t.data);
+      return date >= startOfWeek && date <= endOfWeek;
+    });
+  }
+
+  get paginatedTransactions() {
+    const start = (this.currentPage - 1) * this.pageSize;
+    return this.filteredTransactions.slice(start, start + this.pageSize);
+  }
+
+  get totalPages() {
+    return Math.max(1, Math.ceil(this.filteredTransactions.length / this.pageSize));
+  }
+
+  get paginationStart() {
+    if (this.filteredTransactions.length === 0) return 0;
+    return (this.currentPage - 1) * this.pageSize + 1;
+  }
+
+  get paginationEnd() {
+    return Math.min(this.currentPage * this.pageSize, this.filteredTransactions.length);
+  }
+
+  changePage(delta: number) {
+    const nextPage = this.currentPage + delta;
+    if (nextPage < 1 || nextPage > this.totalPages) return;
+    this.currentPage = nextPage;
   }
 
   // Actions

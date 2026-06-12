@@ -1,6 +1,7 @@
 
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth/auth.guard';
+import { RestrictedFinancialGuard } from './guards/restricted-financial/restricted-financial.guard';
 
 export const routes: Routes = [
   {
@@ -122,7 +123,7 @@ export const routes: Routes = [
   {
     path: 'financial/cash-flow',
     loadComponent: () => import('./financial/cash-flow/cash-flow.page').then(m => m.CashFlowPage),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RestrictedFinancialGuard]
   },
 
   {
@@ -138,7 +139,7 @@ export const routes: Routes = [
   {
     path: 'financial/dre',
     loadComponent: () => import('./financial/dre/dre.page').then(m => m.DrePage),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RestrictedFinancialGuard]
   },
   {
     path: 'financial/bank-accounts',
@@ -158,7 +159,7 @@ export const routes: Routes = [
   {
     path: 'financial/reports',
     loadComponent: () => import('./financial/reports/reports.page').then(m => m.ReportsPage),
-    canActivate: [AuthGuard]
+    canActivate: [AuthGuard, RestrictedFinancialGuard]
   },
   {
     path: 'financial/obras/obras-list',

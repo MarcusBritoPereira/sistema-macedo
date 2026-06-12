@@ -661,12 +661,14 @@ export class FinancialDashboardService {
       0,
     );
 
-    // 2. Receivables (A Receber) for the Period - Including OVERDUE
+    // 2. Receivables (A Receber) for the selected month only.
+    // The previous implementation included every overdue item up to the month end,
+    // making the KPI cards look unchanged when the user navigated between months.
     const receivables = await this.prisma.lancamentoFinanceiro.findMany({
       where: {
         tipo: 'RECEITA',
         OR: [
-          { dataVencimento: { lte: endOfMonth } }, // Includes overdue
+          { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
           { dataPagamento: { gte: startOfMonth, lte: endOfMonth } },
         ],
       },
@@ -683,17 +685,22 @@ export class FinancialDashboardService {
       .reduce((sum, t) => sum + Number(t.valor), 0);
 
     const recPending = receivables
-      .filter((t) => t.status === 'PREVISTO' && t.dataVencimento <= endOfMonth)
+      .filter(
+        (t) =>
+          t.status === 'PREVISTO' &&
+          t.dataVencimento >= startOfMonth &&
+          t.dataVencimento <= endOfMonth,
+      )
       .reduce((sum, t) => sum + Number(t.valor), 0);
 
     const recTotal = recReceived + recPending;
 
-    // 3. Payables (A Pagar) for the Period - Including OVERDUE
+    // 3. Payables (A Pagar) for the selected month only.
     const payables = await this.prisma.lancamentoFinanceiro.findMany({
       where: {
         tipo: 'DESPESA',
         OR: [
-          { dataVencimento: { lte: endOfMonth } }, // Includes overdue
+          { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
           { dataPagamento: { gte: startOfMonth, lte: endOfMonth } },
         ],
       },
@@ -710,7 +717,12 @@ export class FinancialDashboardService {
       .reduce((sum, t) => sum + Number(t.valor), 0);
 
     const payPending = payables
-      .filter((t) => t.status === 'PREVISTO' && t.dataVencimento <= endOfMonth)
+      .filter(
+        (t) =>
+          t.status === 'PREVISTO' &&
+          t.dataVencimento >= startOfMonth &&
+          t.dataVencimento <= endOfMonth,
+      )
       .reduce((sum, t) => sum + Number(t.valor), 0);
 
     const payTotal = payPaid + payPending;
@@ -966,25 +978,29 @@ export class FinancialDashboardService {
           Number(totalIn._sum.valor || 0) -
           Number(totalOut._sum.valor || 0);
 
-        // TRY REAL-TIME BALANCE from API if integrated
-        try {
-          const integration = await this.prisma.integracaoBancaria.findUnique({
-            where: { contaBancariaId: acc.id },
-          });
+        // TRY REAL-TIME BALANCE from API if integrated, but only for the live
+        // dashboard. Historical/month-selected dashboards must keep the
+        // calculated balance capped by lteDate so changing months changes KPIs.
+        if (!lteDate) {
+          try {
+            const integration = await this.prisma.integracaoBancaria.findUnique({
+              where: { contaBancariaId: acc.id },
+            });
 
-          if (integration && integration.status === 'CONNECTED') {
-            const realTimeBal = await this.bankingService.getAccountBalance(
-              acc.id,
+            if (integration && integration.status === 'CONNECTED') {
+              const realTimeBal = await this.bankingService.getAccountBalance(
+                acc.id,
+              );
+              bal = realTimeBal;
+            }
+          } catch (e: any) {
+            // If the integration is bad or disconnected, do not fail.
+            console.error(
+              `[Dashboard] Failed to fetch real-time balance for ${acc.nome} (${acc.id}):`,
+              e.message,
             );
-            bal = realTimeBal;
+            // Fallback to calculated balance (already set in 'bal')
           }
-        } catch (e: any) {
-          // If the integration is bad or disconnected, do not fail.
-          console.error(
-            `[Dashboard] Failed to fetch real-time balance for ${acc.nome} (${acc.id}):`,
-            e.message,
-          );
-          // Fallback to calculated balance (already set in 'bal')
         }
 
         return { ...acc, saldo: bal };

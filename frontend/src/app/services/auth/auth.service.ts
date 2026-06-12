@@ -75,6 +75,13 @@ export class AuthService {
     this.userSubject.next(null);
   }
 
+  isJessicaUser(user: any = this.userSubject.value): boolean {
+    const email = user?.email?.toLowerCase?.() || '';
+    const nome = user?.nome?.toLowerCase?.() || '';
+
+    return email === 'engjessicamiranda91@gmail.com' || nome.includes('jessica') || nome.includes('jéssica');
+  }
+
   logout() {
     this.api.post('auth/logout', {}).subscribe({ error: () => null });
     this.clearSessionState();

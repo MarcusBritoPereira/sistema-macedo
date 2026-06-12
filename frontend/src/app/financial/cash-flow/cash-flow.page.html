@@ -121,11 +121,11 @@
             <div class="block-header">
                 <div class="filters">
                     <ion-button size="small" [fill]="filterPeriod === 'month' ? 'solid' : 'outline'"
-                        (click)="filterPeriod = 'month'">Este Mês</ion-button>
+                        (click)="selectFilter('month')">Este Mês</ion-button>
                     <ion-button size="small" [fill]="filterPeriod === 'week' ? 'solid' : 'outline'"
-                        (click)="filterPeriod = 'week'">Esta Semana</ion-button>
+                        (click)="selectFilter('week')">Esta Semana</ion-button>
                     <ion-button size="small" [fill]="filterPeriod === 'today' ? 'solid' : 'outline'"
-                        (click)="filterPeriod = 'today'">Hoje</ion-button>
+                        (click)="selectFilter('today')">Hoje</ion-button>
                 </div>
             </div>
 
@@ -144,7 +144,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        <tr *ngFor="let t of filteredTransactions">
+                        <tr *ngFor="let t of paginatedTransactions">
                             <td>{{ t.data | date:'dd/MM' }}</td>
                             <td>{{ t.descricao }}</td>
                             <td>{{ t.conta }}</td>
@@ -182,13 +182,28 @@
                 </table>
             </div>
 
+            <div class="pagination-bar" *ngIf="filteredTransactions.length > pageSize">
+                <div class="pagination-info">
+                    Mostrando {{ paginationStart }}-{{ paginationEnd }} de {{ filteredTransactions.length }} movimentações
+                </div>
+                <div class="pagination-actions">
+                    <ion-button fill="outline" size="small" (click)="changePage(-1)" [disabled]="currentPage === 1">
+                        Anterior
+                    </ion-button>
+                    <span>Página {{ currentPage }} de {{ totalPages }}</span>
+                    <ion-button fill="outline" size="small" (click)="changePage(1)" [disabled]="currentPage === totalPages">
+                        Próxima
+                    </ion-button>
+                </div>
+            </div>
+
             <!-- Mobile Card List (Mobile) -->
             <div class="mobile-list-container ion-hide-md-up">
                 <div class="empty-state" *ngIf="filteredTransactions.length === 0">
                     <p>Nenhuma movimentação neste período.</p>
                 </div>
 
-                <ion-card class="mobile-item-card" *ngFor="let t of filteredTransactions">
+                <ion-card class="mobile-item-card" *ngFor="let t of paginatedTransactions">
                     <ion-card-content>
                         <div class="card-header">
                             <div class="card-title-row">

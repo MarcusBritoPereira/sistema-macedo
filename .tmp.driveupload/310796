@@ -1,7 +1,0 @@
-{
-  "name": "sistema-macedo",
-  "integrations": {
-    "capacitor": {}
-  },
-  "type": "angular"
-}

@@ -1,7 +1,7 @@
 /* Side Menu Modernization */
 
 ion-menu {
-    --width: 280px;
+    --width: 240px;
     transition: width 0.3s ease;
 }
 
@@ -11,22 +11,24 @@ ion-content {
 }
 
 .menu-header {
-    padding: 40px 20px 20px 20px;
+    padding: 24px 16px 12px 16px;
     display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    margin-bottom: 10px;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 0;
     transition: padding 0.3s ease;
 
     .user-avatar {
-        width: 60px;
-        height: 60px;
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
         overflow: hidden;
-        margin-bottom: 15px;
-        border: 3px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 0;
+        border: 2px solid rgba(255, 255, 255, 0.2);
         box-shadow: none !important;
         transition: all 0.3s ease;
+        flex-shrink: 0;
 
         img {
             width: 100%;
@@ -37,20 +39,23 @@ ion-content {
 
     .user-info {
         transition: opacity 0.2s ease;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
 
         h2 {
             margin: 0;
-            font-size: 1.25rem;
-            font-weight: 700;
+            font-size: 1rem;
+            font-weight: 600;
             color: #ffffff;
-            letter-spacing: -0.025em;
+            letter-spacing: -0.01em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         p {
-            margin: 4px 0 0 0;
-            font-size: 0.875rem;
-            color: rgba(255, 255, 255, 0.7);
-            font-weight: 500;
+            display: none;
         }
     }
 }
@@ -208,8 +213,9 @@ ion-menu.menu-collapsed {
     --width: 80px !important;
 
     .menu-header {
-        padding: 40px 10px 20px 10px;
+        padding: 24px 10px 12px 10px;
         align-items: center;
+        justify-content: center;
 
         .user-info {
             display: none;
@@ -218,8 +224,8 @@ ion-menu.menu-collapsed {
 
         .user-avatar {
             margin-bottom: 0;
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
         }
     }
 

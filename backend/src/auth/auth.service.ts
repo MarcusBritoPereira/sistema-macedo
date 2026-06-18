@@ -146,12 +146,26 @@ export class AuthService {
     }
   }
 
+  async getProfile(userId: string) {
+    const user = await this.usersService.findOneSafe(userId);
+    if (!user) {
+      throw new UnauthorizedException('Usuário não encontrado');
+    }
+    return { user };
+  }
+
   async changePassword(userId: string, novaSenha: string) {
     await this.usersService.update(userId, {
       senha: novaSenha,
       precisaTrocarSenha: false,
     });
-    
+
+    const sessionsPattern = `session:${userId}:*`;
+    const keys = await this.redis.keys(sessionsPattern);
+    if (keys.length) {
+      await this.redis.del(...keys);
+    }
+
     return { ok: true };
   }
 }

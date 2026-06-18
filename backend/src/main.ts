@@ -1,4 +1,4 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import helmet from 'helmet';
@@ -10,6 +10,53 @@ function parseOrigins(value?: string) {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
+}
+
+function isProduction() {
+  return process.env.NODE_ENV === 'production';
+}
+
+function getAllowedOrigins() {
+  const configured = parseOrigins(process.env.FRONTEND_URL);
+  if (isProduction()) {
+    return configured.length
+      ? configured
+      : ['https://sistemamacedo.cloud', 'https://www.sistemamacedo.cloud'];
+  }
+
+  return [
+    'http://localhost:4200',
+    'http://localhost:8100',
+    'http://127.0.0.1:4200',
+    'http://127.0.0.1:8100',
+    ...configured,
+  ];
+}
+
+function csrfOriginGuard(allowedOrigins: string[]) {
+  const unsafeMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+  return (req: any, res: any, next: () => void) => {
+    if (!unsafeMethods.has(req.method)) return next();
+
+    const hasCookieAuth = typeof req.headers.cookie === 'string';
+    if (!hasCookieAuth) return next();
+
+    const origin = req.headers.origin;
+    const referer = req.headers.referer;
+    let source = origin;
+    if (!source && referer) {
+      try {
+        source = new URL(referer).origin;
+      } catch {
+        source = null;
+      }
+    }
+
+    if (source && allowedOrigins.includes(source)) return next();
+
+    res.statusCode = 403;
+    res.end('CSRF origin rejected');
+  };
 }
 
 async function bootstrap() {
@@ -45,15 +92,8 @@ async function bootstrap() {
   );
   app.useGlobalInterceptors(new LoggingInterceptor());
 
-  // CORS seguro: lista explícita de origens
-  const allowedOrigins = [
-    'https://sistemamacedo.cloud',
-    'https://www.sistemamacedo.cloud',
-    'http://sistemamacedo.cloud',
-    'http://212.85.14.87',
-    'http://localhost:8100', // dev (Ionic/Angular)
-    ...parseOrigins(process.env.FRONTEND_URL), // opcional (pode ser CSV)
-  ];
+  const allowedOrigins = getAllowedOrigins();
+  app.use(csrfOriginGuard(allowedOrigins));
 
   app.enableCors({
     origin: (origin, cb) => {

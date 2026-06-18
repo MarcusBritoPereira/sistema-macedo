@@ -296,9 +296,13 @@
               </div>
               <div
                 *ngIf="!operationalData.costCenterKpis?.expensesByCostCenter?.length"
-                class="no-data-msg"
+                class="no-data-msg-center"
               >
-                Nenhuma despesa registrada nos centros de custo.
+                <ion-icon name="pie-chart-outline" class="construct-placeholder-icon" style="font-size: 32px; color: #9ca3af; margin-bottom: 8px;"></ion-icon>
+                <span>Nenhuma despesa registrada nos centros de custo.</span>
+                <ion-button routerLink="/financial/cost-centers" fill="outline" size="small" class="ion-margin-top" color="primary">
+                  Configurar Centros de Custo
+                </ion-button>
               </div>
             </div>
           </ion-card-content>
@@ -395,13 +399,19 @@
                 *ngIf="!operationalData.costCenterKpis?.deviations?.length"
                 class="no-data-msg-center"
               >
-                <div class="success-illustration">
-                  <span class="success-checkmark">✓</span>
-                </div>
-                <span
-                  >Saúde financeira excelente. Nenhum centro de custo estourou o
-                  planejado.</span
-                >
+                <ng-container *ngIf="operationalData.costCenterKpis?.expensesByCostCenter?.length; else noCostCenters">
+                  <div class="success-illustration">
+                    <span class="success-checkmark">✓</span>
+                  </div>
+                  <span>Saúde financeira excelente. Nenhum centro de custo estourou o planejado.</span>
+                </ng-container>
+                <ng-template #noCostCenters>
+                  <ion-icon name="information-circle-outline" style="font-size: 32px; color: #9ca3af; margin-bottom: 8px;"></ion-icon>
+                  <span>Configure um orçamento para acompanhar os desvios aqui.</span>
+                  <ion-button routerLink="/financial/cost-centers" fill="clear" size="small" class="ion-margin-top" color="primary">
+                    Criar primeiro orçamento
+                  </ion-button>
+                </ng-template>
               </div>
             </div>
           </ion-card-content>
@@ -493,11 +503,12 @@
                 <ion-icon
                   name="construct-outline"
                   class="construct-placeholder-icon"
+                  style="font-size: 32px; color: #9ca3af; margin-bottom: 8px;"
                 ></ion-icon>
-                <span
-                  >Nenhum centro de custo operacional com meta física
-                  registrado.</span
-                >
+                <span>Nenhum centro de custo operacional com meta física registrado.</span>
+                <ion-button routerLink="/financial/cost-centers" fill="outline" size="small" class="ion-margin-top" color="primary">
+                  Definir Metas Físicas
+                </ion-button>
               </div>
             </div>
           </ion-card-content>

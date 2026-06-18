@@ -37,6 +37,7 @@ import {
   trendingDownOutline,
   trendingUpOutline,
   walletOutline,
+  informationCircleOutline,
 } from 'ionicons/icons';
 import { Chart, ChartConfiguration, ChartData, registerables } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -129,6 +130,7 @@ export class DashboardPage implements OnInit {
       business,
       ellipsisHorizontal,
       alertCircleOutline,
+      informationCircleOutline,
       speedometerOutline,
       pieChartOutline,
       pricetagOutline,

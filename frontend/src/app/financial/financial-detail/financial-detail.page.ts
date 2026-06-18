@@ -66,11 +66,11 @@ export class FinancialDetailPage implements OnInit {
 
       // Details
       habilitarRateio: [false],
-      tipoLancamento: ['ADMINISTRATIVO', [Validators.required]],
+      tipoLancamento: ['ADMINISTRATIVO'],
       obraId: [''],
       tipoCusto: ['OUTROS'],
       categoriaCusto: [''],
-      categoriaId: ['', [Validators.required]],
+      categoriaId: [''],
       subcategoriaId: [''],
       centroCustoId: [''],
       codigoReferencia: [''],
@@ -100,9 +100,15 @@ export class FinancialDetailPage implements OnInit {
     const url = this.router.url;
     if (url.includes('payables')) {
       this.type = 'payables';
+      this.financialForm.get('tipoLancamento')?.setValidators([Validators.required]);
+      this.financialForm.get('categoriaId')?.setValidators([Validators.required]);
     } else {
       this.type = 'receivables';
+      this.financialForm.get('tipoLancamento')?.clearValidators();
+      this.financialForm.get('categoriaId')?.clearValidators();
     }
+    this.financialForm.get('tipoLancamento')?.updateValueAndValidity();
+    this.financialForm.get('categoriaId')?.updateValueAndValidity();
 
     this.itemId = this.route.snapshot.paramMap.get('id');
 

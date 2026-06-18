@@ -78,7 +78,7 @@
         </div>
 
 
-        <div class="input-row">
+        <div class="input-row" *ngIf="type === 'payables'">
           <div class="input-group flex-1">
             <label>Tipo de lançamento *</label>
             <select formControlName="tipoLancamento" class="clean-input">
@@ -111,8 +111,18 @@
           </div>
         </div>
 
+        <div class="input-row" *ngIf="type === 'receivables'">
+          <div class="input-group flex-1">
+            <label>Obra vinculada (Opcional)</label>
+            <select formControlName="obraId" class="clean-input">
+              <option value="" disabled selected>Nenhuma</option>
+              <option *ngFor="let obra of obras" [value]="obra.id">{{ obra.nome }}</option>
+            </select>
+          </div>
+        </div>
+
         <!-- Categoria / CC -->
-        <div class="input-row">
+        <div class="input-row" *ngIf="type === 'payables'">
           <div class="input-group flex-1">
             <label>Categoria *</label>
             <select formControlName="categoriaId" (change)="onCategoryChange($event)" class="clean-input">
@@ -139,7 +149,7 @@
         </div>
 
         <!-- Toggles Section 1 -->
-        <div class="info-alert" style="background: #f8f9fa; border: 1px solid #eee; margin-top: 8px;">
+        <div class="info-alert" style="background: #f8f9fa; border: 1px solid #eee; margin-top: 8px;" *ngIf="type === 'payables'">
           <div class="toggle-group" style="width: 100%; justify-content: space-between;">
             <div>
               <h4 style="margin: 0; font-size: 0.9rem; font-weight: 600; color: #333;">Rateio de Custo</h4>

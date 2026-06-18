@@ -1,18 +1,44 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
-  IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol,
-  IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList,
-  IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton,
-  IonDatetimeButton, IonModal, IonDatetime, IonSpinner, ModalController, IonFab, IonFabButton, IonFabList
+  IonContent,
+  IonHeader,
+  IonTitle,
+  IonToolbar,
+  IonButtons,
+  IonMenuButton,
+  IonCard,
+  IonCardContent,
+  IonIcon,
+  IonButton,
+  IonSpinner,
 } from '@ionic/angular/standalone';
-import { FinancialDashboardService, OperationalDashboardResponse } from '../../services/financial/financial-dashboard.service';
+import {
+  FinancialDashboardService,
+  OperationalDashboardResponse,
+} from '../../services/financial/financial-dashboard.service';
 import { addIcons } from 'ionicons';
 import {
-  business, ellipsisHorizontal, alertCircleOutline, speedometerOutline, pieChartOutline, pricetagOutline, constructOutline, trendingUpOutline, trendingDownOutline, cashOutline, statsChartOutline
+  alertCircleOutline,
+  arrowForwardOutline,
+  business,
+  calendarOutline,
+  cashOutline,
+  constructOutline,
+  ellipsisHorizontal,
+  pieChartOutline,
+  pricetagOutline,
+  refreshOutline,
+  shieldCheckmarkOutline,
+  speedometerOutline,
+  statsChartOutline,
+  trendingDownOutline,
+  trendingUpOutline,
+  walletOutline,
 } from 'ionicons/icons';
-import { Chart, ChartConfiguration, ChartData, ChartType, registerables } from 'chart.js';
+import { Chart, ChartConfiguration, ChartData, registerables } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
 
 Chart.register(...registerables);
@@ -23,16 +49,28 @@ Chart.register(...registerables);
   styleUrls: ['./dashboard.page.scss'],
   standalone: true,
   imports: [
-    CommonModule, FormsModule, BaseChartDirective,
-    IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol,
-    IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList,
-    IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton,
-    IonDatetimeButton, IonModal, IonDatetime, IonSpinner, IonFab, IonFabButton, IonFabList
-  ]
+    CommonModule,
+    FormsModule,
+    RouterLink,
+    BaseChartDirective,
+    IonContent,
+    IonHeader,
+    IonTitle,
+    IonToolbar,
+    IonButtons,
+    IonMenuButton,
+    IonCard,
+    IonCardContent,
+    IonIcon,
+    IonButton,
+    IonSpinner,
+  ],
 })
 export class DashboardPage implements OnInit {
   operationalData: OperationalDashboardResponse | null = null;
   loading = false;
+  errorMessage = '';
+  activeRange = 'Mês atual';
 
   // Chart 1: Daily Flow (Mixed)
   public dailyFlowChartOptions: ChartConfiguration['options'] = {
@@ -40,16 +78,16 @@ export class DashboardPage implements OnInit {
     maintainAspectRatio: false,
     scales: {
       x: { grid: { display: false } },
-      y: { beginAtZero: true }
+      y: { beginAtZero: true },
     },
     plugins: {
       legend: { display: false },
-      tooltip: { mode: 'index', intersect: false }
-    }
+      tooltip: { mode: 'index', intersect: false },
+    },
   };
   public dailyFlowChartData: ChartData<'bar' | 'line'> = {
     labels: [],
-    datasets: []
+    datasets: [],
   };
 
   // Chart 2: Sales (Bar)
@@ -58,15 +96,15 @@ export class DashboardPage implements OnInit {
     maintainAspectRatio: false,
     scales: {
       x: { grid: { display: false } },
-      y: { beginAtZero: true }
+      y: { beginAtZero: true },
     },
     plugins: {
-      legend: { display: false }
-    }
+      legend: { display: false },
+    },
   };
   public salesChartData: ChartData<'bar'> = {
     labels: [],
-    datasets: []
+    datasets: [],
   };
 
   // Chart 3: Cost Center Expenses (Doughnut)
@@ -76,7 +114,7 @@ export class DashboardPage implements OnInit {
     cutout: '70%',
     plugins: {
       legend: {
-        display: false
+        display: false,
       },
       tooltip: {
         backgroundColor: '#1E293B',
@@ -92,31 +130,34 @@ export class DashboardPage implements OnInit {
             const label = context.label || '';
             const value = (context.raw as number) || 0;
             return ` ${label}: ${this.formatCurrency(value)}`;
-          }
-        }
-      }
-    }
+          },
+        },
+      },
+    },
   };
   public costCenterChartData: ChartData<'doughnut'> = {
     labels: [],
-    datasets: []
+    datasets: [],
   };
 
-  constructor(
-    private dashboardService: FinancialDashboardService
-  ) {
-    addIcons({ 
-      business, 
-      ellipsisHorizontal, 
-      alertCircleOutline, 
-      speedometerOutline, 
-      pieChartOutline, 
-      pricetagOutline, 
-      constructOutline, 
-      trendingUpOutline, 
-      trendingDownOutline, 
+  constructor(private dashboardService: FinancialDashboardService) {
+    addIcons({
+      business,
+      ellipsisHorizontal,
+      alertCircleOutline,
+      speedometerOutline,
+      pieChartOutline,
+      pricetagOutline,
+      constructOutline,
+      trendingUpOutline,
+      trendingDownOutline,
       cashOutline,
-      statsChartOutline
+      statsChartOutline,
+      refreshOutline,
+      calendarOutline,
+      shieldCheckmarkOutline,
+      arrowForwardOutline,
+      walletOutline,
     });
   }
 
@@ -126,6 +167,7 @@ export class DashboardPage implements OnInit {
 
   loadData() {
     this.loading = true;
+    this.errorMessage = '';
     this.dashboardService.getOperationalDashboard().subscribe({
       next: (data) => {
         this.operationalData = data;
@@ -134,18 +176,20 @@ export class DashboardPage implements OnInit {
       },
       error: (err) => {
         console.error('Error loading dashboard', err);
+        this.errorMessage =
+          'Não foi possível carregar o dashboard agora. Verifique a conexão e tente novamente.';
         this.loading = false;
-      }
+      },
     });
   }
 
   setupCharts(data: OperationalDashboardResponse) {
     // 1. Daily Flow Chart
     if (data.dailyFlow) {
-      const labels = data.dailyFlow.map(d => d.label);
-      const recebs = data.dailyFlow.map(d => d.recebimentos);
-      const pags = data.dailyFlow.map(d => d.pagamentos);
-      const saldo = data.dailyFlow.map(d => d.saldo);
+      const labels = data.dailyFlow.map((d) => d.label);
+      const recebs = data.dailyFlow.map((d) => d.recebimentos);
+      const pags = data.dailyFlow.map((d) => d.pagamentos);
+      const saldo = data.dailyFlow.map((d) => d.saldo);
 
       this.dailyFlowChartData = {
         labels: labels,
@@ -160,7 +204,7 @@ export class DashboardPage implements OnInit {
             pointBorderColor: '#1E3A8A',
             borderWidth: 2,
             tension: 0.4,
-            order: 1
+            order: 1,
           },
           {
             type: 'bar',
@@ -169,7 +213,7 @@ export class DashboardPage implements OnInit {
             backgroundColor: '#60A5FA', // Blue Light
             borderRadius: 4,
             barPercentage: 0.6,
-            order: 2
+            order: 2,
           },
           {
             type: 'bar',
@@ -180,21 +224,21 @@ export class DashboardPage implements OnInit {
             // Let's use the colors from SCSS.
             borderRadius: 4,
             barPercentage: 0.6,
-            order: 3
-          }
-        ]
+            order: 3,
+          },
+        ],
       };
     }
 
     // 2. Sales Chart
     if (data.monthlyHistory) {
-      // Re-sort if needed, but backend sends last 6 months descending in creation, 
+      // Re-sort if needed, but backend sends last 6 months descending in creation,
       // check backend logic: "for i=5; i>=0" -> d is months ago. So it pushes oldest first?
-      // "d = new Date(now... - i)". i=5 (5 months ago).. i=0 (current). 
+      // "d = new Date(now... - i)". i=5 (5 months ago).. i=0 (current).
       // Yes, pushes oldest first.
 
-      const salesLabels = data.monthlyHistory.map(h => h.label);
-      const salesValues = data.monthlyHistory.map(h => h.valor);
+      const salesLabels = data.monthlyHistory.map((h) => h.label);
+      const salesValues = data.monthlyHistory.map((h) => h.valor);
 
       this.salesChartData = {
         labels: salesLabels,
@@ -204,18 +248,18 @@ export class DashboardPage implements OnInit {
             data: salesValues,
             backgroundColor: '#0EA5E9', // Blue Sky
             borderRadius: 4,
-            barPercentage: 0.6
-          }
-        ]
+            barPercentage: 0.6,
+          },
+        ],
       };
     }
 
     // 3. Cost Center Expenses Chart
     if (data.costCenterKpis?.expensesByCostCenter) {
       const expenses = data.costCenterKpis.expensesByCostCenter;
-      const ccLabels = expenses.map(e => e.nome);
-      const ccValues = expenses.map(e => e.total);
-      const ccColors = expenses.map(e => e.cor || '#64748B');
+      const ccLabels = expenses.map((e) => e.nome);
+      const ccValues = expenses.map((e) => e.total);
+      const ccColors = expenses.map((e) => e.cor || '#64748B');
 
       this.costCenterChartData = {
         labels: ccLabels,
@@ -226,14 +270,105 @@ export class DashboardPage implements OnInit {
             hoverBackgroundColor: ccColors,
             borderWidth: 2,
             borderColor: '#ffffff',
-            hoverOffset: 6
-          }
-        ]
+            hoverOffset: 6,
+          },
+        ],
       };
     }
   }
 
+  get totalReceivablesRisk(): number {
+    if (!this.operationalData) return 0;
+    return (
+      this.operationalData.receivables.overdue +
+      this.operationalData.receivables.today +
+      this.operationalData.receivables.remainingMonth
+    );
+  }
+
+  get totalPayablesRisk(): number {
+    if (!this.operationalData) return 0;
+    return (
+      this.operationalData.payables.overdue +
+      this.operationalData.payables.today +
+      this.operationalData.payables.remainingMonth
+    );
+  }
+
+  get projectedNetFlow(): number {
+    return this.totalReceivablesRisk - this.totalPayablesRisk;
+  }
+
+  get overdueBalance(): number {
+    if (!this.operationalData) return 0;
+    return (
+      this.operationalData.receivables.overdue -
+      this.operationalData.payables.overdue
+    );
+  }
+
+  get healthScore(): number {
+    if (!this.operationalData) return 0;
+    const obligations = Math.max(this.totalPayablesRisk, 1);
+    const liquidity = Math.min(
+      (this.operationalData.totalBalance / obligations) * 55,
+      55,
+    );
+    const overduePenalty = this.operationalData.payables.overdue > 0 ? 20 : 0;
+    const deviationPenalty = Math.min(
+      (this.operationalData.costCenterKpis?.deviations?.length || 0) * 10,
+      25,
+    );
+    return Math.max(
+      0,
+      Math.min(
+        100,
+        Math.round(45 + liquidity - overduePenalty - deviationPenalty),
+      ),
+    );
+  }
+
+  get healthLabel(): string {
+    if (this.healthScore >= 80) return 'Saudável';
+    if (this.healthScore >= 60) return 'Atenção';
+    return 'Crítico';
+  }
+
+  get healthTone(): 'success' | 'warning' | 'danger' {
+    if (this.healthScore >= 80) return 'success';
+    if (this.healthScore >= 60) return 'warning';
+    return 'danger';
+  }
+
+  get lastUpdateLabel(): string {
+    if (!this.operationalData?.lastUpdate) return 'Aguardando atualização';
+    return new Intl.DateTimeFormat('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date(this.operationalData.lastUpdate));
+  }
+
+  get topAccountLabel(): string {
+    const account = this.operationalData?.accounts?.[0];
+    if (!account) return 'Nenhuma conta cadastrada';
+    return `${account.banco} · ${account.nome}`;
+  }
+
+  get hasDailyFlowData(): boolean {
+    return (this.operationalData?.dailyFlow?.length || 0) > 0;
+  }
+
+  get hasSalesData(): boolean {
+    return (this.operationalData?.monthlyHistory?.length || 0) > 0;
+  }
+
   formatCurrency(val: number): string {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }).format(val || 0);
   }
 }

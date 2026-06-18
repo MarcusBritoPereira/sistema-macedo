@@ -13,7 +13,102 @@
   </div>
 
   <div class="dashboard-container" *ngIf="operationalData && !loading">
-    <h1 class="page-title ion-hide-md-down">Visão Geral</h1>
+    <section class="dashboard-hero">
+      <div class="hero-copy">
+        <span class="eyebrow"
+          ><ion-icon name="calendar-outline"></ion-icon>{{ activeRange }}</span
+        >
+        <h1>Visão financeira operacional</h1>
+        <p>
+          Indicadores vivos para antecipar vencimentos, acompanhar saldo,
+          priorizar conciliação e medir centros de custo.
+        </p>
+        <div class="hero-meta">
+          <span>Atualizado em {{ lastUpdateLabel }}</span>
+          <span>{{ topAccountLabel }}</span>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <ion-button fill="clear" class="refresh-btn" (click)="loadData()">
+          <ion-icon name="refresh-outline" slot="start"></ion-icon>
+          Atualizar
+        </ion-button>
+        <ion-button
+          routerLink="/financial/reconciliation"
+          class="primary-action"
+        >
+          Conciliar agora
+          <ion-icon name="arrow-forward-outline" slot="end"></ion-icon>
+        </ion-button>
+      </div>
+    </section>
+
+    <div class="executive-strip">
+      <ion-card
+        class="executive-card health-card"
+        [class.success]="healthTone === 'success'"
+        [class.warning]="healthTone === 'warning'"
+        [class.danger]="healthTone === 'danger'"
+      >
+        <ion-card-content>
+          <div class="score-ring" [style.--score]="healthScore + '%'">
+            <span>{{ healthScore }}</span>
+          </div>
+          <div>
+            <span class="metric-label">Saúde financeira</span>
+            <strong>{{ healthLabel }}</strong>
+            <small>Saldo, atrasos e desvios orçamentários consolidados.</small>
+          </div>
+        </ion-card-content>
+      </ion-card>
+      <ion-card class="executive-card">
+        <ion-card-content>
+          <ion-icon name="wallet-outline" class="metric-icon blue"></ion-icon>
+          <div>
+            <span class="metric-label">Saldo em contas</span>
+            <strong>{{ formatCurrency(operationalData.totalBalance) }}</strong>
+            <small
+              >{{ operationalData.accounts.length || 0 }} conta(s)
+              monitorada(s)</small
+            >
+          </div>
+        </ion-card-content>
+      </ion-card>
+      <ion-card
+        class="executive-card"
+        [class.positive]="projectedNetFlow >= 0"
+        [class.negative]="projectedNetFlow < 0"
+      >
+        <ion-card-content>
+          <ion-icon
+            [name]="projectedNetFlow >= 0 ? 'trending-up-outline' : 'trending-down-outline'"
+            class="metric-icon"
+          ></ion-icon>
+          <div>
+            <span class="metric-label">Fluxo projetado</span>
+            <strong>{{ formatCurrency(projectedNetFlow) }}</strong>
+            <small>A receber - a pagar no horizonte atual</small>
+          </div>
+        </ion-card-content>
+      </ion-card>
+      <ion-card
+        class="executive-card"
+        [class.positive]="overdueBalance >= 0"
+        [class.negative]="overdueBalance < 0"
+      >
+        <ion-card-content>
+          <ion-icon
+            name="shield-checkmark-outline"
+            class="metric-icon"
+          ></ion-icon>
+          <div>
+            <span class="metric-label">Balanço vencido</span>
+            <strong>{{ formatCurrency(overdueBalance) }}</strong>
+            <small>Recebíveis vencidos menos obrigações vencidas</small>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
 
     <!-- KPI ROW -->
     <div class="kpi-row">
@@ -23,13 +118,17 @@
         <div class="cards-wrapper">
           <ion-card class="kpi-card">
             <ion-card-content>
-              <div class="value text-blue">{{ formatCurrency(operationalData.receivables.overdue) }}</div>
+              <div class="value text-blue">
+                {{ formatCurrency(operationalData.receivables.overdue) }}
+              </div>
               <div class="label">Vencidos</div>
             </ion-card-content>
           </ion-card>
           <ion-card class="kpi-card">
             <ion-card-content>
-              <div class="value text-blue">{{ formatCurrency(operationalData.receivables.today) }}</div>
+              <div class="value text-blue">
+                {{ formatCurrency(operationalData.receivables.today) }}
+              </div>
               <div class="label">Vencem hoje</div>
             </ion-card-content>
           </ion-card>
@@ -42,13 +141,17 @@
         <div class="cards-wrapper">
           <ion-card class="kpi-card">
             <ion-card-content>
-              <div class="value text-teal">{{ formatCurrency(operationalData.payables.overdue) }}</div>
+              <div class="value text-teal">
+                {{ formatCurrency(operationalData.payables.overdue) }}
+              </div>
               <div class="label">Vencidos</div>
             </ion-card-content>
           </ion-card>
           <ion-card class="kpi-card">
             <ion-card-content>
-              <div class="value text-teal">{{ formatCurrency(operationalData.payables.today) }}</div>
+              <div class="value text-teal">
+                {{ formatCurrency(operationalData.payables.today) }}
+              </div>
               <div class="label">Vencem hoje</div>
             </ion-card-content>
           </ion-card>
@@ -58,7 +161,6 @@
 
     <!-- WIDGETS ROW -->
     <div class="widgets-row">
-
       <!-- 1. Contas Financeiras -->
       <div class="widget-col">
         <div class="widget-header">
@@ -67,19 +169,26 @@
         <ion-card class="widget-card accounts-card">
           <ion-card-content>
             <div class="total-balance">
-              <span class="value">{{ formatCurrency(operationalData.totalBalance) }}</span>
+              <span class="value"
+                >{{ formatCurrency(operationalData.totalBalance) }}</span
+              >
               <span class="label">Valor total</span>
             </div>
 
             <div class="accounts-list">
-              <div class="account-item" *ngFor="let acc of operationalData.accounts">
+              <div
+                class="account-item"
+                *ngFor="let acc of operationalData.accounts"
+              >
                 <div class="icon-box">
                   <ion-icon name="business"></ion-icon>
                 </div>
                 <div class="acc-details">
                   <div class="acc-type">Conta corrente</div>
                   <div class="acc-name">{{ acc.banco }} ({{acc.nome}})</div>
-                  <div class="acc-val">Valor: {{ formatCurrency(acc.saldo) }}</div>
+                  <div class="acc-val">
+                    Valor: {{ formatCurrency(acc.saldo) }}
+                  </div>
                 </div>
               </div>
             </div>
@@ -95,9 +204,18 @@
         </div>
         <ion-card class="widget-card chart-card">
           <ion-card-content>
-            <div class="chart-wrapper">
-              <canvas baseChart [data]="dailyFlowChartData" [options]="dailyFlowChartOptions" [type]="'bar'">
+            <div class="chart-wrapper" [class.empty-chart]="!hasDailyFlowData">
+              <canvas
+                *ngIf="hasDailyFlowData"
+                baseChart
+                [data]="dailyFlowChartData"
+                [options]="dailyFlowChartOptions"
+                [type]="'bar'"
+              >
               </canvas>
+              <div class="empty-chart-state" *ngIf="!hasDailyFlowData">
+                Sem fluxo diário no período
+              </div>
             </div>
             <div class="chart-legend-custom">
               <div class="legend-item">
@@ -122,9 +240,18 @@
         </div>
         <ion-card class="widget-card chart-card">
           <ion-card-content>
-            <div class="chart-wrapper">
-              <canvas baseChart [data]="salesChartData" [options]="salesChartOptions" [type]="'bar'">
+            <div class="chart-wrapper" [class.empty-chart]="!hasSalesData">
+              <canvas
+                *ngIf="hasSalesData"
+                baseChart
+                [data]="salesChartData"
+                [options]="salesChartOptions"
+                [type]="'bar'"
+              >
               </canvas>
+              <div class="empty-chart-state" *ngIf="!hasSalesData">
+                Sem faturamento histórico
+              </div>
             </div>
             <div class="chart-legend-custom">
               <div class="legend-item">
@@ -134,13 +261,15 @@
           </ion-card-content>
         </ion-card>
       </div>
-
     </div>
 
     <!-- SEÇÃO CENTROS DE CUSTO (BI & METAS) -->
     <div class="section-divider">
       <h2>Painel Corporativo de Centros de Custo</h2>
-      <p>Mapeamento de investimentos, controle preventivo de desvios e metas físicas de engenharia</p>
+      <p>
+        Mapeamento de investimentos, controle preventivo de desvios e metas
+        físicas de engenharia
+      </p>
     </div>
 
     <div class="widgets-row cc-analytics-row">
@@ -154,27 +283,50 @@
           <ion-card-content>
             <div class="cc-chart-container">
               <div class="chart-wrapper doughnut-wrapper">
-                <canvas baseChart [data]="costCenterChartData" [options]="costCenterChartOptions" [type]="'doughnut'">
+                <canvas
+                  baseChart
+                  [data]="costCenterChartData"
+                  [options]="costCenterChartOptions"
+                  [type]="'doughnut'"
+                >
                 </canvas>
-                <div class="chart-center-info" *ngIf="operationalData.costCenterKpis?.expensesByCostCenter?.length">
+                <div
+                  class="chart-center-info"
+                  *ngIf="operationalData.costCenterKpis?.expensesByCostCenter?.length"
+                >
                   <span class="center-label">Centros</span>
-                  <span class="center-value">{{ operationalData.costCenterKpis?.expensesByCostCenter?.length }}</span>
+                  <span class="center-value"
+                    >{{
+                    operationalData.costCenterKpis?.expensesByCostCenter?.length
+                    }}</span
+                  >
                 </div>
               </div>
             </div>
-            
+
             <div class="cc-legend-list">
-              <div class="cc-legend-item" *ngFor="let item of operationalData.costCenterKpis?.expensesByCostCenter">
+              <div
+                class="cc-legend-item"
+                *ngFor="let item of operationalData.costCenterKpis?.expensesByCostCenter"
+              >
                 <div class="cc-legend-left">
-                  <span class="cc-color-dot" [style.background-color]="item.cor"></span>
+                  <span
+                    class="cc-color-dot"
+                    [style.background-color]="item.cor"
+                  ></span>
                   <div class="cc-info">
                     <span class="cc-name">{{ item.nome }}</span>
-                    <span class="cc-code" *ngIf="item.codigo">{{ item.codigo }}</span>
+                    <span class="cc-code" *ngIf="item.codigo"
+                      >{{ item.codigo }}</span
+                    >
                   </div>
                 </div>
                 <span class="cc-value">{{ formatCurrency(item.total) }}</span>
               </div>
-              <div *ngIf="!operationalData.costCenterKpis?.expensesByCostCenter?.length" class="no-data-msg">
+              <div
+                *ngIf="!operationalData.costCenterKpis?.expensesByCostCenter?.length"
+                class="no-data-msg"
+              >
                 Nenhuma despesa registrada nos centros de custo.
               </div>
             </div>
@@ -190,55 +342,95 @@
         </div>
         <ion-card class="widget-card deviations-card">
           <ion-card-content>
-            <div class="deviations-header" [class.has-deviations]="operationalData.costCenterKpis?.deviations?.length">
-              <div class="dev-header-icon" [class.danger]="operationalData.costCenterKpis?.deviations?.length">
-                <ion-icon [name]="operationalData.costCenterKpis?.deviations?.length ? 'alert-circle-outline' : 'cash-outline'"></ion-icon>
+            <div
+              class="deviations-header"
+              [class.has-deviations]="operationalData.costCenterKpis?.deviations?.length"
+            >
+              <div
+                class="dev-header-icon"
+                [class.danger]="operationalData.costCenterKpis?.deviations?.length"
+              >
+                <ion-icon
+                  [name]="operationalData.costCenterKpis?.deviations?.length ? 'alert-circle-outline' : 'cash-outline'"
+                ></ion-icon>
               </div>
               <div class="dev-header-text">
                 <h4 *ngIf="operationalData.costCenterKpis?.deviations?.length">
-                  {{ operationalData.costCenterKpis?.deviations?.length }} {{ operationalData.costCenterKpis?.deviations?.length === 1 ? 'Centro com Estouro' : 'Centros com Estouro' }}
+                  {{ operationalData.costCenterKpis?.deviations?.length }} {{
+                  operationalData.costCenterKpis?.deviations?.length === 1 ?
+                  'Centro com Estouro' : 'Centros com Estouro' }}
                 </h4>
-                <h4 *ngIf="!operationalData.costCenterKpis?.deviations?.length">Tudo Sob Controle</h4>
-                <p>{{ operationalData.costCenterKpis?.deviations?.length ? 'Atenção necessária: custos realizados superam o orçamento previsto ou limite.' : 'Nenhum desvio orçamentário crítico detectado nos centros de custo.' }}</p>
+                <h4 *ngIf="!operationalData.costCenterKpis?.deviations?.length">
+                  Tudo Sob Controle
+                </h4>
+                <p>
+                  {{ operationalData.costCenterKpis?.deviations?.length ?
+                  'Atenção necessária: custos realizados superam o orçamento
+                  previsto ou limite.' : 'Nenhum desvio orçamentário crítico
+                  detectado nos centros de custo.' }}
+                </p>
               </div>
             </div>
 
             <div class="deviations-list">
-              <div class="deviation-item" *ngFor="let item of operationalData.costCenterKpis?.deviations">
+              <div
+                class="deviation-item"
+                *ngFor="let item of operationalData.costCenterKpis?.deviations"
+              >
                 <div class="dev-row-main">
                   <div class="dev-left">
-                    <span class="cc-code-badge">{{ item.codigo || 'S/C' }}</span>
+                    <span class="cc-code-badge"
+                      >{{ item.codigo || 'S/C' }}</span
+                    >
                     <span class="cc-name-label">{{ item.nome }}</span>
                   </div>
-                  <span class="dev-pct-badge" *ngIf="item.previsto > 0">+{{ ((item.realizado - item.previsto) / item.previsto * 100) | number:'1.0-0' }}%</span>
+                  <span class="dev-pct-badge" *ngIf="item.previsto > 0"
+                    >+{{ ((item.realizado - item.previsto) / item.previsto *
+                    100) | number:'1.0-0' }}%</span
+                  >
                 </div>
-                
+
                 <div class="dev-metrics-grid">
                   <div class="dev-metric">
                     <span class="label">Orçado</span>
-                    <span class="value">{{ formatCurrency(item.previsto) }}</span>
+                    <span class="value"
+                      >{{ formatCurrency(item.previsto) }}</span
+                    >
                   </div>
                   <div class="dev-metric">
                     <span class="label">Realizado</span>
-                    <span class="value text-danger">{{ formatCurrency(item.realizado) }}</span>
+                    <span class="value text-danger"
+                      >{{ formatCurrency(item.realizado) }}</span
+                    >
                   </div>
                   <div class="dev-metric text-right">
                     <span class="label">Estouro</span>
-                    <span class="value text-danger-bold">{{ formatCurrency(item.desvio) }}</span>
+                    <span class="value text-danger-bold"
+                      >{{ formatCurrency(item.desvio) }}</span
+                    >
                   </div>
                 </div>
 
                 <div class="dev-progress-bar-wrapper">
                   <div class="dev-progress-bar-bg">
-                    <div class="dev-progress-bar-fill" [style.width]="'100%'"></div>
+                    <div
+                      class="dev-progress-bar-fill"
+                      [style.width]="'100%'"
+                    ></div>
                   </div>
                 </div>
               </div>
-              <div *ngIf="!operationalData.costCenterKpis?.deviations?.length" class="no-data-msg-center">
+              <div
+                *ngIf="!operationalData.costCenterKpis?.deviations?.length"
+                class="no-data-msg-center"
+              >
                 <div class="success-illustration">
                   <span class="success-checkmark">✓</span>
                 </div>
-                <span>Saúde financeira excelente. Nenhum centro de custo estourou o planejado.</span>
+                <span
+                  >Saúde financeira excelente. Nenhum centro de custo estourou o
+                  planejado.</span
+                >
               </div>
             </div>
           </ion-card-content>
@@ -254,23 +446,37 @@
         <ion-card class="widget-card productivity-card">
           <ion-card-content>
             <div class="production-targets-list">
-              <div class="target-item" *ngFor="let item of operationalData.costCenterKpis?.productionTargets">
+              <div
+                class="target-item"
+                *ngFor="let item of operationalData.costCenterKpis?.productionTargets"
+              >
                 <div class="target-top">
                   <div class="target-cc-info">
-                    <span class="cc-code-badge green">{{ item.codigo || 'OP' }}</span>
+                    <span class="cc-code-badge green"
+                      >{{ item.codigo || 'OP' }}</span
+                    >
                     <span class="target-name">{{ item.nome }}</span>
                   </div>
-                  <span class="target-qty-badge">{{ item.realizado | number:'1.0-2' }} / {{ item.metaFisica | number:'1.0-2' }} {{ item.unidadeMedida }}</span>
+                  <span class="target-qty-badge"
+                    >{{ item.realizado | number:'1.0-2' }} / {{ item.metaFisica
+                    | number:'1.0-2' }} {{ item.unidadeMedida }}</span
+                  >
                 </div>
 
                 <!-- Barra de progresso física com efeito visual esmeralda premium -->
                 <div class="progress-bar-container">
                   <div class="progress-info-row">
                     <span class="pct-text">Progresso Físico</span>
-                    <span class="pct-val">{{ (item.realizado / item.metaFisica * 100) | number:'1.0-0' }}%</span>
+                    <span class="pct-val"
+                      >{{ (item.realizado / item.metaFisica * 100) |
+                      number:'1.0-0' }}%</span
+                    >
                   </div>
                   <div class="premium-progress-bg">
-                    <div class="premium-progress-fill" [style.width]="(item.realizado / item.metaFisica * 100) > 100 ? '100%' : (item.realizado / item.metaFisica * 100) + '%'"></div>
+                    <div
+                      class="premium-progress-fill"
+                      [style.width]="(item.realizado / item.metaFisica * 100) > 100 ? '100%' : (item.realizado / item.metaFisica * 100) + '%'"
+                    ></div>
                   </div>
                 </div>
 
@@ -278,39 +484,64 @@
                 <div class="unit-costs-row">
                   <div class="cost-stat">
                     <span class="label">Custo Unitário Real</span>
-                    <span class="value" [class.text-danger]="item.custoUnitario > item.custoUnitarioPrevisto" [class.text-success]="item.custoUnitario <= item.custoUnitarioPrevisto">
-                      {{ formatCurrency(item.custoUnitario) }}/{{ item.unidadeMedida }}
+                    <span
+                      class="value"
+                      [class.text-danger]="item.custoUnitario > item.custoUnitarioPrevisto"
+                      [class.text-success]="item.custoUnitario <= item.custoUnitarioPrevisto"
+                    >
+                      {{ formatCurrency(item.custoUnitario) }}/{{
+                      item.unidadeMedida }}
                     </span>
                   </div>
                   <div class="cost-stat">
                     <span class="label">Unitário Previsto</span>
-                    <span class="value">{{ formatCurrency(item.custoUnitarioPrevisto) }}/{{ item.unidadeMedida }}</span>
+                    <span class="value"
+                      >{{ formatCurrency(item.custoUnitarioPrevisto) }}/{{
+                      item.unidadeMedida }}</span
+                    >
                   </div>
                 </div>
 
                 <div class="efficiency-badge-row">
-                  <span class="efficiency-indicator" [class.danger]="item.custoUnitario > item.custoUnitarioPrevisto" [class.success]="item.custoUnitario <= item.custoUnitarioPrevisto">
-                    {{ item.custoUnitario > item.custoUnitarioPrevisto ? '🔴 Acima do previsto por unidade' : '🟢 Eficiência operacional excelente' }}
+                  <span
+                    class="efficiency-indicator"
+                    [class.danger]="item.custoUnitario > item.custoUnitarioPrevisto"
+                    [class.success]="item.custoUnitario <= item.custoUnitarioPrevisto"
+                  >
+                    {{ item.custoUnitario > item.custoUnitarioPrevisto ? '🔴
+                    Acima do previsto por unidade' : '🟢 Eficiência operacional
+                    excelente' }}
                   </span>
                 </div>
               </div>
 
-              <div *ngIf="!operationalData.costCenterKpis?.productionTargets?.length" class="no-data-msg-center">
-                <ion-icon name="construct-outline" class="construct-placeholder-icon"></ion-icon>
-                <span>Nenhum centro de custo operacional com meta física registrado.</span>
+              <div
+                *ngIf="!operationalData.costCenterKpis?.productionTargets?.length"
+                class="no-data-msg-center"
+              >
+                <ion-icon
+                  name="construct-outline"
+                  class="construct-placeholder-icon"
+                ></ion-icon>
+                <span
+                  >Nenhum centro de custo operacional com meta física
+                  registrado.</span
+                >
               </div>
             </div>
           </ion-card-content>
         </ion-card>
       </div>
     </div>
-
   </div>
   <div class="empty-dashboard" *ngIf="!loading && !operationalData">
     <div class="empty-state-content">
       <ion-icon name="stats-chart-outline" class="empty-icon"></ion-icon>
       <h2>Nenhum dado financeiro encontrado</h2>
-      <p>Ainda não há lançamentos financeiros registrados ou ocorreu um erro ao carregar o painel.</p>
+      <p>
+        {{ errorMessage || 'Ainda não há lançamentos financeiros registrados ou
+        ocorreu um erro ao carregar o painel.' }}
+      </p>
       <ion-button (click)="loadData()">Tentar Novamente</ion-button>
     </div>
   </div>

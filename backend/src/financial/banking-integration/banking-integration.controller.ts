@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -19,6 +20,31 @@ import { ConfigureBankingDto } from './dto/configure-banking.dto';
 import { PermissionsGuard } from '../../auth/permissions.guard';
 import { RequirePermissions } from '../../auth/permissions.decorator';
 
+const MAX_IMPORT_FILE_SIZE = 5 * 1024 * 1024;
+
+function assertImportFile(
+  file: Express.Multer.File | undefined,
+  allowedExtensions: string[],
+) {
+  if (!file?.buffer?.length) {
+    throw new BadRequestException('Arquivo obrigatório');
+  }
+
+  if (file.size > MAX_IMPORT_FILE_SIZE) {
+    throw new BadRequestException('Arquivo excede o limite de 5MB');
+  }
+
+  const originalName = file.originalname?.toLowerCase() || '';
+  const isAllowed = allowedExtensions.some((extension) =>
+    originalName.endsWith(extension),
+  );
+  if (!isAllowed) {
+    throw new BadRequestException(
+      `Formato inválido. Envie arquivo ${allowedExtensions.join(' ou ')}`,
+    );
+  }
+}
+
 @Controller('financial/banking')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class BankingIntegrationController {
@@ -26,31 +52,42 @@ export class BankingIntegrationController {
 
   @Post('upload-ofx')
   @RequirePermissions('can_reconcile')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_IMPORT_FILE_SIZE } }),
+  )
   uploadOfx(
     @UploadedFile() file: Express.Multer.File,
     @Body('contaId') contaId: string,
   ) {
+    assertImportFile(file, ['.ofx']);
+    if (!contaId) throw new BadRequestException('contaId é obrigatório');
     return this.service.importOfx(file.buffer, contaId);
   }
 
   @Post('upload-csv')
   @RequirePermissions('can_reconcile')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: MAX_IMPORT_FILE_SIZE } }),
+  )
   uploadCsv(
     @UploadedFile() file: Express.Multer.File,
     @Body('contaId') contaId: string,
   ) {
+    assertImportFile(file, ['.csv']);
+    if (!contaId) throw new BadRequestException('contaId é obrigatório');
     return this.service.importCsv(file.buffer, contaId);
   }
 
   @Post('configure')
   @RequirePermissions('can_manage_banking')
   @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'certificate', maxCount: 1 },
-      { name: 'privateKey', maxCount: 1 },
-    ]),
+    FileFieldsInterceptor(
+      [
+        { name: 'certificate', maxCount: 1 },
+        { name: 'privateKey', maxCount: 1 },
+      ],
+      { limits: { fileSize: MAX_IMPORT_FILE_SIZE } },
+    ),
   )
   configure(
     @Body() dto: ConfigureBankingDto,

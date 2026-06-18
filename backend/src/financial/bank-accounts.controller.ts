@@ -9,20 +9,37 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthGuard } from '@nestjs/passport';
-import { RolesGuard } from '../auth/roles.guard';
-import { Roles } from '../auth/roles.decorator';
+import { PermissionsGuard } from '../auth/permissions.guard';
+import { RequirePermissions } from '../auth/permissions.decorator';
 
 @Controller('financial/bank-accounts')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class BankAccountsController {
   constructor(private prisma: PrismaService) {}
 
   @Get()
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('can_manage_banking')
   async findAll() {
     const accounts = await this.prisma.contaBancaria.findMany({
-      include: {
-        integracao: true,
+      select: {
+        id: true,
+        nome: true,
+        banco: true,
+        agencia: true,
+        conta: true,
+        codigoBanco: true,
+        saldoInicial: true,
+        createdAt: true,
+        updatedAt: true,
+        integracao: {
+          select: {
+            id: true,
+            banco: true,
+            status: true,
+            lastSync: true,
+            dataInicioAutomacao: true,
+          },
+        },
       },
     });
     const ids = accounts.map((acc) => acc.id);
@@ -100,7 +117,7 @@ export class BankAccountsController {
   }
 
   @Post()
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('can_manage_banking')
   async create(@Body() data: any) {
     return this.prisma.contaBancaria.create({
       data: {
@@ -115,7 +132,7 @@ export class BankAccountsController {
   }
 
   @Delete(':id')
-  @Roles('ADMIN')
+  @RequirePermissions('can_manage_banking')
   async delete(@Param('id') id: string) {
     return this.prisma.$transaction(async (tx) => {
       // 1. Delete Integration if exists

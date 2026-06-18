@@ -4,6 +4,7 @@ import {
   UseGuards,
   Body,
   UnauthorizedException,
+  Get,
   Req,
   Res,
   Patch,
@@ -12,10 +13,19 @@ import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { ThrottlerGuard } from '@nestjs/throttler';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import type { Request, Response } from 'express';
 
 const accessTokenMaxAge =
   Number(process.env.JWT_ACCESS_MAX_AGE_MS) || 2 * 60 * 60 * 1000;
+
+function isSecureRequest(req: Request): boolean {
+  return (
+    process.env.NODE_ENV === 'production' ||
+    req.headers['x-forwarded-proto'] === 'https' ||
+    req.secure
+  );
+}
 
 function getCookie(req: Request, name: string): string | null {
   const rawCookie = req.headers.cookie;
@@ -45,7 +55,7 @@ export class AuthController {
     }
     const auth = await this.authService.login(user);
 
-    const isSecure = req.headers['x-forwarded-proto'] === 'https' || req.secure;
+    const isSecure = isSecureRequest(req);
     const cookieBase = {
       httpOnly: true,
       secure: isSecure,
@@ -75,7 +85,7 @@ export class AuthController {
       throw new UnauthorizedException('Refresh token ausente');
     }
     const auth = await this.authService.refresh(refreshToken);
-    const isSecure = req.headers['x-forwarded-proto'] === 'https' || req.secure;
+    const isSecure = isSecureRequest(req);
     const cookieBase = {
       httpOnly: true,
       secure: isSecure,
@@ -105,12 +115,15 @@ export class AuthController {
   }
 
   @UseGuards(AuthGuard('jwt'))
+  @Get('me')
+  me(@Req() req: any) {
+    return this.authService.getProfile(req.user.userId || req.user.sub);
+  }
+
+  @UseGuards(AuthGuard('jwt'))
   @Patch('change-password')
-  async changePassword(@Req() req: any, @Body('novaSenha') novaSenha: string) {
-    if (!novaSenha) {
-      throw new UnauthorizedException('A nova senha é obrigatória');
-    }
+  async changePassword(@Req() req: any, @Body() dto: ChangePasswordDto) {
     const userId = req.user.userId || req.user.sub;
-    return this.authService.changePassword(userId, novaSenha);
+    return this.authService.changePassword(userId, dto.novaSenha);
   }
 }

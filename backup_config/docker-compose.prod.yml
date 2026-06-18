@@ -3,9 +3,9 @@ services:
     image: postgres:15-alpine
     container_name: macedo_postgres_prod
     environment:
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-macedo_system}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     volumes:
       - postgres_data_prod:/var/lib/postgresql/data
     networks:
@@ -28,17 +28,18 @@ services:
       dockerfile: Dockerfile
     container_name: macedo_backend_prod
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
       FRONTEND_URL: http://212.85.14.87
-      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-macedo_system}
-      JWT_SECRET: ${JWT_SECRET:-supersecretkeyCHANGE}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-supersecretrefreshCHANGE}
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?JWT_REFRESH_SECRET is required}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_URL: redis://redis:6379
-      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:-jJyGy6myLktYQ0lKw71m/+PTWEx7hQL+HJ4cPa1eIr4=}
+      ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:?ENCRYPTION_MASTER_KEY is required}
       PORT: 3000
+      NODE_ENV: production
     depends_on:
       - postgres
       - redis

@@ -1,6 +1,13 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '../api/api.service';
-import { BehaviorSubject, finalize, Observable, shareReplay, tap } from 'rxjs';
+import {
+  BehaviorSubject,
+  finalize,
+  map,
+  Observable,
+  shareReplay,
+  tap,
+} from 'rxjs';
 import { Router } from '@angular/router';
 
 @Injectable({
@@ -46,6 +53,19 @@ export class AuthService {
     );
   }
 
+  validateSession(): Observable<boolean> {
+    return this.api.get<any>('auth/me').pipe(
+      tap((res) => {
+        if (res.user) {
+          sessionStorage.setItem('user', JSON.stringify(res.user));
+          this.userSubject.next(res.user);
+          this.isAuthenticated = true;
+        }
+      }),
+      map(() => true),
+    );
+  }
+
   refreshSession(): Observable<any> {
     if (!this.refreshRequest) {
       this.refreshRequest = this.api.post<any>('auth/refresh', {}).pipe(
@@ -75,11 +95,21 @@ export class AuthService {
     this.userSubject.next(null);
   }
 
-  isJessicaUser(user: any = this.userSubject.value): boolean {
-    const email = user?.email?.toLowerCase?.() || '';
-    const nome = user?.nome?.toLowerCase?.() || '';
-
-    return email === 'engjessicamiranda91@gmail.com' || nome.includes('jessica') || nome.includes('jéssica');
+  hasPermission(
+    permission: string,
+    user: any = this.userSubject.value,
+  ): boolean {
+    const permissoes = user?.perfil?.permissoes;
+    if (!permissoes) return false;
+    if (permissoes.all === true) return true;
+    if (Array.isArray(permissoes)) return permissoes.includes(permission);
+    if (permissoes[permission] === true) return true;
+    return (
+      permissoes.financial === true &&
+      (permission.startsWith('financeiro.') ||
+        permission === 'can_reconcile' ||
+        permission === 'can_manage_banking')
+    );
   }
 
   logout() {

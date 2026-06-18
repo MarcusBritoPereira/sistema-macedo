@@ -136,7 +136,7 @@ export class ObraDetailPage implements OnInit {
         await this.showToast('Obra atualizada com sucesso!', 'success');
         this.goBack();
       } else {
-        const novaObra = await this.obrasService.create(data).toPromise();
+        const novaObra = (await this.obrasService.create(data).toPromise()) as Obra;
         await this.showToast('Obra criada com sucesso! Agora defina o Cronograma de Parcelas.', 'success');
         this.obraId = novaObra.id!;
         this.isEdit = true;

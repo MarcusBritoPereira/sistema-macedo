@@ -144,7 +144,7 @@
 
         <div *ngIf="currentTab === 'parcelas' && isEdit" class="parcelas-wrapper">
             <app-parcelas-table 
-                [obraId]="obraId" 
+                [obraId]="obraId || ''" 
                 [orcamentoPrevisto]="form.get('orcamentoPrevisto')?.value"
                 [parcelas]="parcelas"
                 (parcelasChanged)="loadParcelas()">

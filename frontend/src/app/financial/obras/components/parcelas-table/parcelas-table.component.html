@@ -1,0 +1,65 @@
+<div class="table-container">
+  <div class="actions-header">
+    <h3>Cronograma de Pagamento</h3>
+    <div class="buttons">
+      <ion-button size="small" fill="outline" color="secondary" (click)="openGenerator()">
+        <ion-icon name="flash-outline" slot="start"></ion-icon>
+        Gerador
+      </ion-button>
+      <ion-button size="small" color="primary" (click)="addParcelaManual()">
+        <ion-icon name="add-outline" slot="start"></ion-icon>
+        Adicionar
+      </ion-button>
+    </div>
+  </div>
+
+  <table class="parcelas-table">
+    <thead>
+      <tr>
+        <th class="col-parcela">Parcelas</th>
+        <th class="col-percent">%</th>
+        <th class="col-valor">Valor da parcela</th>
+        <th class="col-prazo">Prazo de pagamento</th>
+        <th class="col-status">Status</th>
+        <th class="col-actions"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of parcelas; let i = index">
+        <td>Parcela {{ i + 1 }}</td>
+        <td>{{ p.porcentagem ? (p.porcentagem + '%') : '-' }}</td>
+        <td class="valor">{{ p.valor | currency:'BRL' }}</td>
+        <td>
+          <span *ngIf="p.descricao">{{ p.descricao }} – </span>
+          {{ p.dataVencimento | date:'dd/MM/yyyy' }}
+        </td>
+        <td>
+          <ion-badge [color]="p.status === 'RECEBIDO' ? 'success' : (p.status === 'ATRASADO' ? 'danger' : 'warning')">
+            {{ p.status }}
+          </ion-badge>
+        </td>
+        <td class="actions">
+          <ion-button fill="clear" size="small" (click)="editParcela(p)">
+            <ion-icon name="pencil-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+          <ion-button fill="clear" color="danger" size="small" (click)="removeParcela(p)">
+            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </td>
+      </tr>
+      <tr *ngIf="parcelas.length === 0">
+        <td colspan="6" class="empty-state">
+          Nenhuma parcela cadastrada. Use o Gerador para criar automaticamente.
+        </td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td class="total-label">TOTAL</td>
+        <td class="total-percent">{{ totalPorcentagem }}%</td>
+        <td class="total-valor">{{ totalValor | currency:'BRL' }}</td>
+        <td colspan="3"></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>

@@ -7,12 +7,14 @@ import { ObrasService, Obra, ParcelaObra } from '../../../services/financial/obr
 import { ClientsService } from '../../../services/clients/clients';
 import { CostCentersService } from '../../../services/financial/cost-centers.service';
 
+import { ParcelasTableComponent } from '../components/parcelas-table/parcelas-table.component';
+
 @Component({
   selector: 'app-obra-detail',
   templateUrl: './obra-detail.page.html',
   styleUrls: ['./obra-detail.page.scss'],
   standalone: true,
-  imports: [IonicModule, CommonModule, ReactiveFormsModule, FormsModule]
+  imports: [IonicModule, CommonModule, ReactiveFormsModule, FormsModule, ParcelasTableComponent]
 })
 export class ObraDetailPage implements OnInit {
   form: FormGroup;
@@ -132,11 +134,15 @@ export class ObraDetailPage implements OnInit {
       if (this.isEdit && this.obraId) {
         await this.obrasService.update(this.obraId, data).toPromise();
         await this.showToast('Obra atualizada com sucesso!', 'success');
+        this.goBack();
       } else {
-        await this.obrasService.create(data).toPromise();
-        await this.showToast('Obra criada com sucesso!', 'success');
+        const novaObra = await this.obrasService.create(data).toPromise();
+        await this.showToast('Obra criada com sucesso! Agora defina o Cronograma de Parcelas.', 'success');
+        this.obraId = novaObra.id!;
+        this.isEdit = true;
+        this.currentTab = 'parcelas';
+        this.location.replaceState(`/financial/obras/detalhe/${this.obraId}`);
       }
-      this.goBack();
     } catch (err) {
       console.error(err);
       await this.showToast('Erro ao salvar a obra.', 'danger');
@@ -167,104 +173,12 @@ export class ObraDetailPage implements OnInit {
     this.location.back();
   }
 
-  // Parcelas Methods
   loadParcelas() {
     if (!this.obraId) return;
     this.obrasService.getParcelas(this.obraId).subscribe({
       next: (data) => this.parcelas = data,
       error: () => this.showToast('Erro ao carregar parcelas', 'danger')
     });
-  }
-
-  async openParcelaModal(parcela?: ParcelaObra) {
-    const alert = await this.alertCtrl.create({
-      header: parcela ? 'Editar Parcela' : 'Nova Parcela',
-      inputs: [
-        {
-          name: 'percentual',
-          type: 'number',
-          placeholder: 'Percentual (%)',
-          value: parcela?.percentual || ''
-        },
-        {
-          name: 'valor',
-          type: 'number',
-          placeholder: 'Valor (R$)',
-          value: parcela?.valor || ''
-        },
-        {
-          name: 'dataVencimento',
-          type: 'date',
-          value: parcela?.dataVencimento ? parcela.dataVencimento.split('T')[0] : ''
-        },
-        // We'll have a default status or read it if editing.
-        // Alert inputs don't support selects well natively without custom UI, 
-        // so we'll just handle status as PREVISTO for new, and maybe keep existing.
-        // Let's add a text input or just default it. We can add a radio group, but inputs type=radio replaces the whole form.
-      ],
-      buttons: [
-        {
-          text: 'Cancelar',
-          role: 'cancel'
-        },
-        {
-          text: 'Salvar',
-          handler: (data) => {
-            if (!data.valor || !data.dataVencimento) {
-              this.showToast('Valor e Vencimento são obrigatórios.', 'warning');
-              return false; // keep open
-            }
-            this.saveParcela(data, parcela);
-            return true;
-          }
-        }
-      ]
-    });
-    await alert.present();
-  }
-
-  saveParcela(data: any, existing?: ParcelaObra) {
-    if (!this.obraId) return;
-
-    const payload: Partial<ParcelaObra> = {
-      obraId: this.obraId,
-      percentual: data.percentual ? Number(data.percentual) : undefined,
-      valor: Number(data.valor),
-      dataVencimento: new Date(data.dataVencimento).toISOString(),
-      status: existing ? existing.status : 'PREVISTO'
-    };
-
-    if (existing && existing.id) {
-      this.obrasService.updateParcela(this.obraId, existing.id, payload).subscribe({
-        next: () => {
-          this.showToast('Parcela atualizada!', 'success');
-          this.loadParcelas();
-        },
-        error: () => this.showToast('Erro ao atualizar parcela', 'danger')
-      });
-    } else {
-      this.obrasService.createParcela(this.obraId, payload).subscribe({
-        next: () => {
-          this.showToast('Parcela criada!', 'success');
-          this.loadParcelas();
-        },
-        error: () => this.showToast('Erro ao criar parcela', 'danger')
-      });
-    }
-  }
-
-  async deleteParcela(parcelaId: string) {
-    if (!this.obraId) return;
-    
-    if(confirm('Tem certeza que deseja excluir esta parcela?')) {
-      this.obrasService.deleteParcela(this.obraId, parcelaId).subscribe({
-        next: () => {
-          this.showToast('Parcela excluída', 'success');
-          this.loadParcelas();
-        },
-        error: () => this.showToast('Erro ao excluir parcela', 'danger')
-      });
-    }
   }
 
   async showToast(message: string, color: string) {

@@ -110,6 +110,7 @@ export class ObrasService {
         porcentagem: data.porcentagem,
         valor: data.valor,
         dataVencimento: new Date(data.dataVencimento),
+        descricao: data.descricao || null,
         status: data.status || 'PREVISTO',
       },
     });
@@ -137,6 +138,7 @@ export class ObrasService {
           porcentagem: data.porcentagem ?? existing.porcentagem,
           valor: data.valor ?? existing.valor,
           dataVencimento: data.dataVencimento ? new Date(data.dataVencimento) : existing.dataVencimento,
+          descricao: data.descricao !== undefined ? data.descricao : existing.descricao,
           status: data.status ?? existing.status,
         },
         include: { obra: true }

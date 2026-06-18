@@ -729,6 +729,7 @@ model ParcelaObra {
   porcentagem    Decimal       @db.Decimal(5, 2)
   valor          Decimal       @db.Decimal(10, 2)
   dataVencimento DateTime
+  descricao      String?
   status         StatusParcela @default(PREVISTO)
 
   transacaoId String?               @unique

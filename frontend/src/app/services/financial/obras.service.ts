@@ -22,9 +22,10 @@ export interface Obra {
 export interface ParcelaObra {
   id?: string;
   obraId: string;
-  percentual?: number;
+  porcentagem?: number;
   valor: number;
   dataVencimento: string;
+  descricao?: string;
   status: string;
   transacaoId?: string;
 }

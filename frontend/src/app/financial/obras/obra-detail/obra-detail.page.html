@@ -143,42 +143,12 @@
         </div>
 
         <div *ngIf="currentTab === 'parcelas' && isEdit" class="parcelas-wrapper">
-            <div class="header-actions" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                <h3 style="margin: 0; color: #333;">Cronograma de Recebimentos</h3>
-                <ion-button size="small" (click)="openParcelaModal()">
-                    <ion-icon name="add-outline" slot="start"></ion-icon>
-                    Nova Parcela
-                </ion-button>
-            </div>
-
-            <ion-card *ngIf="parcelas.length === 0" class="empty-card" style="text-align: center; padding: 32px; background: transparent; border: 1px dashed #ccc; box-shadow: none;">
-                <ion-icon name="document-text-outline" style="font-size: 48px; color: #999;"></ion-icon>
-                <p style="color: #666; margin-top: 16px;">Nenhuma parcela cadastrada para esta obra.</p>
-            </ion-card>
-
-            <div class="parcelas-list" *ngIf="parcelas.length > 0">
-                <ion-card *ngFor="let p of parcelas" class="parcela-card" style="margin-bottom: 12px; border-radius: 8px;">
-                    <ion-item lines="none">
-                        <ion-label>
-                            <h2 style="font-weight: 600; font-size: 16px; margin-bottom: 4px;">{{ p.valor | currency:'BRL' }} <span *ngIf="p.percentual" style="color: #666; font-size: 13px; font-weight: normal;">({{ p.percentual }}%)</span></h2>
-                            <p style="font-size: 13px; color: #666;">
-                                <ion-icon name="calendar-outline" style="vertical-align: middle; margin-right: 4px;"></ion-icon>
-                                Vencimento: {{ p.dataVencimento | date:'dd/MM/yyyy' }}
-                            </p>
-                        </ion-label>
-                        <ion-badge slot="end" 
-                            [color]="p.status === 'RECEBIDO' ? 'success' : (p.status === 'ATRASADO' ? 'danger' : 'warning')">
-                            {{ p.status }}
-                        </ion-badge>
-                        <ion-button fill="clear" slot="end" (click)="openParcelaModal(p)">
-                            <ion-icon name="pencil-outline" slot="icon-only"></ion-icon>
-                        </ion-button>
-                        <ion-button fill="clear" color="danger" slot="end" (click)="deleteParcela(p.id!)">
-                            <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
-                        </ion-button>
-                    </ion-item>
-                </ion-card>
-            </div>
+            <app-parcelas-table 
+                [obraId]="obraId" 
+                [orcamentoPrevisto]="form.get('orcamentoPrevisto')?.value"
+                [parcelas]="parcelas"
+                (parcelasChanged)="loadParcelas()">
+            </app-parcelas-table>
         </div>
 
     </div>

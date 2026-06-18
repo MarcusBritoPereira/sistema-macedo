@@ -1,0 +1,98 @@
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.actions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #eaeaea;
+  
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: #333;
+    font-weight: 600;
+  }
+  
+  .buttons {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+.parcelas-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: inherit;
+  
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #eaeaea;
+    font-size: 14px;
+  }
+  
+  th {
+    background-color: #f8f9fa;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+  
+  tbody tr {
+    transition: background-color 0.2s;
+    
+    &:hover {
+      background-color: #fdfdfd;
+    }
+  }
+  
+  td {
+    color: #333;
+    vertical-align: middle;
+  }
+  
+  .valor {
+    font-weight: 500;
+  }
+  
+  .actions {
+    text-align: right;
+    white-space: nowrap;
+    
+    ion-button {
+      margin: 0;
+    }
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: #888;
+    font-style: italic;
+  }
+  
+  tfoot {
+    background-color: #e9ecef;
+    font-weight: bold;
+    
+    td {
+      border-bottom: none;
+      border-top: 2px solid #ccc;
+      color: #333;
+    }
+    
+    .total-label {
+      text-align: center;
+      letter-spacing: 1px;
+    }
+  }
+}

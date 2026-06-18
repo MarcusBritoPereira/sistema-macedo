@@ -42,7 +42,7 @@ export interface ReportData {
         </div>
       </div>
 
-      <!-- EXECUTIVE SUMMARY CARDS -->
+      <!-- EXECUTIVE SUMMARY CARDS (DRE) -->
       <div class="executive-summary" *ngIf="isDRE">
         <ion-card class="summary-card">
           <div class="card-title">Receita Líquida</div>
@@ -81,6 +81,34 @@ export interface ReportData {
           <div class="card-indicator">
             <span class="indicator-chip" [class.positive]="metrics.netMargin >= 0" [class.negative]="metrics.netMargin < 0">
               Margem: {{ metrics.netMargin | number:'1.0-0' }}%
+            </span>
+          </div>
+        </ion-card>
+      </div>
+
+      <!-- EXECUTIVE SUMMARY CARDS (OBRAS ABC) -->
+      <div class="executive-summary" *ngIf="isObrasABC">
+        <ion-card class="summary-card">
+          <div class="card-title">Custo Total de Obras</div>
+          <div class="card-value value-blue">{{ (data.summary?.totalGeral || 0) | currency:'BRL' }}</div>
+        </ion-card>
+
+        <ion-card class="summary-card">
+          <div class="card-title">Total Mão de Obra</div>
+          <div class="card-value value-red">{{ (data.summary?.totalMaoDeObra || 0) | currency:'BRL' }}</div>
+        </ion-card>
+
+        <ion-card class="summary-card">
+          <div class="card-title">Total Materiais</div>
+          <div class="card-value value-red">{{ (data.summary?.totalMaterial || 0) | currency:'BRL' }}</div>
+        </ion-card>
+
+        <ion-card class="summary-card">
+          <div class="card-title">Obra de Maior Custo</div>
+          <div class="card-value" style="font-size: 18px;">{{ data.summary?.maiorObraNome || 'Nenhuma' }}</div>
+          <div class="card-indicator">
+            <span class="indicator-chip negative">
+              {{ (data.summary?.maiorObraValor || 0) | currency:'BRL' }}
             </span>
           </div>
         </ion-card>
@@ -359,6 +387,7 @@ export class ReportViewerComponent implements OnInit, OnChanges {
   @Input() period: string = '';
 
   isDRE = false;
+  isObrasABC = false;
   metrics = {
     recurrence: 0,
     grossMargin: 0,
@@ -397,6 +426,7 @@ export class ReportViewerComponent implements OnInit, OnChanges {
 
     // Check if it's a DRE report to format it specifically
     this.isDRE = this.title.toLowerCase().includes('dre') || this.title.toLowerCase().includes('resultado');
+    this.isObrasABC = this.title.toLowerCase().includes('curva abc') || this.title.toLowerCase().includes('obras abc');
 
     if (this.isDRE && this.data.summary) {
       const { receitaLiquida = 1, ebitda = 0, lucroLiquido = 0, lucroBruto = 0 } = this.data.summary;

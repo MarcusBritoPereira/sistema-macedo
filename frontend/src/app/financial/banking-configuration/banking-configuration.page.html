@@ -44,7 +44,17 @@
                         </span>
                     </div>
 
-                    <div class="col-actions">
+                    <div class="col-actions" style="display: flex; gap: 8px;">
+                        <ion-button *ngIf="acc.banco === 'Caixinha (Dinheiro Físico)'" fill="clear" color="primary" (click)="editAccount($event, acc)">
+                            <ion-icon name="pencil-outline" slot="icon-only"></ion-icon>
+                        </ion-button>
+                        <ion-button *ngIf="acc.banco === 'Caixinha (Dinheiro Físico)'" fill="clear" color="success" (click)="addCaixinhaTransaction($event, acc, 'RECEITA')">
+                            <ion-icon name="add-circle-outline" slot="icon-only"></ion-icon>
+                        </ion-button>
+                        <ion-button *ngIf="acc.banco === 'Caixinha (Dinheiro Físico)'" fill="clear" color="danger" (click)="addCaixinhaTransaction($event, acc, 'DESPESA')">
+                            <ion-icon name="remove-circle-outline" slot="icon-only"></ion-icon>
+                        </ion-button>
+
                         <ion-button fill="clear" color="danger" (click)="deleteAccount($event, acc)">
                             <ion-icon name="trash-outline" slot="icon-only"></ion-icon>
                         </ion-button>

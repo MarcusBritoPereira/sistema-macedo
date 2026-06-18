@@ -1,8 +1,0 @@
-import { ReportsService } from './reports.service';
-import { ReportGenerationRequestDto } from './dto/report-generation-request.dto';
-export declare class ReportsController {
-    private readonly reportsService;
-    constructor(reportsService: ReportsService);
-    getReports(): import("./reports.service").ReportDefinition[];
-    generateReports(payload: ReportGenerationRequestDto): Promise<import("./reports.service").ReportGenerationResponse>;
-}

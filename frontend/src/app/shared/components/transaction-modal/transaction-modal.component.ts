@@ -29,6 +29,7 @@ import { environment } from '../../../../environments/environment';
 })
 export class TransactionModalComponent implements OnInit {
     @Input() transaction: Transaction | null = null;
+    @Input() presetData: Partial<Transaction> | null = null;
     @Input() type: 'RECEITA' | 'DESPESA' = 'DESPESA'; // Default if creating new
 
     title: string = 'Nova Transação';
@@ -80,6 +81,9 @@ export class TransactionModalComponent implements OnInit {
             this.mode = 'CREATE';
             this.title = this.type === 'RECEITA' ? 'Nova Receita' : 'Nova Despesa';
             this.formData.tipo = this.type;
+            if (this.presetData) {
+                this.formData = { ...this.formData, ...this.presetData };
+            }
             this.valorStr = '';
         }
     }

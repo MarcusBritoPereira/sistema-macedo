@@ -7,7 +7,10 @@ import { BankingIntegrationService, BankingStatus } from '../../services/financi
 import { FinancialService } from '../../services/financial/financial';
 import { BankAccount } from '../../services/financial/financial';
 import { addIcons } from 'ionicons';
-import { checkmarkCircleOutline, closeCircleOutline, refreshOutline, cloudUploadOutline, linkOutline, businessOutline, saveOutline, documentAttachOutline, keyOutline, alertCircle, informationCircleOutline, addCircleOutline, trashOutline } from 'ionicons/icons';
+import { checkmarkCircleOutline, closeCircleOutline, refreshOutline, cloudUploadOutline, linkOutline, businessOutline, saveOutline, documentAttachOutline, keyOutline, alertCircle, informationCircleOutline, addCircleOutline, trashOutline, pencilOutline, removeCircleOutline } from 'ionicons/icons';
+import { ModalController } from '@ionic/angular/standalone';
+import { BankAccountWizardComponent } from './bank-account-wizard/bank-account-wizard.component';
+import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
 
 @Component({
     selector: 'app-banking-configuration',
@@ -35,9 +38,10 @@ export class BankingConfigurationPage implements OnInit {
         private bankingService: BankingIntegrationService,
         private financialService: FinancialService,
         private toastCtrl: ToastController,
-        private alertCtrl: AlertController
+        private alertCtrl: AlertController,
+        private modalCtrl: ModalController
     ) {
-        addIcons({ checkmarkCircleOutline, closeCircleOutline, refreshOutline, cloudUploadOutline, linkOutline, businessOutline, saveOutline, documentAttachOutline, keyOutline, alertCircle, informationCircleOutline, addCircleOutline, trashOutline });
+        addIcons({ checkmarkCircleOutline, closeCircleOutline, refreshOutline, cloudUploadOutline, linkOutline, businessOutline, saveOutline, documentAttachOutline, keyOutline, alertCircle, informationCircleOutline, addCircleOutline, trashOutline, pencilOutline, removeCircleOutline });
 
         this.integrationForm = this.fb.group({
             banco: ['', [Validators.required]],
@@ -197,6 +201,45 @@ export class BankingConfigurationPage implements OnInit {
             ]
         });
         await alert.present();
+    }
+
+    async editAccount(event: Event, acc: BankAccount) {
+        event.stopPropagation();
+        const modal = await this.modalCtrl.create({
+            component: BankAccountWizardComponent,
+            componentProps: { accountToEdit: acc },
+            cssClass: 'wizard-modal'
+        });
+        await modal.present();
+        const { data } = await modal.onWillDismiss();
+        if (data?.refresh) {
+            this.loadBankAccounts();
+        }
+    }
+
+    async addCaixinhaTransaction(event: Event, acc: BankAccount, type: 'RECEITA' | 'DESPESA') {
+        event.stopPropagation();
+        const modal = await this.modalCtrl.create({
+            component: TransactionModalComponent,
+            componentProps: { 
+                type,
+                presetData: {
+                    contaBancariaId: acc.id,
+                    status: 'REALIZADO'
+                }
+            }
+        });
+        await modal.present();
+        const { data, role } = await modal.onWillDismiss();
+        if (role === 'save') {
+            this.financialService.createTransaction(data).subscribe({
+                next: () => {
+                    this.showToast('Lançamento inserido no caixa com sucesso!', 'success');
+                    this.loadBankAccounts(); // Refresh accounts just in case
+                },
+                error: () => this.showToast('Erro ao lançar no caixa.', 'danger')
+            });
+        }
     }
 
     executeDelete(id: string) {

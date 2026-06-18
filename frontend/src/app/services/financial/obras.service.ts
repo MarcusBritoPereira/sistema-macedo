@@ -19,6 +19,16 @@ export interface Obra {
   centroCusto?: any;
 }
 
+export interface ParcelaObra {
+  id?: string;
+  obraId: string;
+  percentual?: number;
+  valor: number;
+  dataVencimento: string;
+  status: string;
+  transacaoId?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -44,5 +54,22 @@ export class ObrasService {
 
   delete(id: string): Observable<any> {
     return this.api.delete(`financial/obras/${id}`);
+  }
+
+  // Parcelas
+  getParcelas(obraId: string): Observable<ParcelaObra[]> {
+    return this.api.get<ParcelaObra[]>(`financial/obras/${obraId}/parcelas`);
+  }
+
+  createParcela(obraId: string, parcela: Partial<ParcelaObra>): Observable<ParcelaObra> {
+    return this.api.post<ParcelaObra>(`financial/obras/${obraId}/parcelas`, parcela);
+  }
+
+  updateParcela(obraId: string, parcelaId: string, parcela: Partial<ParcelaObra>): Observable<ParcelaObra> {
+    return this.api.patch<ParcelaObra>(`financial/obras/${obraId}/parcelas/${parcelaId}`, parcela);
+  }
+
+  deleteParcela(obraId: string, parcelaId: string): Observable<any> {
+    return this.api.delete(`financial/obras/${obraId}/parcelas/${parcelaId}`);
   }
 }

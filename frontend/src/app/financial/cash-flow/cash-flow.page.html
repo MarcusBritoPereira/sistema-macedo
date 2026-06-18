@@ -48,58 +48,58 @@
 
         <!-- BLOCK 1: MAIN KPI CARDS -->
         <div class="kpi-grid">
-            <!-- Card 1: Saldo Atual (Blue/Neutral) -->
+            <!-- Card 1: Saldo Inicial -->
             <ion-card class="kpi-card bg-neutral">
                 <ion-card-content>
-                    <div class="kpi-label">Saldo Atual</div>
-                    <div class="kpi-value text-blue">{{ formatCurrency(operationalData.kpis.saldoAtual) }}</div>
-                    <div class="kpi-sub">Saldo conciliado até hoje</div>
+                    <div class="kpi-label">Saldo Inicial Mês</div>
+                    <div class="kpi-value text-blue">{{ formatCurrency(operationalData.kpis.saldoInicialMes) }}</div>
+                    <div class="kpi-sub">Saldo no dia 1º</div>
                 </ion-card-content>
             </ion-card>
 
-            <!-- Card 2: A Receber (Green) -->
+            <!-- Card 2: Entradas (Green) -->
             <ion-card class="kpi-card bg-green-light">
                 <ion-card-content>
-                    <div class="kpi-label">A Receber</div>
-                    <div class="kpi-value text-green">{{ formatCurrency(operationalData.kpis.aReceber.pendente) }}</div>
+                    <div class="kpi-label">Entradas (Receitas)</div>
+                    <div class="kpi-value text-green">{{ formatCurrency(operationalData.summary.entradasMes) }}</div>
                     <div class="kpi-details">
                         <div class="detail-row">
-                            <span>Recebido:</span>
-                            <span class="val">{{ formatCurrency(operationalData.kpis.aReceber.recebido) }}</span>
+                            <span>Recebido Real:</span>
+                            <span class="val">{{ formatCurrency(operationalData.summary.recebidoReal) }}</span>
                         </div>
                         <div class="detail-row">
-                            <span>Previsto Total:</span>
-                            <span class="val">{{ formatCurrency(operationalData.kpis.aReceber.total) }}</span>
+                            <span>Previsto a Receber:</span>
+                            <span class="val">{{ formatCurrency(operationalData.summary.previstoReceber) }}</span>
                         </div>
                     </div>
                 </ion-card-content>
             </ion-card>
 
-            <!-- Card 3: A Pagar (Red) -->
+            <!-- Card 3: Saídas (Red) -->
             <ion-card class="kpi-card bg-red-light">
                 <ion-card-content>
-                    <div class="kpi-label">A Pagar</div>
-                    <div class="kpi-value text-red">{{ formatCurrency(operationalData.kpis.aPagar.pendente) }}</div>
+                    <div class="kpi-label">Saídas (Despesas)</div>
+                    <div class="kpi-value text-red">{{ formatCurrency(operationalData.summary.saidasMes) }}</div>
                     <div class="kpi-details">
                         <div class="detail-row">
-                            <span>Pago:</span>
+                            <span>Pago Real:</span>
                             <span class="val">{{ formatCurrency(operationalData.kpis.aPagar.pago) }}</span>
                         </div>
                         <div class="detail-row">
-                            <span>Previsto Total:</span>
-                            <span class="val">{{ formatCurrency(operationalData.kpis.aPagar.total) }}</span>
+                            <span>Previsto a Pagar:</span>
+                            <span class="val">{{ formatCurrency(operationalData.kpis.aPagar.pendente) }}</span>
                         </div>
                     </div>
                 </ion-card-content>
             </ion-card>
 
-            <!-- Card 4: Saldo Projetado (Blue) -->
+            <!-- Card 4: Saldo Final -->
             <ion-card class="kpi-card bg-blue-light">
                 <ion-card-content>
-                    <div class="kpi-label">Resultado do Mês</div>
-                    <div class="kpi-value text-blue-dark">{{ formatCurrency(operationalData.kpis.saldoProjetado) }}
+                    <div class="kpi-label">Saldo Final Mês</div>
+                    <div class="kpi-value text-blue-dark">{{ formatCurrency(operationalData.kpis.saldoFinalMes) }}
                     </div>
-                    <div class="kpi-sub">Saldo + Receber - Pagar</div>
+                    <div class="kpi-sub">Inicial + Entradas - Saídas</div>
                 </ion-card-content>
             </ion-card>
         </div>

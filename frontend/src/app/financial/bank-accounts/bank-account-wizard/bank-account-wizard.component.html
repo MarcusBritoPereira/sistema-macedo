@@ -114,6 +114,15 @@
                         <span class="field-hint">Dê um nome para identificar esta conta depois</span>
                     </div>
 
+                    <div class="form-field col-6" *ngIf="selectedType === 'CAIXINHA'">
+                        <label>Saldo Inicial (Dinheiro Físico) *</label>
+                        <div class="currency-input-wrapper" style="display: flex; align-items: center; border: 1px solid #ccc; padding: 0 10px; border-radius: 4px; background: #fff;">
+                            <span style="margin-right: 5px;">R$</span>
+                            <ion-input [(ngModel)]="formData.startingBalance" type="number" placeholder="0,00"
+                                style="--padding-start: 0;"></ion-input>
+                        </div>
+                    </div>
+
                     <div class="form-field col-6">
                         <label>Modalidade da conta *</label>
                         <ion-radio-group [(ngModel)]="formData.modalidade" class="radio-row">

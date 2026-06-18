@@ -72,6 +72,10 @@ export class FinancialService {
     return this.api.post<BankAccount>('financial/bank-accounts', data);
   }
 
+  updateBankAccount(id: string, data: Partial<BankAccount>): Observable<BankAccount> {
+    return this.api.patch<BankAccount>(`financial/bank-accounts/${id}`, data);
+  }
+
   getTransactions(filters?: {
     tipo?: 'RECEITA' | 'DESPESA',
     status?: string,

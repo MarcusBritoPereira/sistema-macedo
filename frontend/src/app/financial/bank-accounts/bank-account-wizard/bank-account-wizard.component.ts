@@ -1,5 +1,5 @@
 
-import { Component } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import {
@@ -8,7 +8,7 @@ import {
     IonLabel, IonList, ModalController, IonInput, IonSelect,
     IonSelectOption, IonCheckbox, ToastController, IonSpinner
 } from '@ionic/angular/standalone';
-import { FinancialService } from '../../../services/financial/financial';
+import { FinancialService, BankAccount } from '../../../services/financial/financial';
 import { addIcons } from 'ionicons';
 import {
     closeOutline, businessOutline, walletOutline, cardOutline,
@@ -29,7 +29,9 @@ import {
         IonSelect, IonSelectOption, IonCheckbox, IonSpinner
     ]
 })
-export class BankAccountWizardComponent {
+export class BankAccountWizardComponent implements OnInit {
+    @Input() accountToEdit?: BankAccount;
+
     currentStep: number = 1;
     selectedType: string = 'CORRENTE';
     loading: boolean = false;
@@ -169,6 +171,22 @@ export class BankAccountWizardComponent {
         });
     }
 
+    ngOnInit() {
+        if (this.accountToEdit) {
+            this.currentStep = 2; // Pula a etapa inicial
+            this.selectedType = this.accountToEdit.banco === 'Caixinha (Dinheiro Físico)' ? 'CAIXINHA' : 'CORRENTE';
+            this.formData.nome = this.accountToEdit.nome;
+            this.formData.banco = this.accountToEdit.banco || '';
+            this.formData.agencia = this.accountToEdit.agencia || '';
+            this.formData.conta = this.accountToEdit.conta || '';
+            this.formData.startingBalance = this.accountToEdit.saldo || 0;
+            // Se for caixinha já pula direto
+            if (this.selectedType === 'CAIXINHA') {
+                this.currentStep = 2; // Pode editar o nome e o saldo (veremos na step 2)
+            }
+        }
+    }
+
     dismiss() {
         this.modalCtrl.dismiss();
     }
@@ -197,18 +215,33 @@ export class BankAccountWizardComponent {
             saldoInicial: this.formData.startingBalance || 0
         };
 
-        this.financialService.createBankAccount(payload).subscribe({
-            next: (res) => {
-                this.loading = false;
-                this.showToast('Conta cadastrada com sucesso!', 'success');
-                this.modalCtrl.dismiss({ refresh: true });
-            },
-            error: (err) => {
-                this.loading = false;
-                console.error('Error saving account:', err);
-                this.showToast('Erro ao cadastrar conta bancária.', 'danger');
-            }
-        });
+        if (this.accountToEdit) {
+            this.financialService.updateBankAccount(this.accountToEdit.id, payload).subscribe({
+                next: (res) => {
+                    this.loading = false;
+                    this.showToast('Conta atualizada com sucesso!', 'success');
+                    this.modalCtrl.dismiss({ refresh: true });
+                },
+                error: (err) => {
+                    this.loading = false;
+                    console.error('Error updating account:', err);
+                    this.showToast('Erro ao atualizar conta bancária.', 'danger');
+                }
+            });
+        } else {
+            this.financialService.createBankAccount(payload).subscribe({
+                next: (res) => {
+                    this.loading = false;
+                    this.showToast('Conta cadastrada com sucesso!', 'success');
+                    this.modalCtrl.dismiss({ refresh: true });
+                },
+                error: (err) => {
+                    this.loading = false;
+                    console.error('Error saving account:', err);
+                    this.showToast('Erro ao cadastrar conta bancária.', 'danger');
+                }
+            });
+        }
     }
 
     async showToast(message: string, color: string) {

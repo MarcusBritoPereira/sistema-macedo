@@ -60,9 +60,29 @@ export class PermissionsGuard implements CanActivate {
       ? (permissoesRaw as string[])
       : [];
 
-    const hasPermission = requiredPermissions.every((permission) =>
-      userPermissions.includes(permission),
-    );
+    const permissionObject =
+      permissoesRaw &&
+      typeof permissoesRaw === 'object' &&
+      !Array.isArray(permissoesRaw)
+        ? (permissoesRaw as Record<string, unknown>)
+        : {};
+
+    const hasPermission = requiredPermissions.every((permission) => {
+      if (userPermissions.includes(permission)) return true;
+      if (permissionObject[permission] === true) return true;
+
+      // Compatibilidade com perfis legados, como { financial: true }.
+      if (
+        permissionObject.financial === true &&
+        (permission.startsWith('financeiro.') ||
+          permission === 'can_reconcile' ||
+          permission === 'can_manage_banking')
+      ) {
+        return true;
+      }
+
+      return false;
+    });
 
     if (!hasPermission) {
       throw new ForbiddenException(

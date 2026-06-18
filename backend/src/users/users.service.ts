@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -9,6 +8,7 @@ export class UsersService {
 
   async create(data: any) {
     const hashedPassword = await bcrypt.hash(data.senha, 10);
+    const { nome, email, perfil, ativo } = data;
 
     // Handle profile connection by name if provided as string
     let perfilConnection = {};
@@ -18,15 +18,18 @@ export class UsersService {
           connect: { nome: data.perfil },
         },
       };
-      delete data.perfil; // Remove raw string to avoid schema conflict
     }
 
+    const createData: any = {
+      nome,
+      email,
+      ativo,
+      senha: hashedPassword,
+      ...perfilConnection,
+    };
+
     return this.prisma.usuario.create({
-      data: {
-        ...data,
-        senha: hashedPassword,
-        ...perfilConnection,
-      },
+      data: createData,
     });
   }
 
@@ -50,6 +53,21 @@ export class UsersService {
     });
   }
 
+  findOneSafe(id: string) {
+    return this.prisma.usuario.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        nome: true,
+        email: true,
+        perfil: true,
+        ativo: true,
+        precisaTrocarSenha: true,
+        createdAt: true,
+      },
+    });
+  }
+
   async findByEmail(email: string) {
     return this.prisma.usuario.findUnique({
       where: { email },
@@ -58,8 +76,17 @@ export class UsersService {
   }
 
   async update(id: string, data: any) {
+    const updateData: any = {};
+    for (const field of [
+      'nome',
+      'email',
+      'ativo',
+      'precisaTrocarSenha',
+    ] as const) {
+      if (data[field] !== undefined) updateData[field] = data[field];
+    }
     if (data.senha && typeof data.senha === 'string') {
-      data.senha = await bcrypt.hash(data.senha, 10);
+      updateData.senha = await bcrypt.hash(data.senha, 10);
     }
 
     // Handle profile connection by name if provided as string
@@ -70,13 +97,12 @@ export class UsersService {
           connect: { nome: data.perfil },
         },
       };
-      delete data.perfil;
     }
 
     return this.prisma.usuario.update({
       where: { id },
       data: {
-        ...data,
+        ...updateData,
         ...perfilConnection,
       },
     });

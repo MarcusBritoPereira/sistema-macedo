@@ -67,8 +67,26 @@
             </ion-select>
         </ion-item>
 
-        <!-- Categoria -->
+        <!-- Cliente -->
         <ion-item fill="outline" class="input-item">
+            <ion-label position="stacked">Cliente</ion-label>
+            <ion-select [(ngModel)]="formData.clienteId" interface="action-sheet" placeholder="Selecione">
+                <ion-select-option value="">Nenhum</ion-select-option>
+                <ion-select-option *ngFor="let c of clients" [value]="c.id">{{ c.nomeFantasia || c.razaoSocial }}</ion-select-option>
+            </ion-select>
+        </ion-item>
+
+        <!-- Obra -->
+        <ion-item fill="outline" class="input-item">
+            <ion-label position="stacked">Obra Vinculada</ion-label>
+            <ion-select [(ngModel)]="formData.obraId" interface="action-sheet" placeholder="Selecione">
+                <ion-select-option value="">Nenhuma</ion-select-option>
+                <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
+            </ion-select>
+        </ion-item>
+
+        <!-- Categoria -->
+        <ion-item fill="outline" class="input-item" *ngIf="formData.tipo !== 'RECEITA'">
             <ion-label position="stacked">Categoria</ion-label>
             <ion-select [(ngModel)]="formData.categoriaId" interface="action-sheet" placeholder="Selecione">
                 <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</ion-select-option>
@@ -76,7 +94,7 @@
         </ion-item>
 
         <!-- Centro de Custo -->
-        <ion-item fill="outline" class="input-item">
+        <ion-item fill="outline" class="input-item" *ngIf="formData.tipo !== 'RECEITA'">
             <ion-label position="stacked">Centro de Custo</ion-label>
             <ion-select [(ngModel)]="formData.centroCustoId" interface="action-sheet" placeholder="Selecione">
                 <ion-select-option *ngFor="let cc of costCenters" [value]="cc.id">{{ cc.nome }}</ion-select-option>

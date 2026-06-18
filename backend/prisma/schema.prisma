@@ -200,6 +200,7 @@ model LancamentoFinanceiro {
   rateiosHistorico RateioHistorico[]
 
   conciliacoes ConciliacaoBancaria[]
+  parcelaObra  ParcelaObra?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -704,6 +705,7 @@ model Obra {
 
   lancamentos LancamentoFinanceiro[]
   rateios     RateioLancamento[]
+  parcelas    ParcelaObra[]
 
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -718,4 +720,30 @@ enum StatusObra {
   PAUSADA
   CONCLUIDA
   CANCELADA
+}
+
+model ParcelaObra {
+  id             String        @id @default(uuid())
+  obraId         String
+  obra           Obra          @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  porcentagem    Decimal       @db.Decimal(5, 2)
+  valor          Decimal       @db.Decimal(10, 2)
+  dataVencimento DateTime
+  status         StatusParcela @default(PREVISTO)
+
+  transacaoId String?               @unique
+  transacao   LancamentoFinanceiro? @relation(fields: [transacaoId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([obraId])
+  @@index([status])
+  @@map("parcelas_obra")
+}
+
+enum StatusParcela {
+  PREVISTO
+  RECEBIDO
+  ATRASADO
 }

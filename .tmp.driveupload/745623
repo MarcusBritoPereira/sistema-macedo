@@ -1,0 +1,149 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BankAccountsController = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../prisma/prisma.service");
+const passport_1 = require("@nestjs/passport");
+const roles_guard_1 = require("../auth/roles.guard");
+const roles_decorator_1 = require("../auth/roles.decorator");
+let BankAccountsController = class BankAccountsController {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async findAll() {
+        const accounts = await this.prisma.contaBancaria.findMany({
+            include: {
+                integracao: true,
+            },
+        });
+        const ids = accounts.map((acc) => acc.id);
+        const pendingByAccount = await this.prisma.extratoBancario.groupBy({
+            by: ['importacaoId'],
+            _count: { _all: true },
+            where: {
+                conciliado: false,
+                importacao: {
+                    contaBancariaId: { in: ids },
+                },
+            },
+        });
+        const imports = await this.prisma.importacaoBancaria.findMany({
+            where: { contaBancariaId: { in: ids } },
+            select: { id: true, contaBancariaId: true },
+        });
+        const importToAccount = new Map(imports.map((i) => [i.id, i.contaBancariaId]));
+        const pendingMap = new Map();
+        for (const item of pendingByAccount) {
+            const accountId = importToAccount.get(item.importacaoId || '');
+            if (!accountId)
+                continue;
+            pendingMap.set(accountId, (pendingMap.get(accountId) || 0) + item._count._all);
+        }
+        const [lastStatements, reconciledAgg] = await Promise.all([
+            this.prisma.extratoBancario.findMany({
+                where: { importacao: { contaBancariaId: { in: ids } } },
+                orderBy: { data: 'desc' },
+                select: {
+                    data: true,
+                    importacao: { select: { contaBancariaId: true } },
+                },
+            }),
+            this.prisma.lancamentoFinanceiro.groupBy({
+                by: ['contaBancariaId', 'tipo'],
+                where: { contaBancariaId: { in: ids }, status: 'CONCILIADO' },
+                _sum: { valor: true },
+            }),
+        ]);
+        const lastImportedMap = new Map();
+        for (const row of lastStatements) {
+            const accountId = row.importacao?.contaBancariaId;
+            if (accountId && !lastImportedMap.has(accountId)) {
+                lastImportedMap.set(accountId, row.data);
+            }
+        }
+        const balanceMap = new Map();
+        for (const row of reconciledAgg) {
+            const id = row.contaBancariaId;
+            if (!id)
+                continue;
+            const current = balanceMap.get(id) || 0;
+            const value = Number(row._sum.valor || 0);
+            balanceMap.set(id, current + (row.tipo === 'RECEITA' ? value : -value));
+        }
+        return accounts.map((acc) => ({
+            ...acc,
+            pendingReconciliations: pendingMap.get(acc.id) || 0,
+            lastSync: acc.integracao ? acc.integracao.lastSync : null,
+            statusIntegracao: acc.integracao
+                ? acc.integracao.status
+                : 'NOT_CONFIGURED',
+            lastImported: lastImportedMap.get(acc.id) || null,
+            saldoAtual: Number(acc.saldoInicial) + (balanceMap.get(acc.id) || 0),
+        }));
+    }
+    async create(data) {
+        return this.prisma.contaBancaria.create({
+            data: {
+                nome: data.nome,
+                banco: data.banco,
+                agencia: data.agencia,
+                conta: data.conta,
+                codigoBanco: data.codigoBanco,
+                saldoInicial: data.saldoInicial || 0,
+            },
+        });
+    }
+    async delete(id) {
+        return this.prisma.$transaction(async (tx) => {
+            await tx.integracaoBancaria.deleteMany({
+                where: { contaBancariaId: id },
+            });
+            return tx.contaBancaria.delete({
+                where: { id },
+            });
+        });
+    }
+};
+exports.BankAccountsController = BankAccountsController;
+__decorate([
+    (0, common_1.Get)(),
+    (0, roles_decorator_1.Roles)('ADMIN', 'FINANCEIRO'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], BankAccountsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)('ADMIN', 'FINANCEIRO'),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], BankAccountsController.prototype, "create", null);
+__decorate([
+    (0, common_1.Delete)(':id'),
+    (0, roles_decorator_1.Roles)('ADMIN'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], BankAccountsController.prototype, "delete", null);
+exports.BankAccountsController = BankAccountsController = __decorate([
+    (0, common_1.Controller)('financial/bank-accounts'),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)('jwt'), roles_guard_1.RolesGuard),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], BankAccountsController);
+//# sourceMappingURL=bank-accounts.controller.js.map

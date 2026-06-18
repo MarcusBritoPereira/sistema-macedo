@@ -1,0 +1,5 @@
+import { CreateFiscalParamDto } from './create-param.dto';
+declare const UpdateFiscalParamDto_base: import("@nestjs/mapped-types").MappedType<Partial<CreateFiscalParamDto>>;
+export declare class UpdateFiscalParamDto extends UpdateFiscalParamDto_base {
+}
+export {};

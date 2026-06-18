@@ -11,6 +11,9 @@ import { closeOutline, calendarOutline, cashOutline } from 'ionicons/icons';
 import { FinancialService, Transaction } from '../../../services/financial/financial';
 import { CategoriesService } from '../../../services/financial/categories.service';
 import { CostCentersService } from '../../../services/financial/cost-centers.service';
+import { ClientsService } from '../../../services/clients/clients';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 @Component({
     selector: 'app-transaction-modal',
@@ -48,12 +51,16 @@ export class TransactionModalComponent implements OnInit {
     categories: any[] = [];
     costCenters: any[] = [];
     bankAccounts: any[] = [];
+    clients: any[] = [];
+    obras: any[] = [];
 
     constructor(
         private modalCtrl: ModalController,
         private categoriesService: CategoriesService,
         private costCentersService: CostCentersService,
-        private financialService: FinancialService
+        private financialService: FinancialService,
+        private clientsService: ClientsService,
+        private http: HttpClient
     ) {
         addIcons({ closeOutline, calendarOutline, cashOutline });
     }
@@ -84,6 +91,9 @@ export class TransactionModalComponent implements OnInit {
             next: (accounts) => this.bankAccounts = accounts,
             error: (err) => console.error('Error loading accounts in modal', err)
         });
+        this.clientsService.findAll().subscribe(c => this.clients = c);
+        // Obras service does not exist in frontend services yet? Let's use direct HTTP
+        this.http.get<any[]>(`${environment.apiUrl}/financial/obras`).subscribe(o => this.obras = o);
     }
 
     isValid() {

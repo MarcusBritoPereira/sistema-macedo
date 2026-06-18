@@ -24,9 +24,11 @@ export class FinancialTransactionsService {
   };
 
   private validateBusinessRules(data: {
+    tipo?: string;
     tipoLancamento?: TipoClassificacaoLancamento | null;
     obraId?: string | null;
   }) {
+    if (data.tipo === 'RECEITA') return;
     const requiresObra =
       data.tipoLancamento === 'OBRA' || data.tipoLancamento === 'POS_OBRA';
     if (requiresObra && !data.obraId) {
@@ -35,7 +37,7 @@ export class FinancialTransactionsService {
   }
 
   async create(data: CreateTransactionDto, usuarioId: string) {
-    this.validateBusinessRules(data);
+    this.validateBusinessRules({ ...data });
     const createData = this.toCreateInput(data);
     return this.prisma.$transaction(async (tx) => {
       const transaction = await tx.lancamentoFinanceiro.create({
@@ -196,6 +198,7 @@ export class FinancialTransactionsService {
     });
 
     this.validateBusinessRules({
+      tipo: data.tipo ?? existing?.tipoLancamento ? 'DESPESA' : 'RECEITA', // Fallback, we'll just ignore for update
       tipoLancamento: data.tipoLancamento ?? existing?.tipoLancamento,
       obraId: data.obraId ?? existing?.obraId,
     });
@@ -273,7 +276,7 @@ export class FinancialTransactionsService {
       categoria: data.categoriaId
         ? { connect: { id: data.categoriaId } }
         : undefined,
-      centroCusto: data.centroCustoId
+      centroCusto: (data.tipo !== 'RECEITA' && data.centroCustoId)
         ? { connect: { id: data.centroCustoId } }
         : undefined,
       contrato: data.contratoId
@@ -284,9 +287,9 @@ export class FinancialTransactionsService {
         ? { connect: { id: data.fornecedorId } }
         : undefined,
       obra: data.obraId ? { connect: { id: data.obraId } } : undefined,
-      tipoLancamento: data.tipoLancamento,
-      tipoCusto: data.tipoCusto,
-      categoriaCusto: data.categoriaCusto,
+      tipoLancamento: data.tipo === 'RECEITA' ? null : data.tipoLancamento,
+      tipoCusto: data.tipo === 'RECEITA' ? null : data.tipoCusto,
+      categoriaCusto: data.tipo === 'RECEITA' ? null : data.categoriaCusto,
     };
   }
 
@@ -341,9 +344,9 @@ export class FinancialTransactionsService {
       categoria: data.categoriaId
         ? { connect: { id: data.categoriaId } }
         : undefined,
-      centroCusto: data.centroCustoId
+      centroCusto: (data.tipo !== 'RECEITA' && data.centroCustoId)
         ? { connect: { id: data.centroCustoId } }
-        : undefined,
+        : data.tipo === 'RECEITA' ? { disconnect: true } : undefined,
       contrato: data.contratoId
         ? { connect: { id: data.contratoId } }
         : undefined,
@@ -352,9 +355,9 @@ export class FinancialTransactionsService {
         ? { connect: { id: data.fornecedorId } }
         : undefined,
       obra: data.obraId ? { connect: { id: data.obraId } } : undefined,
-      tipoLancamento: data.tipoLancamento,
-      tipoCusto: data.tipoCusto,
-      categoriaCusto: data.categoriaCusto,
+      tipoLancamento: data.tipo === 'RECEITA' ? null : data.tipoLancamento,
+      tipoCusto: data.tipo === 'RECEITA' ? null : data.tipoCusto,
+      categoriaCusto: data.tipo === 'RECEITA' ? null : data.categoriaCusto,
     };
   }
 }

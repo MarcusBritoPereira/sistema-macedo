@@ -1,0 +1,80 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { CashFlowFilterDto } from './dto/cash-flow-filter.dto';
+export declare class CashFlowService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    getCashFlow(filter: CashFlowFilterDto): Promise<{
+        period: {
+            start: Date;
+            end: Date;
+        };
+        kpis: {
+            saldoAtual: number;
+            saldoInicialMes: number;
+            saldoFinalMes: number;
+            aReceber: {
+                total: number;
+                recebido: number;
+                pendente: number;
+            };
+            aPagar: {
+                total: number;
+                pago: number;
+                pendente: number;
+            };
+            saldoProjetado: number;
+        };
+        summary: {
+            totalIn: number;
+            totalOut: number;
+            balance: number;
+            entradasMes: number;
+            saidasMes: number;
+            previstoReceber: number;
+            recebidoReal: number;
+        };
+        accounts: {
+            id: string;
+            name: string;
+            bank: string;
+            balance: number;
+            saldoInicialConta: number;
+        }[];
+        today: {
+            in: number;
+            out: number;
+        };
+        remaining: {
+            in: number;
+            out: number;
+        };
+        chart: any[];
+        transactions: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            descricao: string;
+            tipo: import(".prisma/client").$Enums.TipoLancamento;
+            status: import(".prisma/client").$Enums.StatusLancamento;
+            clienteId: string | null;
+            valor: import("@prisma/client/runtime/library").Decimal;
+            dataVencimento: Date;
+            dataPagamento: Date | null;
+            dataCompetencia: Date | null;
+            observacoes: string | null;
+            urlComprovante: string | null;
+            fornecedorNome: string | null;
+            tipoLancamento: import(".prisma/client").$Enums.TipoClassificacaoLancamento | null;
+            tipoCusto: import(".prisma/client").$Enums.TipoCustoLancamento | null;
+            categoriaCusto: string | null;
+            recorrente: boolean;
+            contaBancariaId: string | null;
+            categoriaId: string | null;
+            centroCustoId: string | null;
+            contratoId: string | null;
+            fornecedorId: string | null;
+            obraId: string | null;
+            recurrenciaId: string | null;
+        }[];
+    }>;
+}

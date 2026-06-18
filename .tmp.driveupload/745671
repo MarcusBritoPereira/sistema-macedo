@@ -1,0 +1,28 @@
+import type { Response } from 'express';
+import { FinancialBudgetService } from './financial-budget.service';
+import { CreateBudgetDto } from './dto/create-budget.dto';
+export declare class FinancialBudgetController {
+    private readonly service;
+    constructor(service: FinancialBudgetService);
+    upsert(createBudgetDto: CreateBudgetDto): Promise<{
+        id: string;
+        updatedAt: Date;
+        mes: number;
+        ano: number;
+        receitaMeta: import("@prisma/client/runtime/library").Decimal;
+        despesaMeta: import("@prisma/client/runtime/library").Decimal;
+    }>;
+    getTemplate(res: Response): Response<any, Record<string, any>>;
+    importCsv(file: Express.Multer.File): Promise<{
+        success: boolean;
+        imported: number;
+    }>;
+    findAll(ano: string): import(".prisma/client").Prisma.PrismaPromise<{
+        id: string;
+        updatedAt: Date;
+        mes: number;
+        ano: number;
+        receitaMeta: import("@prisma/client/runtime/library").Decimal;
+        despesaMeta: import("@prisma/client/runtime/library").Decimal;
+    }[]>;
+}

@@ -80,6 +80,21 @@ export class ReportsService {
       ],
       defaultSelected: true,
     },
+    {
+      id: 'obras-abc',
+      title: 'Curva ABC e Custos por Obra',
+      description: 'Análise de curva ABC de insumos e custos detalhados (mão de obra, materiais) por Obra.',
+      cadence: 'Mensal',
+      category: 'Gestão de Obras',
+      tags: ['Obras', 'ABC', 'Custos'],
+      icon: 'pie-chart-outline',
+      highlights: [
+        'Curva ABC de Insumos',
+        'Custo de Mão de Obra',
+        'Custo de Material',
+      ],
+      defaultSelected: true,
+    },
   ];
 
   getCatalog(): ReportDefinition[] {
@@ -119,6 +134,8 @@ export class ReportsService {
             data = await this.generateCostCentersReport(payload.filters);
           } else if (report.id === 'taxes') {
             data = await this.generateTaxesReport(payload.filters);
+          } else if (report.id === 'obras-abc') {
+            data = await this.generateObrasAbcReport(payload.filters);
           }
           return {
             id: report.id,
@@ -757,5 +774,94 @@ export class ReportsService {
         },
       ],
     };
+  }
+
+  private async generateObrasAbcReport(filters: any) {
+    let startDate: Date;
+    let endDate: Date;
+    if (filters.startDate && filters.endDate) {
+      startDate = new Date(filters.startDate);
+      endDate = new Date(filters.endDate);
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      const n = new Date();
+      startDate = new Date(n.getFullYear(), n.getMonth(), 1);
+      endDate = new Date(n.getFullYear(), n.getMonth() + 1, 0);
+    }
+
+    const obras = await this.prisma.obra.findMany();
+    const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+      where: {
+        dataVencimento: { gte: startDate, lte: endDate },
+        status: { in: ['REALIZADO', 'CONCILIADO'] },
+        tipo: 'DESPESA',
+      },
+    });
+
+    const details: any[] = [];
+    details.push({
+      label: 'Custos por Obra (Mão de Obra vs Material)',
+      value: 0,
+      level: 0,
+      type: 'header',
+    });
+
+    let totalGeral = 0;
+
+    for (const obra of obras) {
+      const transObra = transactions.filter(t => t.obraId === obra.id);
+      if (transObra.length === 0) continue;
+
+      let maoDeObra = 0;
+      let material = 0;
+      let outros = 0;
+
+      for (const t of transObra) {
+        const val = Math.abs(Number(t.valor));
+        if (t.tipoCusto === 'MAO_DE_OBRA') maoDeObra += val;
+        else if (t.tipoCusto === 'MATERIAL') material += val;
+        else outros += val;
+      }
+
+      const totalObra = maoDeObra + material + outros;
+      totalGeral += totalObra;
+
+      details.push({ label: `Obra: ${obra.nome}`, value: totalObra, level: 1 });
+      if (maoDeObra > 0) details.push({ label: 'Mão de Obra', value: maoDeObra, level: 2 });
+      if (material > 0) details.push({ label: 'Material', value: material, level: 2 });
+      if (outros > 0) details.push({ label: 'Outros Custos', value: outros, level: 2 });
+    }
+
+    // Curva ABC
+    const insumosAgregados: Record<string, number> = {};
+    for (const t of transactions) {
+      if (t.tipoCusto === 'MATERIAL' && t.categoriaCusto) {
+        insumosAgregados[t.categoriaCusto] = (insumosAgregados[t.categoriaCusto] || 0) + Math.abs(Number(t.valor));
+      }
+    }
+
+    const insumosSorted = Object.entries(insumosAgregados).sort((a, b) => b[1] - a[1]);
+    
+    details.push({
+      label: 'Curva ABC - Materiais Mais Representativos',
+      value: 0,
+      level: 0,
+      type: 'header',
+    });
+
+    for (const [nome, valor] of insumosSorted.slice(0, 10)) {
+      details.push({ label: nome, value: valor, level: 1 });
+    }
+
+    details.push({
+      label: 'Total de Custos no Período',
+      value: totalGeral,
+      level: 0,
+      type: 'total',
+      highlight: true,
+    });
+
+    return { summary: null, details };
   }
 }

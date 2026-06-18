@@ -1,0 +1,9 @@
+export declare class CreateSupplierDto {
+    nomeFantasia: string;
+    razaoSocial?: string;
+    cnpj?: string;
+    email?: string;
+    telefone?: string;
+    categoriaDefaultId?: string;
+    ativo?: boolean;
+}

@@ -16,6 +16,7 @@ export interface Transaction {
   centroCustoId?: string;
   contratoId?: string;
   clienteId?: string;
+  obraId?: string;
   formaPagamento?: string;
   condicaoPagamento?: string; // 'A_VISTA', 'PARCELADO'
   contaBancariaId?: string;

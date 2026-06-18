@@ -1,0 +1,214 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CategoriesService = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../prisma/prisma.service");
+const Papa = __importStar(require("papaparse"));
+let CategoriesService = class CategoriesService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    sanitizeCategoryPayload(dto) {
+        const data = {};
+        if (dto.nome !== undefined)
+            data.nome = dto.nome.trim();
+        if (dto.tipo !== undefined)
+            data.tipo = dto.tipo;
+        if (dto.descricao !== undefined) {
+            data.descricao = dto.descricao?.trim() || null;
+        }
+        if (dto.classificacao !== undefined) {
+            data.classificacao = dto.classificacao || null;
+        }
+        if (dto.parentId !== undefined)
+            data.parentId = dto.parentId || null;
+        return data;
+    }
+    async ensureUniqueName(data, currentId) {
+        if (!data.nome)
+            return;
+        const parentId = data.parentId || null;
+        const existing = await this.prisma.categoriaFinanceira.findFirst({
+            where: {
+                nome: { equals: data.nome, mode: 'insensitive' },
+                tipo: data.tipo,
+                parentId,
+                ...(currentId ? { id: { not: currentId } } : {}),
+            },
+            select: { id: true },
+        });
+        if (existing) {
+            throw new common_1.ConflictException('Já existe uma categoria com este nome para o mesmo tipo.');
+        }
+    }
+    mapCategory(category) {
+        if (!category)
+            return category;
+        const children = category.children || [];
+        return {
+            ...category,
+            subcategorias: children,
+            children,
+        };
+    }
+    async create(createCategoryDto) {
+        const data = this.sanitizeCategoryPayload(createCategoryDto);
+        if (!data.nome) {
+            throw new common_1.BadRequestException('Nome da categoria é obrigatório.');
+        }
+        await this.ensureUniqueName(data);
+        const category = await this.prisma.categoriaFinanceira.create({
+            data,
+            include: { children: true, parent: true },
+        });
+        return this.mapCategory(category);
+    }
+    getTemplate(res) {
+        const csv = Papa.unparse([
+            {
+                nome: '',
+                tipo: 'RECEITA ou DESPESA',
+                descricao: '',
+                classificacao: '',
+            },
+        ]);
+        res.header('Content-Type', 'text/csv');
+        res.attachment('categorias_modelo.csv');
+        return res.send(csv);
+    }
+    async importCsv(file) {
+        const csvData = file.buffer.toString('utf-8');
+        const { data } = Papa.parse(csvData, {
+            header: true,
+            skipEmptyLines: true,
+        });
+        let count = 0;
+        for (const row of data) {
+            if (!row.nome || !row.tipo)
+                continue;
+            const tipo = row.tipo.trim().toUpperCase();
+            if (tipo !== 'RECEITA' && tipo !== 'DESPESA')
+                continue;
+            const existing = await this.prisma.categoriaFinanceira.findFirst({
+                where: {
+                    nome: { equals: row.nome.trim(), mode: 'insensitive' },
+                    tipo: tipo,
+                    parentId: null,
+                },
+            });
+            if (!existing) {
+                await this.prisma.categoriaFinanceira.create({
+                    data: {
+                        nome: row.nome.trim(),
+                        tipo: tipo,
+                        descricao: row.descricao || null,
+                        classificacao: row.classificacao || null,
+                    },
+                });
+                count++;
+            }
+        }
+        return { success: true, imported: count };
+    }
+    async findAll() {
+        const categories = await this.prisma.categoriaFinanceira.findMany({
+            include: { children: { orderBy: { nome: 'asc' } }, parent: true },
+            orderBy: { nome: 'asc' },
+        });
+        return categories.map((category) => this.mapCategory(category));
+    }
+    async findAllTree() {
+        const categories = await this.prisma.categoriaFinanceira.findMany({
+            where: { parentId: null },
+            include: {
+                children: { include: { children: true }, orderBy: { nome: 'asc' } },
+            },
+            orderBy: { nome: 'asc' },
+        });
+        return categories.map((category) => this.mapCategory(category));
+    }
+    async findOne(id) {
+        const category = await this.prisma.categoriaFinanceira.findUnique({
+            where: { id },
+            include: { children: { orderBy: { nome: 'asc' } }, parent: true },
+        });
+        return this.mapCategory(category);
+    }
+    async update(id, updateCategoryDto) {
+        const current = await this.prisma.categoriaFinanceira.findUnique({
+            where: { id },
+            select: { nome: true, tipo: true, parentId: true },
+        });
+        if (!current)
+            throw new common_1.BadRequestException('Categoria não encontrada.');
+        const data = this.sanitizeCategoryPayload(updateCategoryDto);
+        await this.ensureUniqueName({
+            ...data,
+            nome: data.nome || current.nome,
+            tipo: data.tipo || current.tipo,
+            parentId: data.parentId === undefined
+                ? current.parentId || undefined
+                : data.parentId,
+        }, id);
+        const category = await this.prisma.categoriaFinanceira.update({
+            where: { id },
+            data,
+            include: { children: { orderBy: { nome: 'asc' } }, parent: true },
+        });
+        return this.mapCategory(category);
+    }
+    remove(id) {
+        return this.prisma.categoriaFinanceira.delete({
+            where: { id },
+        });
+    }
+};
+exports.CategoriesService = CategoriesService;
+exports.CategoriesService = CategoriesService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], CategoriesService);
+//# sourceMappingURL=categories.service.js.map

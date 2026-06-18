@@ -76,6 +76,9 @@ export class ObrasService {
         cliente: true,
         centroCusto: true,
         lancamentos: true,
+        parcelas: {
+          orderBy: { dataVencimento: 'asc' }
+        },
       },
     });
 
@@ -97,6 +100,81 @@ export class ObrasService {
     await this.findOne(id); // Check existence
     return this.prisma.obra.delete({
       where: { id },
+    });
+  }
+
+  async createParcela(obraId: string, data: any) {
+    return this.prisma.parcelaObra.create({
+      data: {
+        obraId,
+        porcentagem: data.porcentagem,
+        valor: data.valor,
+        dataVencimento: new Date(data.dataVencimento),
+        status: data.status || 'PREVISTO',
+      },
+    });
+  }
+
+  async findParcelas(obraId: string) {
+    return this.prisma.parcelaObra.findMany({
+      where: { obraId },
+      orderBy: { dataVencimento: 'asc' },
+    });
+  }
+
+  async updateParcela(parcelaId: string, data: any) {
+    const existing = await this.prisma.parcelaObra.findUnique({
+      where: { id: parcelaId },
+      include: { obra: true },
+    });
+
+    if (!existing) throw new NotFoundException('Parcela não encontrada');
+
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.parcelaObra.update({
+        where: { id: parcelaId },
+        data: {
+          porcentagem: data.porcentagem ?? existing.porcentagem,
+          valor: data.valor ?? existing.valor,
+          dataVencimento: data.dataVencimento ? new Date(data.dataVencimento) : existing.dataVencimento,
+          status: data.status ?? existing.status,
+        },
+        include: { obra: true }
+      });
+
+      if (
+        data.status === 'RECEBIDO' && 
+        existing.status !== 'RECEBIDO' && 
+        !existing.transacaoId
+      ) {
+        const transacao = await tx.lancamentoFinanceiro.create({
+          data: {
+            descricao: `Recebimento Parcela Obra: ${updated.obra.nome} (${updated.porcentagem}%)`,
+            valor: updated.valor,
+            dataVencimento: updated.dataVencimento,
+            dataPagamento: new Date(),
+            dataCompetencia: new Date(),
+            tipo: 'RECEITA',
+            status: 'REALIZADO',
+            obraId: updated.obraId,
+            clienteId: updated.obra?.clienteId,
+            tipoLancamento: 'OBRA',
+          }
+        });
+
+        await tx.parcelaObra.update({
+          where: { id: updated.id },
+          data: { transacaoId: transacao.id }
+        });
+      }
+
+      return updated;
+    });
+  }
+
+  async removeParcela(parcelaId: string) {
+    return this.prisma.parcelaObra.delete({
+      where: { id: parcelaId },
     });
   }
 }

@@ -1,0 +1,17 @@
+import { PrismaService } from '../../prisma/prisma.service';
+import { GerarDreDto } from './dto/gerar-dre.dto';
+import { DREDetalhesDto } from './dto/dre-detalhes.dto';
+export declare class DreService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    private obterIdsHierarquia;
+    gerar(dto: GerarDreDto): Promise<any>;
+    obterDetalhesDRE(dto: DREDetalhesDto): Promise<any>;
+    invalidarCacheDRE(): Promise<void>;
+    private getCacheKey;
+    private getPeriodKeys;
+    private getPeriodKey;
+    private initializeResultStructure;
+    private initializePeriodValues;
+    private calculateFinalDRE;
+}

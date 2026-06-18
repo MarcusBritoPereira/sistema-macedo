@@ -55,4 +55,28 @@ export class ObrasController {
   remove(@Param('id') id: string) {
     return this.obrasService.remove(id);
   }
+
+  @Post(':id/parcelas')
+  @RequirePermissions('financeiro.obras.write')
+  createParcela(@Param('id') id: string, @Body() body: any) {
+    return this.obrasService.createParcela(id, body);
+  }
+
+  @Get(':id/parcelas')
+  @RequirePermissions('financeiro.obras.read')
+  findParcelas(@Param('id') id: string) {
+    return this.obrasService.findParcelas(id);
+  }
+
+  @Patch('parcelas/:parcelaId')
+  @RequirePermissions('financeiro.obras.write')
+  updateParcela(@Param('parcelaId') parcelaId: string, @Body() body: any) {
+    return this.obrasService.updateParcela(parcelaId, body);
+  }
+
+  @Delete('parcelas/:parcelaId')
+  @RequirePermissions('financeiro.obras.delete')
+  removeParcela(@Param('parcelaId') parcelaId: string) {
+    return this.obrasService.removeParcela(parcelaId);
+  }
 }

@@ -98,8 +98,27 @@ export class CashFlowService {
         name: acc.nome,
         bank: acc.banco,
         balance: currentBalance,
+        saldoInicialConta: Number(acc.saldoInicial),
       };
     });
+
+    const pastTransactions = await this.prisma.lancamentoFinanceiro.findMany({
+      where: {
+        status: { in: ['REALIZADO', 'CONCILIADO'] },
+        OR: [
+          { dataPagamento: { lt: start } },
+          { dataPagamento: null, dataVencimento: { lt: start } },
+        ]
+      }
+    });
+
+    const pastIn = pastTransactions.filter(t => t.tipo === 'RECEITA').reduce((s, t) => s + Number(t.valor), 0);
+    const pastOut = pastTransactions.filter(t => t.tipo === 'DESPESA').reduce((s, t) => s + Number(t.valor), 0);
+    const sumSaldosIniciais = accounts.reduce((sum, acc) => sum + acc.saldoInicialConta, 0);
+    
+    const saldoInicialMes = sumSaldosIniciais + pastIn - pastOut;
+    // Entradas e Saídas do mês (considerando tudo, previsto + realizado)
+    const saldoFinalMes = saldoInicialMes + totalIn - totalOut;
 
     // 3. Calculate "Today" and "Remaining" metrics
     // "Today" = Due strictly today
@@ -170,6 +189,8 @@ export class CashFlowService {
       period: { start, end },
       kpis: {
         saldoAtual: totalCurrentBalance,
+        saldoInicialMes,
+        saldoFinalMes,
         aReceber: {
           total: totalIn,
           recebido: received,
@@ -186,15 +207,17 @@ export class CashFlowService {
         totalIn,
         totalOut,
         balance,
+        entradasMes: totalIn,
+        saidasMes: totalOut,
+        previstoReceber: pendingIn,
+        recebidoReal: received,
       },
-      accounts, // New
+      accounts,
       today: {
-        // New
         in: todayIn,
         out: todayOut,
       },
       remaining: {
-        // New
         in: remainingIn,
         out: remainingOut,
       },

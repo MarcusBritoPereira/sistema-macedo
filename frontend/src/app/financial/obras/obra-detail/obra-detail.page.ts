@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { IonicModule, NavController, ToastController, AlertController } from '@ionic/angular/standalone';
+import { IonicModule, NavController, ToastController, AlertController } from '@ionic/angular';
 import { ActivatedRoute } from '@angular/router';
 import { ObrasService, Obra, ParcelaObra } from '../../../services/financial/obras.service';
 import { ClientsService } from '../../../services/clients/clients';

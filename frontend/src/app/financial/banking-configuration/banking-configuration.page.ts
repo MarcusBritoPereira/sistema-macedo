@@ -9,7 +9,7 @@ import { BankAccount } from '../../services/financial/financial';
 import { addIcons } from 'ionicons';
 import { checkmarkCircleOutline, closeCircleOutline, refreshOutline, cloudUploadOutline, linkOutline, businessOutline, saveOutline, documentAttachOutline, keyOutline, alertCircle, informationCircleOutline, addCircleOutline, trashOutline, pencilOutline, removeCircleOutline } from 'ionicons/icons';
 import { ModalController } from '@ionic/angular/standalone';
-import { BankAccountWizardComponent } from './bank-account-wizard/bank-account-wizard.component';
+import { BankAccountWizardComponent } from '../bank-accounts/bank-account-wizard/bank-account-wizard.component';
 import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
 
 @Component({

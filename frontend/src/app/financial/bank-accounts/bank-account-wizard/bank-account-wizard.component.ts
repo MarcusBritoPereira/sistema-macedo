@@ -173,17 +173,13 @@ export class BankAccountWizardComponent implements OnInit {
 
     ngOnInit() {
         if (this.accountToEdit) {
-            this.currentStep = 2; // Pula a etapa inicial
-            this.selectedType = this.accountToEdit.banco === 'Caixinha (Dinheiro Físico)' ? 'CAIXINHA' : 'CORRENTE';
+            this.currentStep = 2;
             this.formData.nome = this.accountToEdit.nome;
-            this.formData.banco = this.accountToEdit.banco || '';
+            this.formData.banco = this.accountToEdit.banco;
             this.formData.agencia = this.accountToEdit.agencia || '';
             this.formData.conta = this.accountToEdit.conta || '';
-            this.formData.startingBalance = this.accountToEdit.saldo || 0;
-            // Se for caixinha já pula direto
-            if (this.selectedType === 'CAIXINHA') {
-                this.currentStep = 2; // Pode editar o nome e o saldo (veremos na step 2)
-            }
+            this.formData.startingBalance = this.accountToEdit.saldoInicial || 0;
+            this.selectedType = this.accountToEdit.banco === 'Caixinha (Dinheiro Físico)' ? 'CAIXINHA' : 'CONTA_CORRENTE';
         }
     }
 

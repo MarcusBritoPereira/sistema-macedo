@@ -90,22 +90,6 @@ export class DashboardPage implements OnInit {
     datasets: [],
   };
 
-  // Chart 2: Sales (Bar)
-  public salesChartOptions: ChartConfiguration['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { grid: { display: false } },
-      y: { beginAtZero: true },
-    },
-    plugins: {
-      legend: { display: false },
-    },
-  };
-  public salesChartData: ChartData<'bar'> = {
-    labels: [],
-    datasets: [],
-  };
 
   // Chart 3: Cost Center Expenses (Doughnut)
   public costCenterChartOptions: ChartConfiguration<'doughnut'>['options'] = {
@@ -230,29 +214,6 @@ export class DashboardPage implements OnInit {
       };
     }
 
-    // 2. Sales Chart
-    if (data.monthlyHistory) {
-      // Re-sort if needed, but backend sends last 6 months descending in creation,
-      // check backend logic: "for i=5; i>=0" -> d is months ago. So it pushes oldest first?
-      // "d = new Date(now... - i)". i=5 (5 months ago).. i=0 (current).
-      // Yes, pushes oldest first.
-
-      const salesLabels = data.monthlyHistory.map((h) => h.label);
-      const salesValues = data.monthlyHistory.map((h) => h.valor);
-
-      this.salesChartData = {
-        labels: salesLabels,
-        datasets: [
-          {
-            label: 'Faturamento',
-            data: salesValues,
-            backgroundColor: '#0EA5E9', // Blue Sky
-            borderRadius: 4,
-            barPercentage: 0.6,
-          },
-        ],
-      };
-    }
 
     // 3. Cost Center Expenses Chart
     if (data.costCenterKpis?.expensesByCostCenter) {
@@ -361,9 +322,6 @@ export class DashboardPage implements OnInit {
     return (this.operationalData?.dailyFlow?.length || 0) > 0;
   }
 
-  get hasSalesData(): boolean {
-    return (this.operationalData?.monthlyHistory?.length || 0) > 0;
-  }
 
   formatCurrency(val: number): string {
     return new Intl.NumberFormat('pt-BR', {

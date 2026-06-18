@@ -160,7 +160,7 @@
     </div>
 
     <!-- WIDGETS ROW -->
-    <div class="widgets-row">
+    <div class="widgets-row two-columns">
       <!-- 1. Contas Financeiras -->
       <div class="widget-col">
         <div class="widget-header">
@@ -232,35 +232,6 @@
         </ion-card>
       </div>
 
-      <!-- 3. Gráfico de Vendas -->
-      <div class="widget-col">
-        <div class="widget-header">
-          <h3>Gráfico de vendas</h3>
-          <ion-icon name="ellipsis-horizontal"></ion-icon>
-        </div>
-        <ion-card class="widget-card chart-card">
-          <ion-card-content>
-            <div class="chart-wrapper" [class.empty-chart]="!hasSalesData">
-              <canvas
-                *ngIf="hasSalesData"
-                baseChart
-                [data]="salesChartData"
-                [options]="salesChartOptions"
-                [type]="'bar'"
-              >
-              </canvas>
-              <div class="empty-chart-state" *ngIf="!hasSalesData">
-                Sem faturamento histórico
-              </div>
-            </div>
-            <div class="chart-legend-custom">
-              <div class="legend-item">
-                <span class="dot blue-sky"></span> Faturamento
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-      </div>
     </div>
 
     <!-- SEÇÃO CENTROS DE CUSTO (BI & METAS) -->

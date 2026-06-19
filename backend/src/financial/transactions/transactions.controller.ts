@@ -16,24 +16,24 @@ import { AuthGuard } from '@nestjs/passport';
 import { CreateTransactionDto } from './dto/create-transaction.dto';
 import { UpdateTransactionDto } from './dto/update-transaction.dto';
 import { CreateManyTransactionsDto } from './dto/create-many-transactions.dto';
-import { RolesGuard } from '../../auth/roles.guard';
-import { Roles } from '../../auth/roles.decorator';
+import { PermissionsGuard } from '../../auth/permissions.guard';
+import { RequirePermissions } from '../../auth/permissions.decorator';
 
 @Controller('financial/transactions')
-@UseGuards(AuthGuard('jwt'), RolesGuard)
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class FinancialTransactionsController {
   constructor(
     private readonly transactionsService: FinancialTransactionsService,
   ) {}
 
   @Post()
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('financeiro.lancamentos.write')
   create(@Body() createDto: CreateTransactionDto, @Req() req: any) {
     return this.transactionsService.create(createDto, req.user.id);
   }
 
   @Post('bulk')
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('financeiro.lancamentos.write')
   createMany(
     @Body() createDto: CreateManyTransactionsDto | CreateTransactionDto[],
     @Req() req: any,
@@ -43,6 +43,7 @@ export class FinancialTransactionsController {
   }
 
   @Get()
+  @RequirePermissions('financeiro.lancamentos.read')
   findAll(
     @Query('type') type?: TipoLancamento,
     @Query('tipo') tipo?: TipoLancamento,
@@ -78,13 +79,13 @@ export class FinancialTransactionsController {
   }
 
   @Get(':id')
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('financeiro.lancamentos.read')
   findOne(@Param('id') id: string) {
     return this.transactionsService.findOne(id);
   }
 
   @Patch(':id')
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('financeiro.lancamentos.write')
   update(
     @Param('id') id: string,
     @Body() updateDto: UpdateTransactionDto,
@@ -94,7 +95,7 @@ export class FinancialTransactionsController {
   }
 
   @Delete(':id')
-  @Roles('ADMIN', 'FINANCEIRO')
+  @RequirePermissions('financeiro.lancamentos.delete')
   remove(@Param('id') id: string, @Req() req: any) {
     return this.transactionsService.remove(id, req.user.id);
   }

@@ -8,11 +8,14 @@ import {
   Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../auth/permissions.guard';
+import { RequirePermissions } from '../../auth/permissions.decorator';
 import { RateioService } from './rateio.service';
 import { CreateRateiosBatchDto } from './dto/create-rateio.dto';
 
 @Controller('financial/transactions/:id/rateios')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
+@RequirePermissions('financeiro.rateios.read')
 export class RateioController {
   constructor(private readonly rateioService: RateioService) {}
 

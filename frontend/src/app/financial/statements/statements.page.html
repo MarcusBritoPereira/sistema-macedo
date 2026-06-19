@@ -197,9 +197,7 @@
                 <div class="col-desc" *ngIf="columns.description">
                     <span class="desc-main">{{ t.descricao }}</span>
                     <div class="desc-sub-row">
-                        <span class="desc-sub" *ngIf="t.categoriaId">{{ t.categoriaId | json }}</span>
-                        <!-- Temporary debug or mapping needed if I can't map id to name efficiently here without pipe -->
-                        <!-- Let's relying on 'Sem categoria' logic or improve it -->
+                        <span class="desc-sub">{{ getCategoryName(t.categoriaId) }}</span>
                         <span class="desc-sub" *ngIf="t.fornecedor">{{ t.fornecedor }}</span>
                     </div>
                 </div>

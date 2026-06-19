@@ -1,4 +1,4 @@
-@import "../../../theme/variables.scss";
+@use "../../../theme/variables.scss" as *;
 
 // Reusing design system from statements
 $border-color: #E2E8F0;

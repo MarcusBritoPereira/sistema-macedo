@@ -125,6 +125,12 @@ export class StatementsPage implements OnInit {
         this.categoriesService.findAll().subscribe(cats => this.categories = cats);
     }
 
+    getCategoryName(categoryId?: string | null): string {
+        if (!categoryId) return 'Sem categoria';
+        const category = this.categories.find(c => c.id === categoryId);
+        return category?.nome || 'Categoria não encontrada';
+    }
+
     // ... (rest of methods)
 
     addReceita() {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma, ClassificacaoDRE } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { GerarDreDto, DRERegime, DREGranularidade } from './dto/gerar-dre.dto';
@@ -18,6 +18,8 @@ import { DREDetalhesDto } from './dto/dre-detalhes.dto';
 
 @Injectable()
 export class DreService {
+  private readonly logger = new Logger(DreService.name);
+
   constructor(private prisma: PrismaService) {}
 
   private async obterIdsHierarquia(centroCustoId: string): Promise<string[]> {
@@ -55,9 +57,9 @@ export class DreService {
       centroCustoId,
       contaBancariaId,
     } = dto;
-    console.time(`DRE_Generation:${regime}:${granularidade}`);
-    console.log(
-      `[DRE] Iniciando geração: ${regime} ${granularidade} [${dataInicio} - ${dataFim}]`,
+    const startedAt = Date.now();
+    this.logger.debug(
+      `Iniciando geração DRE: regime=${regime} granularidade=${granularidade} periodo=${dataInicio}..${dataFim}`,
     );
 
     const start = startOfDay(new Date(dataInicio));
@@ -151,6 +153,9 @@ export class DreService {
     }
 
     const final = this.calculateFinalDRE(result, periodos);
+    this.logger.debug(
+      `DRE finalizada: periodos=${periodos.length} durationMs=${Date.now() - startedAt}`,
+    );
 
     await (this.prisma as any).dreCache.upsert({
       where: { chave: cacheKey },
@@ -382,10 +387,6 @@ export class DreService {
         periodos.length > 0 ? avg / periodos.length : 0;
     }
 
-    console.log(`[DRE] Finalizando: ${periodos.length} períodos calculados`);
-    console.timeEnd(
-      `DRE_Generation:${result.regime || ''}:${result.granularidade || ''}`,
-    );
     return result;
   }
 }

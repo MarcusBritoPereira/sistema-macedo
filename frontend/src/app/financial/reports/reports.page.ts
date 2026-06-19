@@ -21,7 +21,6 @@ import {
   IonSelect,
   IonSelectOption,
   IonButton,
-  IonChip,
   IonIcon,
   IonBadge,
   IonList,
@@ -83,7 +82,6 @@ type PresetPeriod = 'month' | 'quarter' | 'year' | 'custom';
     IonSelect,
     IonSelectOption,
     IonButton,
-    IonChip,
     IonIcon,
     IonBadge,
     IonList,
@@ -232,6 +230,14 @@ export class ReportsPage implements OnInit {
 
   get selectedCount() {
     return this.selectedReports.size;
+  }
+
+  get activeFilterCount() {
+    return [
+      this.selectedAccount !== 'all',
+      this.selectedCostCenter !== 'all',
+      this.includeProvisional
+    ].filter(Boolean).length;
   }
 
   get periodLabel() {

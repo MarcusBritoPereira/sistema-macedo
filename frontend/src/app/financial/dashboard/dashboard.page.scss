@@ -108,6 +108,10 @@ $shadow:
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
+
+  &.two-columns {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .widget-col {

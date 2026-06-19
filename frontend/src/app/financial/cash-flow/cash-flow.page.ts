@@ -87,18 +87,7 @@ export class CashFlowPage implements OnInit {
     labels: [],
     datasets: [
       { data: [], label: 'Entradas', backgroundColor: '#16A34A', borderRadius: 4, order: 2 },
-      { data: [], label: 'Saídas', backgroundColor: '#DC2626', borderRadius: 4, order: 3 },
-      {
-        data: [],
-        label: 'Saldo Acumulado',
-        type: 'line',
-        borderColor: '#2563EB',
-        pointBackgroundColor: '#2563EB',
-        borderWidth: 2,
-        tension: 0.4,
-        fill: false,
-        order: 1 // Top layer
-      }
+      { data: [], label: 'Saídas', backgroundColor: '#DC2626', borderRadius: 4, order: 3 }
     ]
   };
 
@@ -152,7 +141,6 @@ export class CashFlowPage implements OnInit {
 
     this.barChartData.datasets[0].data = dailyFlow.map(d => d.entradas);
     this.barChartData.datasets[1].data = dailyFlow.map(d => d.saidas);
-    this.barChartData.datasets[2].data = dailyFlow.map(d => d.saldoAcumulado);
 
     this.chart?.update();
   }

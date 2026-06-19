@@ -12,173 +12,220 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding">
+<ion-content class="ion-padding reports-page">
   <section class="hero">
     <div class="hero-text">
-      <h2>Relatórios mais rápidos e claros</h2>
-      <p>
-        1) Defina os filtros, 2) selecione os relatórios, 3) gere o pacote. Tudo em uma única tela.
-      </p>
+      <ion-badge color="primary">Novo fluxo guiado</ion-badge>
+      <h2>Gere relatórios financeiros em 3 passos</h2>
+      <p>Escolha o período, marque os relatórios desejados e clique em gerar. Os filtros avançados são opcionais.</p>
     </div>
-    <div class="hero-badges">
-      <ion-badge color="primary">{{ periodLabel }}</ion-badge>
-      <ion-badge color="success">{{ selectedCount }} selecionado(s)</ion-badge>
-      <ion-badge [color]="hasValidDateRange ? 'tertiary' : 'warning'">
-        {{ hasValidDateRange ? 'Período válido' : 'Revise datas' }}
-      </ion-badge>
+    <div class="hero-panel">
+      <strong>Resumo do pacote</strong>
+      <span>{{ filterSummary }}</span>
+      <ion-button expand="block" size="large" (click)="generateReports()" [disabled]="!canGenerate">
+        <ion-icon name="sparkles-outline" slot="start"></ion-icon>
+        <span *ngIf="!generating">Gerar {{ selectedCount }} relatório(s)</span>
+        <ion-spinner *ngIf="generating" name="dots"></ion-spinner>
+      </ion-button>
+      <small *ngIf="selectedCount === 0">Selecione pelo menos um relatório para liberar a geração.</small>
+      <small *ngIf="selectedCount > 0 && !hasValidDateRange">Revise as datas antes de gerar.</small>
     </div>
   </section>
 
-  <ion-card class="filters-card">
-    <ion-card-header>
-      <ion-card-title>
-        <ion-icon name="filter-outline"></ion-icon>
-        Parâmetros do pacote
-      </ion-card-title>
-      <ion-card-subtitle>Todos os relatórios selecionados usarão os filtros abaixo.</ion-card-subtitle>
-    </ion-card-header>
-    <ion-card-content>
-      <ion-grid>
-        <ion-row>
-          <ion-col size="12" size-md="3">
-            <ion-item>
-              <ion-label position="stacked">Período</ion-label>
-              <ion-select [(ngModel)]="selectedPeriod" interface="popover" (ionChange)="onPeriodChange()">
-                <ion-select-option value="month">Mês atual</ion-select-option>
-                <ion-select-option value="quarter">Trimestre</ion-select-option>
-                <ion-select-option value="year">Ano corrente</ion-select-option>
-                <ion-select-option value="custom">Personalizado</ion-select-option>
-              </ion-select>
-            </ion-item>
-          </ion-col>
-          <ion-col size="12" size-md="3">
-            <ion-item>
-              <ion-label position="stacked">Conta bancária</ion-label>
-              <ion-select [(ngModel)]="selectedAccount" interface="popover" [disabled]="loadingFilters">
-                <ion-select-option value="all">Todas</ion-select-option>
-                <ion-select-option *ngFor="let account of bankAccounts" [value]="account.id">
-                  {{ account.nome }} ({{ account.banco }})
-                </ion-select-option>
-              </ion-select>
-            </ion-item>
-          </ion-col>
-          <ion-col size="12" size-md="3">
-            <ion-item>
-              <ion-label position="stacked">Centro de custo</ion-label>
-              <ion-select [(ngModel)]="selectedCostCenter" interface="popover" [disabled]="loadingFilters">
-                <ion-select-option value="all">Todos</ion-select-option>
-                <ion-select-option *ngFor="let center of costCenters" [value]="center.id">
-                  {{ center.nome }}
-                </ion-select-option>
-              </ion-select>
-            </ion-item>
-          </ion-col>
-          <ion-col size="12" size-md="3">
-            <ion-item lines="none" class="toggle-item">
-              <ion-label>Incluir provisões</ion-label>
-              <ion-toggle [(ngModel)]="includeProvisional"></ion-toggle>
-            </ion-item>
-          </ion-col>
-        </ion-row>
+  <section class="wizard-steps" aria-label="Passo a passo para gerar relatórios">
+    <article class="step-card active">
+      <span>1</span>
+      <div>
+        <strong>Período</strong>
+        <p>{{ periodDateLabel }}</p>
+      </div>
+    </article>
+    <article class="step-card" [class.active]="selectedCount > 0">
+      <span>2</span>
+      <div>
+        <strong>Relatórios</strong>
+        <p>{{ selectedCount > 0 ? selectedCount + ' selecionado(s)' : 'Escolha no catálogo' }}</p>
+      </div>
+    </article>
+    <article class="step-card" [class.active]="canGenerate || generating">
+      <span>3</span>
+      <div>
+        <strong>Gerar</strong>
+        <p>{{ canGenerate ? 'Tudo pronto' : 'Aguardando seleção' }}</p>
+      </div>
+    </article>
+  </section>
 
-        <ion-row class="date-row">
-          <ion-col size="12" size-md="4">
-            <ion-item [disabled]="selectedPeriod !== 'custom'">
-              <ion-label position="stacked">Data inicial</ion-label>
-              <ion-datetime-button datetime="startDatePicker"></ion-datetime-button>
-              <ion-modal keepContentsMounted="true">
-                <ion-datetime id="startDatePicker" presentation="date" [(ngModel)]="startDate"></ion-datetime>
-              </ion-modal>
-            </ion-item>
-          </ion-col>
-          <ion-col size="12" size-md="4">
-            <ion-item [disabled]="selectedPeriod !== 'custom'">
-              <ion-label position="stacked">Data final</ion-label>
-              <ion-datetime-button datetime="endDatePicker"></ion-datetime-button>
-              <ion-modal keepContentsMounted="true">
-                <ion-datetime id="endDatePicker" presentation="date" [(ngModel)]="endDate"></ion-datetime>
-              </ion-modal>
-            </ion-item>
-          </ion-col>
-          <ion-col size="12" size-md="4" class="actions-col">
-            <ion-button expand="block" fill="outline" (click)="applyFilters()">
-              <ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>
-              Validar filtros
-            </ion-button>
-            <ion-button expand="block" (click)="generateReports()" [disabled]="!canGenerate">
+  <ion-grid class="main-layout">
+    <ion-row>
+      <ion-col size="12" size-lg="7">
+        <ion-card class="filters-card simple-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="calendar-outline"></ion-icon>
+              1. Defina o período
+            </ion-card-title>
+            <ion-card-subtitle>O período é o único filtro obrigatório. Use “Personalizado” apenas quando precisar de datas específicas.</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="period-options">
+              <ion-button [fill]="selectedPeriod === 'month' ? 'solid' : 'outline'" (click)="selectedPeriod = 'month'; onPeriodChange()">Mês atual</ion-button>
+              <ion-button [fill]="selectedPeriod === 'quarter' ? 'solid' : 'outline'" (click)="selectedPeriod = 'quarter'; onPeriodChange()">Trimestre</ion-button>
+              <ion-button [fill]="selectedPeriod === 'year' ? 'solid' : 'outline'" (click)="selectedPeriod = 'year'; onPeriodChange()">Ano corrente</ion-button>
+              <ion-button [fill]="selectedPeriod === 'custom' ? 'solid' : 'outline'" (click)="selectedPeriod = 'custom'; onPeriodChange()">Personalizado</ion-button>
+            </div>
+
+            <div class="date-range-box" [class.warning]="!hasValidDateRange">
+              <ion-icon [name]="hasValidDateRange ? 'checkmark-circle-outline' : 'alert-circle-outline'"></ion-icon>
+              <div>
+                <strong>{{ hasValidDateRange ? 'Período pronto para uso' : 'Período precisa de ajuste' }}</strong>
+                <p>{{ periodDateLabel }}</p>
+              </div>
+            </div>
+
+            <ion-grid class="date-grid" *ngIf="selectedPeriod === 'custom'">
+              <ion-row>
+                <ion-col size="12" size-md="6">
+                  <ion-item>
+                    <ion-label position="stacked">Data inicial</ion-label>
+                    <ion-datetime-button datetime="startDatePicker"></ion-datetime-button>
+                    <ion-modal keepContentsMounted="true">
+                      <ion-datetime id="startDatePicker" presentation="date" [(ngModel)]="startDate"></ion-datetime>
+                    </ion-modal>
+                  </ion-item>
+                </ion-col>
+                <ion-col size="12" size-md="6">
+                  <ion-item>
+                    <ion-label position="stacked">Data final</ion-label>
+                    <ion-datetime-button datetime="endDatePicker"></ion-datetime-button>
+                    <ion-modal keepContentsMounted="true">
+                      <ion-datetime id="endDatePicker" presentation="date" [(ngModel)]="endDate"></ion-datetime>
+                    </ion-modal>
+                  </ion-item>
+                </ion-col>
+              </ion-row>
+            </ion-grid>
+          </ion-card-content>
+        </ion-card>
+
+        <ion-card class="simple-card advanced-filters">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="filter-outline"></ion-icon>
+              Filtros opcionais
+            </ion-card-title>
+            <ion-card-subtitle>Deixe como “Todos/Todas” para gerar uma visão geral.</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <ion-grid>
+              <ion-row>
+                <ion-col size="12" size-md="4">
+                  <ion-item>
+                    <ion-label position="stacked">Conta bancária</ion-label>
+                    <ion-select [(ngModel)]="selectedAccount" interface="popover" [disabled]="loadingFilters">
+                      <ion-select-option value="all">Todas as contas</ion-select-option>
+                      <ion-select-option *ngFor="let account of bankAccounts" [value]="account.id">{{ account.nome }} ({{ account.banco }})</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+                </ion-col>
+                <ion-col size="12" size-md="4">
+                  <ion-item>
+                    <ion-label position="stacked">Centro de custo</ion-label>
+                    <ion-select [(ngModel)]="selectedCostCenter" interface="popover" [disabled]="loadingFilters">
+                      <ion-select-option value="all">Todos os centros</ion-select-option>
+                      <ion-select-option *ngFor="let center of costCenters" [value]="center.id">{{ center.nome }}</ion-select-option>
+                    </ion-select>
+                  </ion-item>
+                </ion-col>
+                <ion-col size="12" size-md="4">
+                  <ion-item lines="none" class="toggle-item">
+                    <ion-label>
+                      <strong>Incluir provisões</strong>
+                      <p>Entradas/saídas previstas</p>
+                    </ion-label>
+                    <ion-toggle [(ngModel)]="includeProvisional"></ion-toggle>
+                  </ion-item>
+                </ion-col>
+              </ion-row>
+            </ion-grid>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col size="12" size-lg="5">
+        <ion-card class="selection-summary sticky-card">
+          <ion-card-header>
+            <ion-card-title>
+              <ion-icon name="document-text-outline"></ion-icon>
+              2. Escolha os relatórios
+            </ion-card-title>
+            <ion-card-subtitle>Use um atalho ou marque relatórios individualmente no catálogo.</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="quick-actions">
+              <ion-button expand="block" fill="solid" (click)="selectRecommended()" [disabled]="loadingReports">Usar seleção recomendada</ion-button>
+              <ion-button expand="block" fill="outline" (click)="selectAllFiltered()" [disabled]="loadingReports">Selecionar resultados da busca</ion-button>
+              <ion-button expand="block" fill="clear" (click)="clearSelection()" [disabled]="selectedCount === 0">Limpar seleção</ion-button>
+            </div>
+
+            <div class="selected-list">
+              <div class="selected-list-header">
+                <strong>{{ selectedCount }} relatório(s) selecionado(s)</strong>
+                <ion-badge [color]="selectedCount > 0 ? 'success' : 'medium'">{{ selectedCount > 0 ? 'Pronto' : 'Pendente' }}</ion-badge>
+              </div>
+              <ion-list lines="none">
+                <ion-item *ngFor="let label of selectedLabels">
+                  <ion-icon name="checkmark-circle-outline" slot="start" color="success"></ion-icon>
+                  <ion-label>{{ label }}</ion-label>
+                </ion-item>
+                <ion-item *ngIf="selectedLabels.length === 0" class="empty-selection">
+                  <ion-label>Nenhum relatório selecionado. Clique em “Usar seleção recomendada” para começar rápido.</ion-label>
+                </ion-item>
+              </ion-list>
+            </div>
+
+            <ion-button class="generate-button" expand="block" size="large" (click)="generateReports()" [disabled]="!canGenerate">
               <ion-icon name="sparkles-outline" slot="start"></ion-icon>
-              <span *ngIf="!generating">Gerar pacote agora</span>
+              <span *ngIf="!generating">3. Gerar pacote</span>
               <ion-spinner *ngIf="generating" name="dots"></ion-spinner>
             </ion-button>
-          </ion-col>
-        </ion-row>
-      </ion-grid>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <ion-card class="generation-result" *ngIf="lastGeneration">
+    <ion-card-header>
+      <ion-card-title>Relatórios gerados</ion-card-title>
+      <ion-card-subtitle>{{ lastGeneration.count }} relatório(s) • {{ lastGeneration.generatedAt | date:'short' }}</ion-card-subtitle>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list lines="none">
+        <ion-item *ngFor="let report of lastGeneration.reports" button (click)="viewReport(report)" [detail]="true">
+          <ion-icon name="document-text-outline" slot="start" color="primary"></ion-icon>
+          <ion-label>
+            <h2>{{ report.title }}</h2>
+            <p>{{ report.status === 'ready' ? 'Pronto para visualizar' : 'Processando...' }}</p>
+          </ion-label>
+          <ion-button fill="clear" slot="end" (click)="$event.stopPropagation(); viewReport(report)">
+            <ion-icon name="eye-outline" slot="icon-only"></ion-icon>
+          </ion-button>
+        </ion-item>
+      </ion-list>
     </ion-card-content>
   </ion-card>
 
-  <section class="selection-summary">
-    <ion-card>
-      <ion-card-content>
-        <div class="summary-header">
-          <div>
-            <h3>Seleção atual</h3>
-            <p>Escolha os relatórios desejados e gere seu pacote.</p>
-          </div>
-          <ion-badge color="primary">{{ selectedCount }} selecionados</ion-badge>
-        </div>
-
-        <div class="summary-actions">
-          <ion-button fill="clear" size="small" (click)="selectAllFiltered()" [disabled]="loadingReports">
-            Selecionar resultados da busca
-          </ion-button>
-          <ion-button fill="clear" size="small" (click)="clearSelection()" [disabled]="selectedCount === 0">
-            Limpar seleção
-          </ion-button>
-        </div>
-
-        <ion-list lines="none">
-          <ion-item *ngFor="let label of selectedLabels">
-            <ion-icon name="checkmark-circle-outline" slot="start" color="success"></ion-icon>
-            <ion-label>{{ label }}</ion-label>
-          </ion-item>
-          <ion-item *ngIf="selectedLabels.length === 0">
-            <ion-label color="medium">Nenhum relatório selecionado ainda.</ion-label>
-          </ion-item>
-        </ion-list>
-
-        <div class="generation-result" *ngIf="lastGeneration">
-          <p>
-            Última geração: {{ lastGeneration.count }} relatório(s) • {{ lastGeneration.generatedAt | date:'short' }}
-          </p>
-          <ion-list lines="none">
-            <ion-item *ngFor="let report of lastGeneration.reports" button (click)="viewReport(report)" [detail]="true">
-              <ion-icon name="document-text-outline" slot="start" color="primary"></ion-icon>
-              <ion-label>
-                <h2>{{ report.title }}</h2>
-                <p>{{ report.status === 'ready' ? 'Pronto para visualizar' : 'Processando...' }}</p>
-              </ion-label>
-              <ion-button fill="clear" slot="end" (click)="$event.stopPropagation(); viewReport(report)">
-                <ion-icon name="eye-outline" slot="icon-only"></ion-icon>
-              </ion-button>
-            </ion-item>
-          </ion-list>
-        </div>
-      </ion-card-content>
-    </ion-card>
-  </section>
-
-  <section>
+  <section class="catalog-section">
     <div class="section-header">
-      <h3>Catálogo de relatórios</h3>
+      <div>
+        <h3>Catálogo de relatórios</h3>
+        <p>Marque ou desmarque os cards abaixo. A busca filtra apenas o catálogo, não altera os relatórios já selecionados.</p>
+      </div>
       <ion-badge color="medium">{{ filteredReports.length }} de {{ reports.length }}</ion-badge>
     </div>
 
-    <ion-searchbar
-      placeholder="Buscar por nome, categoria, tag..."
-      [(ngModel)]="reportSearch"
-      animated="true"
-      show-clear-button="focus"
-    ></ion-searchbar>
+    <ion-searchbar placeholder="Buscar por nome, categoria, tag..." [(ngModel)]="reportSearch" animated="true" show-clear-button="focus"></ion-searchbar>
 
     <ion-grid>
       <ion-row>
@@ -190,8 +237,8 @@
           <p>Nenhum relatório encontrado para este filtro de busca.</p>
         </ion-col>
 
-        <ion-col size="12" size-md="6" size-lg="4" *ngFor="let report of filteredReports">
-          <ion-card class="report-card" [class.selected]="isSelected(report.id)">
+        <ion-col size="12" size-md="6" size-xl="4" *ngFor="let report of filteredReports">
+          <ion-card class="report-card" [class.selected]="isSelected(report.id)" button (click)="toggleReport(report.id)">
             <ion-card-header>
               <div class="card-title">
                 <ion-icon [name]="report.icon" class="report-icon"></ion-icon>
@@ -203,14 +250,8 @@
             </ion-card-header>
             <ion-card-content>
               <div class="meta">
-                <ion-chip color="primary">
-                  <ion-icon name="calendar-outline"></ion-icon>
-                  <ion-label>{{ report.cadence }}</ion-label>
-                </ion-chip>
-                <ion-chip color="tertiary">
-                  <ion-icon name="analytics-outline"></ion-icon>
-                  <ion-label>{{ report.category }}</ion-label>
-                </ion-chip>
+                <ion-chip color="primary"><ion-icon name="calendar-outline"></ion-icon><ion-label>{{ report.cadence }}</ion-label></ion-chip>
+                <ion-chip color="tertiary"><ion-icon name="analytics-outline"></ion-icon><ion-label>{{ report.category }}</ion-label></ion-chip>
               </div>
               <div class="tags">
                 <ion-badge *ngFor="let tag of report.tags" color="success">{{ tag }}</ion-badge>
@@ -218,9 +259,9 @@
               <ul class="highlights">
                 <li *ngFor="let item of report.highlights">{{ item }}</li>
               </ul>
-              <ion-button expand="block" fill="outline" (click)="toggleReport(report.id)">
+              <ion-button expand="block" [fill]="isSelected(report.id) ? 'solid' : 'outline'" (click)="$event.stopPropagation(); toggleReport(report.id)">
                 <ion-icon [name]="isSelected(report.id) ? 'checkmark-circle-outline' : 'document-text-outline'" slot="start"></ion-icon>
-                {{ isSelected(report.id) ? 'Selecionado' : 'Adicionar à seleção' }}
+                {{ isSelected(report.id) ? 'Selecionado' : 'Adicionar' }}
               </ion-button>
             </ion-card-content>
           </ion-card>

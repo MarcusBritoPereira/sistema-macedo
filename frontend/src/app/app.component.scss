@@ -1,5 +1,11 @@
 /* Side Menu Modernization */
 
+ion-split-pane {
+    --side-width: 240px;
+    --side-min-width: 240px;
+    --side-max-width: 240px;
+}
+
 ion-menu {
     --width: 240px;
     transition: width 0.3s ease;

@@ -46,7 +46,8 @@ import {
   eyeOutline,
   printOutline,
   searchOutline,
-  sparklesOutline
+  sparklesOutline,
+  alertCircleOutline
 } from 'ionicons/icons';
 import { ReportsService, ReportDefinition, ReportGenerationResponse } from '../../services/financial/reports.service';
 import { FinancialService, BankAccount } from '../../services/financial/financial';
@@ -135,7 +136,8 @@ export class ReportsPage implements OnInit {
       eyeOutline,
       printOutline,
       searchOutline,
-      sparklesOutline
+      sparklesOutline,
+      alertCircleOutline
     });
   }
 
@@ -243,6 +245,25 @@ export class ReportsPage implements OnInit {
     return map[this.selectedPeriod];
   }
 
+  get periodDateLabel() {
+    const start = this.normalizeDate(this.startDate);
+    const end = this.normalizeDate(this.endDate);
+
+    if (!start || !end) {
+      return 'Escolha as datas para continuar';
+    }
+
+    return `${this.formatDisplayDate(start)} até ${this.formatDisplayDate(end)}`;
+  }
+
+  get filterSummary() {
+    const account = this.selectedAccount === 'all' ? 'todas as contas' : 'conta selecionada';
+    const costCenter = this.selectedCostCenter === 'all' ? 'todos os centros' : 'centro selecionado';
+    const provisional = this.includeProvisional ? 'com provisões' : 'sem provisões';
+
+    return `${this.periodLabel} • ${account} • ${costCenter} • ${provisional}`;
+  }
+
   get canGenerate() {
     return !this.generating && !this.loadingReports && this.selectedReports.size > 0 && this.hasValidDateRange;
   }
@@ -260,6 +281,12 @@ export class ReportsPage implements OnInit {
 
   selectAllFiltered() {
     this.filteredReports.forEach(report => this.selectedReports.add(report.id));
+  }
+
+  selectRecommended() {
+    const recommended = this.reports.filter(report => report.defaultSelected);
+    const reportsToSelect = recommended.length > 0 ? recommended : this.reports.slice(0, 3);
+    this.selectedReports = new Set(reportsToSelect.map(report => report.id));
   }
 
   clearSelection() {
@@ -388,5 +415,10 @@ export class ReportsPage implements OnInit {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private formatDisplayDate(dateValue: string) {
+    const [year, month, day] = dateValue.split('-');
+    return `${day}/${month}/${year}`;
   }
 }

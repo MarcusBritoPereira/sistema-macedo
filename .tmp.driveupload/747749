@@ -1,0 +1,73 @@
+import { PrismaService } from '../prisma/prisma.service';
+import { CreateSupplierDto } from './dto/create-supplier.dto';
+import { UpdateSupplierDto } from './dto/update-supplier.dto';
+import { Response } from 'express';
+export declare class SuppliersService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    create(dto: CreateSupplierDto): Promise<{
+        email: string | null;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        razaoSocial: string | null;
+        nomeFantasia: string;
+        cnpj: string | null;
+        telefone: string | null;
+        categoriaDefaultId: string | null;
+    }>;
+    getTemplate(res: Response): Response<any, Record<string, any>>;
+    importCsv(file: Express.Multer.File): Promise<{
+        success: boolean;
+        imported: number;
+    }>;
+    findAll(): Promise<{
+        email: string | null;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        razaoSocial: string | null;
+        nomeFantasia: string;
+        cnpj: string | null;
+        telefone: string | null;
+        categoriaDefaultId: string | null;
+    }[]>;
+    findOne(id: string): Promise<{
+        email: string | null;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        razaoSocial: string | null;
+        nomeFantasia: string;
+        cnpj: string | null;
+        telefone: string | null;
+        categoriaDefaultId: string | null;
+    }>;
+    update(id: string, dto: UpdateSupplierDto): Promise<{
+        email: string | null;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        razaoSocial: string | null;
+        nomeFantasia: string;
+        cnpj: string | null;
+        telefone: string | null;
+        categoriaDefaultId: string | null;
+    }>;
+    remove(id: string): Promise<{
+        email: string | null;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        razaoSocial: string | null;
+        nomeFantasia: string;
+        cnpj: string | null;
+        telefone: string | null;
+        categoriaDefaultId: string | null;
+    }>;
+}

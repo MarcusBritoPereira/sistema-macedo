@@ -654,12 +654,13 @@ export class FinancialDashboardService {
     const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
 
     // 1. Current Balance (Saldo Atual) - Realized only
-    const accountsWithBalance =
-      await this.getAccountsWithRealTimeBalance(endOfMonth);
-    const currentBalance = accountsWithBalance.reduce(
-      (acc, curr) => acc + curr.saldo,
-      0,
-    );
+    const accountsWithBalance = await this.getAccountsWithRealTimeBalance(endOfMonth);
+    const currentBalance = accountsWithBalance.reduce((acc, curr) => acc + curr.saldo, 0);
+
+    const endOfPrevMonth = new Date(y, m - 1, 0, 23, 59, 59, 999);
+    const accountsWithBalanceStart = await this.getAccountsWithRealTimeBalance(endOfPrevMonth);
+    const saldoInicialMes = accountsWithBalanceStart.reduce((acc, curr) => acc + curr.saldo, 0);
+
 
     // 2. Receivables (A Receber) for the selected month only.
     // The previous implementation included every overdue item up to the month end,
@@ -841,6 +842,8 @@ export class FinancialDashboardService {
       period: { month: m, year: y },
       kpis: {
         saldoAtual: currentBalance,
+        saldoInicialMes,
+        saldoFinalMes: currentBalance,
         aReceber: {
           total: recTotal,
           recebido: recReceived,
@@ -848,6 +851,12 @@ export class FinancialDashboardService {
         },
         aPagar: { total: payTotal, pago: payPaid, pendente: payPending },
         saldoProjetado: projectedBalance,
+      },
+      summary: {
+        entradasMes: recTotal,
+        recebidoReal: recReceived,
+        previstoReceber: recPending,
+        saidasMes: payTotal,
       },
       chart: dailyFlow,
       transactions: formattedTransactions,

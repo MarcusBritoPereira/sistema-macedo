@@ -1,0 +1,32 @@
+export declare class CreateClientDto {
+    razaoSocial: string;
+    nomeFantasia?: string;
+    cnpj?: string;
+    inscricaoEstadual?: string;
+    cpf?: string;
+    email?: string;
+    telefone?: string;
+    endereco?: string;
+    representanteNome?: string;
+    representanteCpf?: string;
+    representanteCargo?: string;
+    representanteEmail?: string;
+    representanteTelefone?: string;
+    financeiroNome?: string;
+    financeiroEmail?: string;
+    financeiroWhatsapp?: string;
+    financeiroPreferenciaContato?: string;
+    redesSociais?: any;
+    usuariosAdmins?: string;
+    linksUteis?: any;
+    nicho?: string;
+    qtdConteudo?: string;
+    consultora?: string;
+    emissaoNf?: boolean;
+    emailNf?: string;
+    obsFiscais?: string;
+    foro?: string;
+    lgpdAceito?: boolean;
+    aceiteEletronico?: boolean;
+    ativo?: boolean;
+}

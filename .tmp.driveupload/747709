@@ -1,0 +1,35 @@
+import { OnModuleDestroy } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+type HealthStatus = 'ok' | 'degraded';
+type DependencyStatus = 'up' | 'down';
+export interface DependencyHealth {
+    status: DependencyStatus;
+    latencyMs: number;
+    error?: string;
+}
+export interface HealthCheckResponse {
+    status: HealthStatus;
+    timestamp: string;
+    uptimeSeconds: number;
+    version: string;
+    environment: string;
+    checks: {
+        api: DependencyHealth;
+        database?: DependencyHealth;
+        redis?: DependencyHealth;
+    };
+}
+export declare class HealthService implements OnModuleDestroy {
+    private readonly prisma;
+    private readonly redis;
+    constructor(prisma: PrismaService);
+    onModuleDestroy(): Promise<void>;
+    getHealth(): Promise<HealthCheckResponse>;
+    getDatabaseHealth(): Promise<HealthCheckResponse>;
+    getRedisHealth(): Promise<HealthCheckResponse>;
+    private buildResponse;
+    private checkDatabase;
+    private checkRedis;
+    private getSafeErrorMessage;
+}
+export {};

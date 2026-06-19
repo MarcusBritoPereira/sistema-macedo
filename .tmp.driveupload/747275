@@ -1,0 +1,13 @@
+export declare class ConfigureBankingDto {
+    contaBancariaId?: string;
+    banco: string;
+    agencia?: string;
+    conta?: string;
+    codigoBanco?: string;
+    clientId?: string;
+    clientSecret?: string;
+    apiKey?: string;
+    certificate?: string;
+    privateKey?: string;
+    dataInicioAutomacao?: string;
+}

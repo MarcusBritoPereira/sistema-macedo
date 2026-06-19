@@ -21,6 +21,12 @@ export interface DREResponse {
 }
 
 export interface ExecutiveDashboardResponse {
+    summary?: {
+        entradasMes: number;
+        recebidoReal: number;
+        previstoReceber: number;
+        saidasMes: number;
+    };
     kpis: {
         totalReceita: number;
         totalDespesas: number;
@@ -68,6 +74,8 @@ export interface CashFlowDashboardResponse {
     period: { month: number; year: number };
     kpis: {
         saldoAtual: number;
+        saldoInicialMes: number;
+        saldoFinalMes: number;
         aReceber: { total: number; recebido: number; pendente: number };
         aPagar: { total: number; pago: number; pendente: number };
         saldoProjetado: number;

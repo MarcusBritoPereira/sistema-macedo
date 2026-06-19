@@ -1,0 +1,21 @@
+import { StatusLancamento, TipoClassificacaoLancamento, TipoCustoLancamento, TipoLancamento } from '@prisma/client';
+export declare class CreateTransactionDto {
+    descricao: string;
+    valor: number;
+    dataVencimento: string;
+    dataPagamento?: string;
+    dataCompetencia?: string;
+    tipo: TipoLancamento;
+    status?: StatusLancamento;
+    observacoes?: string;
+    contaBancariaId?: string;
+    categoriaId?: string;
+    centroCustoId?: string;
+    contratoId?: string;
+    clienteId?: string;
+    fornecedorId?: string;
+    tipoLancamento?: TipoClassificacaoLancamento;
+    tipoCusto?: TipoCustoLancamento;
+    categoriaCusto?: string;
+    obraId?: string;
+}

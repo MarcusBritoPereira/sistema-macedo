@@ -1,0 +1,10 @@
+import { DRERegime } from './gerar-dre.dto';
+export declare class DREDetalhesDto {
+    categoria: string;
+    subcategoria?: string;
+    dataInicio: string;
+    dataFim: string;
+    regime: DRERegime;
+    centroCustoId?: string;
+    contaBancariaId?: string;
+}

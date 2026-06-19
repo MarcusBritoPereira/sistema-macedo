@@ -1,0 +1,209 @@
+import { PrismaService } from '../../prisma/prisma.service';
+import { BankingIntegrationService } from '../banking-integration/banking-integration.service';
+export declare class FinancialDashboardService {
+    private prisma;
+    private bankingService;
+    constructor(prisma: PrismaService, bankingService: BankingIntegrationService);
+    getDRE(startDate: Date, endDate: Date): Promise<{
+        period: {
+            start: Date;
+            end: Date;
+        };
+        breakdown: {
+            RECEITA_RECORRENTE: number;
+            RECEITA_NAO_RECORRENTE: number;
+            DEDUCOES_RECEITA: number;
+            CUSTO_SERVICOS_PRESTADOS: number;
+            DESPESA_ADMINISTRATIVA: number;
+            DESPESA_COMERCIAL: number;
+            DESPESA_ESTRUTURAL: number;
+            DESPESA_SOCIOS: number;
+            DESPESA_FINANCEIRA: number;
+            RECEITA_FINANCEIRA: number;
+            IMPOSTOS_LUCRO: number;
+            OUTROS: number;
+        };
+        estruturaGerencial: {
+            chave: string;
+            titulo: string;
+            descricao: string;
+            valor: number;
+        }[];
+        summary: {
+            receitasOperacionais: number;
+            receitaBruta: number;
+            deducoes: number;
+            receitaLiquida: number;
+            csp: number;
+            lucroBruto: number;
+            despesasOperacionais: number;
+            ebit: number;
+            resultadoFinanceiro: number;
+            lair: number;
+            impostosLucro: number;
+            lucroLiquido: number;
+            outrasReceitasDespesasNaoOperacionais: number;
+            despesasInvestimentosEmprestimos: number;
+            lucroPrejuizoFinal: number;
+        };
+    }>;
+    getExecutiveDashboard(month: number, year: number): Promise<{
+        kpis: {
+            totalReceita: number;
+            totalDespesas: number;
+            contasReceber: number;
+            contasPagar: number;
+            lucroLiquido: number;
+            margemLucro: number;
+            saldoFinal: number;
+            liquidezReduzida: number;
+            liquidezGeral: number;
+        };
+        budget: {
+            receitaMeta: number;
+            despesaMeta: number;
+            receitaPct: number;
+            despesaPct: number;
+        };
+        history: {
+            label: string;
+            receita: number;
+            despesa: number;
+            lucro: number;
+        }[];
+    }>;
+    getOperationalDashboard(): Promise<{
+        receivables: {
+            overdue: number;
+            today: number;
+            remainingMonth: number;
+        };
+        payables: {
+            overdue: number;
+            today: number;
+            remainingMonth: number;
+        };
+        accounts: {
+            saldo: number;
+            nome: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            banco: string;
+            agencia: string | null;
+            conta: string | null;
+            codigoBanco: string | null;
+            saldoInicial: import("@prisma/client/runtime/library").Decimal;
+        }[];
+        totalBalance: number;
+        dailyFlow: any[];
+        monthlyHistory: any[];
+        costCenterKpis: {
+            expensesByCostCenter: {
+                id: string;
+                nome: string;
+                codigo: string | null;
+                total: number;
+                cor: string;
+            }[];
+            deviations: {
+                id: string;
+                nome: string;
+                codigo: string | null;
+                previsto: number;
+                realizado: number;
+                desvio: number;
+                limiteMaximo: number | null;
+            }[];
+            productionTargets: {
+                id: string;
+                nome: string;
+                codigo: string | null;
+                metaFisica: number;
+                realizado: number;
+                unidadeMedida: string;
+                custoUnitario: number;
+                custoUnitarioPrevisto: number;
+            }[];
+            expensesByTag: {
+                tag: string;
+                total: number;
+            }[];
+        };
+        lastUpdate: string;
+    }>;
+    getCashFlowDashboard(month?: number, year?: number): Promise<{
+        period: {
+            month: number;
+            year: number;
+        };
+        kpis: {
+            saldoAtual: number;
+            saldoInicialMes: number;
+            saldoFinalMes: number;
+            aReceber: {
+                total: number;
+                recebido: number;
+                pendente: number;
+            };
+            aPagar: {
+                total: number;
+                pago: number;
+                pendente: number;
+            };
+            saldoProjetado: number;
+        };
+        summary: {
+            entradasMes: number;
+            recebidoReal: number;
+            previstoReceber: number;
+            saidasMes: number;
+        };
+        chart: any[];
+        transactions: {
+            id: string;
+            data: Date | null;
+            descricao: string;
+            conta: string | undefined;
+            categoria: string | undefined;
+            tipo: import(".prisma/client").$Enums.TipoLancamento;
+            valor: number;
+            status: import(".prisma/client").$Enums.StatusLancamento;
+        }[];
+        accounts: {
+            saldo: number;
+            nome: string;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            banco: string;
+            agencia: string | null;
+            conta: string | null;
+            codigoBanco: string | null;
+            saldoInicial: import("@prisma/client/runtime/library").Decimal;
+        }[];
+        lastUpdate: string;
+    }>;
+    getBalanceSheet(asOf: Date): Promise<{
+        asOf: string;
+        assets: {
+            cashAndBanks: number;
+            accountsReceivable: number;
+            total: number;
+            accounts: {
+                id: string;
+                nome: string;
+                banco: string;
+                saldo: number;
+            }[];
+        };
+        liabilities: {
+            accountsPayable: number;
+            total: number;
+        };
+        equity: {
+            total: number;
+        };
+    }>;
+    private getAccountsWithRealTimeBalance;
+}

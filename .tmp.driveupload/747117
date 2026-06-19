@@ -1,0 +1,118 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FinancialBudgetService = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../prisma/prisma.service");
+const Papa = __importStar(require("papaparse"));
+let FinancialBudgetService = class FinancialBudgetService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async upsert(createBudgetDto) {
+        const { mes, ano, receitaMeta, despesaMeta } = createBudgetDto;
+        const existing = await this.prisma.financialBudget.findUnique({
+            where: {
+                mes_ano: {
+                    mes,
+                    ano,
+                },
+            },
+        });
+        if (existing) {
+            return this.prisma.financialBudget.update({
+                where: { id: existing.id },
+                data: { receitaMeta, despesaMeta },
+            });
+        }
+        return this.prisma.financialBudget.create({
+            data: {
+                mes,
+                ano,
+                receitaMeta,
+                despesaMeta,
+            },
+        });
+    }
+    getTemplate(res) {
+        const csv = Papa.unparse([{ mes: '1', ano: '2026', receitaMeta: '1000.00', despesaMeta: '500.00' }]);
+        res.header('Content-Type', 'text/csv');
+        res.attachment('orcamentos_modelo.csv');
+        return res.send(csv);
+    }
+    async importCsv(file) {
+        const csvData = file.buffer.toString('utf-8');
+        const { data } = Papa.parse(csvData, { header: true, skipEmptyLines: true });
+        let count = 0;
+        for (const row of data) {
+            if (!row.mes || !row.ano || !row.receitaMeta || !row.despesaMeta)
+                continue;
+            const mes = parseInt(row.mes);
+            const ano = parseInt(row.ano);
+            if (isNaN(mes) || isNaN(ano))
+                continue;
+            await this.upsert({
+                mes,
+                ano,
+                receitaMeta: parseFloat(row.receitaMeta) || 0,
+                despesaMeta: parseFloat(row.despesaMeta) || 0,
+            });
+            count++;
+        }
+        return { success: true, imported: count };
+    }
+    findAll(ano) {
+        return this.prisma.financialBudget.findMany({
+            where: ano ? { ano } : undefined,
+            orderBy: { mes: 'asc' },
+        });
+    }
+};
+exports.FinancialBudgetService = FinancialBudgetService;
+exports.FinancialBudgetService = FinancialBudgetService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], FinancialBudgetService);
+//# sourceMappingURL=financial-budget.service.js.map

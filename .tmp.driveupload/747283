@@ -1,0 +1,826 @@
+"use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.BankingIntegrationService = void 0;
+const common_1 = require("@nestjs/common");
+const axios_1 = __importDefault(require("axios"));
+const https = __importStar(require("https"));
+const fs = __importStar(require("fs"));
+const path = __importStar(require("path"));
+const prisma_service_1 = require("../../prisma/prisma.service");
+const crypto_service_1 = require("../../shared/crypto.service");
+const ofx_service_1 = require("./ofx.service");
+const reconciliation_service_1 = require("../reconciliation/reconciliation.service");
+let BankingIntegrationService = class BankingIntegrationService {
+    prisma;
+    ofxService;
+    reconciliationService;
+    cryptoService;
+    INTER_AUTH_URL = 'https://cdpj.partners.bancointer.com.br/oauth/v2/token';
+    INTER_API_URL = 'https://cdpj.partners.bancointer.com.br/banking/v2/extrato';
+    INTER_SALDO_URL = 'https://cdpj.partners.bancointer.com.br/banking/v2/saldo';
+    CERTS_DIR = path.resolve(process.cwd(), 'secure', 'certs');
+    constructor(prisma, ofxService, reconciliationService, cryptoService) {
+        this.prisma = prisma;
+        this.ofxService = ofxService;
+        this.reconciliationService = reconciliationService;
+        this.cryptoService = cryptoService;
+        if (!fs.existsSync(this.CERTS_DIR)) {
+            fs.mkdirSync(this.CERTS_DIR, { recursive: true });
+        }
+    }
+    async configure(dto, files) {
+        console.log('Service: configure started');
+        try {
+            let accountId = dto.contaBancariaId;
+            if (!accountId) {
+                console.log('Service: No accountId, finding/creating account...');
+                const bankName = dto.banco || 'Banco Inter';
+                const existing = await this.prisma.contaBancaria.findFirst({
+                    where: { banco: bankName },
+                    include: { integracao: true },
+                });
+                if (existing) {
+                    if (existing.integracao) {
+                        throw new common_1.BadRequestException('Esta conta já possui uma integração vinculada.');
+                    }
+                    console.log('Service: Found existing account (unlinked):', existing.id);
+                    accountId = existing.id;
+                }
+                else {
+                    console.log('Service: Creating new account...');
+                    const newAcc = await this.prisma.contaBancaria.create({
+                        data: {
+                            nome: `Conta ${bankName}`,
+                            banco: bankName,
+                            agencia: dto.agencia,
+                            conta: dto.conta,
+                            codigoBanco: dto.codigoBanco,
+                            saldoInicial: 0,
+                        },
+                    });
+                    console.log('Service: Created new account:', newAcc.id);
+                    accountId = newAcc.id;
+                }
+            }
+            else {
+                console.log('Service: Updating provided accountId identification fields:', accountId);
+                await this.prisma.contaBancaria.update({
+                    where: { id: accountId },
+                    data: {
+                        agencia: dto.agencia,
+                        conta: dto.conta,
+                        codigoBanco: dto.codigoBanco,
+                    },
+                });
+            }
+            const updateData = {
+                banco: dto.banco,
+                status: 'CONNECTED',
+                lastSync: new Date(),
+            };
+            if (dto.clientId && dto.clientId !== '******') {
+                updateData.clientId = this.cryptoService.encrypt(dto.clientId);
+            }
+            if (dto.clientSecret && dto.clientSecret !== '******') {
+                updateData.clientSecret = this.cryptoService.encrypt(dto.clientSecret);
+            }
+            if (dto.dataInicioAutomacao) {
+                updateData.dataInicioAutomacao = new Date(dto.dataInicioAutomacao);
+            }
+            else if (dto.dataInicioAutomacao === '') {
+                updateData.dataInicioAutomacao = null;
+            }
+            if (dto.apiKey && dto.apiKey !== '******') {
+                updateData.apiKey = this.cryptoService.encrypt(dto.apiKey);
+            }
+            if (files) {
+                console.log('Service: Processing files...');
+                const certFile = files.certificate?.[0];
+                const keyFile = files.privateKey?.[0];
+                if (certFile) {
+                    const certPath = path.join(this.CERTS_DIR, `${accountId}_cert.crt`);
+                    console.log('Service: Writing cert to', certPath);
+                    fs.writeFileSync(certPath, certFile.buffer);
+                    updateData.crtFile = certPath;
+                }
+                if (keyFile) {
+                    const keyPath = path.join(this.CERTS_DIR, `${accountId}_key.key`);
+                    console.log('Service: Writing key to', keyPath);
+                    fs.writeFileSync(keyPath, keyFile.buffer);
+                    updateData.keyFile = keyPath;
+                }
+            }
+            console.log('Service: Upserting integration for account', accountId);
+            const result = await this.prisma.integracaoBancaria.upsert({
+                where: { contaBancariaId: accountId },
+                update: updateData,
+                create: {
+                    ...updateData,
+                    contaBancariaId: accountId,
+                },
+            });
+            return result;
+        }
+        catch (error) {
+            console.error('CRITICAL Error in configure:', error);
+            if (error instanceof Error) {
+                console.error('Stack:', error.stack);
+            }
+            throw error;
+        }
+    }
+    async getStatus(contaBancariaId) {
+        const integration = await this.prisma.integracaoBancaria.findUnique({
+            where: { contaBancariaId },
+        });
+        if (!integration)
+            return { status: 'NOT_CONFIGURED' };
+        return {
+            status: integration.status,
+            lastSync: integration.lastSync,
+            banco: integration.banco,
+            dataInicioAutomacao: integration.dataInicioAutomacao,
+        };
+    }
+    async syncStatements(contaBancariaId) {
+        const integration = await this.prisma.integracaoBancaria.findUnique({
+            where: { contaBancariaId },
+            include: { contaBancaria: true },
+        });
+        if (!integration || integration.status !== 'CONNECTED') {
+            throw new common_1.BadRequestException('Integração não configurada ou desconectada');
+        }
+        const logFile = path.join(this.CERTS_DIR, 'banking_debug.log');
+        const log = (msg) => {
+            const timestamp = new Date().toISOString();
+            try {
+                fs.appendFileSync(logFile, `[${timestamp}] ${msg}\n`);
+            }
+            catch (e) {
+                console.error('Failed to write to log file:', e);
+            }
+            console.log(msg);
+        };
+        try {
+            log(`[Sync] Starting sync for account ${contaBancariaId}...`);
+            if (!fs.existsSync(integration.crtFile) ||
+                !fs.existsSync(integration.keyFile)) {
+                throw new common_1.BadRequestException('Certificados não encontrados no servidor.');
+            }
+            const certContent = fs.readFileSync(integration.crtFile);
+            const keyContent = fs.readFileSync(integration.keyFile);
+            const accessToken = await this.getAccessToken(this.tryDecrypt(integration.clientId), this.tryDecrypt(integration.clientSecret), certContent, keyContent);
+            log('[Sync] Authenticated. Fetching pages...');
+            const today = new Date();
+            let startLimit = new Date();
+            if (integration.dataInicioAutomacao) {
+                startLimit = new Date(integration.dataInicioAutomacao);
+            }
+            else {
+                startLimit.setDate(today.getDate() - 60);
+            }
+            const dataInicio = startLimit.toISOString().split('T')[0];
+            const dataFim = today.toISOString().split('T')[0];
+            let allStatements = [];
+            let currentPage = 0;
+            let hasMore = true;
+            while (hasMore) {
+                log(`[Sync] Fetching page ${currentPage} (Window: ${dataInicio} to ${dataFim})...`);
+                let responseData;
+                let retries = 0;
+                while (retries < 3) {
+                    try {
+                        responseData = await this.fetchInterStatements(accessToken, dataInicio, dataFim, certContent, keyContent, currentPage, integration.contaBancaria?.conta);
+                        break;
+                    }
+                    catch (err) {
+                        if (axios_1.default.isAxiosError(err) && err.response?.status === 429) {
+                            retries++;
+                            log(`[Sync] Rate limited (429). Retrying in ${retries * 2}s...`);
+                            await new Promise((resolve) => setTimeout(resolve, retries * 2000));
+                        }
+                        else {
+                            throw err;
+                        }
+                    }
+                }
+                if (!responseData)
+                    throw new Error('API do banco não respondeu após várias tentativas.');
+                const pageTrans = responseData.transacoes || [];
+                allStatements = [...allStatements, ...pageTrans];
+                log(`[Sync] Page ${currentPage} returned ${pageTrans.length} items.`);
+                const pageSize = 1000;
+                if (pageTrans.length < pageSize ||
+                    (responseData.totalPaginas !== undefined &&
+                        currentPage >= responseData.totalPaginas - 1)) {
+                    hasMore = false;
+                }
+                else {
+                    currentPage++;
+                    await new Promise((resolve) => setTimeout(resolve, 1000));
+                }
+                if (currentPage > 50)
+                    hasMore = false;
+            }
+            log(`[Sync] Fetched total of ${allStatements.length} transactions across ${currentPage + 1} pages.`);
+            let importedCount = 0;
+            let duplicatesCount = 0;
+            const newStatementIds = [];
+            const importLog = await this.prisma.importacaoBancaria.create({
+                data: {
+                    filename: `API Inter ${new Date().toISOString().split('T')[0]}`,
+                    fileType: 'MANUAL',
+                    contaBancariaId: contaBancariaId,
+                    status: 'COMPLETED',
+                },
+            });
+            for (const t of allStatements) {
+                const middayDate = new Date(`${t.dataEntrada}T12:00:00Z`);
+                const valor = parseFloat(t.valor);
+                const cleanDesc = (t.descricao || '').replace(/\s+/g, ' ').trim();
+                const hashDateStr = middayDate.toISOString().split('T')[0];
+                const hash = `INTER-${hashDateStr}-${t.tipoOperacao || ''}-${t.titulo}-${t.valor}-${cleanDesc.substring(0, 100)}`;
+                const exists = await this.prisma.extratoBancario.findUnique({
+                    where: { hash },
+                });
+                if (!exists) {
+                    const tituloNorm = (t.titulo || '')
+                        .trim()
+                        .toLowerCase()
+                        .replace(/\s+/g, ' ');
+                    const descNorm = cleanDesc.toLowerCase().replace(/\s+/g, ' ');
+                    const finalDesc = descNorm.startsWith(tituloNorm)
+                        ? cleanDesc.trim()
+                        : `${t.titulo} - ${cleanDesc}`.trim();
+                    const created = await this.prisma.extratoBancario.create({
+                        data: {
+                            data: middayDate,
+                            descricao: finalDesc,
+                            valor: Math.abs(valor),
+                            tipo: t.tipoTransacao === 'CREDITO' || t.tipoOperacao === 'C'
+                                ? 'CREDIT'
+                                : 'DEBIT',
+                            hash: hash,
+                            conciliado: false,
+                            importacaoId: importLog.id,
+                        },
+                    });
+                    newStatementIds.push(created.id);
+                    importedCount++;
+                }
+                else {
+                    duplicatesCount++;
+                }
+            }
+            log(`[Sync] Import done: ${importedCount} imported, ${duplicatesCount} duplicates.`);
+            await this.prisma.integracaoBancaria.update({
+                where: { id: integration.id },
+                data: { lastSync: new Date() },
+            });
+            let suggestions = [];
+            try {
+                suggestions =
+                    await this.reconciliationService.findAutoSuggestions(newStatementIds);
+            }
+            catch (e) {
+                log(`[Sync] Warning: auto-suggestion failed: ${e.message}`);
+            }
+            return {
+                success: true,
+                imported: importedCount,
+                suggestions,
+                message: suggestions.length > 0
+                    ? `Sincronização concluída! ${importedCount} importados. ${suggestions.length} podem ser conciliados.`
+                    : `Sincronização concluída! ${importedCount} importados.`,
+            };
+        }
+        catch (error) {
+            log(`[ERROR] ${error.message}`);
+            if (axios_1.default.isAxiosError(error)) {
+                log(`[AXIOS DATA] ${JSON.stringify(error.response?.data)}`);
+                log(`[AXIOS STATUS] ${JSON.stringify(error.response?.status)}`);
+            }
+            if (error.message &&
+                (error.message.includes('autenticação') ||
+                    error.message.includes('certificado'))) {
+                await this.prisma.integracaoBancaria.update({
+                    where: { id: integration.id },
+                    data: { status: 'ERROR' },
+                });
+            }
+            throw new common_1.BadRequestException(`Erro na sincronização: ${error.message}`);
+        }
+    }
+    async getAccountBalance(contaBancariaId) {
+        const integration = await this.prisma.integracaoBancaria.findUnique({
+            where: { contaBancariaId },
+            include: { contaBancaria: true },
+        });
+        if (!integration || integration.status !== 'CONNECTED') {
+            throw new common_1.BadRequestException('Integração não configurada ou desconectada');
+        }
+        if (!fs.existsSync(integration.crtFile) ||
+            !fs.existsSync(integration.keyFile)) {
+            throw new common_1.BadRequestException('Certificados não encontrados no servidor.');
+        }
+        const certContent = fs.readFileSync(integration.crtFile);
+        const keyContent = fs.readFileSync(integration.keyFile);
+        const accessToken = await this.getAccessToken(this.tryDecrypt(integration.clientId), this.tryDecrypt(integration.clientSecret), certContent, keyContent, 'extrato.read');
+        const responseData = await this.fetchInterBalance(accessToken, certContent, keyContent, integration.contaBancaria?.conta);
+        return parseFloat(responseData.disponivel || '0');
+    }
+    async fetchInterCards(token, cert, key) {
+        const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+        const url = 'https://cdpj.partners.bancointer.com.br/cartoes/v1/cartoes';
+        const response = await axios_1.default.get(url, {
+            httpsAgent: agent,
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        return response.data;
+    }
+    async fetchInterCreditCardTransactions(token, cardId, startDate, endDate, cert, key) {
+        const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+        const url = `https://cdpj.partners.bancointer.com.br/cartoes/v1/cartoes/${cardId}/transacoes?dataInicio=${startDate}&dataFim=${endDate}`;
+        const response = await axios_1.default.get(url, {
+            httpsAgent: agent,
+            headers: { Authorization: `Bearer ${token}` },
+        });
+        return response.data;
+    }
+    async getAccessToken(clientId, clientSecret, cert, key, scope = 'extrato.read') {
+        const agent = new https.Agent({
+            cert: cert,
+            key: key,
+            rejectUnauthorized: false,
+        });
+        const params = new URLSearchParams();
+        params.append('client_id', clientId);
+        params.append('client_secret', clientSecret);
+        params.append('scope', scope);
+        params.append('grant_type', 'client_credentials');
+        try {
+            const response = await axios_1.default.post(this.INTER_AUTH_URL, params, {
+                httpsAgent: agent,
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            });
+            return response.data.access_token;
+        }
+        catch (error) {
+            if (error.response) {
+                console.error('Inter Auth Error Response:', JSON.stringify(error.response.data));
+                throw new common_1.BadRequestException(`Falha ao autenticar com Banco Inter: ${error.response.data?.title || error.message} (${error.response.status})`);
+            }
+            throw new common_1.BadRequestException(`Falha ao autenticar com Banco Inter: ${error.message}`);
+        }
+    }
+    tryDecrypt(value) {
+        try {
+            return this.cryptoService.decrypt(value);
+        }
+        catch {
+            return value;
+        }
+    }
+    async importOfx(fileBuffer, contaId) {
+        let ofxContent = '';
+        try {
+            const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+            ofxContent = utf8Decoder.decode(fileBuffer);
+        }
+        catch {
+            const winDecoder = new TextDecoder('windows-1252');
+            ofxContent = winDecoder.decode(fileBuffer);
+        }
+        const transactions = this.ofxService.parseOfx(ofxContent);
+        const importLog = await this.prisma.importacaoBancaria.create({
+            data: {
+                filename: `Upload OFX ${new Date().toISOString()}`,
+                fileType: 'OFX',
+                contaBancariaId: contaId,
+                status: 'COMPLETED',
+            },
+        });
+        let importedCount = 0;
+        let duplicatesCount = 0;
+        for (const t of transactions) {
+            const valor = t.amount;
+            const cleanDesc = (t.descricao || '').replace(/\s+/g, ' ').trim();
+            let dateObj = t.date;
+            if (!dateObj || isNaN(dateObj.getTime())) {
+                dateObj = new Date();
+            }
+            const hashDateStr = dateObj.toISOString().split('T')[0];
+            const hash = `OFX-${hashDateStr}-${t.type}-${t.id}-${t.amount}-${cleanDesc.substring(0, 50)}`;
+            const exists = await this.prisma.extratoBancario.findUnique({
+                where: { hash },
+            });
+            if (!exists) {
+                await this.prisma.extratoBancario.create({
+                    data: {
+                        data: dateObj,
+                        descricao: cleanDesc,
+                        valor: Math.abs(valor),
+                        tipo: valor < 0 ? 'DEBIT' : 'CREDIT',
+                        hash: hash,
+                        conciliado: false,
+                        importacaoId: importLog.id,
+                        fitid: t.id,
+                        sourceType: 'OFX',
+                    },
+                });
+                importedCount++;
+            }
+            else {
+                duplicatesCount++;
+            }
+        }
+        return {
+            success: true,
+            imported: importedCount,
+            duplicates: duplicatesCount,
+            message: `Importação concluída: ${importedCount} novos, ${duplicatesCount} duplicados.`,
+        };
+    }
+    async importCsv(fileBuffer, contaId) {
+        let csvContent = '';
+        try {
+            const utf8Decoder = new TextDecoder('utf-8', { fatal: true });
+            csvContent = utf8Decoder.decode(fileBuffer);
+        }
+        catch {
+            const winDecoder = new TextDecoder('windows-1252');
+            csvContent = winDecoder.decode(fileBuffer);
+        }
+        const rawLines = csvContent.split(/\r?\n/);
+        const cleanedLines = rawLines
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+        if (cleanedLines.length === 0) {
+            throw new common_1.BadRequestException('O arquivo CSV está vazio.');
+        }
+        let sep = ',';
+        const sampleLine = cleanedLines[0];
+        const semicolonCount = (sampleLine.match(/;/g) || []).length;
+        const commaCount = (sampleLine.match(/,/g) || []).length;
+        if (semicolonCount > commaCount) {
+            sep = ';';
+        }
+        const splitCsvLine = (line, separator) => {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                }
+                else if (char === separator && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                }
+                else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result.map((val) => {
+                if (val.startsWith('"') && val.endsWith('"')) {
+                    return val.slice(1, -1).trim();
+                }
+                return val;
+            });
+        };
+        const parseBrazilianDate = (dateStr) => {
+            if (!dateStr)
+                return null;
+            const cleaned = dateStr.trim();
+            if (/^\d{4}-\d{2}-\d{2}$/.test(cleaned)) {
+                const d = new Date(`${cleaned}T12:00:00Z`);
+                return isNaN(d.getTime()) ? null : d;
+            }
+            const match = cleaned.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+            if (match) {
+                const day = parseInt(match[1], 10);
+                const month = parseInt(match[2], 10) - 1;
+                const year = parseInt(match[3], 10);
+                return new Date(Date.UTC(year, month, day, 12, 0, 0));
+            }
+            const matchShort = cleaned.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{2})$/);
+            if (matchShort) {
+                const day = parseInt(matchShort[1], 10);
+                const month = parseInt(matchShort[2], 10) - 1;
+                let year = parseInt(matchShort[3], 10);
+                year += year < 50 ? 2000 : 1900;
+                return new Date(Date.UTC(year, month, day, 12, 0, 0));
+            }
+            const parsed = new Date(cleaned);
+            return isNaN(parsed.getTime()) ? null : parsed;
+        };
+        const parseBrazilianValue = (valStr) => {
+            if (!valStr)
+                return null;
+            let cleaned = valStr.trim().replace('R$', '').replace(/\s+/g, '');
+            if (cleaned === '' || cleaned === '-')
+                return null;
+            let isNegative = false;
+            if (cleaned.endsWith('-')) {
+                isNegative = true;
+                cleaned = cleaned.slice(0, -1);
+            }
+            if (cleaned.startsWith('-')) {
+                isNegative = true;
+                cleaned = cleaned.slice(1);
+            }
+            if (cleaned.startsWith('+')) {
+                cleaned = cleaned.slice(1);
+            }
+            const hasComma = cleaned.includes(',');
+            const hasDot = cleaned.includes('.');
+            if (hasComma && hasDot) {
+                if (cleaned.indexOf('.') < cleaned.indexOf(',')) {
+                    cleaned = cleaned.replace(/\./g, '').replace(',', '.');
+                }
+                else {
+                    cleaned = cleaned.replace(/,/g, '');
+                }
+            }
+            else if (hasComma) {
+                cleaned = cleaned.replace(',', '.');
+            }
+            const numValue = parseFloat(cleaned);
+            if (isNaN(numValue))
+                return null;
+            return isNegative ? -numValue : numValue;
+        };
+        let headerIdx = -1;
+        let colMap = {
+            dateIdx: -1,
+            descIdx: -1,
+            valueIdx: -1,
+            typeIdx: -1,
+            creditIdx: -1,
+            debitIdx: -1,
+        };
+        for (let i = 0; i < cleanedLines.length; i++) {
+            const cols = splitCsvLine(cleanedLines[i], sep);
+            const normalizedCols = cols.map((c) => c
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim());
+            const hasDate = normalizedCols.some((c) => c.includes('data') || c.includes('date') || c === 'dt' || c === 'dt.');
+            const hasValue = normalizedCols.some((c) => c === 'valor' ||
+                c === 'value' ||
+                c === 'amount' ||
+                c.includes('valor (') ||
+                c === 'val' ||
+                c.includes('lancamento') ||
+                c === 'entrada' ||
+                c === 'saida' ||
+                c.includes('credito') ||
+                c.includes('debito'));
+            if (hasDate && hasValue) {
+                headerIdx = i;
+                for (let j = 0; j < normalizedCols.length; j++) {
+                    const col = normalizedCols[j];
+                    if (col.includes('data') ||
+                        col.includes('date') ||
+                        col === 'dt' ||
+                        col === 'dt.') {
+                        colMap.dateIdx = j;
+                    }
+                    else if (col.includes('descricao') ||
+                        col.includes('historico') ||
+                        col.includes('detalhe') ||
+                        col.includes('description') ||
+                        col.includes('motivo')) {
+                        colMap.descIdx = j;
+                    }
+                    else if (col === 'valor' ||
+                        col === 'value' ||
+                        col === 'amount' ||
+                        col.includes('valor (') ||
+                        col === 'val' ||
+                        col.includes('lancamento')) {
+                        colMap.valueIdx = j;
+                    }
+                    else if (col === 'tipo' ||
+                        col === 'type' ||
+                        col === 'c/d' ||
+                        col.includes('operacao')) {
+                        colMap.typeIdx = j;
+                    }
+                    else if (col === 'entrada' || col.includes('credito')) {
+                        colMap.creditIdx = j;
+                    }
+                    else if (col === 'saida' || col.includes('debito')) {
+                        colMap.debitIdx = j;
+                    }
+                }
+                break;
+            }
+        }
+        if (headerIdx === -1) {
+            colMap = {
+                dateIdx: 0,
+                descIdx: 1,
+                valueIdx: 2,
+                typeIdx: 3,
+                creditIdx: -1,
+                debitIdx: -1,
+            };
+            headerIdx = -1;
+        }
+        const startRowIdx = headerIdx + 1;
+        const parsedTransactions = [];
+        for (let i = startRowIdx; i < cleanedLines.length; i++) {
+            const cols = splitCsvLine(cleanedLines[i], sep);
+            if (cols.length <= Math.max(colMap.dateIdx, colMap.descIdx, colMap.valueIdx)) {
+                continue;
+            }
+            const rawDate = cols[colMap.dateIdx];
+            const parsedDate = parseBrazilianDate(rawDate);
+            if (!parsedDate)
+                continue;
+            const description = colMap.descIdx !== -1 ? cols[colMap.descIdx] : 'Lançamento CSV';
+            let value = 0;
+            let isDebit = false;
+            if (colMap.creditIdx !== -1 && colMap.debitIdx !== -1) {
+                const credVal = parseBrazilianValue(cols[colMap.creditIdx]);
+                const debVal = parseBrazilianValue(cols[colMap.debitIdx]);
+                if (credVal !== null && credVal !== 0) {
+                    value = Math.abs(credVal);
+                    isDebit = false;
+                }
+                else if (debVal !== null && debVal !== 0) {
+                    value = Math.abs(debVal);
+                    isDebit = true;
+                }
+                else {
+                    continue;
+                }
+            }
+            else {
+                const val = parseBrazilianValue(cols[colMap.valueIdx]);
+                if (val === null)
+                    continue;
+                value = val;
+                if (colMap.typeIdx !== -1) {
+                    const typeStr = cols[colMap.typeIdx].toUpperCase().trim();
+                    if (typeStr.startsWith('D') ||
+                        typeStr.includes('SAIDA') ||
+                        typeStr.includes('DEBIT')) {
+                        isDebit = true;
+                    }
+                    else if (typeStr.startsWith('C') ||
+                        typeStr.includes('ENTRADA') ||
+                        typeStr.includes('CREDIT')) {
+                        isDebit = false;
+                    }
+                    else {
+                        isDebit = value < 0;
+                    }
+                }
+                else {
+                    isDebit = value < 0;
+                }
+            }
+            parsedTransactions.push({
+                date: parsedDate,
+                description: description || 'Lançamento Sem Descrição',
+                value: Math.abs(value),
+                type: isDebit ? 'DEBIT' : 'CREDIT',
+            });
+        }
+        if (parsedTransactions.length === 0) {
+            throw new common_1.BadRequestException('Nenhuma transação válida foi encontrada no arquivo CSV.');
+        }
+        const importLog = await this.prisma.importacaoBancaria.create({
+            data: {
+                filename: `Upload CSV ${new Date().toISOString()}`,
+                fileType: 'CSV',
+                contaBancariaId: contaId,
+                status: 'COMPLETED',
+            },
+        });
+        let importedCount = 0;
+        let duplicatesCount = 0;
+        for (const t of parsedTransactions) {
+            const cleanDesc = t.description.replace(/\s+/g, ' ').trim();
+            const hashDateStr = t.date.toISOString().split('T')[0];
+            const signVal = t.type === 'DEBIT' ? -t.value : t.value;
+            const hash = `CSV-${hashDateStr}-${t.type}-${signVal}-${cleanDesc.substring(0, 50)}`;
+            const exists = await this.prisma.extratoBancario.findUnique({
+                where: { hash },
+            });
+            if (!exists) {
+                await this.prisma.extratoBancario.create({
+                    data: {
+                        data: t.date,
+                        descricao: cleanDesc,
+                        valor: t.value,
+                        tipo: t.type,
+                        hash: hash,
+                        conciliado: false,
+                        importacaoId: importLog.id,
+                        sourceType: 'CSV',
+                    },
+                });
+                importedCount++;
+            }
+            else {
+                duplicatesCount++;
+            }
+        }
+        return {
+            success: true,
+            imported: importedCount,
+            duplicates: duplicatesCount,
+            message: `Importação concluída: ${importedCount} novos, ${duplicatesCount} duplicados.`,
+        };
+    }
+    async fetchInterStatements(token, dataInicio, dataFim, cert, key, pagina = 0, accountNumber) {
+        const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+        const url = `${this.INTER_API_URL}?dataInicio=${dataInicio}&dataFim=${dataFim}&pagina=${pagina}&tamanhoPagina=1000`;
+        const headers = {
+            Authorization: `Bearer ${token}`,
+        };
+        if (accountNumber) {
+            headers['x-inter-conta-corrente'] = accountNumber;
+        }
+        const response = await axios_1.default.get(url, {
+            httpsAgent: agent,
+            headers: headers,
+        });
+        return response.data;
+    }
+    async fetchInterBalance(token, cert, key, accountNumber) {
+        const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+        const url = this.INTER_SALDO_URL;
+        const headers = {
+            Authorization: `Bearer ${token}`,
+        };
+        if (accountNumber) {
+            headers['x-inter-conta-corrente'] = accountNumber;
+        }
+        const response = await axios_1.default.get(url, {
+            httpsAgent: agent,
+            headers: headers,
+        });
+        return response.data;
+    }
+};
+exports.BankingIntegrationService = BankingIntegrationService;
+exports.BankingIntegrationService = BankingIntegrationService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        ofx_service_1.OfxService,
+        reconciliation_service_1.ReconciliationService,
+        crypto_service_1.CryptoService])
+], BankingIntegrationService);
+//# sourceMappingURL=banking-integration.service.js.map

@@ -1,0 +1,101 @@
+import { PrismaService } from '../prisma/prisma.service';
+export declare class UsersService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    create(data: any): Promise<{
+        nome: string;
+        email: string;
+        ativo: boolean;
+        id: string;
+        senha: string;
+        precisaTrocarSenha: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        perfilId: string;
+    }>;
+    findAll(): import(".prisma/client").Prisma.PrismaPromise<{
+        perfil: {
+            nome: string;
+            id: string;
+            descricao: string | null;
+            permissoes: import("@prisma/client/runtime/library").JsonValue | null;
+        };
+        nome: string;
+        email: string;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+    }[]>;
+    findOne(id: string): import(".prisma/client").Prisma.Prisma__UsuarioClient<({
+        perfil: {
+            nome: string;
+            id: string;
+            descricao: string | null;
+            permissoes: import("@prisma/client/runtime/library").JsonValue | null;
+        };
+    } & {
+        nome: string;
+        email: string;
+        ativo: boolean;
+        id: string;
+        senha: string;
+        precisaTrocarSenha: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        perfilId: string;
+    }) | null, null, import("@prisma/client/runtime/library").DefaultArgs>;
+    findOneSafe(id: string): import(".prisma/client").Prisma.Prisma__UsuarioClient<{
+        perfil: {
+            nome: string;
+            id: string;
+            descricao: string | null;
+            permissoes: import("@prisma/client/runtime/library").JsonValue | null;
+        };
+        nome: string;
+        email: string;
+        ativo: boolean;
+        id: string;
+        precisaTrocarSenha: boolean;
+        createdAt: Date;
+    } | null, null, import("@prisma/client/runtime/library").DefaultArgs>;
+    findByEmail(email: string): Promise<({
+        perfil: {
+            nome: string;
+            id: string;
+            descricao: string | null;
+            permissoes: import("@prisma/client/runtime/library").JsonValue | null;
+        };
+    } & {
+        nome: string;
+        email: string;
+        ativo: boolean;
+        id: string;
+        senha: string;
+        precisaTrocarSenha: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        perfilId: string;
+    }) | null>;
+    update(id: string, data: any): Promise<{
+        nome: string;
+        email: string;
+        ativo: boolean;
+        id: string;
+        senha: string;
+        precisaTrocarSenha: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        perfilId: string;
+    }>;
+    remove(id: string): import(".prisma/client").Prisma.Prisma__UsuarioClient<{
+        nome: string;
+        email: string;
+        ativo: boolean;
+        id: string;
+        senha: string;
+        precisaTrocarSenha: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        perfilId: string;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+}

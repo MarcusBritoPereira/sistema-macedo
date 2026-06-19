@@ -244,6 +244,6 @@ export class CashFlowPage implements OnInit {
   }
 
   formatCurrency(val: number): string {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val);
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val) || 0);
   }
 }

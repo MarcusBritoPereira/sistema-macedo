@@ -1,7 +1,0 @@
-export declare class CryptoService {
-    private readonly algorithm;
-    private readonly _key;
-    constructor();
-    encrypt(plainText: string): string;
-    decrypt(cipherText: string): string;
-}

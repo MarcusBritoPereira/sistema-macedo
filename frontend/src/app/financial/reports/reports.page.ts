@@ -24,12 +24,10 @@ import {
   IonIcon,
   IonBadge,
   IonList,
-  IonDatetimeButton,
-  IonModal,
-  IonDatetime,
   IonToggle,
   IonSpinner,
   IonSearchbar,
+  IonInput,
   ToastController
 } from '@ionic/angular/standalone';
 import { forkJoin, of, catchError } from 'rxjs';
@@ -85,12 +83,10 @@ type PresetPeriod = 'month' | 'quarter' | 'year' | 'custom';
     IonIcon,
     IonBadge,
     IonList,
-    IonDatetimeButton,
-    IonModal,
-    IonDatetime,
     IonToggle,
     IonSpinner,
     IonSearchbar,
+    IonInput,
     ReportViewerComponent
   ]
 })

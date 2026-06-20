@@ -29,6 +29,8 @@ import {
   IonSearchbar,
   IonInput,
   IonModal,
+  IonDatetime,
+  IonDatetimeButton,
   ToastController
 } from '@ionic/angular/standalone';
 import { forkJoin, of, catchError } from 'rxjs';
@@ -89,6 +91,8 @@ type PresetPeriod = 'month' | 'quarter' | 'year' | 'custom';
     IonSearchbar,
     IonInput,
     IonModal,
+    IonDatetime,
+    IonDatetimeButton,
     ReportViewerComponent
   ]
 })
@@ -299,6 +303,10 @@ export class ReportsPage implements OnInit {
 
   onPeriodChange() {
     this.updateDatesFromPeriod();
+  }
+
+  onCustomDateChange() {
+    this.selectedPeriod = 'custom';
   }
 
   updateDatesFromPeriod() {

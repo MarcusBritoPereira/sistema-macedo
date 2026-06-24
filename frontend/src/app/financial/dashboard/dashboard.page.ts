@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -41,6 +41,7 @@ import {
 } from 'ionicons/icons';
 import { Chart, ChartConfiguration, ChartData, registerables } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
+import { Subscription } from 'rxjs';
 
 Chart.register(...registerables);
 
@@ -67,11 +68,17 @@ Chart.register(...registerables);
     IonSpinner,
   ],
 })
-export class DashboardPage implements OnInit {
+export class DashboardPage implements OnInit, OnDestroy {
   operationalData: OperationalDashboardResponse | null = null;
   loading = false;
   errorMessage = '';
   activeRange = 'Mês atual';
+  loadingSlow = false;
+  loadingTimeout = false;
+
+  private loadingSubscription: Subscription | null = null;
+  private slowTimer: ReturnType<typeof setTimeout> | null = null;
+  private timeoutTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Chart 1: Daily Flow (Mixed)
   public dailyFlowChartOptions: ChartConfiguration['options'] = {
@@ -151,20 +158,72 @@ export class DashboardPage implements OnInit {
     this.loadData();
   }
 
+  ngOnDestroy() {
+    this.clearTimers();
+    this.loadingSubscription?.unsubscribe();
+  }
+
+  private clearTimers() {
+    if (this.slowTimer) {
+      clearTimeout(this.slowTimer);
+      this.slowTimer = null;
+    }
+    if (this.timeoutTimer) {
+      clearTimeout(this.timeoutTimer);
+      this.timeoutTimer = null;
+    }
+  }
+
   loadData() {
+    this.loadingSubscription?.unsubscribe();
+    this.clearTimers();
+
     this.loading = true;
+    this.loadingSlow = false;
+    this.loadingTimeout = false;
     this.errorMessage = '';
-    this.dashboardService.getOperationalDashboard().subscribe({
+
+    // After 10s, show "loading slowly" message
+    this.slowTimer = setTimeout(() => {
+      if (this.loading) {
+        this.loadingSlow = true;
+      }
+    }, 10000);
+
+    // After 30s, show timeout/retry option
+    this.timeoutTimer = setTimeout(() => {
+      if (this.loading) {
+        this.loadingTimeout = true;
+      }
+    }, 30000);
+
+    this.loadingSubscription = this.dashboardService.getOperationalDashboard().subscribe({
       next: (data) => {
+        this.clearTimers();
         this.operationalData = data;
         this.setupCharts(data);
         this.loading = false;
+        this.loadingSlow = false;
+        this.loadingTimeout = false;
       },
       error: (err) => {
+        this.clearTimers();
         console.error('Error loading dashboard', err);
-        this.errorMessage =
-          'Não foi possível carregar o dashboard agora. Verifique a conexão e tente novamente.';
+
+        if (err.status === 0) {
+          this.errorMessage =
+            'Sem conexão com o servidor. Verifique sua rede e tente novamente.';
+        } else if (err.status === 504 || err.status === 408) {
+          this.errorMessage =
+            'O servidor demorou demais para responder. Tente novamente em alguns instantes.';
+        } else {
+          this.errorMessage =
+            'Não foi possível carregar o dashboard agora. Verifique a conexão e tente novamente.';
+        }
+
         this.loading = false;
+        this.loadingSlow = false;
+        this.loadingTimeout = false;
       },
     });
   }

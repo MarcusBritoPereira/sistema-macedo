@@ -10,6 +10,15 @@
 <ion-content class="dashboard-bg" [fullscreen]="true">
   <div *ngIf="loading" class="loading-overlay">
     <ion-spinner name="crescent"></ion-spinner>
+    <p class="loading-msg" *ngIf="loadingSlow && !loadingTimeout">
+      O carregamento está demorando mais que o esperado...
+    </p>
+    <div class="loading-timeout-msg" *ngIf="loadingTimeout">
+      <p>O servidor está demorando muito para responder.</p>
+      <ion-button fill="outline" size="small" (click)="loadData()">
+        Tentar Novamente
+      </ion-button>
+    </div>
   </div>
 
   <div class="dashboard-container" *ngIf="operationalData && !loading">

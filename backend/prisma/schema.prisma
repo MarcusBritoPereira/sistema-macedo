@@ -211,6 +211,8 @@ model LancamentoFinanceiro {
   @@index([categoriaId, dataCompetencia], map: "idx_lancamento_categoria_comp")
   @@index([clienteId, dataVencimento], map: "idx_lancamento_cliente_venc")
   @@index([fornecedorId, dataVencimento], map: "idx_lancamento_fornecedor_venc")
+  @@index([tipo, status, dataPagamento], map: "idx_lancamento_tipo_status_pag")
+  @@index([centroCustoId], map: "idx_lancamento_centro_custo")
   @@map("lancamentos_financeiros")
 }
 

@@ -386,17 +386,107 @@ export class FinancialDashboardService {
       999,
     );
 
-    // 1. Current Balance (Calculated + Real-time)
-    const accountsWithBalance = await this.getAccountsWithRealTimeBalance();
+    // Date range for daily flow (last 14 days)
+    const dailyFlowStart = new Date(now);
+    dailyFlowStart.setDate(dailyFlowStart.getDate() - 13);
+    dailyFlowStart.setHours(0, 0, 0, 0);
+
+    // Date range for monthly history (last 6 months)
+    const monthlyHistStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+
+    // --- PARALLEL FETCH: All independent queries run simultaneously ---
+    const [
+      accountsWithBalance,
+      receivables,
+      payables,
+      dailyFlowIn,
+      dailyFlowOut,
+      monthlyHistoryRaw,
+      ccs,
+      monthlyExpenses,
+      monthlyRateios,
+    ] = await Promise.all([
+      // 1. Current Balance (Calculated + Real-time)
+      this.getAccountsWithRealTimeBalance(),
+
+      // 2. Receivables Info (select only needed columns)
+      this.prisma.lancamentoFinanceiro.findMany({
+        where: { tipo: 'RECEITA', status: 'PREVISTO' },
+        select: { valor: true, dataVencimento: true },
+      }),
+
+      // 3. Payables Info (select only needed columns)
+      this.prisma.lancamentoFinanceiro.findMany({
+        where: { tipo: 'DESPESA', status: 'PREVISTO' },
+        select: { valor: true, dataVencimento: true },
+      }),
+
+      // 4a. Daily Flow IN — single bulk query instead of 14 sequential ones
+      this.prisma.lancamentoFinanceiro.findMany({
+        where: {
+          tipo: 'RECEITA',
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+          dataPagamento: { gte: dailyFlowStart, lte: now },
+        },
+        select: { valor: true, dataPagamento: true },
+      }),
+
+      // 4b. Daily Flow OUT — single bulk query instead of 14 sequential ones
+      this.prisma.lancamentoFinanceiro.findMany({
+        where: {
+          tipo: 'DESPESA',
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+          dataPagamento: { gte: dailyFlowStart, lte: now },
+        },
+        select: { valor: true, dataPagamento: true },
+      }),
+
+      // 5. Monthly History — single bulk query instead of 6 sequential ones
+      this.prisma.lancamentoFinanceiro.findMany({
+        where: {
+          tipo: 'RECEITA',
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+          dataPagamento: { gte: monthlyHistStart, lte: endOfMonth },
+        },
+        select: { valor: true, dataPagamento: true },
+      }),
+
+      // 6. Cost Centers
+      this.prisma.centroCusto.findMany({
+        where: { ativo: true },
+      }),
+
+      // 7. Monthly expenses for cost center KPIs (select only needed columns)
+      this.prisma.lancamentoFinanceiro.findMany({
+        where: {
+          tipo: 'DESPESA',
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+          dataPagamento: { gte: startOfMonth, lte: endOfMonth },
+        },
+        select: { valor: true, centroCustoId: true },
+      }),
+
+      // 8. Rateios for the current month
+      this.prisma.rateioLancamento.findMany({
+        where: {
+          lancamento: {
+            tipo: 'DESPESA',
+            status: { in: ['REALIZADO', 'CONCILIADO'] },
+            dataPagamento: { gte: startOfMonth, lte: endOfMonth },
+          },
+        },
+        include: {
+          lancamento: { select: { centroCustoId: true } },
+        },
+      }),
+    ]);
+
     const totalBalance = accountsWithBalance.reduce(
       (acc, curr) => acc + curr.saldo,
       0,
     );
 
-    // 2. Receivables Info
-    const receivables = await this.prisma.lancamentoFinanceiro.findMany({
-      where: { tipo: 'RECEITA', status: 'PREVISTO' },
-    });
+    // 2. Receivables aggregation (in-memory, data already fetched)
     const recOverdue = receivables
       .filter((t) => t.dataVencimento < todayStart)
       .reduce((s, t) => s + Number(t.valor), 0);
@@ -411,10 +501,7 @@ export class FinancialDashboardService {
       )
       .reduce((s, t) => s + Number(t.valor), 0);
 
-    // 3. Payables Info
-    const payables = await this.prisma.lancamentoFinanceiro.findMany({
-      where: { tipo: 'DESPESA', status: 'PREVISTO' },
-    });
+    // 3. Payables aggregation (in-memory, data already fetched)
     const payOverdue = payables
       .filter((t) => t.dataVencimento < todayStart)
       .reduce((s, t) => s + Number(t.valor), 0);
@@ -429,38 +516,42 @@ export class FinancialDashboardService {
       )
       .reduce((s, t) => s + Number(t.valor), 0);
 
-    // 4. Daily Flow (Last 14 Days)
+    // 4. Daily Flow — aggregate in memory by date key (no more N+1)
+    const dailyFlowMap: Record<string, { recebimentos: number; pagamentos: number }> = {};
+
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      dailyFlowMap[key] = { recebimentos: 0, pagamentos: 0 };
+    }
+
+    for (const t of dailyFlowIn) {
+      if (t.dataPagamento) {
+        const d = t.dataPagamento;
+        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        if (dailyFlowMap[key]) {
+          dailyFlowMap[key].recebimentos += Number(t.valor);
+        }
+      }
+    }
+
+    for (const t of dailyFlowOut) {
+      if (t.dataPagamento) {
+        const d = t.dataPagamento;
+        const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+        if (dailyFlowMap[key]) {
+          dailyFlowMap[key].pagamentos += Number(t.valor);
+        }
+      }
+    }
+
     const dailyFlow: any[] = [];
     for (let i = 13; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      const dStart = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-      const dEnd = new Date(
-        d.getFullYear(),
-        d.getMonth(),
-        d.getDate(),
-        23,
-        59,
-        59,
-        999,
-      );
-
-      const inVal = await this.prisma.lancamentoFinanceiro.aggregate({
-        _sum: { valor: true },
-        where: {
-          tipo: 'RECEITA',
-          status: { in: ['REALIZADO', 'CONCILIADO'] },
-          dataPagamento: { gte: dStart, lte: dEnd },
-        },
-      });
-      const outVal = await this.prisma.lancamentoFinanceiro.aggregate({
-        _sum: { valor: true },
-        where: {
-          tipo: 'DESPESA',
-          status: { in: ['REALIZADO', 'CONCILIADO'] },
-          dataPagamento: { gte: dStart, lte: dEnd },
-        },
-      });
+      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const entry = dailyFlowMap[key] || { recebimentos: 0, pagamentos: 0 };
 
       dailyFlow.push({
         date: d.toISOString(),
@@ -468,99 +559,70 @@ export class FinancialDashboardService {
           day: '2-digit',
           month: 'short',
         }),
-        recebimentos: Number(inVal._sum.valor || 0),
-        pagamentos: Number(outVal._sum.valor || 0),
-        saldo: Number(inVal._sum.valor || 0) - Number(outVal._sum.valor || 0),
+        recebimentos: entry.recebimentos,
+        pagamentos: entry.pagamentos,
+        saldo: entry.recebimentos - entry.pagamentos,
       });
     }
 
-    // 5. Monthly History (Last 6 Months)
+    // 5. Monthly History — aggregate in memory by month key (no more N+1)
+    const monthlyMap: Record<string, number> = {};
+    for (const t of monthlyHistoryRaw) {
+      if (t.dataPagamento) {
+        const d = t.dataPagamento;
+        const key = `${d.getFullYear()}-${d.getMonth()}`;
+        monthlyMap[key] = (monthlyMap[key] || 0) + Number(t.valor);
+      }
+    }
+
     const monthlyHistory: any[] = [];
     for (let i = 5; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const m = d.getMonth() + 1;
-      const y = d.getFullYear();
-      const startM = new Date(y, m - 1, 1);
-      const endM = new Date(y, m, 0, 23, 59, 59, 999);
-
-      const rev = await this.prisma.lancamentoFinanceiro.aggregate({
-        _sum: { valor: true },
-        where: {
-          tipo: 'RECEITA',
-          status: { in: ['REALIZADO', 'CONCILIADO'] },
-          dataPagamento: { gte: startM, lte: endM },
-        },
-      });
+      const key = `${d.getFullYear()}-${d.getMonth()}`;
 
       monthlyHistory.push({
         label: d.toLocaleDateString('pt-BR', { month: 'short' }),
-        valor: Number(rev._sum.valor || 0),
+        valor: monthlyMap[key] || 0,
       });
     }
 
-    // === CALCULO DE KPIS DE CENTROS DE CUSTO PARA BI ===
-    const ccs = await this.prisma.centroCusto.findMany({
-      where: { ativo: true }
-    });
-
-    // Fetch all current month realized expenses
-    const monthlyExpenses = await this.prisma.lancamentoFinanceiro.findMany({
-      where: {
-        tipo: 'DESPESA',
-        status: { in: ['REALIZADO', 'CONCILIADO'] },
-        dataPagamento: { gte: startOfMonth, lte: endOfMonth }
-      }
-    });
-
-    // Also fetch rateios for the current month
-    const monthlyRateios = await this.prisma.rateioLancamento.findMany({
-      where: {
-        lancamento: {
-          tipo: 'DESPESA',
-          status: { in: ['REALIZADO', 'CONCILIADO'] },
-          dataPagamento: { gte: startOfMonth, lte: endOfMonth }
-        }
-      },
-      include: {
-        lancamento: true
-      }
-    });
-
-    // Aggregate expenses by Cost Center ID
+    // === COST CENTER KPIs (data already fetched in parallel) ===
     const ccRealizado: Record<string, number> = {};
-    ccs.forEach(c => ccRealizado[c.id] = 0);
+    ccs.forEach((c) => (ccRealizado[c.id] = 0));
 
-    // 1. Standard bookings without rateios
-    monthlyExpenses.forEach(t => {
+    // Standard bookings
+    monthlyExpenses.forEach((t) => {
       if (t.centroCustoId && ccRealizado[t.centroCustoId] !== undefined) {
         ccRealizado[t.centroCustoId] += Number(t.valor);
       }
     });
 
-    // 2. Add rateios
-    monthlyRateios.forEach(r => {
-      if (r.lancamento?.centroCustoId && ccRealizado[r.lancamento.centroCustoId] !== undefined) {
+    // Add rateios
+    monthlyRateios.forEach((r) => {
+      if (
+        r.lancamento?.centroCustoId &&
+        ccRealizado[r.lancamento.centroCustoId] !== undefined
+      ) {
         ccRealizado[r.lancamento.centroCustoId] += Number(r.valor);
       }
     });
 
-
-    // 3. Format expensesByCostCenter
+    // Format expensesByCostCenter
     const expensesByCostCenter = ccs
-      .map(c => ({
+      .map((c) => ({
         id: c.id,
         nome: c.nome,
         codigo: c.codigo,
         total: ccRealizado[c.id] || 0,
-        cor: c.cor || '#475569'
+        cor: c.cor || '#475569',
       }))
-      .filter(item => item.total > 0)
+      .filter((item) => item.total > 0)
       .sort((a, b) => b.total - a.total);
 
-    // 4. Format deviations
+    // Format deviations
     const deviations = ccs
-      .filter(c => c.orcamentoPrevisto && Number(c.orcamentoPrevisto) > 0)
-      .map(c => {
+      .filter((c) => c.orcamentoPrevisto && Number(c.orcamentoPrevisto) > 0)
+      .map((c) => {
         const realizado = ccRealizado[c.id] || 0;
         const previsto = Number(c.orcamentoPrevisto);
         const desvio = realizado - previsto;
@@ -571,21 +633,25 @@ export class FinancialDashboardService {
           previsto,
           realizado,
           desvio,
-          limiteMaximo: c.limiteMaximo ? Number(c.limiteMaximo) : null
+          limiteMaximo: c.limiteMaximo ? Number(c.limiteMaximo) : null,
         };
       })
-      .filter(d => d.realizado > 0)
+      .filter((d) => d.realizado > 0)
       .sort((a, b) => b.realizado - a.realizado);
 
-    // 5. Format productionTargets
+    // Format productionTargets
     const productionTargets = ccs
-      .filter(c => c.unidadeMedida && c.metaFisica && Number(c.metaFisica) > 0)
-      .map(c => {
+      .filter(
+        (c) => c.unidadeMedida && c.metaFisica && Number(c.metaFisica) > 0,
+      )
+      .map((c) => {
         const realizadoVal = ccRealizado[c.id] || 0;
         const meta = Number(c.metaFisica);
         const custoUnitario = meta > 0 ? realizadoVal / meta : 0;
-        const custoUnitarioPrevisto = c.orcamentoPrevisto ? Number(c.orcamentoPrevisto) / meta : 0;
-        
+        const custoUnitarioPrevisto = c.orcamentoPrevisto
+          ? Number(c.orcamentoPrevisto) / meta
+          : 0;
+
         return {
           id: c.id,
           nome: c.nome,
@@ -594,17 +660,17 @@ export class FinancialDashboardService {
           realizado: realizadoVal,
           unidadeMedida: c.unidadeMedida || 'un',
           custoUnitario,
-          custoUnitarioPrevisto
+          custoUnitarioPrevisto,
         };
       });
 
-    // 6. Format expensesByTag
+    // Format expensesByTag
     const tagMap: Record<string, number> = {};
-    ccs.forEach(c => {
+    ccs.forEach((c) => {
       const tags = c.tags ? c.tags.split(',') : [];
       const realizado = ccRealizado[c.id] || 0;
       if (realizado > 0) {
-        tags.forEach(tag => {
+        tags.forEach((tag) => {
           const tName = tag.trim();
           if (tName) {
             tagMap[tName] = (tagMap[tName] || 0) + realizado;
@@ -621,7 +687,7 @@ export class FinancialDashboardService {
       expensesByCostCenter,
       deviations,
       productionTargets,
-      expensesByTag
+      expensesByTag,
     };
 
     return {
@@ -997,13 +1063,19 @@ export class FinancialDashboardService {
             });
 
             if (integration && integration.status === 'CONNECTED') {
-              const realTimeBal = await this.bankingService.getAccountBalance(
-                acc.id,
-              );
+              // Timeout de 5s para evitar travamento se a API bancária estiver lenta
+              const realTimeBal = await Promise.race([
+                this.bankingService.getAccountBalance(acc.id),
+                new Promise<never>((_, reject) =>
+                  setTimeout(
+                    () => reject(new Error('Banking API timeout (5s)')),
+                    5000,
+                  ),
+                ),
+              ]);
               bal = realTimeBal;
             }
           } catch (e: any) {
-            // If the integration is bad or disconnected, do not fail.
             console.error(
               `[Dashboard] Failed to fetch real-time balance for ${acc.nome} (${acc.id}):`,
               e.message,

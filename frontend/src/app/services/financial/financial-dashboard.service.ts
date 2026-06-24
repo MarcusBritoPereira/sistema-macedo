@@ -59,13 +59,6 @@ export interface OperationalDashboardResponse {
     accounts: { id: string; nome: string; banco: string; saldo: number }[];
     totalBalance: number;
     dailyFlow: { date: string; label: string; recebimentos: number; pagamentos: number; saldo: number }[];
-    monthlyTotals?: { inflows: number; outflows: number };
-    receivableItems?: { id: string; nome: string; vencimento: string; valor: number; status: string }[];
-    payableItems?: { id: string; nome: string; vencimento: string; valor: number; categoria: string }[];
-    monthlyPayables?: { label: string; valor: number }[];
-    expensesBySupplier?: { nome: string; total: number }[];
-    expensesByCostType?: { nome: string; total: number }[];
-    alerts?: { dueNext7: number };
     monthlyHistory: { label: string; valor: number }[];
     lastUpdate: string;
     costCenterKpis?: {

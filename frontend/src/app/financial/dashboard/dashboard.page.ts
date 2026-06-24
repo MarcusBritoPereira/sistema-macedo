@@ -38,14 +38,6 @@ import {
   trendingUpOutline,
   walletOutline,
   informationCircleOutline,
-  chevronDownOutline,
-  personCircleOutline,
-  clipboardOutline,
-  documentTextOutline,
-  analyticsOutline,
-  receiptOutline,
-  barChartOutline,
-  notificationsOutline,
 } from 'ionicons/icons';
 import { Chart, ChartConfiguration, ChartData, registerables } from 'chart.js';
 import { BaseChartDirective } from 'ng2-charts';
@@ -133,42 +125,6 @@ export class DashboardPage implements OnInit {
     datasets: [],
   };
 
-
-  public verticalBarOptions: ChartConfiguration<'bar'>['options'] = {
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { grid: { display: false }, ticks: { color: '#0f172a', font: { size: 11, weight: 'bold' } } },
-      y: {
-        beginAtZero: true,
-        grid: { color: '#e5e7eb' },
-        ticks: { color: '#0f172a', callback: (value) => this.compactCurrency(Number(value)) },
-      },
-    },
-    plugins: {
-      legend: { display: true, labels: { boxWidth: 10, color: '#0f172a', font: { size: 11 } } },
-      tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${this.formatCurrency(Number(context.raw || 0))}` } },
-    },
-  };
-
-  public horizontalBarOptions: ChartConfiguration<'bar'>['options'] = {
-    indexAxis: 'y',
-    responsive: true,
-    maintainAspectRatio: false,
-    scales: {
-      x: { beginAtZero: true, grid: { color: '#e5e7eb' }, ticks: { callback: (value) => this.compactCurrency(Number(value)) } },
-      y: { grid: { display: false }, ticks: { color: '#0f172a', font: { size: 12, weight: 'bold' } } },
-    },
-    plugins: {
-      legend: { display: true, labels: { boxWidth: 10, color: '#0f172a', font: { size: 11 } } },
-      tooltip: { callbacks: { label: (context) => `${context.dataset.label}: ${this.formatCurrency(Number(context.raw || 0))}` } },
-    },
-  };
-
-  public monthlyPayablesChartData: ChartData<'bar'> = { labels: [], datasets: [] };
-  public supplierChartData: ChartData<'bar'> = { labels: [], datasets: [] };
-  public costTypeChartData: ChartData<'bar'> = { labels: [], datasets: [] };
-
   constructor(private dashboardService: FinancialDashboardService) {
     addIcons({
       business,
@@ -188,14 +144,6 @@ export class DashboardPage implements OnInit {
       shieldCheckmarkOutline,
       arrowForwardOutline,
       walletOutline,
-      chevronDownOutline,
-      personCircleOutline,
-      clipboardOutline,
-      documentTextOutline,
-      analyticsOutline,
-      receiptOutline,
-      barChartOutline,
-      notificationsOutline,
     });
   }
 
@@ -268,24 +216,6 @@ export class DashboardPage implements OnInit {
       };
     }
 
-
-    this.monthlyPayablesChartData = this.buildBarData(
-      data.monthlyPayables?.map((item) => item.label) || [],
-      data.monthlyPayables?.map((item) => item.valor) || [],
-      'Contas a Pagar Previstas',
-    );
-
-    this.supplierChartData = this.buildBarData(
-      data.expensesBySupplier?.map((item) => item.nome) || [],
-      data.expensesBySupplier?.map((item) => item.total) || [],
-      'Valor Gasto',
-    );
-
-    this.costTypeChartData = this.buildBarData(
-      data.expensesByCostType?.map((item) => item.nome) || [],
-      data.expensesByCostType?.map((item) => item.total) || [],
-      'Valor Gasto',
-    );
 
     // 3. Cost Center Expenses Chart
     if (data.costCenterKpis?.expensesByCostCenter) {
@@ -394,84 +324,6 @@ export class DashboardPage implements OnInit {
     return (this.operationalData?.dailyFlow?.length || 0) > 0;
   }
 
-
-  get periodLabel(): string {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return `${this.formatDate(start.toISOString())} - ${this.formatDate(end.toISOString())}`;
-  }
-
-  get monthlyInflows(): number {
-    return this.operationalData?.monthlyTotals?.inflows || 0;
-  }
-
-  get monthlyOutflows(): number {
-    return this.operationalData?.monthlyTotals?.outflows || 0;
-  }
-
-  get monthlyResult(): number {
-    return this.monthlyInflows - this.monthlyOutflows;
-  }
-
-  get pendingReceivables(): number {
-    return this.totalReceivablesRisk;
-  }
-
-  get pendingPayables(): number {
-    return this.totalPayablesRisk;
-  }
-
-  get projectedBalance(): number {
-    return (this.operationalData?.totalBalance || 0) + this.pendingReceivables - this.pendingPayables;
-  }
-
-  get alerts(): { dueNext7: number } {
-    return { dueNext7: this.operationalData?.alerts?.dueNext7 || 0 };
-  }
-
-  get summaryCards() {
-    return [
-      { label: 'Saldo Atual', value: this.operationalData?.totalBalance || 0, icon: 'wallet-outline' },
-      { label: 'Entradas no Mês', value: this.monthlyInflows, icon: 'trending-down-outline' },
-      { label: 'Saídas no Mês', value: this.monthlyOutflows, icon: 'trending-up-outline', muted: true },
-      { label: 'Resultado do Mês', value: this.monthlyResult, icon: 'stats-chart-outline' },
-      { label: 'A Receber', value: this.pendingReceivables, icon: 'business' },
-      { label: 'A Pagar', value: this.pendingPayables, icon: 'document-text-outline', muted: true },
-      { label: 'Saldo Projetado', value: this.projectedBalance, icon: 'speedometer-outline' },
-    ];
-  }
-
-  get mainDeviationText(): string {
-    const deviation = this.operationalData?.costCenterKpis?.deviations?.[0];
-    if (!deviation || deviation.previsto <= 0) return 'Nenhuma obra acima do orçamento previsto';
-    const pct = ((deviation.realizado - deviation.previsto) / deviation.previsto) * 100;
-    return `${deviation.nome} está ${pct.toFixed(0)}% acima do orçamento previsto`;
-  }
-
-  buildBarData(labels: string[], values: number[], label: string): ChartData<'bar'> {
-    return {
-      labels,
-      datasets: [{
-        label,
-        data: values,
-        backgroundColor: '#0b5be7',
-        borderColor: '#0b45bf',
-        borderWidth: 1,
-        borderRadius: 4,
-        barPercentage: 0.58,
-        categoryPercentage: 0.72,
-      }],
-    };
-  }
-
-  compactCurrency(value: number): string {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(value || 0);
-  }
-
-  formatDate(value: string): string {
-    return new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit' }).format(new Date(value));
-  }
 
   formatCurrency(val: number): string {
     return new Intl.NumberFormat('pt-BR', {

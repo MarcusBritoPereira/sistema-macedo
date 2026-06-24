@@ -4,7 +4,8 @@ import { RouterLink } from '@angular/router';
 import {
   IonContent,
   IonButton,
-  IonIcon
+  IonIcon,
+  IonSpinner
 } from '@ionic/angular/standalone';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
@@ -20,7 +21,7 @@ import {
   analyticsOutline,
   businessOutline,
   receiptOutline,
-  targetOutline,
+  trendingUpOutline,
   clipboardOutline,
   arrowForwardOutline,
   documentTextOutline,
@@ -41,7 +42,8 @@ Chart.register(...registerables);
     CurrencyPipe,
     IonContent,
     IonButton,
-    IonIcon
+    IonIcon,
+    IonSpinner
   ],
   templateUrl: './dashboard.page.html',
   styleUrls: ['./dashboard.page.scss']
@@ -68,7 +70,7 @@ export class DashboardPage implements OnInit {
           color: '#0f172a',
           font: {
             size: 12,
-            weight: '500'
+            weight: 500
           }
         }
       }
@@ -106,7 +108,7 @@ export class DashboardPage implements OnInit {
       analyticsOutline,
       businessOutline,
       receiptOutline,
-      targetOutline,
+      trendingUpOutline,
       clipboardOutline,
       arrowForwardOutline,
       documentTextOutline,
@@ -165,7 +167,7 @@ export class DashboardPage implements OnInit {
           {
             title: 'Saldo Projetado',
             value: response.cards.projectedBalance,
-            icon: 'target-outline',
+            icon: 'trending-up-outline',
             primary: true
           }
         ];

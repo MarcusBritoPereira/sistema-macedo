@@ -37,6 +37,12 @@ export class FinancialDashboardController {
     return this.dashboardService.getOperationalDashboard();
   }
 
+  @Get('summary')
+  getSummaryDashboard(@Query('year') year?: string) {
+    const y = year ? parseInt(year) : new Date().getFullYear();
+    return this.dashboardService.getSummaryDashboard(y);
+  }
+
   @Get('cash-flow')
   getCashFlowDashboard(
     @Query('month') month?: string,

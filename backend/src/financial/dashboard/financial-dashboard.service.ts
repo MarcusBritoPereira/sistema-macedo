@@ -1084,8 +1084,266 @@ export class FinancialDashboardService {
           }
         }
 
-        return { ...acc, saldo: bal };
       }),
     );
+  }
+
+  async getSummaryDashboard(year: number) {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999,
+    );
+
+    // 1. Cards
+    const accounts = await this.getAccountsWithRealTimeBalance();
+    const currentBalance = accounts.reduce((acc, curr) => acc + curr.saldo, 0);
+
+    const [incomeQuery, expenseQuery, recQuery, payQuery] = await Promise.all([
+      this.prisma.lancamentoFinanceiro.aggregate({
+        _sum: { valor: true },
+        where: {
+          tipo: 'RECEITA',
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+          dataPagamento: { gte: startOfMonth, lte: endOfMonth },
+        },
+      }),
+      this.prisma.lancamentoFinanceiro.aggregate({
+        _sum: { valor: true },
+        where: {
+          tipo: 'DESPESA',
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+          dataPagamento: { gte: startOfMonth, lte: endOfMonth },
+        },
+      }),
+      this.prisma.lancamentoFinanceiro.aggregate({
+        _sum: { valor: true },
+        where: {
+          tipo: 'RECEITA',
+          status: 'PREVISTO',
+          dataVencimento: { gte: startOfMonth, lte: endOfMonth },
+        },
+      }),
+      this.prisma.lancamentoFinanceiro.aggregate({
+        _sum: { valor: true },
+        where: {
+          tipo: 'DESPESA',
+          status: 'PREVISTO',
+          dataVencimento: { gte: startOfMonth, lte: endOfMonth },
+        },
+      }),
+    ]);
+
+    const monthlyIncome = Number(incomeQuery._sum.valor || 0);
+    const monthlyExpense = Number(expenseQuery._sum.valor || 0);
+    const monthlyResult = monthlyIncome - monthlyExpense;
+    const receivable = Number(recQuery._sum.valor || 0);
+    const payable = Number(payQuery._sum.valor || 0);
+    const projectedBalance = currentBalance + (receivable - payable);
+
+    // 2. Receivables List (Limit 5, Pending/Overdue)
+    const rawReceivables = await this.prisma.lancamentoFinanceiro.findMany({
+      take: 5,
+      where: { tipo: 'RECEITA', status: 'PREVISTO' },
+      orderBy: { dataVencimento: 'asc' },
+      include: { cliente: true },
+    });
+    const receivables = rawReceivables.map((r) => {
+      const clientName =
+        r.cliente?.nomeFantasia || r.cliente?.razaoSocial || 'Cliente Geral';
+      const statusStr = r.dataVencimento < now ? 'Atrasado' : 'A vencer';
+      return {
+        client: clientName,
+        dueDate: r.dataVencimento.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+        }),
+        value: Number(r.valor),
+        status: statusStr,
+      };
+    });
+
+    // 3. Payables List (Limit 5, Pending)
+    const rawPayables = await this.prisma.lancamentoFinanceiro.findMany({
+      take: 5,
+      where: { tipo: 'DESPESA', status: 'PREVISTO' },
+      orderBy: { dataVencimento: 'asc' },
+      include: { fornecedor: true, categoria: true },
+    });
+    const payables = rawPayables.map((p) => {
+      const supplierName =
+        p.fornecedor?.nomeFantasia || p.fornecedorNome || 'Fornecedor Geral';
+      return {
+        supplier: supplierName,
+        dueDate: p.dataVencimento.toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: '2-digit',
+        }),
+        value: Number(p.valor),
+        category: p.categoria?.nome || 'Sem categoria',
+      };
+    });
+
+    // 4. Payable Forecast (12 Months of Year)
+    const startOfYear = new Date(year, 0, 1);
+    const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
+    const yearExpenses = await this.prisma.lancamentoFinanceiro.findMany({
+      where: {
+        tipo: 'DESPESA',
+        OR: [
+          { dataPagamento: { gte: startOfYear, lte: endOfYear } },
+          { dataVencimento: { gte: startOfYear, lte: endOfYear } },
+        ],
+      },
+      select: {
+        valor: true,
+        status: true,
+        dataPagamento: true,
+        dataVencimento: true,
+      },
+    });
+
+    const payableForecast = Array(12).fill(0);
+    for (const exp of yearExpenses) {
+      const date =
+        ['REALIZADO', 'CONCILIADO'].includes(exp.status) && exp.dataPagamento
+          ? exp.dataPagamento
+          : exp.dataVencimento;
+      if (date && date.getFullYear() === year) {
+        const m = date.getMonth();
+        payableForecast[m] += Number(exp.valor);
+      }
+    }
+
+    // 5. Supplier Expenses (Top 8, Realized)
+    const rawSupplierExpenses = await this.prisma.lancamentoFinanceiro.findMany({
+      where: {
+        tipo: 'DESPESA',
+        status: { in: ['REALIZADO', 'CONCILIADO'] },
+      },
+      select: {
+        valor: true,
+        fornecedor: { select: { nomeFantasia: true } },
+        fornecedorNome: true,
+      },
+    });
+
+    const supplierMap: Record<string, number> = {};
+    for (const exp of rawSupplierExpenses) {
+      const name =
+        exp.fornecedor?.nomeFantasia || exp.fornecedorNome || 'Outros';
+      supplierMap[name] = (supplierMap[name] || 0) + Number(exp.valor);
+    }
+
+    const supplierExpenses = Object.entries(supplierMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 8);
+
+    // 6. Cost Type Expenses (Top 7 Categories, Realized)
+    const rawCategoryExpenses = await this.prisma.lancamentoFinanceiro.findMany({
+      where: {
+        tipo: 'DESPESA',
+        status: { in: ['REALIZADO', 'CONCILIADO'] },
+      },
+      select: { valor: true, categoria: { select: { nome: true } } },
+    });
+
+    const categoryMap: Record<string, number> = {};
+    for (const exp of rawCategoryExpenses) {
+      const name = exp.categoria?.nome || 'Sem categoria';
+      categoryMap[name] = (categoryMap[name] || 0) + Number(exp.valor);
+    }
+
+    const costTypeExpenses = Object.entries(categoryMap)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 7);
+
+    // 7. Dynamic Alerts
+    const alerts: { color: string; text: string }[] = [];
+
+    // Check overdue payables
+    const overduePayablesSum = await this.prisma.lancamentoFinanceiro.aggregate({
+      _sum: { valor: true },
+      where: {
+        tipo: 'DESPESA',
+        status: 'PREVISTO',
+        dataVencimento: { lt: now },
+      },
+    });
+    const overduePaySum = Number(overduePayablesSum._sum.valor || 0);
+    if (overduePaySum > 0) {
+      alerts.push({
+        color: 'red',
+        text: `R$ ${overduePaySum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em contas a pagar atrasadas`,
+      });
+    }
+
+    // Check overdue receivables
+    const overdueReceivablesSum = await this.prisma.lancamentoFinanceiro.aggregate({
+      _sum: { valor: true },
+      where: {
+        tipo: 'RECEITA',
+        status: 'PREVISTO',
+        dataVencimento: { lt: now },
+      },
+    });
+    const overdueRecSum = Number(overdueReceivablesSum._sum.valor || 0);
+    if (overdueRecSum > 0) {
+      alerts.push({
+        color: 'orange',
+        text: `R$ ${overdueRecSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em recebimentos atrasados`,
+      });
+    }
+
+    // Upcoming payables in next 7 days
+    const next7Days = new Date();
+    next7Days.setDate(next7Days.getDate() + 7);
+    const upcomingPayables = await this.prisma.lancamentoFinanceiro.aggregate({
+      _sum: { valor: true },
+      where: {
+        tipo: 'DESPESA',
+        status: 'PREVISTO',
+        dataVencimento: { gte: now, lte: next7Days },
+      },
+    });
+    const upcomingPaySum = Number(upcomingPayables._sum.valor || 0);
+    if (upcomingPaySum > 0) {
+      alerts.push({
+        color: 'blue',
+        text: `R$ ${upcomingPaySum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em contas vencendo nos próximos 7 dias`,
+      });
+    }
+
+    // Projected balance info
+    alerts.push({
+      color: projectedBalance >= 0 ? 'blue' : 'red',
+      text: `Saldo projetado para o fim do mês: R$ ${projectedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+    });
+
+    return {
+      cards: {
+        currentBalance,
+        monthlyIncome,
+        monthlyExpense,
+        monthlyResult,
+        receivable,
+        payable,
+        projectedBalance,
+      },
+      receivables,
+      payables,
+      payableForecast,
+      supplierExpenses,
+      costTypeExpenses,
+      alerts,
+    };
   }
 }

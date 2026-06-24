@@ -117,6 +117,43 @@ export interface BalanceSheetResponse {
     };
 }
 
+export interface FinancialDashboardData {
+  cards: {
+    currentBalance: number;
+    monthlyIncome: number;
+    monthlyExpense: number;
+    monthlyResult: number;
+    receivable: number;
+    payable: number;
+    projectedBalance: number;
+  };
+  receivables: {
+    client: string;
+    dueDate: string;
+    value: number;
+    status: string;
+  }[];
+  payables: {
+    supplier: string;
+    dueDate: string;
+    value: number;
+    category: string;
+  }[];
+  payableForecast: number[];
+  supplierExpenses: {
+    name: string;
+    value: number;
+  }[];
+  costTypeExpenses: {
+    name: string;
+    value: number;
+  }[];
+  alerts: {
+    color: string;
+    text: string;
+  }[];
+}
+
 @Injectable({
     providedIn: 'root'
 })
@@ -143,5 +180,10 @@ export class FinancialDashboardService {
     getBalanceSheet(asOf?: string): Observable<BalanceSheetResponse> {
         const query = asOf ? `?asOf=${asOf}` : '';
         return this.api.get<BalanceSheetResponse>(`financial/dashboard/balance${query}`);
+    }
+
+    getDashboard(year?: number): Observable<FinancialDashboardData> {
+        const y = year || new Date().getFullYear();
+        return this.api.get<FinancialDashboardData>(`financial/dashboard/summary?year=${y}`);
     }
 }

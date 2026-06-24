@@ -81,7 +81,7 @@ export class DashboardPage implements OnInit {
       y: {
         ticks: {
           color: '#1e293b',
-          callback: value => `R$ ${Number(value).toLocaleString('pt-BR')}`
+          callback: (value: any) => `R$ ${Number(value).toLocaleString('pt-BR')}`
         }
       }
     }
@@ -122,7 +122,7 @@ export class DashboardPage implements OnInit {
   loadDashboard(): void {
     this.loading = true;
     this.dashboardService.getDashboard().subscribe({
-      next: (response) => {
+      next: (response: FinancialDashboardData) => {
         this.data = response;
 
         this.cards = [
@@ -183,11 +183,11 @@ export class DashboardPage implements OnInit {
         };
 
         this.supplierExpensesChart = {
-          labels: response.supplierExpenses.map(item => item.name),
+          labels: response.supplierExpenses.map((item: any) => item.name),
           datasets: [
             {
               label: 'Valor Gasto',
-              data: response.supplierExpenses.map(item => item.value),
+              data: response.supplierExpenses.map((item: any) => item.value),
               backgroundColor: '#0057ff',
               borderRadius: 6
             }
@@ -195,11 +195,11 @@ export class DashboardPage implements OnInit {
         };
 
         this.costTypeExpensesChart = {
-          labels: response.costTypeExpenses.map(item => item.name),
+          labels: response.costTypeExpenses.map((item: any) => item.name),
           datasets: [
             {
               label: 'Valor Gasto',
-              data: response.costTypeExpenses.map(item => item.value),
+              data: response.costTypeExpenses.map((item: any) => item.value),
               backgroundColor: '#0057ff',
               borderRadius: 6
             }
@@ -207,7 +207,7 @@ export class DashboardPage implements OnInit {
         };
         this.loading = false;
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Error loading dashboard data', err);
         this.loading = false;
       }

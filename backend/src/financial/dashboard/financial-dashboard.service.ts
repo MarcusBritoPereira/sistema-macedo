@@ -1025,7 +1025,7 @@ export class FinancialDashboardService {
       },
     };
   }
-  private async getAccountsWithRealTimeBalance(lteDate?: Date) {
+  private async getAccountsWithRealTimeBalance(lteDate?: Date): Promise<any[]> {
     const accounts = await this.prisma.contaBancaria.findMany();
 
     return Promise.all(

@@ -1,9 +1,12 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../auth/permissions.guard';
+import { RequirePermissions } from '../../auth/permissions.decorator';
 import { FinancialDashboardService } from './financial-dashboard.service';
 
 @Controller('financial/dashboard')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
+@RequirePermissions('financeiro.dashboard.read')
 export class FinancialDashboardController {
   constructor(private readonly dashboardService: FinancialDashboardService) {}
 

@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import axios from 'axios';
 import * as https from 'https';
@@ -26,6 +27,7 @@ import { ReconciliationService } from '../reconciliation/reconciliation.service'
 
 @Injectable()
 export class BankingIntegrationService {
+  private readonly logger = new Logger(BankingIntegrationService.name);
   private readonly INTER_AUTH_URL =
     'https://cdpj.partners.bancointer.com.br/oauth/v2/token';
   private readonly INTER_API_URL =
@@ -50,13 +52,13 @@ export class BankingIntegrationService {
     dto: ConfigureBankingDto,
     files?: { certificate?: any[]; privateKey?: any[] },
   ) {
-    console.log('Service: configure started');
+    this.logger.debug('Configuração bancária iniciada');
     try {
       let accountId = dto.contaBancariaId;
 
       // If no account ID provided, find or create one based on the Bank Name
       if (!accountId) {
-        console.log('Service: No accountId, finding/creating account...');
+        this.logger.debug('Conta bancária não informada; buscando ou criando conta vinculável');
         const bankName = dto.banco || 'Banco Inter';
         const existing = await this.prisma.contaBancaria.findFirst({
           where: { banco: bankName },
@@ -69,13 +71,10 @@ export class BankingIntegrationService {
               'Esta conta já possui uma integração vinculada.',
             );
           }
-          console.log(
-            'Service: Found existing account (unlinked):',
-            existing.id,
-          );
+          this.logger.debug(`Conta bancária existente sem integração encontrada: ${existing.id}`);
           accountId = existing.id;
         } else {
-          console.log('Service: Creating new account...');
+          this.logger.debug('Criando conta bancária para integração');
           const newAcc = await this.prisma.contaBancaria.create({
             data: {
               nome: `Conta ${bankName}`,
@@ -86,14 +85,11 @@ export class BankingIntegrationService {
               saldoInicial: 0,
             },
           });
-          console.log('Service: Created new account:', newAcc.id);
+          this.logger.debug(`Conta bancária criada para integração: ${newAcc.id}`);
           accountId = newAcc.id;
         }
       } else {
-        console.log(
-          'Service: Updating provided accountId identification fields:',
-          accountId,
-        );
+        this.logger.debug(`Atualizando identificação da conta bancária: ${accountId}`);
         await this.prisma.contaBancaria.update({
           where: { id: accountId },
           data: {
@@ -130,26 +126,28 @@ export class BankingIntegrationService {
 
       // Handle File Uploads
       if (files) {
-        console.log('Service: Processing files...');
+        this.logger.debug('Processando arquivos de certificado da integração');
         const certFile = files.certificate?.[0];
         const keyFile = files.privateKey?.[0];
 
         if (certFile) {
           const certPath = path.join(this.CERTS_DIR, `${accountId}_cert.crt`);
-          console.log('Service: Writing cert to', certPath);
-          fs.writeFileSync(certPath, certFile.buffer);
+          this.logger.debug(`Gravando certificado da integração: ${certPath}`);
+          fs.writeFileSync(certPath, certFile.buffer, { mode: 0o600 });
+          fs.chmodSync(certPath, 0o600);
           updateData.crtFile = certPath;
         }
 
         if (keyFile) {
           const keyPath = path.join(this.CERTS_DIR, `${accountId}_key.key`);
-          console.log('Service: Writing key to', keyPath);
-          fs.writeFileSync(keyPath, keyFile.buffer);
+          this.logger.debug(`Gravando chave privada da integração: ${keyPath}`);
+          fs.writeFileSync(keyPath, keyFile.buffer, { mode: 0o600 });
+          fs.chmodSync(keyPath, 0o600);
           updateData.keyFile = keyPath;
         }
       }
 
-      console.log('Service: Upserting integration for account', accountId);
+      this.logger.debug(`Atualizando integração bancária da conta: ${accountId}`);
       // Upsert Integration
       const result = await this.prisma.integracaoBancaria.upsert({
         where: { contaBancariaId: accountId },
@@ -205,7 +203,7 @@ export class BankingIntegrationService {
       } catch (e) {
         console.error('Failed to write to log file:', e);
       }
-      console.log(msg);
+      this.logger.warn(msg);
     };
 
     try {
@@ -458,7 +456,7 @@ export class BankingIntegrationService {
   }
 
   async fetchInterCards(token: string, cert: Buffer, key: Buffer) {
-    const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+    const agent = new https.Agent({ cert, key, rejectUnauthorized: true });
     const url = 'https://cdpj.partners.bancointer.com.br/cartoes/v1/cartoes';
     const response = await axios.get(url, {
       httpsAgent: agent,
@@ -475,7 +473,7 @@ export class BankingIntegrationService {
     cert: Buffer,
     key: Buffer,
   ) {
-    const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+    const agent = new https.Agent({ cert, key, rejectUnauthorized: true });
     // Using V1 expanded transactions if possible or matching V2
     const url = `https://cdpj.partners.bancointer.com.br/cartoes/v1/cartoes/${cardId}/transacoes?dataInicio=${startDate}&dataFim=${endDate}`;
     const response = await axios.get(url, {
@@ -495,7 +493,7 @@ export class BankingIntegrationService {
     const agent = new https.Agent({
       cert: cert,
       key: key,
-      rejectUnauthorized: false,
+      rejectUnauthorized: true,
     });
 
     const params = new URLSearchParams();
@@ -953,7 +951,7 @@ export class BankingIntegrationService {
     pagina: number = 0,
     accountNumber?: string | null,
   ) {
-    const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+    const agent = new https.Agent({ cert, key, rejectUnauthorized: true });
 
     // Inter V2 API Pagination: pagina (starting at 0) and tamanhoPagina (max 1000)
     const url = `${this.INTER_API_URL}?dataInicio=${dataInicio}&dataFim=${dataFim}&pagina=${pagina}&tamanhoPagina=1000`;
@@ -980,7 +978,7 @@ export class BankingIntegrationService {
     key: Buffer,
     accountNumber?: string | null,
   ) {
-    const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
+    const agent = new https.Agent({ cert, key, rejectUnauthorized: true });
     const url = this.INTER_SALDO_URL;
 
     const headers: any = {

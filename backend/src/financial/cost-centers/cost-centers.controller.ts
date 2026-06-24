@@ -12,6 +12,8 @@ import {
   Res,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { PermissionsGuard } from '../../auth/permissions.guard';
+import { RequirePermissions } from '../../auth/permissions.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { CostCentersService } from './cost-centers.service';
@@ -19,11 +21,13 @@ import { CreateCostCenterDto } from './dto/create-cost-center.dto';
 import { UpdateCostCenterDto } from './dto/update-cost-center.dto';
 
 @Controller('financial/cost-centers')
-@UseGuards(AuthGuard('jwt'))
+@UseGuards(AuthGuard('jwt'), PermissionsGuard)
+@RequirePermissions('financeiro.centros_custo.read')
 export class CostCentersController {
   constructor(private readonly costCentersService: CostCentersService) {}
 
   @Post()
+  @RequirePermissions('financeiro.centros_custo.write')
   create(@Body() createCostCenterDto: CreateCostCenterDto) {
     return this.costCentersService.create(createCostCenterDto);
   }
@@ -34,6 +38,7 @@ export class CostCentersController {
   }
 
   @Post('import')
+  @RequirePermissions('financeiro.centros_custo.write')
   @UseInterceptors(FileInterceptor('file'))
   importCsv(@UploadedFile() file: Express.Multer.File) {
     return this.costCentersService.importCsv(file);
@@ -50,6 +55,7 @@ export class CostCentersController {
   }
 
   @Patch(':id')
+  @RequirePermissions('financeiro.centros_custo.write')
   update(
     @Param('id') id: string,
     @Body() updateCostCenterDto: UpdateCostCenterDto,
@@ -58,6 +64,7 @@ export class CostCentersController {
   }
 
   @Delete(':id')
+  @RequirePermissions('financeiro.centros_custo.delete')
   remove(@Param('id') id: string) {
     return this.costCentersService.remove(id);
   }

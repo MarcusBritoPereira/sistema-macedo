@@ -498,6 +498,89 @@ export class FinancialDashboardService {
       });
     }
 
+
+    const realizedThisMonth = await this.prisma.lancamentoFinanceiro.findMany({
+      where: {
+        status: { in: ['REALIZADO', 'CONCILIADO'] },
+        dataPagamento: { gte: startOfMonth, lte: endOfMonth },
+      },
+      include: { fornecedor: true, categoria: true, cliente: true, obra: true },
+    });
+
+    const monthlyTotals = realizedThisMonth.reduce(
+      (acc, item) => {
+        if (item.tipo === 'RECEITA') acc.inflows += Number(item.valor);
+        if (item.tipo === 'DESPESA') acc.outflows += Number(item.valor);
+        return acc;
+      },
+      { inflows: 0, outflows: 0 },
+    );
+
+    const receivableItems = receivables
+      .sort((a, b) => a.dataVencimento.getTime() - b.dataVencimento.getTime())
+      .slice(0, 3)
+      .map((item) => ({
+        id: item.id,
+        nome: item.descricao,
+        vencimento: item.dataVencimento.toISOString(),
+        valor: Number(item.valor),
+        status: item.dataVencimento < todayStart ? 'Atrasado' : 'A vencer',
+      }));
+
+    const payableItemsSource = await this.prisma.lancamentoFinanceiro.findMany({
+      where: { tipo: 'DESPESA', status: 'PREVISTO' },
+      orderBy: { dataVencimento: 'asc' },
+      take: 3,
+      include: { fornecedor: true, categoria: true },
+    });
+
+    const payableItems = payableItemsSource.map((item) => ({
+      id: item.id,
+      nome: item.fornecedor?.nomeFantasia || item.fornecedorNome || item.descricao,
+      vencimento: item.dataVencimento.toISOString(),
+      valor: Number(item.valor),
+      categoria: item.categoria?.nome || item.categoriaCusto || item.tipoCusto || 'Sem categoria',
+    }));
+
+    const months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+    const monthlyPayables: { label: string; valor: number }[] = [];
+    for (let monthIndex = 0; monthIndex < 12; monthIndex++) {
+      const monthStart = new Date(now.getFullYear(), monthIndex, 1);
+      const monthEnd = new Date(now.getFullYear(), monthIndex + 1, 0, 23, 59, 59, 999);
+      const total = await this.prisma.lancamentoFinanceiro.aggregate({
+        _sum: { valor: true },
+        where: { tipo: 'DESPESA', status: 'PREVISTO', dataVencimento: { gte: monthStart, lte: monthEnd } },
+      });
+      monthlyPayables.push({ label: months[monthIndex], valor: Number(total._sum.valor || 0) });
+    }
+
+    const supplierMap = new Map<string, number>();
+    const costTypeMap = new Map<string, number>();
+    realizedThisMonth
+      .filter((item) => item.tipo === 'DESPESA')
+      .forEach((item) => {
+        const supplier = item.fornecedor?.nomeFantasia || item.fornecedorNome || 'Sem fornecedor';
+        supplierMap.set(supplier, (supplierMap.get(supplier) || 0) + Number(item.valor));
+        const costType = item.categoriaCusto || item.tipoCusto || item.categoria?.nome || 'Sem categoria';
+        costTypeMap.set(costType, (costTypeMap.get(costType) || 0) + Number(item.valor));
+      });
+
+    const expensesBySupplier = Array.from(supplierMap.entries())
+      .map(([nome, total]) => ({ nome, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8);
+
+    const expensesByCostType = Array.from(costTypeMap.entries())
+      .map(([nome, total]) => ({ nome, total }))
+      .sort((a, b) => b.total - a.total)
+      .slice(0, 8);
+
+    const next7End = new Date(todayEnd);
+    next7End.setDate(next7End.getDate() + 7);
+    const dueNext7 = payables
+      .filter((t) => t.dataVencimento >= todayStart && t.dataVencimento <= next7End)
+      .reduce((sum, t) => sum + Number(t.valor), 0);
+
     // === CALCULO DE KPIS DE CENTROS DE CUSTO PARA BI ===
     const ccs = await this.prisma.centroCusto.findMany({
       where: { ativo: true }
@@ -638,6 +721,13 @@ export class FinancialDashboardService {
       accounts: accountsWithBalance,
       totalBalance,
       dailyFlow,
+      monthlyTotals,
+      receivableItems,
+      payableItems,
+      monthlyPayables,
+      expensesBySupplier,
+      expensesByCostType,
+      alerts: { dueNext7 },
       monthlyHistory,
       costCenterKpis,
       lastUpdate: now.toISOString(),

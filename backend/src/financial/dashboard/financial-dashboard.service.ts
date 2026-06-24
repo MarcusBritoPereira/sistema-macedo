@@ -1084,6 +1084,10 @@ export class FinancialDashboardService {
           }
         }
 
+        return {
+          ...acc,
+          saldo: bal,
+        };
       }),
     );
   }

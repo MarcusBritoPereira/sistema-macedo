@@ -4,13 +4,25 @@
             <ion-menu-button></ion-menu-button>
         </ion-buttons>
 
-        <div class="header-content">
-            <div class="header-title-group">
+        <div class="header-content" style="display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 16px;">
+            <div class="header-title-group" style="min-width: 200px;">
                 <h1>DRE Gerencial</h1>
-                <p>Demonstração do Resultado do Exercício</p>
+                <p>Demonstração do Resultado</p>
             </div>
 
-            <div class="month-selector">
+            <!-- Tab Segment Controller -->
+            <div style="flex: 1; display: flex; justify-content: center; max-width: 400px;">
+                <ion-segment [(ngModel)]="activeTab" style="background: #f1f5f9; border-radius: 8px; padding: 2px;">
+                    <ion-segment-button value="dre" style="--color-checked: #1e293b; --background-checked: white; font-size: 13px; font-weight: 600;">
+                        <ion-label>Relatório DRE</ion-label>
+                    </ion-segment-button>
+                    <ion-segment-button value="config" style="--color-checked: #1e293b; --background-checked: white; font-size: 13px; font-weight: 600;">
+                        <ion-label>Configuração</ion-label>
+                    </ion-segment-button>
+                </ion-segment>
+            </div>
+
+            <div class="month-selector" style="display: flex; gap: 8px; align-items: center;" *ngIf="activeTab === 'dre'">
                 <div class="filter-item">
                     <span class="filter-label">REGIME</span>
                     <ion-select [(ngModel)]="filters.regime" (ionChange)="gerarDRE()" interface="popover">
@@ -42,7 +54,7 @@
                 </div>
             </div>
 
-            <div class="header-actions">
+            <div class="header-actions" *ngIf="activeTab === 'dre'">
                 <ion-button fill="outline" class="btn-secondary" (click)="gerarDRE()">
                     <ion-icon slot="start" name="sync-outline"></ion-icon>
                     Atualizar
@@ -52,7 +64,7 @@
     </ion-toolbar>
 
     <!-- Sub-header for date range -->
-    <div class="sub-header-filters ion-hide-md-down" style="background: white; border-bottom: 1px solid #e2e8f0; padding: 12px 24px;">
+    <div class="sub-header-filters ion-hide-md-down" style="background: white; border-bottom: 1px solid #e2e8f0; padding: 12px 24px;" *ngIf="activeTab === 'dre'">
         <div class="date-filter-group" style="display: flex; gap: 24px;">
             <div class="date-input-wrapper" style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 12px; color: var(--ion-color-medium); font-weight: 600;">DE:</span>
@@ -67,207 +79,329 @@
 </ion-header>
 
 <ion-content class="dashboard-content">
-    <div *ngIf="loading" class="loading-overlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%;">
-        <ion-spinner name="crescent"></ion-spinner>
-        <p style="margin-top: 16px; color: var(--ion-color-medium);">Gerando demonstrativo...</p>
+    <!-- Relatório DRE Tab -->
+    <div *ngIf="activeTab === 'dre'">
+        <div *ngIf="loading" class="loading-overlay" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px;">
+            <ion-spinner name="crescent"></ion-spinner>
+            <p style="margin-top: 16px; color: var(--ion-color-medium);">Gerando demonstrativo...</p>
+        </div>
+
+        <div *ngIf="dreResult && !loading" class="dashboard-wrapper" style="max-width: 1400px; margin: 24px auto; padding: 0 16px;">
+            
+            <!-- BLOCK 1: MAIN KPI CARDS -->
+            <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 24px;">
+                <ion-card class="kpi-card bg-neutral" style="margin: 0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: white;">
+                    <ion-card-content>
+                        <div class="kpi-label" style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Resultado Final</div>
+                        <div class="kpi-value" [class.text-red]="isNegative(dreResult.totais['resultadoFinal']?.total || 0)" [class.text-green]="!isNegative(dreResult.totais['resultadoFinal']?.total || 0)" style="font-size: 24px; font-weight: 700; color: #1e293b;">
+                            {{ (dreResult.totais['resultadoFinal']?.total || 0) | currency:'BRL' }}
+                        </div>
+                    </ion-card-content>
+                </ion-card>
+
+                <ion-card class="kpi-card bg-blue-light" style="margin: 0; border-radius: 12px; background: #eff6ff;">
+                    <ion-card-content>
+                        <div class="kpi-label" style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Margem Final</div>
+                        <div class="kpi-value" style="font-size: 24px; font-weight: 700; color: #1e40af;">
+                            {{ (dreResult.margens['resultadoFinal']?.total || 0) | number:'1.1-1' }}%
+                        </div>
+                    </ion-card-content>
+                </ion-card>
+
+                <ion-card class="kpi-card bg-green-light" style="margin: 0; border-radius: 12px; background: #f0fdf4;">
+                    <ion-card-content>
+                        <div class="kpi-label" style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Receita Operacional Líquida</div>
+                        <div class="kpi-value" style="font-size: 24px; font-weight: 700; color: #16a34a;">
+                            {{ (dreResult.totais['receitaLiquida']?.total || 0) | currency:'BRL' }}
+                        </div>
+                    </ion-card-content>
+                </ion-card>
+            </div>
+
+            <!-- BLOCK 1.5: CHARTS SECTION -->
+            <div class="charts-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 24px;">
+                <ion-card style="margin: 0; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: white;">
+                    <canvas id="expenseChart"></canvas>
+                </ion-card>
+                <ion-card style="margin: 0; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: white;">
+                    <canvas id="evolutionChart"></canvas>
+                </ion-card>
+            </div>
+
+            <!-- BLOCK 2: DRE TABLE -->
+            <div class="section-block" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 24px;">
+                <div class="section-header" style="margin-bottom: 24px;">
+                    <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;">📊 Demonstrativo Detalhado (DRE Caixa)</h2>
+                    <p style="font-size: 14px; color: #64748b; margin: 4px 0 0 0;">Relatório estruturado de desempenho por regime de caixa</p>
+                </div>
+
+                <div class="table-container" style="width: 100%; overflow-x: auto;">
+                    <table class="custom-table" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left; padding: 12px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0; position: sticky; left: 0; background: white; z-index: 2;">DESCRIÇÃO</th>
+                                <th *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 12px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0; min-width: 120px;">{{ p }}</th>
+                                <th style="text-align: right; padding: 12px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0; min-width: 120px; background: #f8fafc;">TOTAL</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- 1. RECEITA BRUTA -->
+                            <tr class="group-row" style="background: #f8fafc; cursor: pointer;" (click)="toggleBlock('RECEITAS')">
+                                <td class="sticky-cell" style="padding: 14px 12px; font-weight: 700; color: #0f172a; position: sticky; left: 0; background: #f8fafc; z-index: 1;">
+                                    <ion-icon [name]="expandedBlocks['RECEITAS'] ? 'chevron-down-outline' : 'chevron-forward-outline'" style="font-size: 16px; margin-right: 8px; vertical-align: middle;"></ion-icon>
+                                    1. RECEITA BRUTA
+                                </td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; font-weight: 700;">{{ (dreResult.totais['receitaBruta']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9;">{{ (dreResult.totais['receitaBruta']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+                            <ng-container *ngIf="expandedBlocks['RECEITAS']">
+                                 <!-- Recorrentes -->
+                                <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('RECEITA_RECORRENTE')">
+                                    <td class="indent-1" style="padding: 10px 12px 10px 32px; font-weight: 600; color: #334155; position: sticky; left: 0; background: #fafafa;">Receitas Recorrentes <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px; color: var(--ion-color-primary)"></ion-icon></td>
+                                    <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px;">{{ (dreResult.data['RECEITA_RECORRENTE']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                    <td style="text-align: right; padding: 10px 12px; font-weight: 600;">{{ (dreResult.data['RECEITA_RECORRENTE']?.total || 0) | number:'1.2-2' }}</td>
+                                </tr>
+                                <tr *ngFor="let sub of getSubcategorias('RECEITA_RECORRENTE')" class="leaf-row clickable" style="cursor: pointer;" (click)="abrirDetalhes('RECEITA_RECORRENTE', sub[0])">
+                                    <td class="indent-2" style="padding: 8px 12px 8px 52px; font-size: 13px; color: #64748b; position: sticky; left: 0; background: white;">{{ sub[0] }} <ion-icon name="open-outline" style="font-size: 12px; margin-left: 4px; color: var(--ion-color-primary)"></ion-icon></td>
+                                    <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 8px 12px; font-size: 13px;">{{ (sub[1]?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                    <td style="text-align: right; padding: 8px 12px; font-size: 13px; background: #f8fafc;">{{ (sub[1]?.total || 0) | number:'1.2-2' }}</td>
+                                </tr>
+                                <!-- Não Recorrentes -->
+                                <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('RECEITA_NAO_RECORRENTE')">
+                                    <td class="indent-1" style="padding: 10px 12px 10px 32px; font-weight: 600; color: #334155; position: sticky; left: 0; background: #fafafa;">Receitas Não Recorrentes <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px; color: var(--ion-color-primary)"></ion-icon></td>
+                                    <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px;">{{ (dreResult.data['RECEITA_NAO_RECORRENTE']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                    <td style="text-align: right; padding: 10px 12px; font-weight: 600;">{{ (dreResult.data['RECEITA_NAO_RECORRENTE']?.total || 0) | number:'1.2-2' }}</td>
+                                </tr>
+                            </ng-container>
+
+                            <!-- 2. IMPOSTOS E DEDUÇÕES -->
+                            <tr class="group-row" style="background: #f8fafc; cursor: pointer;" (click)="toggleBlock('DEDUCOES')">
+                                <td class="sticky-cell" style="padding: 14px 12px; font-weight: 700; color: #ef4444; position: sticky; left: 0; background: #f8fafc; z-index: 1;">
+                                    <ion-icon [name]="expandedBlocks['DEDUCOES'] ? 'chevron-down-outline' : 'chevron-forward-outline'" style="font-size: 16px; margin-right: 8px; vertical-align: middle;"></ion-icon>
+                                    2. IMPOSTOS E DEDUÇÕES
+                                </td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; color: #ef4444;">{{ (dreResult.totais['impostosDeducoes']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9; color: #ef4444;">{{ (dreResult.totais['impostosDeducoes']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+                            <ng-container *ngIf="expandedBlocks['DEDUCOES']">
+                                <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('DEDUCOES_RECEITA')">
+                                    <td class="indent-1" style="padding: 10px 12px 10px 32px; color: #ef4444; position: sticky; left: 0; background: #fafafa;">Deduções de Receita <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon></td>
+                                    <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px; color: #ef4444;">{{ (dreResult.data['DEDUCOES_RECEITA']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                    <td style="text-align: right; padding: 10px 12px; font-weight: 600; color: #ef4444;">{{ (dreResult.data['DEDUCOES_RECEITA']?.total || 0) | number:'1.2-2' }}</td>
+                                </tr>
+                                <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('IMPOSTOS_LUCRO')">
+                                    <td class="indent-1" style="padding: 10px 12px 10px 32px; color: #ef4444; position: sticky; left: 0; background: #fafafa;">Impostos sobre Lucro <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon></td>
+                                    <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px; color: #ef4444;">{{ (dreResult.data['IMPOSTOS_LUCRO']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                    <td style="text-align: right; padding: 10px 12px; font-weight: 600; color: #ef4444;">{{ (dreResult.data['IMPOSTOS_LUCRO']?.total || 0) | number:'1.2-2' }}</td>
+                                </tr>
+                            </ng-container>
+
+                            <!-- 3. RECEITA LÍQUIDA -->
+                            <tr class="summary-row" style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">
+                                <td class="sticky-cell" style="padding: 12px; font-weight: 700; color: #1e293b; position: sticky; left: 0; background: #f1f5f9;">3. (=) RECEITA LÍQUIDA</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 12px; font-weight: 700;">{{ (dreResult.totais['receitaLiquida']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 12px; font-weight: 800; color: #0f172a;">{{ (dreResult.totais['receitaLiquida']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+                            <tr class="margin-row" style="background: #eff6ff; font-style: italic;">
+                                <td class="indent-1" style="padding: 8px 12px 8px 32px; font-size: 12px; font-weight: 600; color: #1e40af; position: sticky; left: 0; background: #eff6ff;">Margem da Receita Líquida (2/1)</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #1e40af;">{{ (dreResult.margens['receitaLiquida']?.periodos?.[p] || 0) | number:'1.1-1' }}%</td>
+                                <td style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 700; color: #1e40af; background: #dbeafe;">{{ (dreResult.margens['receitaLiquida']?.total || 0) | number:'1.1-1' }}%</td>
+                            </tr>
+
+                            <!-- 4. CUSTO DOS SERVIÇOS PRESTADOS -->
+                            <tr class="group-row clickable" style="background: #f8fafc; cursor: pointer;" (click)="abrirDetalhes('CUSTO_SERVICOS_PRESTADOS')">
+                                <td class="sticky-cell" style="padding: 14px 12px; color: #c5221f; font-weight: 700; position: sticky; left: 0; background: #f8fafc;">
+                                    (-) 4. CUSTOS (CPV/CSP) <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon>
+                                </td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; color: #c5221f;">{{ (dreResult.totais['custoServicos']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9; color: #c5221f;">{{ (dreResult.totais['custoServicos']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+
+                            <!-- 5. LUCRO BRUTO -->
+                            <tr class="summary-row" style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">
+                                <td class="sticky-cell" style="padding: 12px; font-weight: 700; color: #1e293b; position: sticky; left: 0; background: #f1f5f9;">5. (=) LUCRO BRUTO</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 12px; font-weight: 700;">{{ (dreResult.totais['lucroBruto']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 12px; font-weight: 800; color: #0f172a;">{{ (dreResult.totais['lucroBruto']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+                            <tr class="margin-row" style="background: #eff6ff; font-style: italic;">
+                                <td class="indent-1" style="padding: 8px 12px 8px 32px; font-size: 12px; font-weight: 600; color: #1e40af; position: sticky; left: 0; background: #eff6ff;">Margem Bruta (3/2)</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #1e40af;">{{ (dreResult.margens['bruta']?.periodos?.[p] || 0) | number:'1.1-1' }}%</td>
+                                <td style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 700; color: #1e40af; background: #dbeafe;">{{ (dreResult.margens['bruta']?.total || 0) | number:'1.1-1' }}%</td>
+                            </tr>
+
+                            <!-- 6. DESPESAS OPERACIONAIS -->
+                            <tr class="group-row" style="background: #f8fafc; cursor: pointer;" (click)="toggleBlock('DESPESAS')">
+                                <td class="sticky-cell" style="padding: 14px 12px; font-weight: 700; color: #0f172a; position: sticky; left: 0; background: #f8fafc;">
+                                    <ion-icon [name]="expandedBlocks['DESPESAS'] ? 'chevron-down-outline' : 'chevron-forward-outline'" style="font-size: 16px; margin-right: 8px; vertical-align: middle;"></ion-icon>
+                                    (-) 6. DESPESAS OPERACIONAIS
+                                </td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; font-weight: 700;">{{ (dreResult.totais['despesasOperacionais']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9;">{{ (dreResult.totais['despesasOperacionais']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+                            <ng-container *ngIf="expandedBlocks['DESPESAS']">
+                                <tr *ngFor="let cat of ['DESPESA_ADMINISTRATIVA', 'DESPESA_COMERCIAL', 'DESPESA_ESTRUTURAL', 'DESPESA_SOCIOS']" 
+                                    class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes(cat)">
+                                    <td class="indent-1" style="padding: 10px 12px 10px 32px; font-weight: 600; color: #334155; position: sticky; left: 0; background: #fafafa;">{{ cat.replace('DESPESA_', '') }} <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon></td>
+                                    <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px;">{{ (dreResult.data[cat]?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                    <td style="text-align: right; padding: 10px 12px; font-weight: 600;">{{ (dreResult.data[cat]?.total || 0) | number:'1.2-2' }}</td>
+                                </tr>
+                            </ng-container>
+
+                            <!-- 7. RESULTADO OPERACIONAL -->
+                            <tr class="summary-row" style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">
+                                <td class="sticky-cell" style="padding: 12px; font-weight: 700; color: #1e293b; position: sticky; left: 0; background: #f1f5f9;">7. (=) RESULTADO OPERACIONAL</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 12px; font-weight: 700;">{{ (dreResult.totais['resultadoOperacional']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 12px; font-weight: 800; color: #0f172a;">{{ (dreResult.totais['resultadoOperacional']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+                            <tr class="margin-row" style="background: #eff6ff; font-style: italic;">
+                                <td class="indent-1" style="padding: 8px 12px 8px 32px; font-size: 12px; font-weight: 600; color: #1e40af; position: sticky; left: 0; background: #eff6ff;">Margem Operacional (4/2)</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #1e40af;">{{ (dreResult.margens['resultadoOperacional']?.periodos?.[p] || 0) | number:'1.1-1' }}%</td>
+                                <td style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 700; color: #1e40af; background: #dbeafe;">{{ (dreResult.margens['resultadoOperacional']?.total || 0) | number:'1.1-1' }}%</td>
+                            </tr>
+
+                            <!-- 8. RESULTADO FINANCEIRO LÍQUIDO -->
+                            <tr class="group-row" style="background: #f8fafc; cursor: pointer;" (click)="toggleBlock('FINANCEIRO')">
+                                <td class="sticky-cell" style="padding: 14px 12px; font-weight: 700; color: #0f172a; position: sticky; left: 0; background: #f8fafc;">
+                                    <ion-icon [name]="expandedBlocks['FINANCEIRO'] ? 'chevron-down-outline' : 'chevron-forward-outline'" style="font-size: 16px; margin-right: 8px; vertical-align: middle;"></ion-icon>
+                                    8. RESULTADOS FINANCEIROS
+                                </td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; font-weight: 700;">{{ (dreResult.totais['despesasFinanceirasLiquidas']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9;">{{ (dreResult.totais['despesasFinanceirasLiquidas']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+                            <ng-container *ngIf="expandedBlocks['FINANCEIRO']">
+                                <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('RECEITA_FINANCEIRA')">
+                                    <td class="indent-1" style="padding: 10px 12px 10px 32px; color: #16a34a; position: sticky; left: 0; background: #fafafa;">(+) Receitas Financeiras <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon></td>
+                                    <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px; color: #16a34a;">{{ (dreResult.data['RECEITA_FINANCEIRA']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                    <td style="text-align: right; padding: 10px 12px; font-weight: 600; color: #16a34a;">{{ (dreResult.data['RECEITA_FINANCEIRA']?.total || 0) | number:'1.2-2' }}</td>
+                                </tr>
+                                <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('DESPESA_FINANCEIRA')">
+                                    <td class="indent-1" style="padding: 10px 12px 10px 32px; color: #ef4444; position: sticky; left: 0; background: #fafafa;">(-) Despesas Financeiras <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon></td>
+                                    <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px; color: #ef4444;">{{ (dreResult.data['DESPESA_FINANCEIRA']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                    <td style="text-align: right; padding: 10px 12px; font-weight: 600; color: #ef4444;">{{ (dreResult.data['DESPESA_FINANCEIRA']?.total || 0) | number:'1.2-2' }}</td>
+                                </tr>
+                            </ng-container>
+
+                            <!-- 9. RESULTADO LÍQUIDO -->
+                            <tr class="summary-row" style="background: #f1f5f9; border-top: 1px solid #cbd5e1; border-bottom: 1px solid #cbd5e1;">
+                                <td class="sticky-cell" style="padding: 12px; font-weight: 700; color: #1e293b; position: sticky; left: 0; background: #f1f5f9;">9. (=) RESULTADO LÍQUIDO</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 12px; font-weight: 700;">{{ (dreResult.totais['resultadoLiquido']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 12px; font-weight: 800; color: #0f172a;">{{ (dreResult.totais['resultadoLiquido']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+                            <tr class="margin-row" style="background: #eff6ff; font-style: italic;">
+                                <td class="indent-1" style="padding: 8px 12px 8px 32px; font-size: 12px; font-weight: 600; color: #1e40af; position: sticky; left: 0; background: #eff6ff;">Margem Líquida (5/2)</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #1e40af;">{{ (dreResult.margens['liquida']?.periodos?.[p] || 0) | number:'1.1-1' }}%</td>
+                                <td style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 700; color: #1e40af; background: #dbeafe;">{{ (dreResult.margens['liquida']?.total || 0) | number:'1.1-1' }}%</td>
+                            </tr>
+
+                            <!-- 10. INVESTIMENTOS -->
+                            <tr class="group-row clickable" style="background: #f8fafc; cursor: pointer;" (click)="abrirDetalhes('INVESTIMENTOS')">
+                                <td class="sticky-cell" style="padding: 14px 12px; color: #c5221f; font-weight: 700; position: sticky; left: 0; background: #f8fafc;">
+                                    (-) 10. INVESTIMENTOS <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon>
+                                </td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; color: #c5221f;">{{ (dreResult.totais['investimentos']?.periodos?.[p] || 0) | number:'1.2-2' }}</td>
+                                <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9; color: #c5221f;">{{ (dreResult.totais['investimentos']?.total || 0) | number:'1.2-2' }}</td>
+                            </tr>
+
+                            <!-- 11. RESULTADO FINAL -->
+                            <tr class="total-row" style="background: #0f172a; color: white;">
+                                <td class="sticky-cell" style="padding: 16px 12px; font-weight: 700; font-size: 15px; position: sticky; left: 0; background: #0f172a;">11. (=) RESULTADO FINAL</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 16px 12px; font-weight: 700;" [class.text-red-light]="isNegative(dreResult.totais['resultadoFinal']?.periodos?.[p] || 0)">
+                                    {{ (dreResult.totais['resultadoFinal']?.periodos?.[p] || 0) | number:'1.2-2' }}
+                                </td>
+                                <td style="text-align: right; padding: 16px 12px; font-weight: 800; font-size: 16px;" [class.text-red-light]="isNegative(dreResult.totais['resultadoFinal']?.total || 0)">
+                                    {{ (dreResult.totais['resultadoFinal']?.total || 0) | number:'1.2-2' }}
+                                </td>
+                            </tr>
+                            <tr class="margin-row" style="background: #1e293b; font-style: italic;">
+                                <td class="indent-1" style="padding: 8px 12px 8px 32px; font-size: 12px; font-weight: 600; color: #cbd5e1; position: sticky; left: 0; background: #1e293b;">Margem Final</td>
+                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 600; color: #cbd5e1;">{{ (dreResult.margens['resultadoFinal']?.periodos?.[p] || 0) | number:'1.1-1' }}%</td>
+                                <td style="text-align: right; padding: 8px 12px; font-size: 12px; font-weight: 700; color: #cbd5e1; background: #334155;">{{ (dreResult.margens['resultadoFinal']?.total || 0) | number:'1.1-1' }}%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div *ngIf="!dreResult && !loading" class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 300px; color: #64748b;">
+            <ion-icon name="analytics-outline" style="font-size: 64px; margin-bottom: 16px; opacity: 0.2;"></ion-icon>
+            <h2 style="font-size: 18px; font-weight: 600; margin: 0;">Nenhum dado gerado</h2>
+            <p style="margin: 8px 0 0 0;">Ajuste os filtros e clique em atualizar.</p>
+        </div>
     </div>
 
-    <div *ngIf="dreResult && !loading" class="dashboard-wrapper" style="max-width: 1400px; margin: 24px auto; padding: 0 16px;">
-        
-        <!-- BLOCK 1: MAIN KPI CARDS -->
-        <div class="kpi-grid" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 24px;">
-            <ion-card class="kpi-card bg-neutral" style="margin: 0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
-                <ion-card-content>
-                    <div class="kpi-label" style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Resultado Líquido</div>
-                    <div class="kpi-value" [class.text-red]="isNegative(dreResult.totais['resultadoLiquido'].total)" [class.text-green]="!isNegative(dreResult.totais['resultadoLiquido'].total)" style="font-size: 24px; font-weight: 700;">
-                        {{ dreResult.totais['resultadoLiquido'].total | currency:'BRL' }}
-                    </div>
-                </ion-card-content>
-            </ion-card>
-
-            <ion-card class="kpi-card bg-blue-light" style="margin: 0; border-radius: 12px; background: #eff6ff;">
-                <ion-card-content>
-                    <div class="kpi-label" style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Margem Líquida</div>
-                    <div class="kpi-value" style="font-size: 24px; font-weight: 700; color: #1e40af;">
-                        {{ dreResult.margens['liquida'].total | number:'1.1-1' }}%
-                    </div>
-                </ion-card-content>
-            </ion-card>
-
-            <ion-card class="kpi-card bg-green-light" style="margin: 0; border-radius: 12px; background: #f0fdf4;">
-                <ion-card-content>
-                    <div class="kpi-label" style="font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 8px; text-transform: uppercase;">Receita Operacional</div>
-                    <div class="kpi-value" style="font-size: 24px; font-weight: 700; color: #16a34a;">
-                        {{ dreResult.totais['receitaLiquida'].total | currency:'BRL' }}
-                    </div>
-                </ion-card-content>
-            </ion-card>
-        </div>
-
-        <!-- BLOCK 1.5: CHARTS SECTION -->
-        <div class="charts-grid" style="display: grid; grid-template-columns: 1fr 2fr; gap: 20px; margin-bottom: 24px;">
-            <ion-card style="margin: 0; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: white;">
-                <canvas id="expenseChart"></canvas>
-            </ion-card>
-            <ion-card style="margin: 0; border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); background: white;">
-                <canvas id="evolutionChart"></canvas>
-            </ion-card>
-        </div>
-
-        <!-- BLOCK 2: DRE TABLE -->
+    <!-- DRE Configuration Tab -->
+    <div *ngIf="activeTab === 'config'" style="max-width: 1400px; margin: 24px auto; padding: 0 16px;">
         <div class="section-block" style="background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding: 24px;">
-            <div class="section-header" style="margin-bottom: 24px;">
-                <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;">📊 Demonstrativo Detalhado</h2>
-                <p style="font-size: 14px; color: #64748b; margin: 4px 0 0 0;">Análise de performance por período</p>
+            <div class="section-header" style="margin-bottom: 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+                <div>
+                    <h2 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0;">⚙️ Configuração da DRE</h2>
+                    <p style="font-size: 14px; color: #64748b; margin: 4px 0 0 0;">Mapeie suas categorias financeiras para as linhas do demonstrativo</p>
+                </div>
+                <div style="display: flex; align-items: center; background: #f1f5f9; border-radius: 8px; padding: 2px 12px; width: 100%; max-width: 320px;">
+                    <ion-icon name="search-outline" style="color: #64748b; margin-right: 8px;"></ion-icon>
+                    <input type="text" [(ngModel)]="searchTerm" placeholder="Buscar categoria..." style="border: none; background: transparent; padding: 8px 0; outline: none; font-size: 14px; width: 100%; color: #334155;">
+                </div>
             </div>
 
             <div class="table-container" style="width: 100%; overflow-x: auto;">
-                <table class="custom-table" style="width: 100%; border-collapse: collapse;">
+                <table style="width: 100%; border-collapse: collapse;">
                     <thead>
-                        <tr>
-                            <th style="text-align: left; padding: 12px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0; position: sticky; left: 0; background: white; z-index: 2;">DESCRIÇÃO</th>
-                            <th *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 12px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0; min-width: 120px;">{{ p }}</th>
-                            <th style="text-align: right; padding: 12px; font-size: 13px; font-weight: 600; color: #64748b; border-bottom: 2px solid #e2e8f0; min-width: 120px; background: #f8fafc;">TOTAL</th>
+                        <tr style="border-bottom: 2px solid #e2e8f0;">
+                            <th style="text-align: left; padding: 12px; font-size: 13px; font-weight: 600; color: #64748b;">CATEGORIA</th>
+                            <th style="text-align: left; padding: 12px; font-size: 13px; font-weight: 600; color: #64748b; width: 120px;">TIPO</th>
+                            <th style="text-align: left; padding: 12px; font-size: 13px; font-weight: 600; color: #64748b; width: 350px;">CLASSIFICAÇÃO DRE</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <!-- 1. RECEITAS -->
-                        <tr class="group-row" style="background: #f8fafc; cursor: pointer;" (click)="toggleBlock('RECEITAS')">
-                            <td class="sticky-cell" style="padding: 14px 12px; font-weight: 700; color: #0f172a; position: sticky; left: 0; background: #f8fafc; z-index: 1;">
-                                <ion-icon [name]="expandedBlocks['RECEITAS'] ? 'chevron-down-outline' : 'chevron-forward-outline'" style="font-size: 16px; margin-right: 8px; vertical-align: middle;"></ion-icon>
-                                1. RECEITAS BRUTAS
-                            </td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; font-weight: 700;">{{ dreResult.totais['receitaBruta'].periodos[p] | number:'1.2-2' }}</td>
-                            <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9;">{{ dreResult.totais['receitaBruta'].total | number:'1.2-2' }}</td>
-                        </tr>
-                        <ng-container *ngIf="expandedBlocks['RECEITAS']">
-                             <!-- Recorrentes -->
-                            <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('RECEITA_RECORRENTE')">
-                                <td class="indent-1" style="padding: 10px 12px 10px 32px; font-weight: 600; color: #334155; position: sticky; left: 0; background: #fafafa;">Receitas Recorrentes <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px; color: var(--ion-color-primary)"></ion-icon></td>
-                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px;">{{ dreResult.data['RECEITA_RECORRENTE'].periodos[p] | number:'1.2-2' }}</td>
-                                <td style="text-align: right; padding: 10px 12px; font-weight: 600;">{{ dreResult.data['RECEITA_RECORRENTE'].total | number:'1.2-2' }}</td>
+                        <ng-container *ngFor="let cat of filteredCategories">
+                            <!-- Root Category Row -->
+                            <tr style="border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                                <td style="padding: 14px 12px; font-weight: 700; color: #0f172a;">
+                                    {{ cat.nome }}
+                                </td>
+                                <td style="padding: 14px 12px;">
+                                    <span [style.background]="cat.tipo === 'RECEITA' ? '#e6f4ea' : '#fce8e6'"
+                                          [style.color]="cat.tipo === 'RECEITA' ? '#137333' : '#c5221f'"
+                                          style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; display: inline-block;">
+                                        {{ cat.tipo }}
+                                    </span>
+                                </td>
+                                <td style="padding: 14px 12px;">
+                                    <select [ngModel]="cat.classificacao" (change)="salvarClassificacao(cat, $any($event.target).value)"
+                                            style="width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px; background: white; font-size: 13px; color: #334155; outline: none; cursor: pointer;">
+                                        <option [value]="null">Não classificado</option>
+                                        <option *ngFor="let option of dreClassifications" [value]="option.value">{{ option.label }}</option>
+                                    </select>
+                                </td>
                             </tr>
-                            <tr *ngFor="let sub of getSubcategorias('RECEITA_RECORRENTE')" class="leaf-row clickable" style="cursor: pointer;" (click)="abrirDetalhes('RECEITA_RECORRENTE', sub[0])">
-                                <td class="indent-2" style="padding: 8px 12px 8px 52px; font-size: 13px; color: #64748b; position: sticky; left: 0; background: white;">{{ sub[0] }} <ion-icon name="open-outline" style="font-size: 12px; margin-left: 4px; color: var(--ion-color-primary)"></ion-icon></td>
-                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 8px 12px; font-size: 13px;">{{ sub[1].periodos[p] | number:'1.2-2' }}</td>
-                                <td style="text-align: right; padding: 8px 12px; font-size: 13px; background: #f8fafc;">{{ sub[1].total | number:'1.2-2' }}</td>
-                            </tr>
+                            
+                            <!-- Subcategories Rows if any -->
+                            <ng-container *ngIf="cat.children && cat.children.length > 0">
+                                <tr *ngFor="let sub of cat.children" style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 12px 12px 12px 32px; font-size: 13px; color: #475569; font-weight: 500;">
+                                        <span style="margin-right: 8px; color: #cbd5e1;">└</span>{{ sub.nome }}
+                                    </td>
+                                    <td style="padding: 12px 12px;">
+                                        <span [style.background]="cat.tipo === 'RECEITA' ? '#e6f4ea' : '#fce8e6'"
+                                              [style.color]="cat.tipo === 'RECEITA' ? '#137333' : '#c5221f'"
+                                              style="padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; opacity: 0.85; text-transform: uppercase; display: inline-block;">
+                                            {{ cat.tipo }}
+                                        </span>
+                                    </td>
+                                    <td style="padding: 8px 12px;">
+                                        <select [ngModel]="sub.classificacao" (change)="salvarClassificacao(sub, $any($event.target).value)"
+                                                style="width: 100%; padding: 6px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; font-size: 12px; color: #475569; outline: none; cursor: pointer;">
+                                            <option [value]="null">Não classificado</option>
+                                            <option *ngFor="let option of dreClassifications" [value]="option.value">{{ option.label }}</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                            </ng-container>
                         </ng-container>
-
-                        <!-- 1.1 DEDUCOES -->
-                        <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('DEDUCOES_RECEITA')">
-                            <td class="indent-1" style="padding: 10px 12px; color: #ef4444; position: sticky; left: 0; background: #fafafa;">(-) Deduções <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon></td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px; color: #ef4444;">{{ dreResult.data['DEDUCOES_RECEITA'].periodos[p] | number:'1.2-2' }}</td>
-                            <td style="text-align: right; padding: 10px 12px; font-weight: 600; color: #ef4444;">{{ dreResult.data['DEDUCOES_RECEITA'].total | number:'1.2-2' }}</td>
-                        </tr>
-
-                        <!-- RESULTADO INTERMEDIÁRIO: RECEITA LÍQUIDA -->
-                        <tr class="summary-row" style="border-top: 1px solid #e2e8f0; border-bottom: 2px solid #e2e8f0; background: #f1f5f9;">
-                            <td class="sticky-cell" style="padding: 12px; font-weight: 700; color: #1e293b; position: sticky; left: 0; background: #f1f5f9;">(=) RECEITA LÍQUIDA</td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 12px; font-weight: 700;">{{ dreResult.totais['receitaLiquida'].periodos[p] | number:'1.2-2' }}</td>
-                            <td style="text-align: right; padding: 12px; font-weight: 800; color: #0f172a;">{{ dreResult.totais['receitaLiquida'].total | number:'1.2-2' }}</td>
-                        </tr>
-
-                        <!-- 2. CUSTOS -->
-                        <tr class="group-row" style="background: #f8fafc; cursor: pointer;" (click)="abrirDetalhes('CUSTO_SERVICOS_PRESTADOS')">
-                            <td class="sticky-cell" style="padding: 14px 12px; color: #f97316; font-weight: 700; position: sticky; left: 0; background: #f8fafc;">
-                                (-) 2. CUSTOS (CPV/CSP) <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon>
-                            </td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; color: #f97316;">{{ dreResult.data['CUSTO_SERVICOS_PRESTADOS'].periodos[p] | number:'1.2-2' }}</td>
-                            <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9; color: #f97316;">{{ dreResult.data['CUSTO_SERVICOS_PRESTADOS'].total | number:'1.2-2' }}</td>
-                        </tr>
-
-                        <!-- LUCRO BRUTO -->
-                        <tr class="summary-row" style="background: #f1f5f9;">
-                            <td class="sticky-cell" style="padding: 12px; font-weight: 700; color: #1e293b; position: sticky; left: 0; background: #f1f5f9;">(=) LUCRO BRUTO</td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 12px; font-weight: 700;">{{ dreResult.totais['lucroBruto'].periodos[p] | number:'1.2-2' }}</td>
-                            <td style="text-align: right; padding: 12px; font-weight: 800; color: #0f172a;">{{ dreResult.totais['lucroBruto'].total | number:'1.2-2' }}</td>
-                        </tr>
-
-                        <!-- 3. DESPESAS OPERACIONAIS -->
-                        <tr class="group-row" style="background: #f8fafc; cursor: pointer;" (click)="toggleBlock('DESPESAS')">
-                            <td class="sticky-cell" style="padding: 14px 12px; font-weight: 700; color: #0f172a; position: sticky; left: 0; background: #f8fafc;">
-                                <ion-icon [name]="expandedBlocks['DESPESAS'] ? 'chevron-down-outline' : 'chevron-forward-outline'" style="font-size: 16px; margin-right: 8px; vertical-align: middle;"></ion-icon>
-                                3. DESPESAS OPERACIONAIS
-                            </td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; font-weight: 700;">
-                                {{ (dreResult.data['DESPESA_ADMINISTRATIVA'].periodos[p] + dreResult.data['DESPESA_COMERCIAL'].periodos[p] + dreResult.data['DESPESA_ESTRUTURAL'].periodos[p] + dreResult.data['DESPESA_SOCIOS'].periodos[p]) | number:'1.2-2' }}
-                            </td>
-                            <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9;">
-                                {{ (dreResult.data['DESPESA_ADMINISTRATIVA'].total + dreResult.data['DESPESA_COMERCIAL'].total + dreResult.data['DESPESA_ESTRUTURAL'].total + dreResult.data['DESPESA_SOCIOS'].total) | number:'1.2-2' }}
-                            </td>
-                        </tr>
-                        <ng-container *ngIf="expandedBlocks['DESPESAS']">
-                            <tr *ngFor="let cat of ['DESPESA_ADMINISTRATIVA', 'DESPESA_COMERCIAL', 'DESPESA_ESTRUTURAL', 'DESPESA_SOCIOS']" 
-                                class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes(cat)">
-                                <td class="indent-1" style="padding: 10px 12px 10px 32px; font-weight: 600; color: #334155; position: sticky; left: 0; background: #fafafa;">{{ cat.replace('DESPESA_', '') }} <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon></td>
-                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px;">{{ dreResult.data[cat].periodos[p] | number:'1.2-2' }}</td>
-                                <td style="text-align: right; padding: 10px 12px; font-weight: 600;">{{ dreResult.data[cat].total | number:'1.2-2' }}</td>
-                            </tr>
-                        </ng-container>
-
-                        <!-- RESULTADO ANTES DOS IMPOSTOS (LAIR) -->
-                        <tr class="summary-row" style="background: #f1f5f9;">
-                            <td class="sticky-cell" style="padding: 12px; font-weight: 700; color: #1e293b; position: sticky; left: 0; background: #f1f5f9;">(=) LAIR (Lucro antes de Impostos)</td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 12px; font-weight: 700;">{{ dreResult.totais['lair'].periodos[p] | number:'1.2-2' }}</td>
-                            <td style="text-align: right; padding: 12px; font-weight: 800; color: #0f172a;">{{ dreResult.totais['lair'].total | number:'1.2-2' }}</td>
-                        </tr>
-
-                        <!-- 4. RESULTADOS FINANCEIROS -->
-                        <tr class="group-row" style="background: #f8fafc; cursor: pointer;" (click)="toggleBlock('FINANCEIRO')">
-                            <td class="sticky-cell" style="padding: 14px 12px; font-weight: 700; color: #0f172a; position: sticky; left: 0; background: #f8fafc;">
-                                <ion-icon [name]="expandedBlocks['FINANCEIRO'] ? 'chevron-down-outline' : 'chevron-forward-outline'" style="font-size: 16px; margin-right: 8px; vertical-align: middle;"></ion-icon>
-                                4. RESULTADOS FINANCEIROS
-                            </td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; font-weight: 700;">
-                                {{ (dreResult.data['RECEITA_FINANCEIRA'].periodos[p] - dreResult.data['DESPESA_FINANCEIRA'].periodos[p]) | number:'1.2-2' }}
-                            </td>
-                            <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9;">
-                                {{ (dreResult.data['RECEITA_FINANCEIRA'].total - dreResult.data['DESPESA_FINANCEIRA'].total) | number:'1.2-2' }}
-                            </td>
-                        </tr>
-                        <ng-container *ngIf="expandedBlocks['FINANCEIRO']">
-                            <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('RECEITA_FINANCEIRA')">
-                                <td class="indent-1" style="padding: 10px 12px 10px 32px; color: #16a34a; position: sticky; left: 0; background: #fafafa;">(+) Receitas Financeiras <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon></td>
-                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px; color: #16a34a;">{{ dreResult.data['RECEITA_FINANCEIRA'].periodos[p] | number:'1.2-2' }}</td>
-                                <td style="text-align: right; padding: 10px 12px; font-weight: 600; color: #16a34a;">{{ dreResult.data['RECEITA_FINANCEIRA'].total | number:'1.2-2' }}</td>
-                            </tr>
-                            <tr class="sub-group-row clickable" style="background: #fafafa; cursor: pointer;" (click)="abrirDetalhes('DESPESA_FINANCEIRA')">
-                                <td class="indent-1" style="padding: 10px 12px 10px 32px; color: #ef4444; position: sticky; left: 0; background: #fafafa;">(-) Despesas Financeiras <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon></td>
-                                <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 10px 12px; color: #ef4444;">{{ dreResult.data['DESPESA_FINANCEIRA'].periodos[p] | number:'1.2-2' }}</td>
-                                <td style="text-align: right; padding: 10px 12px; font-weight: 600; color: #ef4444;">{{ dreResult.data['DESPESA_FINANCEIRA'].total | number:'1.2-2' }}</td>
-                            </tr>
-                        </ng-container>
-
-                        <!-- 5. IMPOSTOS SOBRE O LUCRO -->
-                        <tr class="group-row clickable" style="background: #f8fafc; cursor: pointer;" (click)="abrirDetalhes('IMPOSTOS_LUCRO')">
-                            <td class="sticky-cell" style="padding: 14px 12px; font-weight: 700; color: #ef4444; position: sticky; left: 0; background: #f8fafc;">
-                                (-) 5. IMPOSTOS SOBRE O LUCRO <ion-icon name="open-outline" style="font-size: 14px; margin-left: 4px;"></ion-icon>
-                            </td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 14px 12px; color: #ef4444;">{{ dreResult.data['IMPOSTOS_LUCRO'].periodos[p] | number:'1.2-2' }}</td>
-                            <td style="text-align: right; padding: 14px 12px; font-weight: 700; background: #f1f5f9; color: #ef4444;">{{ dreResult.data['IMPOSTOS_LUCRO'].total | number:'1.2-2' }}</td>
-                        </tr>
-
-                        <!-- FINAL RESULT -->
-                        <tr class="total-row" style="background: #0f172a; color: white;">
-                            <td class="sticky-cell" style="padding: 16px 12px; font-weight: 700; font-size: 15px; position: sticky; left: 0; background: #0f172a;">(=) RESULTADO LÍQUIDO DO PERÍODO</td>
-                            <td *ngFor="let p of dreResult.periodos" style="text-align: right; padding: 16px 12px; font-weight: 700;" [class.text-red-light]="isNegative(dreResult.totais['resultadoLiquido'].periodos[p])">
-                                {{ dreResult.totais['resultadoLiquido'].periodos[p] | number:'1.2-2' }}
-                            </td>
-                            <td style="text-align: right; padding: 16px 12px; font-weight: 800; font-size: 16px;" [class.text-red-light]="isNegative(dreResult.totais['resultadoLiquido'].total)">
-                                {{ dreResult.totais['resultadoLiquido'].total | number:'1.2-2' }}
-                            </td>
-                        </tr>
-
                     </tbody>
                 </table>
             </div>
         </div>
-    </div>
-
-    <div *ngIf="!dreResult && !loading" class="empty-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #64748b;">
-        <ion-icon name="analytics-outline" style="font-size: 64px; margin-bottom: 16px; opacity: 0.2;"></ion-icon>
-        <h2 style="font-size: 18px; font-weight: 600; margin: 0;">Nenhum dado gerado</h2>
-        <p style="margin: 8px 0 0 0;">Ajuste os filtros e clique em atualizar.</p>
     </div>
 </ion-content>

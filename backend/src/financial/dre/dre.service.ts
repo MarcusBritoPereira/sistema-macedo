@@ -290,7 +290,15 @@ export class DreService {
           total: 0,
           periodos: this.initializePeriodValues(periodos),
         },
+        impostosDeducoes: {
+          total: 0,
+          periodos: this.initializePeriodValues(periodos),
+        },
         receitaLiquida: {
+          total: 0,
+          periodos: this.initializePeriodValues(periodos),
+        },
+        custoServicos: {
           total: 0,
           periodos: this.initializePeriodValues(periodos),
         },
@@ -298,11 +306,32 @@ export class DreService {
           total: 0,
           periodos: this.initializePeriodValues(periodos),
         },
-        lair: { total: 0, periodos: this.initializePeriodValues(periodos) },
+        despesasOperacionais: {
+          total: 0,
+          periodos: this.initializePeriodValues(periodos),
+        },
+        resultadoOperacional: {
+          total: 0,
+          periodos: this.initializePeriodValues(periodos),
+        },
+        despesasFinanceirasLiquidas: {
+          total: 0,
+          periodos: this.initializePeriodValues(periodos),
+        },
         resultadoLiquido: {
           total: 0,
           periodos: this.initializePeriodValues(periodos),
         },
+        investimentos: {
+          total: 0,
+          periodos: this.initializePeriodValues(periodos),
+        },
+        resultadoFinal: {
+          total: 0,
+          periodos: this.initializePeriodValues(periodos),
+        },
+        // Kept for legacy compatibility
+        lair: { total: 0, periodos: this.initializePeriodValues(periodos) },
       },
       margens: {
         receitaLiquida: {
@@ -310,8 +339,17 @@ export class DreService {
           periodos: this.initializePeriodValues(periodos),
         },
         bruta: { total: 0, periodos: this.initializePeriodValues(periodos) },
-        lair: { total: 0, periodos: this.initializePeriodValues(periodos) },
+        resultadoOperacional: {
+          total: 0,
+          periodos: this.initializePeriodValues(periodos),
+        },
         liquida: { total: 0, periodos: this.initializePeriodValues(periodos) },
+        resultadoFinal: {
+          total: 0,
+          periodos: this.initializePeriodValues(periodos),
+        },
+        // Kept for legacy compatibility
+        lair: { total: 0, periodos: this.initializePeriodValues(periodos) },
       },
     };
   }
@@ -329,42 +367,82 @@ export class DreService {
       const recRec = data.RECEITA_RECORRENTE.periodos[p];
       const recNaoRec = data.RECEITA_NAO_RECORRENTE.periodos[p];
       const deducoes = data.DEDUCOES_RECEITA.periodos[p];
+      const impostosLucro = data.IMPOSTOS_LUCRO.periodos[p];
 
+      // 1. Receita Bruta
       const recBruta = recRec + recNaoRec;
-      const recLiquida = recBruta - deducoes;
-
       result.totais.receitaBruta.periodos[p] = recBruta;
+
+      // 2. Impostos e deduções (DEDUCOES_RECEITA + IMPOSTOS_LUCRO)
+      const impDeducoes = deducoes + impostosLucro;
+      result.totais.impostosDeducoes.periodos[p] = impDeducoes;
+
+      // 3. Receita líquida (Receita Bruta - Impostos e deduções)
+      const recLiquida = recBruta - impDeducoes;
       result.totais.receitaLiquida.periodos[p] = recLiquida;
+
+      // Margem (2/1) -> Receita líquida / Receita Bruta
       result.margens.receitaLiquida.periodos[p] =
         recBruta > 0 ? (recLiquida / recBruta) * 100 : 0;
 
+      // 4. Custo dos serviços prestados
       const custos = data.CUSTO_SERVICOS_PRESTADOS.periodos[p];
+      result.totais.custoServicos.periodos[p] = custos;
+
+      // 5. Lucro bruto (Receita líquida - Custos)
       const lucroBruto = recLiquida - custos;
       result.totais.lucroBruto.periodos[p] = lucroBruto;
+
+      // Margem (3/2) -> Lucro bruto / Receita líquida
       result.margens.bruta.periodos[p] =
         recLiquida > 0 ? (lucroBruto / recLiquida) * 100 : 0;
 
+      // 6. Despesas Operacionais (Administrativas + Comerciais + Estruturais + Sócios)
       const despesasOp =
         data.DESPESA_ADMINISTRATIVA.periodos[p] +
         data.DESPESA_COMERCIAL.periodos[p] +
         data.DESPESA_ESTRUTURAL.periodos[p] +
         data.DESPESA_SOCIOS.periodos[p];
+      result.totais.despesasOperacionais.periodos[p] = despesasOp;
 
+      // 7. Resultado operacional (Lucro bruto - Despesas Operacionais)
+      const resultadoOperacional = lucroBruto - despesasOp;
+      result.totais.resultadoOperacional.periodos[p] = resultadoOperacional;
+
+      // Margem (4/2) -> Resultado operacional / Receita líquida
+      result.margens.resultadoOperacional.periodos[p] =
+        recLiquida > 0 ? (resultadoOperacional / recLiquida) * 100 : 0;
+
+      // 8. Despesas financeiras líquidas (Despesas Financeiras - Receitas Financeiras)
       const despesasFin = data.DESPESA_FINANCEIRA.periodos[p];
       const recFin = data.RECEITA_FINANCEIRA.periodos[p];
+      const despesasFinLiquidas = despesasFin - recFin;
+      result.totais.despesasFinanceirasLiquidas.periodos[p] = despesasFinLiquidas;
 
-      const lucroOperacional = lucroBruto - despesasOp;
-      const lair = lucroOperacional - despesasFin + recFin;
-
-      result.totais.lair.periodos[p] = lair;
-      result.margens.lair.periodos[p] =
-        recLiquida > 0 ? (lair / recLiquida) * 100 : 0;
-
-      const impostos = data.IMPOSTOS_LUCRO.periodos[p];
-      const resLiq = lair - impostos;
+      // 9. Resultado líquido (Resultado operacional - Despesas financeiras líquidas)
+      const resLiq = resultadoOperacional - despesasFinLiquidas;
       result.totais.resultadoLiquido.periodos[p] = resLiq;
+
+      // Margem (5/2) -> Resultado líquido / Receita líquida
       result.margens.liquida.periodos[p] =
         recLiquida > 0 ? (resLiq / recLiquida) * 100 : 0;
+
+      // 10. Investimentos
+      const investimentos = data.INVESTIMENTOS.periodos[p];
+      result.totais.investimentos.periodos[p] = investimentos;
+
+      // 11. Resultado final (Resultado líquido - Investimentos)
+      const resFinal = resLiq - investimentos;
+      result.totais.resultadoFinal.periodos[p] = resFinal;
+
+      // Margem final -> Resultado final / Receita líquida
+      result.margens.resultadoFinal.periodos[p] =
+        recLiquida > 0 ? (resFinal / recLiquida) * 100 : 0;
+
+      // Legacy fields
+      result.totais.lair.periodos[p] = resultadoOperacional - despesasFin + recFin;
+      result.margens.lair.periodos[p] =
+        recLiquida > 0 ? (result.totais.lair.periodos[p] / recLiquida) * 100 : 0;
     }
 
     for (const key of Object.keys(result.totais)) {

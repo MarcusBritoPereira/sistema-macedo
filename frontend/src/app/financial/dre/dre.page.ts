@@ -6,6 +6,7 @@ import { DreService } from '../../services/financial/dre.service';
 import { FinancialService, BankAccount } from '../../services/financial/financial';
 import { CostCenter } from '../../services/financial/cost-centers.service';
 import { DREParams, DREResult } from '../../services/financial/dre';
+import { CategoriesService, Category } from '../../services/financial/categories.service';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 import { DreDrilldownModalComponent } from './components/dre-drilldown-modal/dre-drilldown-modal.component';
 import { Chart, registerables } from 'chart.js';
@@ -45,9 +46,33 @@ export class DrePage implements OnInit {
     'OUTROS': false
   };
 
+  // Tabs navigation
+  activeTab: 'dre' | 'config' = 'dre';
+
+  // Categories list & search state
+  categories: Category[] = [];
+  searchTerm = '';
+
+  dreClassifications = [
+    { value: 'RECEITA_RECORRENTE', label: '1. Receita Recorrente' },
+    { value: 'RECEITA_NAO_RECORRENTE', label: '1. Receita Não Recorrente' },
+    { value: 'DEDUCOES_RECEITA', label: '2. Deduções de Receita' },
+    { value: 'IMPOSTOS_LUCRO', label: '2. Impostos sobre Lucro' },
+    { value: 'CUSTO_SERVICOS_PRESTADOS', label: '4. Custo de Serviços Prestados (CPV/CSP)' },
+    { value: 'DESPESA_ADMINISTRATIVA', label: '6. Despesa Administrativa' },
+    { value: 'DESPESA_COMERCIAL', label: '6. Despesa Comercial' },
+    { value: 'DESPESA_ESTRUTURAL', label: '6. Despesa Estrutural' },
+    { value: 'DESPESA_SOCIOS', label: '6. Despesa de Sócios' },
+    { value: 'DESPESA_FINANCEIRA', label: '8. Despesa Financeira' },
+    { value: 'RECEITA_FINANCEIRA', label: '8. Receita Financeira' },
+    { value: 'INVESTIMENTOS', label: '10. Investimentos' },
+    { value: 'OUTROS', label: 'Outros (Não classificado)' }
+  ];
+
   constructor(
     private dreService: DreService,
     private financialService: FinancialService,
+    private categoriesService: CategoriesService,
     private modalCtrl: ModalController
   ) {
     const today = new Date();
@@ -60,11 +85,48 @@ export class DrePage implements OnInit {
   ngOnInit() {
     this.carregarFiltros();
     this.gerarDRE();
+    this.carregarCategorias();
   }
 
   carregarFiltros() {
     this.financialService.getBankAccounts().subscribe((accs: BankAccount[]) => this.bankAccounts = accs);
     this.financialService.getCostCenters().subscribe((ccs: any[]) => this.costCenters = ccs);
+  }
+
+  carregarCategorias() {
+    this.categoriesService.findAll().subscribe({
+      next: (cats: Category[]) => {
+        // Flatten categories and subcategories so the user can map subcategories directly as well
+        this.categories = cats;
+      },
+      error: (err: any) => {
+        console.error('Erro ao carregar categorias', err);
+      }
+    });
+  }
+
+  salvarClassificacao(cat: Category, classificacao: string) {
+    if (!cat.id) return;
+    this.categoriesService.update(cat.id, { ...cat, classificacao }).subscribe({
+      next: () => {
+        cat.classificacao = classificacao;
+        this.gerarDRE(); // Regenerate DRE report
+      },
+      error: (err: any) => {
+        console.error('Erro ao salvar classificação da categoria', err);
+      }
+    });
+  }
+
+  get filteredCategories() {
+    if (!this.searchTerm.trim()) {
+      return this.categories;
+    }
+    const term = this.searchTerm.toLowerCase();
+    return this.categories.filter(c => 
+      c.nome.toLowerCase().includes(term) ||
+      (c.descricao && c.descricao.toLowerCase().includes(term))
+    );
   }
 
   gerarDRE() {
@@ -76,13 +138,13 @@ export class DrePage implements OnInit {
     if (!params.contaBancariaId) delete params.contaBancariaId;
 
     this.dreService.gerarDRE(params).subscribe({
-      next: (res) => {
+      next: (res: DREResult) => {
         this.dreResult = res;
         this.cacheSubcategorias();
         this.loading = false;
         setTimeout(() => this.renderCharts(), 100);
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error('Erro ao gerar DRE', err);
         this.loading = false;
       }

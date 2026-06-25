@@ -11,15 +11,16 @@ import { RecurringService } from '../../services/financial/recurring.service';
 import { ObrasService, Obra } from '../../services/financial/obras.service';
 import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList, ModalController } from '@ionic/angular/standalone';
 import { RateioModalComponent } from '../../shared/components/rateio-modal/rateio-modal.component';
+import { QuickCreateModalComponent } from '../../shared/components/quick-create-modal/quick-create-modal.component';
 import { addIcons } from 'ionicons';
-import { trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline } from 'ionicons/icons';
+import { trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline, addOutline } from 'ionicons/icons';
 
 @Component({
   selector: 'app-financial-detail',
   templateUrl: './financial-detail.page.html',
   styleUrls: ['./financial-detail.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList, RateioModalComponent]
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonDatetime, IonDatetimeButton, IonModal, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonSelect, IonSelectOption, IonTextarea, IonToggle, IonSegment, IonSegmentButton, IonNote, IonList, RateioModalComponent, QuickCreateModalComponent]
 })
 export class FinancialDetailPage implements OnInit {
   financialForm: FormGroup;
@@ -39,6 +40,7 @@ export class FinancialDetailPage implements OnInit {
   bankAccounts: BankAccount[] = [];
   suppliers: Supplier[] = [];
   obras: Obra[] = [];
+  itemData: any = null; // Store loaded transaction item data
 
   constructor(
     private fb: FormBuilder,
@@ -54,7 +56,7 @@ export class FinancialDetailPage implements OnInit {
     private alertController: AlertController,
     private modalCtrl: ModalController
   ) {
-    addIcons({ trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline });
+    addIcons({ trashOutline, attachOutline, cloudUploadOutline, documentTextOutline, chatboxEllipsesOutline, calendarOutline, checkmarkCircleOutline, listOutline, peopleOutline, walletOutline, pricetagOutline, addOutline });
 
     this.financialForm = this.fb.group({
       // Launch Info
@@ -70,7 +72,7 @@ export class FinancialDetailPage implements OnInit {
       obraId: [''],
       tipoCusto: ['OUTROS'],
       categoriaCusto: [''],
-      categoriaId: [''],
+      categoriaId: ['', [Validators.required]], // Strictly required from startup!
       subcategoriaId: [''],
       centroCustoId: [''],
       codigoReferencia: [''],
@@ -105,7 +107,7 @@ export class FinancialDetailPage implements OnInit {
     } else {
       this.type = 'receivables';
       this.financialForm.get('tipoLancamento')?.clearValidators();
-      this.financialForm.get('categoriaId')?.clearValidators();
+      this.financialForm.get('categoriaId')?.setValidators([Validators.required]);
     }
     this.financialForm.get('tipoLancamento')?.updateValueAndValidity();
     this.financialForm.get('categoriaId')?.updateValueAndValidity();
@@ -141,7 +143,7 @@ export class FinancialDetailPage implements OnInit {
   loadCategories() {
     return new Promise<void>((resolve) => {
       this.categoriesService.findAll().subscribe({
-        next: (cats) => {
+        next: (cats: Category[]) => {
           const typeFilter = this.type === 'receivables' ? 'RECEITA' : 'DESPESA';
           this.categories = cats.filter(c => c.tipo === typeFilter);
           resolve();
@@ -154,7 +156,7 @@ export class FinancialDetailPage implements OnInit {
   loadClients() {
     return new Promise<void>((resolve) => {
       this.clientsService.findAll().subscribe({
-        next: (clients) => {
+        next: (clients: Cliente[]) => {
           this.clients = clients;
           resolve();
         },
@@ -166,7 +168,7 @@ export class FinancialDetailPage implements OnInit {
   loadSuppliers() {
     return new Promise<void>((resolve) => {
       this.suppliersService.findAll().subscribe({
-        next: (items) => {
+        next: (items: Supplier[]) => {
           this.suppliers = items.filter(i => i.ativo !== false); // Only active suppliers
           resolve();
         },
@@ -178,7 +180,7 @@ export class FinancialDetailPage implements OnInit {
   loadCostCenters() {
     return new Promise<void>((resolve) => {
       this.costCentersService.findAll().subscribe({
-        next: (ccs) => {
+        next: (ccs: CostCenter[]) => {
           this.costCenters = ccs;
           resolve();
         },
@@ -190,7 +192,7 @@ export class FinancialDetailPage implements OnInit {
   loadBankAccounts() {
     return new Promise<void>((resolve) => {
       this.financialService.getBankAccounts().subscribe({
-        next: (accs) => {
+        next: (accs: BankAccount[]) => {
           this.bankAccounts = accs;
           resolve();
         },
@@ -211,6 +213,8 @@ export class FinancialDetailPage implements OnInit {
 
   loadItem(id: string) {
     this.financialService.getTransaction(id).subscribe((item: any) => {
+      this.itemData = item; // Store itemData to preserve status
+
       // Setup subcategories before patching
       if (item.categoriaId) {
         // Check if the item.categoriaId is a subcategory or a parent category
@@ -254,7 +258,7 @@ export class FinancialDetailPage implements OnInit {
   loadObras() {
     return new Promise<void>((resolve) => {
       this.obrasService.getAll().subscribe({
-        next: (obras) => { this.obras = obras || []; resolve(); },
+        next: (obras: Obra[]) => { this.obras = obras || []; resolve(); },
         error: () => resolve()
       });
     });
@@ -265,16 +269,40 @@ export class FinancialDetailPage implements OnInit {
     return tipo === "OBRA" || tipo === "POS_OBRA";
   }
 
+  async quickCreateCategory() {
+    const parentType = this.type === 'receivables' ? 'RECEITA' : 'DESPESA';
+    const modal = await this.modalCtrl.create({
+      component: QuickCreateModalComponent,
+      componentProps: {
+        entityType: 'CATEGORY',
+        parentContext: parentType
+      }
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data) {
+      this.categories.push(data);
+      this.financialForm.patchValue({
+        categoriaId: data.id
+      });
+    }
+  }
+
   async onSubmit() {
     if (this.financialForm.valid) {
       const formValue = this.financialForm.value;
+
+      // Preserve status CONCILIADO if it was conciliado
+      let statusValue = formValue.recebido ? 'REALIZADO' : 'PREVISTO';
+      if (this.itemData && this.itemData.status === 'CONCILIADO') {
+        statusValue = 'CONCILIADO';
+      }
 
       const transactionData: any = {
         ...formValue,
         valor: parseFloat(formValue.valor),
         dataVencimento: formValue.vencimento,
-        // If 'recebido' is true, set status to REALIZADO, else PREVISTO
-        status: formValue.recebido ? 'REALIZADO' : 'PREVISTO',
+        status: statusValue,
         tipo: this.type === 'receivables' ? 'RECEITA' : 'DESPESA',
         // Send the subcategory ID if selected, otherwise parent category ID
         categoriaId: formValue.subcategoriaId || formValue.categoriaId
@@ -298,7 +326,7 @@ export class FinancialDetailPage implements OnInit {
             dataInicio: formValue.vencimento, // Start from the first due date
             dataFim: formValue.tipoFimRecurrencia === 'DATE' ? formValue.dataFimRecurrencia : undefined
           }).subscribe({
-            error: (e) => console.error('Error creating recurrence', e)
+            error: (e: any) => console.error('Error creating recurrence', e)
           });
         }
       };
@@ -306,8 +334,6 @@ export class FinancialDetailPage implements OnInit {
       if (this.isEditMode && this.itemId) {
         this.financialService.updateTransaction(this.itemId, transactionData).subscribe({
           next: () => {
-            // For simplicity V1: Editing transaction does NOT update recurrence settings yet.
-            // User would need to go to Recurring List (Future V2)
             this.showToast('Registro atualizado com sucesso!');
             this.router.navigate(['/financial']);
           },
@@ -483,5 +509,3 @@ export class FinancialDetailPage implements OnInit {
     }
   }
 }
-
-

@@ -122,7 +122,7 @@ export class StatementsPage implements OnInit {
     }
 
     loadCategories() {
-        this.categoriesService.findAll().subscribe(cats => this.categories = cats);
+        this.categoriesService.findAll().subscribe((cats: any[]) => this.categories = cats);
     }
 
     // ... (rest of methods)
@@ -150,8 +150,8 @@ export class StatementsPage implements OnInit {
 
     loadBankAccounts() {
         this.financialService.getBankAccounts().subscribe({
-            next: (accounts) => this.bankAccounts = accounts,
-            error: (err) => console.error('Error loading accounts', err)
+            next: (accounts: BankAccount[]) => this.bankAccounts = accounts,
+            error: (err: any) => console.error('Error loading accounts', err)
         });
     }
 
@@ -179,7 +179,7 @@ export class StatementsPage implements OnInit {
                 this.loading = false;
                 onFinish?.();
             },
-            error: (err) => {
+            error: (err: any) => {
                 console.error('Error loading transactions', err);
                 this.loading = false;
                 onFinish?.();
@@ -541,5 +541,20 @@ export class StatementsPage implements OnInit {
         }
     }
 
-
+    getCategoryName(id: string): string {
+        if (!id) return 'Não categorizado';
+        const cat = this.categories.find(c => c.id === id);
+        if (cat) return cat.nome;
+        for (const parent of this.categories) {
+            if (parent.children) {
+                const sub = parent.children.find((s: any) => s.id === id);
+                if (sub) return sub.nome;
+            }
+            if (parent.subcategorias) {
+                const sub = parent.subcategorias.find((s: any) => s.id === id);
+                if (sub) return sub.nome;
+            }
+        }
+        return 'Não categorizado';
+    }
 }

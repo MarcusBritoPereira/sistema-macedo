@@ -80,6 +80,7 @@ export class QuickCreateModalComponent implements OnInit {
                 { value: 'DESPESA_SOCIOS', label: 'Despesa Sócios' },
                 { value: 'DESPESA_FINANCEIRA', label: 'Despesa Financeira' },
                 { value: 'IMPOSTOS_LUCRO', label: 'Impostos s/ Lucro' },
+                { value: 'INVESTIMENTOS', label: 'Investimentos' },
                 { value: 'OUTROS', label: 'Outros' }
             ];
         }

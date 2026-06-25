@@ -7,13 +7,14 @@ import {
     IonDatetime, IonDatetimeButton, IonModal, IonIcon, ModalController
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { closeOutline, calendarOutline, cashOutline } from 'ionicons/icons';
+import { closeOutline, calendarOutline, cashOutline, addOutline } from 'ionicons/icons';
 import { FinancialService, Transaction } from '../../../services/financial/financial';
 import { CategoriesService } from '../../../services/financial/categories.service';
 import { CostCentersService } from '../../../services/financial/cost-centers.service';
 import { ClientsService } from '../../../services/clients/clients';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
+import { QuickCreateModalComponent } from '../quick-create-modal/quick-create-modal.component';
 
 @Component({
     selector: 'app-transaction-modal',
@@ -21,7 +22,7 @@ import { environment } from '../../../../environments/environment';
     styleUrls: ['./transaction-modal.component.scss'],
     standalone: true,
     imports: [
-        CommonModule, FormsModule,
+        CommonModule, FormsModule, QuickCreateModalComponent,
         IonHeader, IonToolbar, IonButtons, IonButton, IonTitle, IonContent,
         IonItem, IonLabel, IonInput, IonSelect, IonSelectOption, IonTextarea,
         IonDatetime, IonDatetimeButton, IonModal, IonIcon
@@ -63,7 +64,7 @@ export class TransactionModalComponent implements OnInit {
         private clientsService: ClientsService,
         private http: HttpClient
     ) {
-        addIcons({ closeOutline, calendarOutline, cashOutline });
+        addIcons({ closeOutline, calendarOutline, cashOutline, addOutline });
     }
 
     ngOnInit() {
@@ -89,22 +90,39 @@ export class TransactionModalComponent implements OnInit {
     }
 
     loadOptions() {
-        this.categoriesService.findAll().subscribe(cats => this.categories = cats);
-        this.costCentersService.findAll().subscribe(ccs => this.costCenters = ccs);
+        this.categoriesService.findAll().subscribe((cats: any[]) => this.categories = cats);
+        this.costCentersService.findAll().subscribe((ccs: any[]) => this.costCenters = ccs);
         this.financialService.getBankAccounts().subscribe({
-            next: (accounts) => this.bankAccounts = accounts,
-            error: (err) => console.error('Error loading accounts in modal', err)
+            next: (accounts: any[]) => this.bankAccounts = accounts,
+            error: (err: any) => console.error('Error loading accounts in modal', err)
         });
-        this.clientsService.findAll().subscribe(c => this.clients = c);
-        // Obras service does not exist in frontend services yet? Let's use direct HTTP
-        this.http.get<any[]>(`${environment.apiUrl}/financial/obras`).subscribe(o => this.obras = o);
+        this.clientsService.findAll().subscribe((c: any[]) => this.clients = c);
+        this.http.get<any[]>(`${environment.apiUrl}/financial/obras`).subscribe((o: any[]) => this.obras = o);
     }
 
     isValid() {
         return this.formData.descricao &&
             this.formData.valor &&
             this.formData.valor > 0 &&
-            this.formData.dataVencimento;
+            this.formData.dataVencimento &&
+            this.formData.categoriaId &&
+            this.formData.contaBancariaId;
+    }
+
+    async quickCreateCategory() {
+        const modal = await this.modalCtrl.create({
+            component: QuickCreateModalComponent,
+            componentProps: {
+                entityType: 'CATEGORY',
+                parentContext: this.formData.tipo
+            }
+        });
+        await modal.present();
+        const { data } = await modal.onWillDismiss();
+        if (data) {
+            this.categories.push(data);
+            this.formData.categoriaId = data.id;
+        }
     }
 
     save() {

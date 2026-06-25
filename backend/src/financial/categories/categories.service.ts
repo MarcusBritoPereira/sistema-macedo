@@ -76,6 +76,14 @@ export class CategoriesService {
       data,
       include: { children: true, parent: true },
     });
+
+    // Invalidate DRE Cache
+    try {
+      await (this.prisma as any).dreCache.deleteMany({});
+    } catch (e) {
+      console.error('Error clearing DRE Cache on category create:', e);
+    }
+
     return this.mapCategory(category);
   }
 
@@ -125,6 +133,13 @@ export class CategoriesService {
           },
         });
         count++;
+      }
+    }
+    if (count > 0) {
+      try {
+        await (this.prisma as any).dreCache.deleteMany({});
+      } catch (e) {
+        console.error('Error clearing DRE Cache on CSV import:', e);
       }
     }
     return { success: true, imported: count };
@@ -184,12 +199,29 @@ export class CategoriesService {
       data,
       include: { children: { orderBy: { nome: 'asc' } }, parent: true },
     });
+
+    // Invalidate DRE Cache
+    try {
+      await (this.prisma as any).dreCache.deleteMany({});
+    } catch (e) {
+      console.error('Error clearing DRE Cache on category update:', e);
+    }
+
     return this.mapCategory(category);
   }
 
-  remove(id: string) {
-    return this.prisma.categoriaFinanceira.delete({
+  async remove(id: string) {
+    const result = await this.prisma.categoriaFinanceira.delete({
       where: { id },
     });
+
+    // Invalidate DRE Cache
+    try {
+      await (this.prisma as any).dreCache.deleteMany({});
+    } catch (e) {
+      console.error('Error clearing DRE Cache on category delete:', e);
+    }
+
+    return result;
   }
 }

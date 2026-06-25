@@ -61,7 +61,7 @@
 
         <!-- Conta Bancária (Destino) -->
         <ion-item fill="outline" class="input-item">
-            <ion-label position="stacked">Conta Bancária</ion-label>
+            <ion-label position="stacked">Conta Bancária *</ion-label>
             <ion-select [(ngModel)]="formData.contaBancariaId" interface="action-sheet" placeholder="Selecione a Conta">
                 <ion-select-option *ngFor="let acc of bankAccounts" [value]="acc.id">{{ acc.nome }}</ion-select-option>
             </ion-select>
@@ -86,12 +86,17 @@
         </ion-item>
 
         <!-- Categoria -->
-        <ion-item fill="outline" class="input-item" *ngIf="formData.tipo !== 'RECEITA'">
-            <ion-label position="stacked">Categoria</ion-label>
-            <ion-select [(ngModel)]="formData.categoriaId" interface="action-sheet" placeholder="Selecione">
-                <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</ion-select-option>
-            </ion-select>
-        </ion-item>
+        <div style="display: flex; align-items: center; width: 100%;">
+            <ion-item fill="outline" class="input-item" style="flex: 1; --border-radius: 8px;">
+                <ion-label position="stacked">Categoria *</ion-label>
+                <ion-select [(ngModel)]="formData.categoriaId" interface="action-sheet" placeholder="Selecione">
+                    <ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</ion-select-option>
+                </ion-select>
+            </ion-item>
+            <ion-button fill="clear" (click)="quickCreateCategory()" style="margin-top: 16px; --padding-start: 8px; --padding-end: 8px;">
+                <ion-icon slot="icon-only" name="add-outline" style="font-size: 24px; color: #16a34a;"></ion-icon>
+            </ion-button>
+        </div>
 
         <!-- Centro de Custo -->
         <ion-item fill="outline" class="input-item" *ngIf="formData.tipo !== 'RECEITA'">

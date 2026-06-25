@@ -5,10 +5,11 @@ import { Observable } from 'rxjs';
 export interface Subcategory {
   id: string;
   nome: string;
-  description?: string; // Using 'description' to match what might be returned or I should check if backend returns 'descricao'.
-  // Wait, backend returns 'descricao'. I should match backend or use a map. Prisma returns 'descricao'.
+  description?: string;
   descricao?: string;
   categoriaId: string;
+  classificacao?: string;
+  tipo?: 'RECEITA' | 'DESPESA';
 }
 
 export interface Category {

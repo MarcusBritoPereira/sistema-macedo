@@ -105,9 +105,17 @@ export class DrePage implements OnInit {
     });
   }
 
-  salvarClassificacao(cat: Category, classificacao: string) {
+  salvarClassificacao(cat: any, classificacao: string) {
     if (!cat.id) return;
-    this.categoriesService.update(cat.id, { ...cat, classificacao }).subscribe({
+    const payload: Category = {
+      id: cat.id,
+      nome: cat.nome,
+      tipo: cat.tipo || 'DESPESA',
+      descricao: cat.descricao || cat.description,
+      classificacao: classificacao || undefined,
+      parentId: cat.parentId || null
+    };
+    this.categoriesService.update(cat.id, payload).subscribe({
       next: () => {
         cat.classificacao = classificacao;
         this.gerarDRE(); // Regenerate DRE report

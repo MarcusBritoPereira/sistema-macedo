@@ -285,9 +285,9 @@
   }
 
   &.card-warning {
-    .card-bottom-accent { background: #f97316; }
-    .icon-circle { background: #fff7ed; ion-icon { color: #f97316; } }
-    .value-display { color: #ea580c; }
+    .card-bottom-accent { background: #ef4444; }
+    .icon-circle { background: #fef2f2; ion-icon { color: #ef4444; } }
+    .value-display { color: #dc2626; }
   }
 }
 
@@ -413,7 +413,7 @@
     }
 
     &.icon-success { background: #10b981; }
-    &.icon-warning { background: #fff7ed; ion-icon { color: #f97316; } }
+    &.icon-warning { background: #fef2f2; ion-icon { color: #ef4444; } }
   }
 
   .mini-card-body {

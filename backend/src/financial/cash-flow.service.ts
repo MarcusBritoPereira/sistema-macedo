@@ -31,6 +31,10 @@ export class CashFlowService {
           lte: end,
         },
       },
+      include: {
+        cliente: true,
+        obra: true,
+      },
     });
 
     const receivables = periodTransactions.filter((t) => t.tipo === 'RECEITA');

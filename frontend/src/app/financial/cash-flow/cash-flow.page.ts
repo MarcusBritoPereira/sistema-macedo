@@ -36,6 +36,7 @@ export class CashFlowPage implements OnInit {
 
   data!: CashFlowData;
   loading = true;
+  currentYear = new Date().getFullYear();
 
   cards: any[] = [];
 
@@ -157,7 +158,7 @@ export class CashFlowPage implements OnInit {
           { title: 'Total Gasto', value: response.cards.totalSpent, icon: 'arrow-up-outline', type: 'danger' },
           { title: 'Saldo Final', value: response.cards.finalBalance, icon: 'analytics-outline', type: 'primary' },
           { title: 'A Receber de Clientes', value: response.cards.receivableClients, icon: 'people-outline', type: 'pending' },
-          { title: 'Queima de Caixa', value: response.cards.cashBurn, icon: 'flame-outline', type: 'warning', suffix: ' / sem' }
+          { title: 'Queima de Caixa', value: response.cards.cashBurn, icon: 'flame-outline', type: 'danger', suffix: ' / sem' }
         ];
 
         // Green emerald style for cash-in flow
@@ -223,8 +224,8 @@ export class CashFlowPage implements OnInit {
               type: 'bar',
               label: 'Gasto',
               data: response.receivedVsSpent.map((item: any) => item.spent),
-              backgroundColor: '#f97316', // Orange for spent
-              hoverBackgroundColor: '#ea580c',
+              backgroundColor: '#ef4444', // Red for spent (formerly orange)
+              hoverBackgroundColor: '#dc2626',
               borderRadius: 6
             },
             {
@@ -247,8 +248,8 @@ export class CashFlowPage implements OnInit {
             {
               label: 'Despesa',
               data: response.expensesByWork.map((item: any) => item.value),
-              backgroundColor: '#f97316', // Warning orange
-              hoverBackgroundColor: '#ea580c',
+              backgroundColor: '#ef4444', // Red for spent (formerly orange)
+              hoverBackgroundColor: '#dc2626',
               borderRadius: 6
             }
           ]

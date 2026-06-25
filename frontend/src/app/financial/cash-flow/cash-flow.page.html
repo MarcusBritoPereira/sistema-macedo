@@ -1,285 +1,212 @@
-<ion-header class="ion-no-border">
-    <ion-toolbar class="header-toolbar ion-hide-md-down">
-        <ion-buttons slot="start">
-            <ion-menu-button></ion-menu-button>
-        </ion-buttons>
+<ion-content class="cash-flow-content">
 
-        <div class="header-content">
-            <div class="header-title-group">
-                <h1>Fluxo de Caixa</h1>
-                <p>Visão financeira do mês</p>
-            </div>
+  <!-- Elegant custom loading layout -->
+  <div *ngIf="loading" class="loading-overlay">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Processando Fluxo de Caixa...</p>
+  </div>
 
-            <div class="month-selector">
-                <ion-button fill="clear" (click)="changeMonth(-1)">
-                    <ion-icon name="chevron-back"></ion-icon>
-                </ion-button>
-                <div class="current-month">
-                    <ion-icon name="calendar-outline"></ion-icon>
-                    <span>{{ currentPeriodLabel | titlecase }}</span>
-                </div>
-                <ion-button fill="clear" (click)="changeMonth(1)">
-                    <ion-icon name="chevron-forward"></ion-icon>
-                </ion-button>
-            </div>
+  <div class="cash-flow-page animate-fade-in" *ngIf="!loading && data">
 
-            <div class="header-actions">
-                <!-- Secondary -->
-                <ion-button fill="outline" class="btn-secondary" (click)="loadData()">
-                    <ion-icon slot="start" name="sync-outline"></ion-icon>
-                    Atualizar
-                </ion-button>
-                <!-- Primary -->
-                <ion-button class="btn-primary" (click)="openTransactionModal()">
-                    <ion-icon slot="start" name="add"></ion-icon>
-                    Nova movimentação
-                </ion-button>
-            </div>
+    <header class="dashboard-header animate-slide-down">
+      <div class="title-area">
+        <ion-button fill="clear" class="menu-button" routerLink="/home">
+          <ion-icon name="menu-outline"></ion-icon>
+        </ion-button>
+
+        <div>
+          <h1>Fluxo de Caixa</h1>
+          <p>Macedo Construtora • Gestão de Performance</p>
         </div>
-    </ion-toolbar>
-</ion-header>
+      </div>
 
-<ion-content class="dashboard-content">
-    <div *ngIf="loading" class="loading-overlay">
-        <ion-spinner name="crescent"></ion-spinner>
-    </div>
+      <div class="header-actions">
+        <button class="date-filter">
+          <ion-icon name="calendar-outline"></ion-icon>
+          01/06/2024 - 30/06/2024
+          <ion-icon name="chevron-down-outline"></ion-icon>
+        </button>
 
-    <div *ngIf="operationalData && !loading" class="dashboard-wrapper">
+        <div class="user-box">
+          <ion-icon name="person-circle-outline"></ion-icon>
+          <div>
+            <strong>Admin</strong>
+            <span>Administrador</span>
+          </div>
+        </div>
+      </div>
+    </header>
 
-        <!-- BLOCK 1: MAIN KPI CARDS -->
-        <div class="kpi-grid">
-            <!-- Card 1: Saldo Inicial -->
-            <ion-card class="kpi-card bg-neutral">
-                <ion-card-content>
-                    <div class="kpi-label">Saldo Inicial Mês</div>
-                    <div class="kpi-value text-blue">{{ formatCurrency(operationalData.kpis.saldoInicialMes) }}</div>
-                    <div class="kpi-sub">Saldo no dia 1º</div>
-                </ion-card-content>
-            </ion-card>
-
-            <!-- Card 2: Entradas (Green) -->
-            <ion-card class="kpi-card bg-green-light">
-                <ion-card-content>
-                    <div class="kpi-label">Entradas (Receitas)</div>
-                    <div class="kpi-value text-green">{{ formatCurrency(operationalData.summary.entradasMes) }}</div>
-                    <div class="kpi-details">
-                        <div class="detail-row">
-                            <span>Recebido Real:</span>
-                            <span class="val">{{ formatCurrency(operationalData.summary.recebidoReal) }}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span>Previsto a Receber:</span>
-                            <span class="val">{{ formatCurrency(operationalData.summary.previstoReceber) }}</span>
-                        </div>
-                    </div>
-                </ion-card-content>
-            </ion-card>
-
-            <!-- Card 3: Saídas (Red) -->
-            <ion-card class="kpi-card bg-red-light">
-                <ion-card-content>
-                    <div class="kpi-label">Saídas (Despesas)</div>
-                    <div class="kpi-value text-red">{{ formatCurrency(operationalData.summary.saidasMes) }}</div>
-                    <div class="kpi-details">
-                        <div class="detail-row">
-                            <span>Pago Real:</span>
-                            <span class="val">{{ formatCurrency(operationalData.kpis.aPagar.pago) }}</span>
-                        </div>
-                        <div class="detail-row">
-                            <span>Previsto a Pagar:</span>
-                            <span class="val">{{ formatCurrency(operationalData.kpis.aPagar.pendente) }}</span>
-                        </div>
-                    </div>
-                </ion-card-content>
-            </ion-card>
-
-            <!-- Card 4: Saldo Final -->
-            <ion-card class="kpi-card bg-blue-light">
-                <ion-card-content>
-                    <div class="kpi-label">Saldo Final Mês</div>
-                    <div class="kpi-value text-blue-dark">{{ formatCurrency(operationalData.kpis.saldoFinalMes) }}
-                    </div>
-                    <div class="kpi-sub">Inicial + Entradas - Saídas</div>
-                </ion-card-content>
-            </ion-card>
+    <!-- KPI summary cards with semantic accents and micro-effects -->
+    <section class="cards-grid">
+      <div class="summary-card animate-scale-up" *ngFor="let card of cards; let idx = index" 
+           [ngClass]="'card-' + card.type"
+           [style.animation-delay]="(idx * 75) + 'ms'">
+        
+        <div class="card-header-row">
+          <span>{{ card.title }}</span>
+          <div class="icon-circle">
+            <ion-icon [name]="card.icon"></ion-icon>
+          </div>
         </div>
 
-        <!-- BLOCK 2: SMART CHART -->
-        <div class="section-block chart-block">
-            <div class="section-header">
-                <h2>📊 Evolução do Saldo</h2>
-                <p>Acompanhamento diário de entradas e saídas</p>
-            </div>
-            <div class="chart-container">
-                <canvas baseChart [data]="barChartData" [options]="barChartOptions" [type]="barChartType">
-                </canvas>
-            </div>
+        <strong class="value-display">
+          {{ formatMoney(card.value) }}{{ card.suffix || '' }}
+        </strong>
+
+        <div class="card-bottom-accent"></div>
+      </div>
+    </section>
+
+    <!-- High-impact top charts -->
+    <section class="charts-top-grid">
+
+      <div class="panel chart-panel">
+        <div class="panel-title">
+          <div class="panel-icon-wrap icon-success">
+            <ion-icon name="analytics-outline"></ion-icon>
+          </div>
+          <div>
+            <h2>Total recebido por mês</h2>
+            <p class="panel-subtitle">Análise histórica consolidada de entradas</p>
+          </div>
         </div>
 
-        <!-- BLOCK 3: MOVIMENTAÇÕES -->
-        <div class="section-block transactions-block">
-            <div class="block-header">
-                <div class="filters">
-                    <ion-button size="small" [fill]="filterPeriod === 'month' ? 'solid' : 'outline'"
-                        (click)="selectFilter('month')">Este Mês</ion-button>
-                    <ion-button size="small" [fill]="filterPeriod === 'week' ? 'solid' : 'outline'"
-                        (click)="selectFilter('week')">Esta Semana</ion-button>
-                    <ion-button size="small" [fill]="filterPeriod === 'today' ? 'solid' : 'outline'"
-                        (click)="selectFilter('today')">Hoje</ion-button>
-                </div>
-            </div>
+        <div class="chart-box large">
+          <canvas
+            baseChart
+            [data]="monthlyReceivedChart"
+            [options]="chartOptions"
+            type="bar">
+          </canvas>
+        </div>
+      </div>
 
-            <div class="table-container ion-hide-md-down">
-                <table class="custom-table">
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Descrição</th>
-                            <th>Conta</th>
-                            <th>Categoria</th>
-                            <th>Tipo</th>
-                            <th>Valor</th>
-                            <th>Status</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let t of paginatedTransactions">
-                            <td>{{ t.data | date:'dd/MM' }}</td>
-                            <td>{{ t.descricao }}</td>
-                            <td>{{ t.conta }}</td>
-                            <td>{{ t.categoria }}</td>
-                            <td>
-                                <ion-badge [color]="t.tipo === 'RECEITA' ? 'success' : 'danger'">
-                                    {{ t.tipo === 'RECEITA' ? 'Entrada' : 'Saída' }}
-                                </ion-badge>
-                            </td>
-                            <td [class.text-green]="t.tipo === 'RECEITA'" [class.text-red]="t.tipo === 'DESPESA'">
-                                {{ formatCurrency(t.valor) }}
-                            </td>
-                            <td>
-                                <div class="status-tag"
-                                    [class.done]="t.status === 'REALIZADO' || t.status === 'CONCILIADO'"
-                                    [class.pending]="t.status === 'PREVISTO'">
-                                    <ion-icon
-                                        [name]="(t.status === 'REALIZADO' || t.status === 'CONCILIADO') ? 'checkmark-circle-outline' : 'time-outline'"></ion-icon>
-                                    {{ (t.status === 'REALIZADO' || t.status === 'CONCILIADO') ? 'Realizado' :
-                                    'Pendente' }}
-                                </div>
-                            </td>
-                            <td class="actions-cell">
-                                <ion-button fill="clear" size="small">
-                                    <ion-icon name="ellipsis-vertical"></ion-icon>
-                                </ion-button>
-                            </td>
-                        </tr>
-                        <tr *ngIf="filteredTransactions.length === 0">
-                            <td colspan="8" class="empty-state">
-                                Nenhuma movimentação neste período.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
-            <div class="pagination-bar" *ngIf="filteredTransactions.length > pageSize">
-                <div class="pagination-info">
-                    Mostrando {{ paginationStart }}-{{ paginationEnd }} de {{ filteredTransactions.length }} movimentações
-                </div>
-                <div class="pagination-actions">
-                    <ion-button fill="outline" size="small" (click)="changePage(-1)" [disabled]="currentPage === 1">
-                        Anterior
-                    </ion-button>
-                    <span>Página {{ currentPage }} de {{ totalPages }}</span>
-                    <ion-button fill="outline" size="small" (click)="changePage(1)" [disabled]="currentPage === totalPages">
-                        Próxima
-                    </ion-button>
-                </div>
-            </div>
-
-            <!-- Mobile Card List (Mobile) -->
-            <div class="mobile-list-container ion-hide-md-up">
-                <div class="empty-state" *ngIf="filteredTransactions.length === 0">
-                    <p>Nenhuma movimentação neste período.</p>
-                </div>
-
-                <ion-card class="mobile-item-card" *ngFor="let t of paginatedTransactions">
-                    <ion-card-content>
-                        <div class="card-header">
-                            <div class="card-title-row">
-                                <span class="card-title">{{ t.descricao }}</span>
-                            </div>
-                            <ion-button fill="clear" size="small" class="actions-btn">
-                                <ion-icon name="ellipsis-vertical"></ion-icon>
-                            </ion-button>
-                        </div>
-                        
-                        <div class="card-subtitle">{{ t.conta }} <span *ngIf="t.categoria">• {{ t.categoria }}</span></div>
-                        
-                        <div class="card-details">
-                            <div class="detail-row">
-                                <span class="detail-label">Data:</span>
-                                <span class="detail-value">{{ t.data | date:'dd/MM/yyyy' }}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Tipo:</span>
-                                <span class="detail-value">
-                                    <ion-badge [color]="t.tipo === 'RECEITA' ? 'success' : 'danger'">
-                                        {{ t.tipo === 'RECEITA' ? 'Entrada' : 'Saída' }}
-                                    </ion-badge>
-                                </span>
-                            </div>
-                            <div class="detail-row mb-2">
-                                <span class="detail-label">Valor:</span>
-                                <span class="detail-value text-bold" [class.text-green]="t.tipo === 'RECEITA'" [class.text-red]="t.tipo === 'DESPESA'">
-                                    {{ formatCurrency(t.valor) }}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="card-footer" style="display: flex; justify-content: flex-end; margin-top: 12px;">
-                            <div class="status-tag"
-                                [class.done]="t.status === 'REALIZADO' || t.status === 'CONCILIADO'"
-                                [class.pending]="t.status === 'PREVISTO'">
-                                <ion-icon
-                                    [name]="(t.status === 'REALIZADO' || t.status === 'CONCILIADO') ? 'checkmark-circle-outline' : 'time-outline'"></ion-icon>
-                                {{ (t.status === 'REALIZADO' || t.status === 'CONCILIADO') ? 'Realizado' :
-                                'Pendente' }}
-                            </div>
-                        </div>
-                    </ion-card-content>
-                </ion-card>
-            </div>
+      <div class="panel chart-panel">
+        <div class="panel-title">
+          <div class="panel-icon-wrap icon-primary">
+            <ion-icon name="trending-up-outline"></ion-icon>
+          </div>
+          <div>
+            <h2>Recebido x A receber de cliente</h2>
+            <p class="panel-subtitle">Comparativo de adimplência por cliente</p>
+          </div>
         </div>
 
-        <!-- BLOCK 4: ACCOUNTS (Collapsible) -->
-        <div class="section-block accounts-block">
-            <div class="collapsible-header" (click)="toggleAccounts()">
-                <div class="flex-row">
-                    <ion-icon name="wallet-outline"></ion-icon>
-                    <h3>Minhas Contas</h3>
-                </div>
-                <ion-icon [name]="showAccounts ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
-            </div>
+        <div class="chart-box large">
+          <canvas
+            baseChart
+            [data]="clientChart"
+            [options]="chartOptions"
+            type="bar">
+          </canvas>
+        </div>
+      </div>
 
-            <div class="accounts-list" *ngIf="showAccounts">
-                <div class="account-item" *ngFor="let acc of operationalData.accounts">
-                    <div class="acc-info">
-                        <span class="acc-name">{{ acc.nome }}</span>
-                        <span class="acc-bank">{{ acc.banco }}</span>
-                    </div>
-                    <div class="acc-val">{{ formatCurrency(acc.saldo) }}</div>
-                </div>
+    </section>
+
+    <!-- Bottom details, mini KPI lists and secondary charts -->
+    <section class="charts-bottom-grid">
+
+      <div class="flex-column-gap">
+        <div class="panel chart-panel">
+          <div class="panel-title">
+            <div class="panel-icon-wrap icon-info">
+              <ion-icon name="calendar-outline"></ion-icon>
             </div>
+            <div>
+              <h2>Recebido x Gasto</h2>
+              <p class="panel-subtitle">Entradas x Saídas x Saldo Acumulado</p>
+            </div>
+          </div>
+
+          <div class="chart-box medium">
+            <canvas
+              baseChart
+              [data]="receivedSpentChart"
+              [options]="chartOptions"
+              type="bar">
+            </canvas>
+          </div>
         </div>
 
-    </div>
+        <div class="mini-cards">
+          <div class="mini-card hover-lift">
+            <div class="mini-card-icon icon-success">
+              <ion-icon name="clipboard-outline"></ion-icon>
+            </div>
+            <div class="mini-card-body">
+              <span>Ticket médio de recebimento</span>
+              <strong>{{ formatMoney(data.averageTicket) }}</strong>
+            </div>
+          </div>
 
-    <!-- Mobile FAB for adding new records -->
-    <ion-fab vertical="bottom" horizontal="end" slot="fixed" class="ion-hide-md-up" style="margin-bottom: 20px;">
-        <ion-fab-button class="btn-primary" (click)="openTransactionModal()">
-            <ion-icon name="add"></ion-icon>
-        </ion-fab-button>
-    </ion-fab>
+          <div class="mini-card hover-lift">
+            <div class="mini-card-icon icon-warning">
+              <ion-icon name="person-outline"></ion-icon>
+            </div>
+            <div class="mini-card-body">
+              <span>Cliente com maior pendência</span>
+              <strong>
+                {{ data.biggestPendingClient.name }} —
+                {{ formatMoney(data.biggestPendingClient.value) }}
+              </strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel chart-panel">
+        <div class="panel-title">
+          <div class="panel-icon-wrap icon-danger">
+            <ion-icon name="bag-handle-outline"></ion-icon>
+          </div>
+          <div>
+            <h2>Despesa por obra</h2>
+            <p class="panel-subtitle">Alocação de saídas financeiras por projeto</p>
+          </div>
+        </div>
+
+        <div class="chart-box medium">
+          <canvas
+            baseChart
+            [data]="expensesByWorkChart"
+            [options]="horizontalOptions"
+            type="bar">
+          </canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Insights & Alerts panel styled with premium details -->
+    <section class="alerts-panel">
+      <div class="alerts-header">
+        <div class="alert-icon">
+          <ion-icon name="notifications-outline"></ion-icon>
+        </div>
+        <div>
+          <h2>Insights Inteligentes</h2>
+          <p>Alertas de liquidez e projeções de caixa baseadas nos contratos ativos</p>
+        </div>
+      </div>
+
+      <div class="alerts-list">
+        <div class="alert-item" *ngFor="let alert of data.alerts" [ngClass]="alert.color">
+          <div class="alert-indicator-bar"></div>
+          <div class="alert-item-content">
+            <div class="alert-icon-mini">
+              <ion-icon *ngIf="alert.color === 'green'" name="checkmark-circle-outline"></ion-icon>
+              <ion-icon *ngIf="alert.color === 'red'" name="flame-outline"></ion-icon>
+              <ion-icon *ngIf="alert.color === 'orange'" name="trending-up-outline"></ion-icon>
+              <ion-icon *ngIf="alert.color === 'blue'" name="analytics-outline"></ion-icon>
+            </div>
+            <p>{{ alert.text }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
 
 </ion-content>

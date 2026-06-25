@@ -1,237 +1,272 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import {
-  IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol,
-  IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList,
-  IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton,
-  IonDatetimeButton, IonModal, IonDatetime, IonSpinner, ModalController, IonFab, IonFabButton, IonFabList,
-  IonNote, IonBadge, IonSearchbar, IonText
-} from '@ionic/angular/standalone';
-import { FinancialDashboardService, OperationalDashboardResponse } from '../../services/financial/financial-dashboard.service';
-import { TransactionModalComponent } from '../../shared/components/transaction-modal/transaction-modal.component';
+import { IonicModule } from '@ionic/angular';
+import { BaseChartDirective } from 'ng2-charts';
+import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { addIcons } from 'ionicons';
 import {
-  filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline,
-  arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline,
-  alertCircleOutline, add, arrowUp, arrowDown, chevronBack, chevronForward, calendarOutline,
-  ellipsisVertical, pencilOutline, trashOutline, checkmarkCircleOutline, searchOutline,
-  chevronDownOutline, chevronUpOutline
+  menuOutline,
+  calendarOutline,
+  chevronDownOutline,
+  personCircleOutline,
+  walletOutline,
+  arrowDownOutline,
+  arrowUpOutline,
+  analyticsOutline,
+  peopleOutline,
+  flameOutline,
+  trendingUpOutline,
+  clipboardOutline,
+  personOutline,
+  bagHandleOutline,
+  notificationsOutline
 } from 'ionicons/icons';
-import { Chart, ChartConfiguration, ChartData, ChartEvent, ChartType, registerables } from 'chart.js';
-import { BaseChartDirective } from 'ng2-charts';
+import { CashFlowData, CashFlowService } from '../../services/financial/cash-flow.service';
 
 Chart.register(...registerables);
 
 @Component({
   selector: 'app-cash-flow',
-  templateUrl: './cash-flow.page.html',
-  styleUrls: ['./cash-flow.page.scss'],
   standalone: true,
-  imports: [
-    CommonModule, FormsModule, BaseChartDirective,
-    IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton, IonGrid, IonRow, IonCol,
-    IonCard, IonCardHeader, IonCardSubtitle, IonCardTitle, IonCardContent, IonItem, IonLabel, IonList,
-    IonProgressBar, IonSelect, IonSelectOption, IonItemGroup, IonItemDivider, IonIcon, IonButton,
-    IonDatetimeButton, IonModal, IonDatetime, IonSpinner, IonFab, IonFabButton, IonFabList,
-    IonNote, IonBadge, IonSearchbar, IonText
-  ]
+  imports: [CommonModule, IonicModule, BaseChartDirective],
+  templateUrl: './cash-flow.page.html',
+  styleUrls: ['./cash-flow.page.scss']
 })
 export class CashFlowPage implements OnInit {
-  operationalData: any | null = null; // Use specific type if updated
-  loading = false;
 
-  // Date State
-  currDate = new Date();
+  data!: CashFlowData;
+  loading = true;
 
-  // Chart State
-  @ViewChild(BaseChartDirective) chart: BaseChartDirective | undefined;
+  cards: any[] = [];
 
-  public barChartOptions: ChartConfiguration['options'] = {
+  monthlyReceivedChart!: any;
+  clientChart!: any;
+  receivedSpentChart!: any;
+  expensesByWorkChart!: any;
+
+  // Elegant styling for Tooltips and Scales
+  chartOptions: ChartConfiguration<'bar'>['options'] = {
     responsive: true,
     maintainAspectRatio: false,
-    scales: {
-      x: {},
-      y: {
-        beginAtZero: true,
-        grid: { color: '#e5e7eb' }
-      },
-      y1: {
-        position: 'right',
-        grid: { drawOnChartArea: false } // Independent axis for balance? Or shared?
-        // User requested: "Linha azul = saldo acumulado". Usually balance is much larger or can be negative.
-        // Best to use same axis if numbers are comparable, or separate if different scales.
-        // Let's use same axis for now as balance is usually in same magnitude as accumulated flows over time? 
-        // Actually, balance is stock, flow is flow. But users often want to see them together.
-      }
-    },
     plugins: {
-      legend: { display: true, position: 'bottom' },
+      legend: {
+        labels: {
+          color: '#1e293b',
+          font: {
+            size: 12,
+            weight: 600,
+            family: 'Outfit, Inter, sans-serif'
+          }
+        }
+      },
       tooltip: {
+        backgroundColor: '#0f172a',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#334155',
+        borderWidth: 1,
+        padding: 12,
+        boxPadding: 6,
+        usePointStyle: true,
         callbacks: {
-          label: (context) => {
+          label: (context: any) => {
             let label = context.dataset.label || '';
-            if (label) label += ': ';
+            if (label) {
+              label += ': ';
+            }
             if (context.parsed.y !== null) {
-              label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+              label += new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              }).format(context.parsed.y);
             }
             return label;
           }
         }
       }
+    },
+    scales: {
+      x: {
+        ticks: { color: '#64748b', font: { weight: 500 } },
+        grid: { display: false }
+      },
+      y: {
+        ticks: {
+          color: '#64748b',
+          callback: (value: any) => `R$ ${Number(value).toLocaleString('pt-BR')}`
+        },
+        grid: {
+          color: '#f1f5f9'
+        }
+      }
     }
   };
 
-  public barChartType: ChartType = 'bar';
-  public barChartData: ChartData<'bar' | 'line'> = {
-    labels: [],
-    datasets: [
-      { data: [], label: 'Entradas', backgroundColor: '#16A34A', borderRadius: 4, order: 2 },
-      { data: [], label: 'Saídas', backgroundColor: '#DC2626', borderRadius: 4, order: 3 }
-    ]
+  horizontalOptions: ChartConfiguration<'bar'>['options'] = {
+    ...this.chartOptions,
+    indexAxis: 'y',
+    scales: {
+      x: {
+        ticks: {
+          color: '#64748b',
+          callback: (value: any) => `R$ ${Number(value).toLocaleString('pt-BR')}`
+        },
+        grid: { color: '#f1f5f9' }
+      },
+      y: {
+        ticks: { color: '#64748b', font: { weight: 500 } },
+        grid: { display: false }
+      }
+    }
   };
 
-  // Transaction Filters
-  filterPeriod: 'today' | 'week' | 'month' = 'month';
-  readonly pageSize = 50;
-  currentPage = 1;
-  showAccounts = false; // Collapsible
-
-  constructor(
-    private dashboardService: FinancialDashboardService,
-    private modalCtrl: ModalController
-  ) {
+  constructor(private cashFlowService: CashFlowService) {
     addIcons({
-      filter, trendingUpOutline, trendingDownOutline, walletOutline, arrowUpCircleOutline,
-      arrowDownCircleOutline, receiptOutline, timeOutline, statsChartOutline, syncOutline,
-      alertCircleOutline, add, arrowUp, arrowDown, chevronBack, chevronForward, calendarOutline,
-      ellipsisVertical, pencilOutline, trashOutline, checkmarkCircleOutline, searchOutline,
-      chevronDownOutline, chevronUpOutline
+      menuOutline,
+      calendarOutline,
+      chevronDownOutline,
+      personCircleOutline,
+      walletOutline,
+      arrowDownOutline,
+      arrowUpOutline,
+      analyticsOutline,
+      peopleOutline,
+      flameOutline,
+      trendingUpOutline,
+      clipboardOutline,
+      personOutline,
+      bagHandleOutline,
+      notificationsOutline
     });
   }
 
-  ngOnInit() {
-    this.loadData();
+  ngOnInit(): void {
+    this.loadCashFlow();
   }
 
-  loadData() {
+  loadCashFlow(): void {
     this.loading = true;
-    const m = this.currDate.getMonth() + 1;
-    const y = this.currDate.getFullYear();
+    this.cashFlowService.getCashFlow().subscribe({
+      next: (response: CashFlowData) => {
+        this.data = response;
 
-    // Using getCashFlowDashboard instead of getOperationalDashboard
-    this.dashboardService.getCashFlowDashboard(m, y).subscribe({
-      next: (data) => {
-        this.operationalData = data;
-        this.currentPage = 1;
-        this.updateChart(data.chart);
+        // Custom structure with color mappings and semantical settings
+        this.cards = [
+          { title: 'Saldo Inicial', value: response.cards.initialBalance, icon: 'wallet-outline', type: 'info' },
+          { title: 'Total Recebido', value: response.cards.totalReceived, icon: 'arrow-down-outline', type: 'success' },
+          { title: 'Total Gasto', value: response.cards.totalSpent, icon: 'arrow-up-outline', type: 'danger' },
+          { title: 'Saldo Final', value: response.cards.finalBalance, icon: 'analytics-outline', type: 'primary' },
+          { title: 'A Receber de Clientes', value: response.cards.receivableClients, icon: 'people-outline', type: 'pending' },
+          { title: 'Queima de Caixa', value: response.cards.cashBurn, icon: 'flame-outline', type: 'warning', suffix: ' / sem' }
+        ];
+
+        // Green emerald style for cash-in flow
+        this.monthlyReceivedChart = {
+          labels: ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'],
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Recebido',
+              data: response.monthlyReceived,
+              backgroundColor: '#10b981', // Emerald green
+              hoverBackgroundColor: '#059669',
+              borderRadius: 8
+            },
+            {
+              type: 'line',
+              label: 'Tendência',
+              data: response.monthlyReceived,
+              borderColor: '#0f172a', // Charcoal trendline
+              backgroundColor: 'transparent',
+              borderWidth: 3,
+              pointBackgroundColor: '#0f172a',
+              pointHoverRadius: 6,
+              tension: 0.35
+            }
+          ]
+        };
+
+        // Emerald received vs Slate receivable
+        this.clientChart = {
+          labels: response.clientReceivedVsReceivable.map((item: any) => item.client),
+          datasets: [
+            {
+              label: 'Recebido',
+              data: response.clientReceivedVsReceivable.map((item: any) => item.received),
+              backgroundColor: '#10b981',
+              hoverBackgroundColor: '#059669',
+              borderRadius: 6
+            },
+            {
+              label: 'A Receber',
+              data: response.clientReceivedVsReceivable.map((item: any) => item.receivable),
+              backgroundColor: '#94a3b8',
+              hoverBackgroundColor: '#64748b',
+              borderRadius: 6
+            }
+          ]
+        };
+
+        // Received vs Spent with Balance trendline
+        this.receivedSpentChart = {
+          labels: response.receivedVsSpent.map((item: any) => item.month),
+          datasets: [
+            {
+              type: 'bar',
+              label: 'Recebido',
+              data: response.receivedVsSpent.map((item: any) => item.received),
+              backgroundColor: '#10b981',
+              hoverBackgroundColor: '#059669',
+              borderRadius: 6
+            },
+            {
+              type: 'bar',
+              label: 'Gasto',
+              data: response.receivedVsSpent.map((item: any) => item.spent),
+              backgroundColor: '#f97316', // Orange for spent
+              hoverBackgroundColor: '#ea580c',
+              borderRadius: 6
+            },
+            {
+              type: 'line',
+              label: 'Saldo',
+              data: response.receivedVsSpent.map((item: any) => item.balance),
+              borderColor: '#0f172a',
+              backgroundColor: 'transparent',
+              borderWidth: 3,
+              pointBackgroundColor: '#0f172a',
+              tension: 0.35
+            }
+          ]
+        };
+
+        // Expenses by work horizontal chart
+        this.expensesByWorkChart = {
+          labels: response.expensesByWork.map((item: any) => item.work),
+          datasets: [
+            {
+              label: 'Despesa',
+              data: response.expensesByWork.map((item: any) => item.value),
+              backgroundColor: '#f97316', // Warning orange
+              hoverBackgroundColor: '#ea580c',
+              borderRadius: 6
+            }
+          ]
+        };
+
         this.loading = false;
       },
-      error: (err) => {
-        console.error('Error loading dashboard', err);
+      error: (err: any) => {
+        console.error('Error loading cash flow data', err);
         this.loading = false;
       }
     });
   }
 
-  updateChart(dailyFlow: any[]) {
-    if (!dailyFlow) return;
-
-    this.barChartData.labels = dailyFlow.map(d => d.label); // Day numbers
-
-    this.barChartData.datasets[0].data = dailyFlow.map(d => d.entradas);
-    this.barChartData.datasets[1].data = dailyFlow.map(d => d.saidas);
-
-    this.chart?.update();
-  }
-
-  changeMonth(delta: number) {
-    this.currDate = new Date(this.currDate.getFullYear(), this.currDate.getMonth() + delta, 1);
-    this.loadData();
-  }
-
-  get currentPeriodLabel(): string {
-    return this.currDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-  }
-
-  toggleAccounts() {
-    this.showAccounts = !this.showAccounts;
-  }
-
-  selectFilter(period: 'today' | 'week' | 'month') {
-    this.filterPeriod = period;
-    this.currentPage = 1;
-  }
-
-  get filteredTransactions() {
-    if (!this.operationalData?.transactions) return [];
-
-    const transactions = this.operationalData.transactions;
-    if (this.filterPeriod === 'month') return transactions;
-
-    const now = new Date();
-    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-
-    if (this.filterPeriod === 'today') {
-      return transactions.filter((t: any) => {
-        const date = new Date(t.data);
-        return date >= startOfToday && date <= endOfToday;
-      });
-    }
-
-    const dayOfWeek = startOfToday.getDay();
-    const startOfWeek = new Date(startOfToday);
-    startOfWeek.setDate(startOfToday.getDate() - dayOfWeek);
-    const endOfWeek = new Date(startOfWeek);
-    endOfWeek.setDate(startOfWeek.getDate() + 6);
-    endOfWeek.setHours(23, 59, 59, 999);
-
-    return transactions.filter((t: any) => {
-      const date = new Date(t.data);
-      return date >= startOfWeek && date <= endOfWeek;
+  formatMoney(value: number): string {
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
     });
-  }
-
-  get paginatedTransactions() {
-    const start = (this.currentPage - 1) * this.pageSize;
-    return this.filteredTransactions.slice(start, start + this.pageSize);
-  }
-
-  get totalPages() {
-    return Math.max(1, Math.ceil(this.filteredTransactions.length / this.pageSize));
-  }
-
-  get paginationStart() {
-    if (this.filteredTransactions.length === 0) return 0;
-    return (this.currentPage - 1) * this.pageSize + 1;
-  }
-
-  get paginationEnd() {
-    return Math.min(this.currentPage * this.pageSize, this.filteredTransactions.length);
-  }
-
-  changePage(delta: number) {
-    const nextPage = this.currentPage + delta;
-    if (nextPage < 1 || nextPage > this.totalPages) return;
-    this.currentPage = nextPage;
-  }
-
-  // Actions
-  async openTransactionModal(type: 'RECEITA' | 'DESPESA' = 'RECEITA') {
-    const modal = await this.modalCtrl.create({
-      component: TransactionModalComponent,
-      componentProps: { type }
-    });
-
-    await modal.present();
-    const { data } = await modal.onWillDismiss();
-    if (data) {
-      this.loadData();
-    }
-  }
-
-  formatCurrency(val: number): string {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(val) || 0);
   }
 }

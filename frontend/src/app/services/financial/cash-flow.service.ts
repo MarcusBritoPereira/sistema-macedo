@@ -46,8 +46,9 @@ export class CashFlowService {
 
   constructor(private api: ApiService) { }
 
-  getCashFlow(): Observable<CashFlowData> {
-    const curYear = new Date().getFullYear();
+  getCashFlow(targetDate: Date = new Date()): Observable<CashFlowData> {
+    const curYear = targetDate.getFullYear();
+    const curMonth = targetDate.getMonth();
     const startOfYearStr = `${curYear}-01-01`;
     const endOfYearStr = `${curYear}-12-31`;
 
@@ -57,9 +58,6 @@ export class CashFlowService {
         const accounts = response.accounts || [];
 
         // 1. Calculate Current Month KPIs
-        const now = new Date();
-        const curMonth = now.getMonth(); // 0-11
-
         const currentMonthTransactions = transactions.filter((t: any) => {
           const d = new Date(t.dataVencimento);
           return d.getFullYear() === curYear && d.getMonth() === curMonth;
@@ -194,6 +192,8 @@ export class CashFlowService {
         });
 
         // 8. Dynamic Intelligence Insights & Alerts (Orange changed to Red)
+        const now = new Date();
+        const prevDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const sevenDaysLater = new Date();
         sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
         const next7DaysIn = transactions

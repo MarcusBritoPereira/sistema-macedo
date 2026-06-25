@@ -9,10 +9,6 @@
 
     <header class="dashboard-header">
       <div class="title-area">
-        <ion-button fill="clear" class="menu-button" routerLink="/home">
-          <ion-icon name="menu-outline"></ion-icon>
-        </ion-button>
-
         <div>
           <h1>Dashboard Financeiro</h1>
           <p>Macedo Construtora</p>
@@ -20,16 +16,24 @@
       </div>
 
       <div class="header-actions">
-        <button class="date-filter">
-          <ion-icon name="calendar-outline"></ion-icon>
-          Exercício Atual (Anual)
-        </button>
+        <div class="period-navigator" style="display: flex; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; height: 46px;">
+          <button class="nav-btn" (click)="changeYear(-1)" style="background: none; border: none; height: 100%; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 18px; transition: all 0.2s ease;">
+            <ion-icon name="chevron-back-outline"></ion-icon>
+          </button>
+          <div class="date-filter" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: #334155; padding: 0 4px; border: none; cursor: default;">
+            <ion-icon name="calendar-outline"></ion-icon>
+            Exercício {{ currentYear }}
+          </div>
+          <button class="nav-btn" (click)="changeYear(1)" style="background: none; border: none; height: 100%; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 18px; transition: all 0.2s ease;">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </button>
+        </div>
 
-        <div class="user-box">
-          <ion-icon name="person-circle-outline"></ion-icon>
+        <div class="user-box" *ngIf="auth.user$ | async as user" style="display: flex; align-items: center; gap: 10px;">
+          <img [src]="'https://ui-avatars.com/api/?name=' + user.nome + '&background=random'" alt="Avatar" style="width: 38px; height: 38px; border-radius: 50%; border: 2px solid #e2e8f0;" />
           <div>
-            <strong>Admin</strong>
-            <span>Administrador</span>
+            <strong style="display: block; font-size: 14px; font-weight: 700; color: #1e293b;">{{ user.nome }}</strong>
+            <span style="display: block; font-size: 12px; color: #64748b; font-weight: 500;">{{ user.perfil?.nome || 'Administrador' }}</span>
           </div>
         </div>
       </div>

@@ -26,9 +26,12 @@ import {
   arrowForwardOutline,
   documentTextOutline,
   barChartOutline,
-  notificationsOutline
+  notificationsOutline,
+  chevronBackOutline,
+  chevronForwardOutline
 } from 'ionicons/icons';
 import { FinancialDashboardService, FinancialDashboardData } from '../../services/financial/financial-dashboard.service';
+import { AuthService } from '../../services/auth/auth.service';
 
 Chart.register(...registerables);
 
@@ -52,6 +55,7 @@ export class DashboardPage implements OnInit {
 
   data!: FinancialDashboardData;
   loading = true;
+  currentYear = new Date().getFullYear();
 
   months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
@@ -73,6 +77,31 @@ export class DashboardPage implements OnInit {
             weight: 500
           }
         }
+      },
+      tooltip: {
+        backgroundColor: '#0f172a',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#e2e8f0',
+        borderWidth: 1,
+        padding: 12,
+        boxPadding: 6,
+        usePointStyle: true,
+        callbacks: {
+          label: (context: any) => {
+            let label = context.dataset.label || '';
+            if (label) {
+              label += ': ';
+            }
+            if (context.raw !== undefined && context.raw !== null) {
+              label += new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              }).format(Number(context.raw));
+            }
+            return label;
+          }
+        }
       }
     },
     scales: {
@@ -91,11 +120,24 @@ export class DashboardPage implements OnInit {
 
   horizontalChartOptions: ChartConfiguration<'bar'>['options'] = {
     ...this.chartOptions,
-    indexAxis: 'y'
+    indexAxis: 'y',
+    scales: {
+      x: {
+        ticks: {
+          color: '#1e293b',
+          callback: (value: any) => `R$ ${Number(value).toLocaleString('pt-BR')}`
+        }
+      },
+      y: {
+        ticks: { color: '#1e293b' },
+        grid: { display: false }
+      }
+    }
   };
 
   constructor(
-    private dashboardService: FinancialDashboardService
+    private dashboardService: FinancialDashboardService,
+    public auth: AuthService
   ) {
     addIcons({
       menuOutline,
@@ -113,7 +155,9 @@ export class DashboardPage implements OnInit {
       arrowForwardOutline,
       documentTextOutline,
       barChartOutline,
-      notificationsOutline
+      notificationsOutline,
+      chevronBackOutline,
+      chevronForwardOutline
     });
   }
 
@@ -123,7 +167,7 @@ export class DashboardPage implements OnInit {
 
   loadDashboard(): void {
     this.loading = true;
-    this.dashboardService.getDashboard().subscribe({
+    this.dashboardService.getDashboard(this.currentYear).subscribe({
       next: (response: FinancialDashboardData) => {
         this.data = response;
 
@@ -221,5 +265,10 @@ export class DashboardPage implements OnInit {
       style: 'currency',
       currency: 'BRL'
     });
+  }
+
+  changeYear(delta: number): void {
+    this.currentYear += delta;
+    this.loadDashboard();
   }
 }

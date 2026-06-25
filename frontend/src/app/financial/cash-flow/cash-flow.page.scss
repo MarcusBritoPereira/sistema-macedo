@@ -269,14 +269,14 @@
   }
 
   &.card-primary {
-    background: #0f172a;
-    border-color: #1e293b;
-    color: #ffffff;
+    background: #ffffff;
+    border-color: #e2e8f0;
+    color: #0f172a;
 
-    .card-header-row span { color: #94a3b8; }
-    .value-display { color: #ffffff; }
-    .icon-circle { background: #1e293b; ion-icon { color: #38bdf8; } }
-    .card-bottom-accent { background: #38bdf8; }
+    .card-header-row span { color: #64748b; }
+    .value-display { color: #3b82f6; }
+    .icon-circle { background: #eff6ff; ion-icon { color: #3b82f6; } }
+    .card-bottom-accent { background: #3b82f6; }
   }
 
   &.card-pending {

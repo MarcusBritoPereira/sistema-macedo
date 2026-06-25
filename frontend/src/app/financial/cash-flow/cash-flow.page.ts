@@ -22,6 +22,7 @@ import {
   notificationsOutline
 } from 'ionicons/icons';
 import { CashFlowData, CashFlowService } from '../../services/financial/cash-flow.service';
+import { AuthService } from '../../services/auth/auth.service';
 
 Chart.register(...registerables);
 
@@ -37,6 +38,7 @@ export class CashFlowPage implements OnInit {
   data!: CashFlowData;
   loading = true;
   currentYear = new Date().getFullYear();
+  currentDate = new Date();
 
   cards: any[] = [];
 
@@ -75,11 +77,11 @@ export class CashFlowPage implements OnInit {
             if (label) {
               label += ': ';
             }
-            if (context.parsed.y !== null) {
+            if (context.raw !== undefined && context.raw !== null) {
               label += new Intl.NumberFormat('pt-BR', {
                 style: 'currency',
                 currency: 'BRL'
-              }).format(context.parsed.y);
+              }).format(Number(context.raw));
             }
             return label;
           }
@@ -121,7 +123,7 @@ export class CashFlowPage implements OnInit {
     }
   };
 
-  constructor(private cashFlowService: CashFlowService) {
+  constructor(private cashFlowService: CashFlowService, public auth: AuthService) {
     addIcons({
       menuOutline,
       calendarOutline,
@@ -147,7 +149,7 @@ export class CashFlowPage implements OnInit {
 
   loadCashFlow(): void {
     this.loading = true;
-    this.cashFlowService.getCashFlow().subscribe({
+    this.cashFlowService.getCashFlow(this.currentDate).subscribe({
       next: (response: CashFlowData) => {
         this.data = response;
 
@@ -269,5 +271,18 @@ export class CashFlowPage implements OnInit {
       style: 'currency',
       currency: 'BRL'
     });
+  }
+
+  changeMonth(delta: number): void {
+    this.currentDate = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + delta, 1);
+    this.currentYear = this.currentDate.getFullYear();
+    this.loadCashFlow();
+  }
+
+  get currentPeriodLabel(): string {
+    const start = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
+    const end = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0);
+    const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
+    return `${start.toLocaleDateString('pt-BR', options)} - ${end.toLocaleDateString('pt-BR', options)}`;
   }
 }

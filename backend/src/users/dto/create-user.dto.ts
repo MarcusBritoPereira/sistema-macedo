@@ -24,4 +24,7 @@ export class CreateUserDto {
 
   @IsOptional()
   ativo?: boolean;
+
+  @IsOptional()
+  permissoes?: any;
 }

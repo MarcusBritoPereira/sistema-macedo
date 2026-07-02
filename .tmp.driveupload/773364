@@ -1,0 +1,50 @@
+import { PrismaService } from '../prisma/prisma.service';
+export declare class BankAccountsController {
+    private prisma;
+    constructor(prisma: PrismaService);
+    findAll(): Promise<{
+        pendingReconciliations: number;
+        lastSync: Date | null;
+        statusIntegracao: string;
+        lastImported: Date | null;
+        saldoAtual: number;
+        nome: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        banco: string;
+        agencia: string | null;
+        conta: string | null;
+        codigoBanco: string | null;
+        saldoInicial: import("@prisma/client/runtime/library").Decimal;
+        integracao: {
+            id: string;
+            status: import(".prisma/client").$Enums.StatusIntegracao;
+            banco: string;
+            dataInicioAutomacao: Date | null;
+            lastSync: Date | null;
+        } | null;
+    }[]>;
+    create(data: any): Promise<{
+        nome: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        banco: string;
+        agencia: string | null;
+        conta: string | null;
+        codigoBanco: string | null;
+        saldoInicial: import("@prisma/client/runtime/library").Decimal;
+    }>;
+    delete(id: string): Promise<{
+        nome: string;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        banco: string;
+        agencia: string | null;
+        conta: string | null;
+        codigoBanco: string | null;
+        saldoInicial: import("@prisma/client/runtime/library").Decimal;
+    }>;
+}

@@ -1,0 +1,8 @@
+import { NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { DreService } from '../../financial/dre/dre.service';
+export declare class FinancialCacheInterceptor implements NestInterceptor {
+    private readonly dreService;
+    constructor(dreService: DreService);
+    intercept(context: ExecutionContext, next: CallHandler): Observable<any>;
+}

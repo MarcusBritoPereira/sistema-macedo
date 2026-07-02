@@ -1,0 +1,1 @@
+{"version":3,"file":"change-password.dto.js","sourceRoot":"","sources":["../../../../src/auth/dto/change-password.dto.ts"],"names":[],"mappings":";;;;;;;;;;;;AAAA,qDAA+D;AAE/D,MAAa,iBAAiB;IAO5B,SAAS,CAAS;CACnB;AARD,8CAQC;AADC;IANC,IAAA,0BAAQ,GAAE;IACV,IAAA,2BAAS,EAAC,CAAC,CAAC;IACZ,IAAA,yBAAO,EAAC,oCAAoC,EAAE;QAC7C,OAAO,EACL,6EAA6E;KAChF,CAAC;;oDACgB"}

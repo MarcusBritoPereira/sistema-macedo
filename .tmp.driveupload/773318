@@ -1,0 +1,25 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.RateioModule = void 0;
+const common_1 = require("@nestjs/common");
+const rateio_service_1 = require("./rateio.service");
+const rateio_controller_1 = require("./rateio.controller");
+const dre_module_1 = require("../dre/dre.module");
+let RateioModule = class RateioModule {
+};
+exports.RateioModule = RateioModule;
+exports.RateioModule = RateioModule = __decorate([
+    (0, common_1.Module)({
+        imports: [dre_module_1.DreModule],
+        controllers: [rateio_controller_1.RateioController],
+        providers: [rateio_service_1.RateioService],
+        exports: [rateio_service_1.RateioService],
+    })
+], RateioModule);
+//# sourceMappingURL=rateio.module.js.map

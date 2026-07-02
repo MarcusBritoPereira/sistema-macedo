@@ -1,0 +1,26 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
+async function main() {
+    console.log('Start clearing ALL reconciliation imports...');
+    const deletedConciliations = await prisma.conciliacaoBancaria.deleteMany({});
+    console.log(`Deleted ${deletedConciliations.count} conciliation records.`);
+    const updatedTransactions = await prisma.lancamentoFinanceiro.updateMany({
+        where: { status: 'CONCILIADO' },
+        data: { status: 'REALIZADO' },
+    });
+    console.log(`Reset ${updatedTransactions.count} financial transactions to REALIZADO status.`);
+    const deletedStatements = await prisma.extratoBancario.deleteMany({});
+    console.log(`Deleted ${deletedStatements.count} bank statement records.`);
+    console.log('Finished cleanup of imports.');
+}
+main()
+    .catch((e) => {
+    console.error(e);
+    process.exit(1);
+})
+    .finally(async () => {
+    await prisma.$disconnect();
+});
+//# sourceMappingURL=clear_imports.js.map

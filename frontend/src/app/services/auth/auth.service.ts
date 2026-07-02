@@ -30,7 +30,14 @@ export class AuthService {
     const user = sessionStorage.getItem('user');
     if (!user) return;
     try {
-      this.userSubject.next(JSON.parse(user));
+      const parsedUser = JSON.parse(user);
+      // Se o payload armazenado estiver usando o formato antigo quebrando (perfil como string)
+      // forçamos o AuthGuard a disparar validateSession() para baixar o objeto completo.
+      if (typeof parsedUser.perfil === 'string' || !parsedUser.perfil?.id) {
+        this.isAuthenticated = false;
+        return;
+      }
+      this.userSubject.next(parsedUser);
       this.isAuthenticated = true;
     } catch {
       this.logout();

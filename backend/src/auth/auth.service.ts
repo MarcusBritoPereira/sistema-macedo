@@ -63,7 +63,8 @@ export class AuthService {
         id: user.id,
         nome: user.nome,
         email: user.email,
-        perfil: user.perfil?.nome,
+        perfil: user.perfil,
+        permissoes: user.permissoes,
         precisaTrocarSenha: user.precisaTrocarSenha,
       },
     };

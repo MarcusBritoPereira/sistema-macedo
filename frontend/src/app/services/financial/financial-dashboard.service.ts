@@ -182,8 +182,12 @@ export class FinancialDashboardService {
         return this.api.get<BalanceSheetResponse>(`financial/dashboard/balance${query}`);
     }
 
-    getDashboard(year?: number): Observable<FinancialDashboardData> {
+    getDashboard(year?: number, month?: number): Observable<FinancialDashboardData> {
         const y = year || new Date().getFullYear();
-        return this.api.get<FinancialDashboardData>(`financial/dashboard/summary?year=${y}`);
+        let url = `financial/dashboard/summary?year=${y}`;
+        if (month !== undefined) {
+            url += `&month=${month}`;
+        }
+        return this.api.get<FinancialDashboardData>(url);
     }
 }

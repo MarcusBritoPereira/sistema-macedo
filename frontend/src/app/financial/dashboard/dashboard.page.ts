@@ -56,8 +56,10 @@ export class DashboardPage implements OnInit {
   data!: FinancialDashboardData;
   loading = true;
   currentYear = new Date().getFullYear();
+  currentMonth = new Date().getMonth();
 
-  months = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
+  months = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+  shortMonths = ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN', 'JUL', 'AGO', 'SET', 'OUT', 'NOV', 'DEZ'];
 
   cards: any[] = [];
 
@@ -167,7 +169,7 @@ export class DashboardPage implements OnInit {
 
   loadDashboard(): void {
     this.loading = true;
-    this.dashboardService.getDashboard(this.currentYear).subscribe({
+    this.dashboardService.getDashboard(this.currentYear, this.currentMonth).subscribe({
       next: (response: FinancialDashboardData) => {
         this.data = response;
 
@@ -267,8 +269,16 @@ export class DashboardPage implements OnInit {
     });
   }
 
-  changeYear(delta: number): void {
-    this.currentYear += delta;
+  changePeriod(delta: number): void {
+    let newMonth = this.currentMonth + delta;
+    if (newMonth > 11) {
+      newMonth = 0;
+      this.currentYear++;
+    } else if (newMonth < 0) {
+      newMonth = 11;
+      this.currentYear--;
+    }
+    this.currentMonth = newMonth;
     this.loadDashboard();
   }
 }

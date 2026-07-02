@@ -1092,12 +1092,14 @@ export class FinancialDashboardService {
     );
   }
 
-  async getSummaryDashboard(year: number) {
+  async getSummaryDashboard(year: number, month?: number) {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const targetYear = year || now.getFullYear();
+    const targetMonth = month !== undefined ? month : now.getMonth();
+    const startOfMonth = new Date(targetYear, targetMonth, 1);
     const endOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
+      targetYear,
+      targetMonth + 1,
       0,
       23,
       59,

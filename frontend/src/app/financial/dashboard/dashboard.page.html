@@ -17,14 +17,14 @@
 
       <div class="header-actions">
         <div class="period-navigator" style="display: flex; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; height: 46px;">
-          <button class="nav-btn" (click)="changeYear(-1)" style="background: none; border: none; height: 100%; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 18px; transition: all 0.2s ease;">
+          <button class="nav-btn" (click)="changePeriod(-1)" style="background: none; border: none; height: 100%; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 18px; transition: all 0.2s ease;">
             <ion-icon name="chevron-back-outline"></ion-icon>
           </button>
           <div class="date-filter" style="display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 14px; color: #334155; padding: 0 4px; border: none; cursor: default;">
             <ion-icon name="calendar-outline"></ion-icon>
-            Exercício {{ currentYear }}
+            {{ months[currentMonth] }} {{ currentYear }}
           </div>
-          <button class="nav-btn" (click)="changeYear(1)" style="background: none; border: none; height: 100%; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 18px; transition: all 0.2s ease;">
+          <button class="nav-btn" (click)="changePeriod(1)" style="background: none; border: none; height: 100%; padding: 0 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #64748b; font-size: 18px; transition: all 0.2s ease;">
             <ion-icon name="chevron-forward-outline"></ion-icon>
           </button>
         </div>

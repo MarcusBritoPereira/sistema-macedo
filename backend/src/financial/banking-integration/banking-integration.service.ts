@@ -46,6 +46,30 @@ export class BankingIntegrationService {
     }
   }
 
+  // Roda todos os dias às 06:00 da manhã no fuso local
+  @Cron('0 6 * * *')
+  async handleDailySync() {
+    console.log('[Cron] Iniciando rotina de sincronização bancária diária...');
+    try {
+      const integrations = await this.prisma.integracaoBancaria.findMany({
+        where: { status: 'CONNECTED' },
+      });
+
+      for (const integration of integrations) {
+        console.log(`[Cron] Sincronizando conta: ${integration.contaBancariaId}`);
+        try {
+          await this.syncStatements(integration.contaBancariaId);
+          console.log(`[Cron] Sucesso ao sincronizar conta: ${integration.contaBancariaId}`);
+        } catch (error) {
+          console.error(`[Cron] Erro ao sincronizar conta: ${integration.contaBancariaId}`, error.message || error);
+        }
+      }
+      console.log('[Cron] Rotina de sincronização bancária finalizada.');
+    } catch (error) {
+      console.error('[Cron] Falha ao executar rotina de sincronização bancária:', error);
+    }
+  }
+
   async configure(
     dto: ConfigureBankingDto,
     files?: { certificate?: any[]; privateKey?: any[] },

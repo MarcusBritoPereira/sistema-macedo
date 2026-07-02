@@ -280,9 +280,8 @@ export class CashFlowPage implements OnInit {
   }
 
   get currentPeriodLabel(): string {
-    const start = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth(), 1);
-    const end = new Date(this.currentDate.getFullYear(), this.currentDate.getMonth() + 1, 0);
-    const options: Intl.DateTimeFormatOptions = { day: '2-digit', month: '2-digit', year: 'numeric' };
-    return `${start.toLocaleDateString('pt-BR', options)} - ${end.toLocaleDateString('pt-BR', options)}`;
+    const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
+    const label = this.currentDate.toLocaleDateString('pt-BR', options);
+    return label.charAt(0).toUpperCase() + label.slice(1);
   }
 }

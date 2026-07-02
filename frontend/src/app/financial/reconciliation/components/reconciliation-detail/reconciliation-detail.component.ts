@@ -563,7 +563,7 @@ export class ReconciliationDetailComponent
   }
 
   getCostCentersForAllocation(item: any): CostCenter[] {
-    const centers = this.localCostCenters || [];
+    const centers = (this.localCostCenters || []).filter(c => c.ativo !== false && c.aceitaLancamento !== false);
     const filterByText = (needle: string) =>
       centers.filter((center) => {
         const text = this.normalizeLabel(

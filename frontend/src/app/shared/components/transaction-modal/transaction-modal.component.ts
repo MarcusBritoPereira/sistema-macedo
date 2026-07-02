@@ -91,7 +91,7 @@ export class TransactionModalComponent implements OnInit {
 
     loadOptions() {
         this.categoriesService.findAll().subscribe((cats: any[]) => this.categories = cats);
-        this.costCentersService.findAll().subscribe((ccs: any[]) => this.costCenters = ccs);
+        this.costCentersService.findAll().subscribe((ccs: any[]) => this.costCenters = ccs.filter((c: any) => c.ativo !== false && c.aceitaLancamento !== false));
         this.financialService.getBankAccounts().subscribe({
             next: (accounts: any[]) => this.bankAccounts = accounts,
             error: (err: any) => console.error('Error loading accounts in modal', err)

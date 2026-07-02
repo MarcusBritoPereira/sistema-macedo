@@ -5,6 +5,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { UsersService } from '../../services/users/users';
+import { AuthService } from '../../services/auth/auth.service';
 import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonSelect, IonSelectOption, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonCheckbox } from '@ionic/angular/standalone';
 
 @Component({
@@ -47,6 +48,7 @@ export class UserDetailPage implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private usersService: UsersService,
+    private authService: AuthService,
     private alertController: AlertController
   ) {
     const permsGroup: any = {};
@@ -83,10 +85,9 @@ export class UserDetailPage implements OnInit {
         userData.perfil = (userData.perfil as any).nome;
       }
 
-      const permsArray = userData.permissoes || [];
       const permsObj: any = {};
       this.permissionsKeys.forEach(p => {
-        permsObj[p.key] = permsArray.includes(p.key);
+        permsObj[p.key] = this.authService.hasPermission(p.key, user);
       });
       userData.permissoes = permsObj;
 

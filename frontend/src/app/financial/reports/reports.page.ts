@@ -27,10 +27,10 @@ import {
   IonToggle,
   IonSpinner,
   IonSearchbar,
-  IonInput,
   IonModal,
   IonDatetime,
   IonDatetimeButton,
+  IonSkeletonText,
   ToastController
 } from '@ionic/angular/standalone';
 import { forkJoin, of, catchError } from 'rxjs';
@@ -47,7 +47,9 @@ import {
   printOutline,
   searchOutline,
   sparklesOutline,
-  alertCircleOutline
+  alertCircleOutline,
+  fileTrayFullOutline,
+  gridOutline,
 } from 'ionicons/icons';
 import { ReportsService, ReportDefinition, ReportGenerationResponse } from '../../services/financial/reports.service';
 import { FinancialService, BankAccount } from '../../services/financial/financial';
@@ -89,10 +91,10 @@ type PresetPeriod = 'month' | 'quarter' | 'year' | 'custom';
     IonToggle,
     IonSpinner,
     IonSearchbar,
-    IonInput,
     IonModal,
     IonDatetime,
     IonDatetimeButton,
+    IonSkeletonText,
     ReportViewerComponent
   ]
 })
@@ -137,7 +139,9 @@ export class ReportsPage implements OnInit {
       printOutline,
       searchOutline,
       sparklesOutline,
-      alertCircleOutline
+      alertCircleOutline,
+      fileTrayFullOutline,
+      gridOutline
     });
   }
 
@@ -276,6 +280,22 @@ export class ReportsPage implements OnInit {
     return !this.generating && !this.loadingReports && this.selectedReports.size > 0 && this.hasValidDateRange;
   }
 
+  get exportReadyCount() {
+    return this.lastGeneration?.reports.filter(report => report.status === 'ready' && report.data).length ?? 0;
+  }
+
+  get exportHint() {
+    if (!this.lastGeneration) {
+      return 'Gere um pacote para habilitar PDF, Excel e impressão.';
+    }
+
+    if (this.exportReadyCount === 0) {
+      return 'Nenhum relatório pronto para exportação no último pacote.';
+    }
+
+    return `${this.exportReadyCount} relatório(s) prontos para exportar.`;
+  }
+
   get hasValidDateRange() {
     const start = this.normalizeDate(this.startDate);
     const end = this.normalizeDate(this.endDate);
@@ -385,6 +405,135 @@ export class ReportsPage implements OnInit {
         this.showToast('Não foi possível gerar os relatórios. Tente novamente.', 'danger');
       }
     });
+  }
+
+
+
+  exportPackage(format: 'pdf' | 'excel' | 'print') {
+    const readyReports = this.lastGeneration?.reports.filter(report => report.status === 'ready' && report.data) ?? [];
+
+    if (readyReports.length === 0) {
+      this.showToast('Gere ao menos um relatório antes de exportar.', 'warning');
+      return;
+    }
+
+    if (format === 'excel') {
+      this.downloadPackageExcel(readyReports);
+      this.showToast('Arquivo Excel gerado para o pacote de relatórios.', 'success');
+      return;
+    }
+
+    this.openPrintablePackage(readyReports, format === 'print');
+  }
+
+  private downloadPackageExcel(reports: any[]) {
+    const workbookHtml = reports.map(report => this.reportToHtmlTable(report)).join('<br><br>');
+    const html = `
+      <html>
+        <head><meta charset="UTF-8"></head>
+        <body>${workbookHtml}</body>
+      </html>
+    `;
+    this.downloadBlob(html, `pacote_relatorios_${this.todayStamp()}.xls`, 'application/vnd.ms-excel;charset=utf-8;');
+  }
+
+  private openPrintablePackage(reports: any[], autoPrint: boolean) {
+    const content = reports.map(report => this.reportToPrintableHtml(report)).join('<div class="page-break"></div>');
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=1200,height=800');
+
+    if (!printWindow) {
+      this.showToast('O navegador bloqueou a janela de impressão/exportação.', 'warning');
+      return;
+    }
+
+    printWindow.document.write(`
+      <!doctype html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="utf-8">
+          <title>Pacote de relatórios - Sistema Macedo</title>
+          <style>
+            body { color: #0f172a; font-family: Arial, sans-serif; margin: 32px; }
+            .report-cover { border-bottom: 2px solid #2563eb; margin-bottom: 24px; padding-bottom: 16px; }
+            h1 { font-size: 26px; margin: 0 0 6px; }
+            h2 { color: #1d4ed8; font-size: 20px; margin: 24px 0 10px; }
+            .meta { color: #64748b; font-size: 13px; margin-bottom: 16px; }
+            table { border-collapse: collapse; margin-top: 12px; width: 100%; }
+            th { background: #eff6ff; color: #1d4ed8; text-align: left; }
+            th, td { border: 1px solid #dbeafe; padding: 8px; }
+            td.value { text-align: right; white-space: nowrap; }
+            .summary { display: grid; gap: 8px; grid-template-columns: repeat(2, 1fr); margin: 12px 0; }
+            .summary div { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; }
+            .page-break { break-after: page; page-break-after: always; }
+            @media print { body { margin: 18mm; } .no-print { display: none; } }
+          </style>
+        </head>
+        <body>
+          <button class="no-print" onclick="window.print()" style="margin-bottom:16px;padding:10px 14px;border-radius:10px;border:1px solid #2563eb;background:#2563eb;color:white;font-weight:700;">Imprimir / salvar PDF</button>
+          <section class="report-cover">
+            <h1>Pacote executivo de relatórios</h1>
+            <div class="meta">Sistema Macedo • ${this.periodDateLabel} • ${reports.length} relatório(s) • Gerado em ${new Date().toLocaleString('pt-BR')}</div>
+          </section>
+          ${content}
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+
+    if (autoPrint) {
+      printWindow.focus();
+      printWindow.print();
+    }
+  }
+
+  private reportToHtmlTable(report: any) {
+    const rows = report.data?.details ?? [];
+    return `
+      <table>
+        <thead><tr><th colspan="3">${this.escapeHtml(report.title)}</th></tr><tr><th>Descrição</th><th>Nível</th><th>Valor</th></tr></thead>
+        <tbody>${rows.map((row: any) => `<tr><td>${this.escapeHtml(row.label)}</td><td>${row.level ?? 0}</td><td>${Number(row.value ?? 0).toFixed(2)}</td></tr>`).join('')}</tbody>
+      </table>
+    `;
+  }
+
+  private reportToPrintableHtml(report: any) {
+    const summary = report.data?.summary ?? {};
+    const rows = report.data?.details ?? [];
+    const summaryEntries = Object.entries(summary).filter(([, value]) => typeof value === 'number' || typeof value === 'string').slice(0, 8);
+
+    return `
+      <section>
+        <h2>${this.escapeHtml(report.title)}</h2>
+        <div class="meta">${this.escapeHtml(this.periodLabel)} • ${this.escapeHtml(this.periodDateLabel)}</div>
+        ${summaryEntries.length ? `<div class="summary">${summaryEntries.map(([key, value]) => `<div><strong>${this.escapeHtml(key)}</strong><br>${this.escapeHtml(String(value))}</div>`).join('')}</div>` : ''}
+        <table>
+          <thead><tr><th>Descrição</th><th>Valor</th></tr></thead>
+          <tbody>${rows.map((row: any) => `<tr><td>${'&nbsp;'.repeat((row.level ?? 0) * 4)}${this.escapeHtml(row.label)}</td><td class="value">${this.formatMoney(row.value ?? 0)}</td></tr>`).join('')}</tbody>
+        </table>
+      </section>
+    `;
+  }
+
+  private downloadBlob(content: string, filename: string, type: string) {
+    const blob = new Blob([content], { type });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private formatMoney(value: number) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(value || 0));
+  }
+
+  private todayStamp() {
+    return new Date().toISOString().split('T')[0];
+  }
+
+  private escapeHtml(value: string) {
+    return value.replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char] ?? char));
   }
 
   viewReport(report: any) {

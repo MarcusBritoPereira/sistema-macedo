@@ -2,7 +2,7 @@ import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/cor
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
 import { addIcons } from 'ionicons';
-import { printOutline, downloadOutline, closeOutline, trendingUpOutline, trendingDownOutline } from 'ionicons/icons';
+import { printOutline, closeOutline, trendingUpOutline, trendingDownOutline, gridOutline, documentTextOutline, bookmarkOutline } from 'ionicons/icons';
 
 export interface ReportRow {
   label: string;
@@ -28,13 +28,17 @@ export interface ReportData {
           <h2>Empresa: Sistema Macedo</h2>
         </div>
         <div class="actions-toolbar">
-          <ion-button fill="outline" size="small" (click)="downloadCSV()">
-            <ion-icon name="download-outline" slot="start"></ion-icon>
-            Exportar CSV
-          </ion-button>
           <ion-button fill="outline" size="small" (click)="exportPDF()">
+            <ion-icon name="document-text-outline" slot="start"></ion-icon>
+            PDF
+          </ion-button>
+          <ion-button fill="outline" size="small" (click)="downloadExcel()">
+            <ion-icon name="grid-outline" slot="start"></ion-icon>
+            Excel
+          </ion-button>
+          <ion-button fill="outline" size="small" (click)="printReport()">
             <ion-icon name="print-outline" slot="start"></ion-icon>
-            Exportar PDF
+            Imprimir
           </ion-button>
           <ion-button fill="clear" size="small" (click)="closeReport()" color="medium">
             <ion-icon name="close-outline" slot="icon-only"></ion-icon>
@@ -120,7 +124,7 @@ export interface ReportData {
           
           <!-- Section Headers / Block Titles -->
           <div *ngIf="row.isSectionHeader" class="section-title">
-            <ion-icon name="bookmark" color="primary"></ion-icon>
+            <ion-icon name="bookmark-outline" color="primary"></ion-icon>
             {{ row.sectionName | uppercase }}
           </div>
 
@@ -399,7 +403,7 @@ export class ReportViewerComponent implements OnInit, OnChanges {
   processedRows: any[] = [];
 
   constructor() {
-    addIcons({ printOutline, downloadOutline, closeOutline, trendingUpOutline, trendingDownOutline });
+    addIcons({ printOutline, closeOutline, trendingUpOutline, trendingDownOutline, gridOutline, documentTextOutline, bookmarkOutline });
   }
 
   ngOnInit() {
@@ -481,35 +485,54 @@ export class ReportViewerComponent implements OnInit, OnChanges {
     }
   }
 
-  downloadCSV() {
+  downloadExcel() {
     if (!this.data || !this.data.details) return;
 
-    const headers = ['Descrição', 'Valor'];
-    const rows = this.data.details.map(row => {
-      const indent = '  '.repeat(row.level || 0);
-      return ['"' + indent + row.label + '"', row.value.toFixed(2)];
-    });
+    const rows = this.data.details.map(row => `
+      <tr>
+        <td>${'&nbsp;'.repeat((row.level || 0) * 4)}${this.escapeHtml(row.label)}</td>
+        <td>${row.level || 0}</td>
+        <td>${Number(row.value || 0).toFixed(2)}</td>
+      </tr>`).join('');
 
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(r => r.join(','))
-    ].join('\\n');
+    const htmlContent = `
+      <html>
+        <head><meta charset="UTF-8"></head>
+        <body>
+          <table>
+            <thead>
+              <tr><th colspan="3">${this.escapeHtml(this.title)}</th></tr>
+              <tr><th>Descrição</th><th>Nível</th><th>Valor</th></tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </body>
+      </html>`;
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob([htmlContent], { type: 'application/vnd.ms-excel;charset=utf-8;' });
     const link = document.createElement('a');
     if (link.download !== undefined) {
       const url = URL.createObjectURL(blob);
       link.setAttribute('href', url);
-      const filename = this.title.replace(/\\s+/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.csv';
+      const filename = this.title.replace(/\s+/g, '_') + '_' + new Date().toISOString().split('T')[0] + '.xls';
       link.setAttribute('download', filename);
       link.style.visibility = 'hidden';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
     }
   }
 
   exportPDF() {
     window.print();
+  }
+
+  printReport() {
+    window.print();
+  }
+
+  private escapeHtml(value: string) {
+    return String(value ?? '').replace(/[&<>"]/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[char] ?? char));
   }
 }

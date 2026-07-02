@@ -169,8 +169,28 @@
 
           <ion-searchbar placeholder="Buscar por nome, categoria, tag ou indicador..." [(ngModel)]="reportSearch" animated="true" show-clear-button="focus"></ion-searchbar>
 
-          <div *ngIf="loadingReports" class="loading-state"><ion-spinner name="dots"></ion-spinner><p>Carregando catálogo...</p></div>
-          <div *ngIf="!loadingReports && filteredReports.length === 0" class="loading-state"><p>Nenhum relatório encontrado para este filtro.</p></div>
+          <div *ngIf="loadingReports" class="skeleton-grid" aria-label="Carregando catálogo de relatórios">
+            <article class="report-card skeleton-card" *ngFor="let item of [1,2,3,4]">
+              <div class="report-topline">
+                <ion-skeleton-text animated class="skeleton-icon"></ion-skeleton-text>
+                <ion-skeleton-text animated class="skeleton-badge"></ion-skeleton-text>
+              </div>
+              <ion-skeleton-text animated class="skeleton-title"></ion-skeleton-text>
+              <ion-skeleton-text animated class="skeleton-line"></ion-skeleton-text>
+              <ion-skeleton-text animated class="skeleton-line short"></ion-skeleton-text>
+              <ion-skeleton-text animated class="skeleton-button"></ion-skeleton-text>
+            </article>
+          </div>
+
+          <div *ngIf="!loadingReports && filteredReports.length === 0" class="empty-state">
+            <div class="empty-icon"><ion-icon name="file-tray-full-outline"></ion-icon></div>
+            <h3>Nenhum relatório encontrado</h3>
+            <p>Revise a busca ou limpe o filtro para voltar ao catálogo completo de relatórios executivos.</p>
+            <ion-button fill="outline" (click)="reportSearch = ''">
+              <ion-icon name="refresh-outline" slot="start"></ion-icon>
+              Limpar busca
+            </ion-button>
+          </div>
 
           <div class="report-grid" *ngIf="!loadingReports && filteredReports.length > 0">
             <article class="report-card" *ngFor="let report of filteredReports" [class.selected]="isSelected(report.id)" (click)="toggleReport(report.id)">
@@ -218,6 +238,26 @@
           <ion-card class="panel-card result-card" *ngIf="lastGeneration">
             <ion-card-header><ion-card-title>Última geração</ion-card-title><ion-card-subtitle>{{ lastGeneration.count }} relatório(s) • {{ lastGeneration.generatedAt | date:'short' }}</ion-card-subtitle></ion-card-header>
             <ion-card-content>
+              <div class="export-panel">
+                <div>
+                  <strong>Exportação executiva</strong>
+                  <p>{{ exportHint }}</p>
+                </div>
+                <div class="export-actions">
+                  <ion-button size="small" fill="outline" (click)="exportPackage('pdf')" [disabled]="exportReadyCount === 0">
+                    <ion-icon name="document-text-outline" slot="start"></ion-icon>
+                    PDF
+                  </ion-button>
+                  <ion-button size="small" fill="outline" (click)="exportPackage('excel')" [disabled]="exportReadyCount === 0">
+                    <ion-icon name="grid-outline" slot="start"></ion-icon>
+                    Excel
+                  </ion-button>
+                  <ion-button size="small" fill="outline" (click)="exportPackage('print')" [disabled]="exportReadyCount === 0">
+                    <ion-icon name="print-outline" slot="start"></ion-icon>
+                    Imprimir
+                  </ion-button>
+                </div>
+              </div>
               <ion-list lines="none">
                 <ion-item *ngFor="let report of lastGeneration.reports" button (click)="viewReport(report)" [detail]="true">
                   <ion-icon name="document-text-outline" slot="start" color="primary"></ion-icon>

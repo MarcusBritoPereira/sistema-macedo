@@ -82,6 +82,12 @@ ion-item {
     font-weight: 500;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); /* Fluid Animation */
 
+    ion-label {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
     ion-icon {
         font-size: 22px;
         margin-right: 16px;

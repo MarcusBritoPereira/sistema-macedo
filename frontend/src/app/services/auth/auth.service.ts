@@ -118,12 +118,17 @@ export class AuthService {
     if (permissoes.all === true) return true;
     if (Array.isArray(permissoes)) return permissoes.includes(permission);
     if (permissoes[permission] === true) return true;
-    return (
-      permissoes.financial === true &&
-      (permission.startsWith('financeiro.') ||
-        permission === 'can_reconcile' ||
-        permission === 'can_manage_banking')
-    );
+    // Compatibilidade com o perfil antigo FINANCEIRO
+    if (permissoes.financial === true) {
+      const financialKeys = [
+        'visao_geral', 'outras_contas', 'conciliacao', 'competencia',
+        'pagar', 'receber', 'extrato', 'fluxo_caixa', 'relatorios',
+        'dre', 'categorias', 'centros_custo', 'integracao', 'clientes', 'fornecedores'
+      ];
+      if (financialKeys.includes(permission)) return true;
+      if (permission.startsWith('financeiro.') || permission === 'can_reconcile' || permission === 'can_manage_banking') return true;
+    }
+    return false;
   }
 
   logout() {

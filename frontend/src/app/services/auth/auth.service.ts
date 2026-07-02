@@ -100,9 +100,17 @@ export class AuthService {
     user: any = this.userSubject.value,
   ): boolean {
     if (!user) return false;
-    if (user?.perfil?.nome === 'ADMINISTRADOR' || user?.perfil?.nome === 'ADMIN') return true;
 
     const userPerms = user.permissoes;
+    // Se as permissões foram customizadas (salvas como um objeto true/false)
+    if (userPerms && typeof userPerms === 'object' && !Array.isArray(userPerms)) {
+      if (userPerms[permission] !== undefined) {
+        return userPerms[permission] === true;
+      }
+    }
+
+    if (user?.perfil?.nome === 'ADMINISTRADOR' || user?.perfil?.nome === 'ADMIN') return true;
+
     if (Array.isArray(userPerms) && userPerms.includes(permission)) return true;
 
     const permissoes = user?.perfil?.permissoes;

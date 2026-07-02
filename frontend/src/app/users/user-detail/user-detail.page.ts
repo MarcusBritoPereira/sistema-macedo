@@ -101,10 +101,8 @@ export class UserDetailPage implements OnInit {
     if (this.userForm.valid) {
       const userData: any = { ...this.userForm.value };
 
-      // Transform permissoes object to array of keys
-      if (userData.permissoes) {
-        userData.permissoes = Object.keys(userData.permissoes).filter(k => userData.permissoes[k]);
-      }
+      // We now keep permissoes as an object (e.g. { visao_geral: true, outras_contas: false }) 
+      // so the backend knows exactly what was explicitly revoked.
 
       // If edit mode and password is empty, remove it from payload
       if (this.isEditMode && !userData.senha) {

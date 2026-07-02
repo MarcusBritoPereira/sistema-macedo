@@ -39,7 +39,7 @@
                 lines="none"
                 detail="false"
                 routerLinkActive="selected"
-              >
+               *ngIf="auth.hasPermission('visao_geral')">
                 <ion-icon
                   aria-hidden="true"
                   slot="start"
@@ -69,7 +69,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('outras_contas')">
                       <ion-icon
                         slot="start"
                         ios="business-outline"
@@ -84,7 +84,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('conciliacao')">
                       <ion-icon
                         slot="start"
                         ios="receipt-outline"
@@ -99,7 +99,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('competencia')">
                       <ion-icon
                         slot="start"
                         ios="calendar-outline"
@@ -114,7 +114,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('pagar')">
                       <ion-icon
                         slot="start"
                         ios="arrow-up-circle-outline"
@@ -129,7 +129,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('receber')">
                       <ion-icon
                         slot="start"
                         ios="arrow-down-circle-outline"
@@ -144,7 +144,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('extrato')">
                       <ion-icon
                         slot="start"
                         ios="list-circle-outline"
@@ -159,7 +159,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('fluxo_caixa')">
                       <ion-icon
                         slot="start"
                         ios="trending-up-outline"
@@ -174,7 +174,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('relatorios')">
                       <ion-icon
                         slot="start"
                         ios="pie-chart-outline"
@@ -189,7 +189,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('dre')">
                       <ion-icon
                         slot="start"
                         ios="analytics-outline"
@@ -221,7 +221,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('categorias')">
                       <ion-icon
                         slot="start"
                         ios="list-outline"
@@ -236,7 +236,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('clientes')">
                       <ion-icon
                         slot="start"
                         ios="people-outline"
@@ -251,7 +251,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('fornecedores')">
                       <ion-icon
                         slot="start"
                         ios="pricetag-outline"
@@ -265,7 +265,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('centros_custo')">
                       <ion-icon
                         slot="start"
                         ios="wallet-outline"
@@ -279,7 +279,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('obras')">
                       <ion-icon
                         slot="start"
                         ios="business-outline"
@@ -293,7 +293,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('usuarios')">
                       <ion-icon
                         slot="start"
                         ios="people-outline"
@@ -307,7 +307,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('integracao')">
                       <ion-icon
                         slot="start"
                         ios="globe-outline"
@@ -321,7 +321,7 @@
                       lines="none"
                       detail="false"
                       routerLinkActive="selected"
-                    >
+                     *ngIf="auth.hasPermission('historico')">
                       <ion-icon
                         slot="start"
                         ios="time-outline"

@@ -99,6 +99,12 @@ export class AuthService {
     permission: string,
     user: any = this.userSubject.value,
   ): boolean {
+    if (!user) return false;
+    if (user?.perfil?.nome === 'ADMINISTRADOR' || user?.perfil?.nome === 'ADMIN') return true;
+
+    const userPerms = user.permissoes;
+    if (Array.isArray(userPerms) && userPerms.includes(permission)) return true;
+
     const permissoes = user?.perfil?.permissoes;
     if (!permissoes) return false;
     if (permissoes.all === true) return true;

@@ -5,14 +5,14 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { IonicModule } from '@ionic/angular';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { UsersService } from '../../services/users/users';
-import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonSelect, IonSelectOption, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonSelect, IonSelectOption, AlertController, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonCheckbox } from '@ionic/angular/standalone';
 
 @Component({
   selector: 'app-user-detail',
   templateUrl: './user-detail.page.html',
   styleUrls: ['./user-detail.page.scss'],
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonSelect, IonSelectOption, IonCard, IonGrid, IonRow, IonCol, IonIcon]
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, RouterModule, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonToast, IonSelect, IonSelectOption, IonCard, IonGrid, IonRow, IonCol, IonIcon, IonCheckbox]
 })
 export class UserDetailPage implements OnInit {
   userForm: FormGroup;
@@ -21,6 +21,27 @@ export class UserDetailPage implements OnInit {
   toastMessage = '';
   isToastOpen = false;
 
+  permissionsKeys = [
+    { key: 'visao_geral', label: 'Visão Geral' },
+    { key: 'outras_contas', label: 'Outras Contas' },
+    { key: 'conciliacao', label: 'Conciliação Bancária' },
+    { key: 'competencia', label: 'Visão de competência' },
+    { key: 'pagar', label: 'Contas a Pagar' },
+    { key: 'receber', label: 'Contas a Receber' },
+    { key: 'extrato', label: 'Extrato de movimentação' },
+    { key: 'fluxo_caixa', label: 'Fluxo de Caixa' },
+    { key: 'relatorios', label: 'Relatórios' },
+    { key: 'dre', label: 'DRE Gerencial' },
+    { key: 'categorias', label: 'Categorias' },
+    { key: 'clientes', label: 'Clientes' },
+    { key: 'fornecedores', label: 'Fornecedores' },
+    { key: 'centros_custo', label: 'Centros de Custo' },
+    { key: 'obras', label: 'Gestão de Obras' },
+    { key: 'usuarios', label: 'Usuários (Sistema)' },
+    { key: 'integracao', label: 'Integração Bancária' },
+    { key: 'historico', label: 'Histórico' }
+  ];
+
   constructor(
     private fb: FormBuilder,
     private route: ActivatedRoute,
@@ -28,11 +49,17 @@ export class UserDetailPage implements OnInit {
     private usersService: UsersService,
     private alertController: AlertController
   ) {
+    const permsGroup: any = {};
+    this.permissionsKeys.forEach(p => {
+      permsGroup[p.key] = [false];
+    });
+
     this.userForm = this.fb.group({
       nome: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       senha: ['', []], // Mandatory only on creation
       perfil: ['FINANCEIRO', [Validators.required]],
+      permissoes: this.fb.group(permsGroup)
     });
   }
 
@@ -49,12 +76,19 @@ export class UserDetailPage implements OnInit {
 
   loadUser(id: string) {
     this.usersService.findOne(id).subscribe(user => {
-      const userData = { ...user };
+      const userData: any = { ...user };
 
       // Flatten nested perfil object to name string for the form select
       if (userData.perfil && typeof userData.perfil === 'object' && 'nome' in userData.perfil) {
         userData.perfil = (userData.perfil as any).nome;
       }
+
+      const permsArray = userData.permissoes || [];
+      const permsObj: any = {};
+      this.permissionsKeys.forEach(p => {
+        permsObj[p.key] = permsArray.includes(p.key);
+      });
+      userData.permissoes = permsObj;
 
       this.userForm.patchValue(userData);
       this.userForm.get('senha')?.setValue(''); // Clear password field
@@ -64,7 +98,12 @@ export class UserDetailPage implements OnInit {
 
   async onSubmit() {
     if (this.userForm.valid) {
-      const userData = this.userForm.value;
+      const userData: any = { ...this.userForm.value };
+
+      // Transform permissoes object to array of keys
+      if (userData.permissoes) {
+        userData.permissoes = Object.keys(userData.permissoes).filter(k => userData.permissoes[k]);
+      }
 
       // If edit mode and password is empty, remove it from payload
       if (this.isEditMode && !userData.senha) {

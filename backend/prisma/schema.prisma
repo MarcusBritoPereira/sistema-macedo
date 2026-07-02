@@ -24,6 +24,8 @@ model Usuario {
   perfilId String
   perfil   Perfil @relation(fields: [perfilId], references: [id])
 
+  permissoes Json? @default("[]")
+
   logs                    LogAuditoria[]
   centrosCustoResponsavel CentroCusto[]  @relation("CentroCustoResponsavel")
 

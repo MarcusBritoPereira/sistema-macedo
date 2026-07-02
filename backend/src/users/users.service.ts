@@ -8,7 +8,7 @@ export class UsersService {
 
   async create(data: any) {
     const hashedPassword = await bcrypt.hash(data.senha, 10);
-    const { nome, email, perfil, ativo } = data;
+    const { nome, email, perfil, ativo, permissoes } = data;
 
     // Handle profile connection by name if provided as string
     let perfilConnection = {};
@@ -25,6 +25,7 @@ export class UsersService {
       email,
       ativo,
       senha: hashedPassword,
+      permissoes: permissoes || [],
       ...perfilConnection,
     };
 
@@ -41,6 +42,7 @@ export class UsersService {
         email: true,
         perfil: true,
         ativo: true,
+        permissoes: true,
         createdAt: true,
       }, // Exclude password
     });
@@ -62,6 +64,7 @@ export class UsersService {
         email: true,
         perfil: true,
         ativo: true,
+        permissoes: true,
         precisaTrocarSenha: true,
         createdAt: true,
       },
@@ -82,6 +85,7 @@ export class UsersService {
       'email',
       'ativo',
       'precisaTrocarSenha',
+      'permissoes'
     ] as const) {
       if (data[field] !== undefined) updateData[field] = data[field];
     }

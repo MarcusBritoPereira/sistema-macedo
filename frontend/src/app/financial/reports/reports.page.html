@@ -1,280 +1,221 @@
-<ion-header>
+<ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-buttons slot="start">
       <ion-menu-button></ion-menu-button>
     </ion-buttons>
-    <ion-title>Relatórios financeiros</ion-title>
-    <ion-buttons slot="end">
-      <ion-button fill="clear" (click)="reloadPageData()" [disabled]="loadingReports || loadingFilters">
-        <ion-icon name="refresh-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="ion-padding reports-page">
-  <section class="command-center">
-    <div class="command-copy">
-      <ion-badge>Central executiva</ion-badge>
-      <h1>Relatórios prontos para decisão, auditoria e fechamento.</h1>
-      <p>Configure período, escopo e pacote em uma experiência única, com atalhos para visões recomendadas e validação antes da geração.</p>
+<ion-content class="ion-padding dashboard-page">
 
-      <div class="hero-metrics" aria-label="Indicadores do pacote">
-        <div>
-          <span>{{ reports.length || '—' }}</span>
-          <small>modelos disponíveis</small>
-        </div>
-        <div>
-          <span>{{ selectedCount }}</span>
-          <small>selecionados</small>
-        </div>
-        <div>
-          <span>{{ activeFilterCount }}</span>
-          <small>filtros ativos</small>
-        </div>
-      </div>
-    </div>
-
-    <aside class="run-card" aria-label="Resumo para geração">
-      <div class="run-status" [class.ready]="canGenerate">
-        <ion-icon [name]="canGenerate ? 'checkmark-circle-outline' : 'alert-circle-outline'"></ion-icon>
-        <div>
-          <strong>{{ canGenerate ? 'Pacote pronto' : 'Aguardando ajustes' }}</strong>
-          <span>{{ filterSummary }}</span>
-        </div>
-      </div>
-      <div class="run-period">
-        <small>Período analisado</small>
-        <strong>{{ periodDateLabel }}</strong>
-      </div>
-      <ion-button expand="block" size="large" (click)="generateReports()" [disabled]="!canGenerate">
-        <ion-icon name="sparkles-outline" slot="start"></ion-icon>
-        <span *ngIf="!generating">Gerar pacote executivo</span>
-        <ion-spinner *ngIf="generating" name="dots"></ion-spinner>
-      </ion-button>
-    </aside>
-  </section>
-
-  <section class="workflow-strip" aria-label="Fluxo de geração">
-    <article class="workflow-step done">
-      <span>01</span>
-      <div>
-        <strong>Escopo</strong>
-        <p>{{ periodDateLabel }}</p>
-      </div>
-    </article>
-    <article class="workflow-step" [class.done]="selectedCount > 0">
-      <span>02</span>
-      <div>
-        <strong>Pacote</strong>
-        <p>{{ selectedCount > 0 ? selectedCount + ' relatório(s) no pacote' : 'Selecione no catálogo' }}</p>
-      </div>
-    </article>
-    <article class="workflow-step" [class.done]="canGenerate || generating">
-      <span>03</span>
-      <div>
-        <strong>Entrega</strong>
-        <p>{{ canGenerate ? 'Pronto para gerar' : 'Validação pendente' }}</p>
-      </div>
-    </article>
-  </section>
-
-  <ion-grid class="workspace-grid">
+  <!-- Top Filters -->
+  <ion-grid class="filters-grid">
     <ion-row>
-      <ion-col size="12" size-xl="8">
-        <ion-card class="panel-card scope-card">
-          <ion-card-header>
-            <div class="panel-heading">
-              <div>
-                <ion-card-title>Defina o escopo da análise</ion-card-title>
-                <ion-card-subtitle>Boas práticas de mercado: período primeiro, filtros depois, relatório por último.</ion-card-subtitle>
-              </div>
-              <ion-badge [color]="hasValidDateRange ? 'success' : 'warning'">{{ hasValidDateRange ? 'Validado' : 'Revisar datas' }}</ion-badge>
-            </div>
-          </ion-card-header>
-          <ion-card-content>
-            <div class="period-selector" role="group" aria-label="Períodos rápidos">
-              <button type="button" [class.active]="selectedPeriod === 'month'" (click)="selectedPeriod = 'month'; onPeriodChange()"><span>Mês atual</span><small>Fechamento mensal</small></button>
-              <button type="button" [class.active]="selectedPeriod === 'quarter'" (click)="selectedPeriod = 'quarter'; onPeriodChange()"><span>Trimestre</span><small>Ritual gerencial</small></button>
-              <button type="button" [class.active]="selectedPeriod === 'year'" (click)="selectedPeriod = 'year'; onPeriodChange()"><span>Ano corrente</span><small>Visão acumulada</small></button>
-              <button type="button" [class.active]="selectedPeriod === 'custom'" (click)="selectedPeriod = 'custom'; onPeriodChange()"><span>Personalizado</span><small>Auditoria e exceções</small></button>
-            </div>
-
-            <div class="date-range-box" [class.warning]="!hasValidDateRange">
-              <ion-icon [name]="hasValidDateRange ? 'checkmark-circle-outline' : 'alert-circle-outline'"></ion-icon>
-              <div>
-                <strong>{{ hasValidDateRange ? 'Janela de análise configurada' : 'Período precisa de ajuste' }}</strong>
-                <p>{{ periodDateLabel }}</p>
-              </div>
-            </div>
-
-            <ion-grid class="date-grid" *ngIf="selectedPeriod === 'custom'">
-              <ion-row>
-                <ion-col size="12" size-md="6">
-                  <div class="date-input-group">
-                    <ion-label>Data inicial</ion-label>
-                    <ion-datetime-button datetime="startDatePicker"></ion-datetime-button>
-                    <ion-modal [keepContentsMounted]="true">
-                      <ng-template>
-                        <ion-datetime id="startDatePicker" presentation="date" [(ngModel)]="startDate" (ionChange)="onCustomDateChange()"></ion-datetime>
-                      </ng-template>
-                    </ion-modal>
-                  </div>
-                </ion-col>
-                <ion-col size="12" size-md="6">
-                  <div class="date-input-group">
-                    <ion-label>Data final</ion-label>
-                    <ion-datetime-button datetime="endDatePicker"></ion-datetime-button>
-                    <ion-modal [keepContentsMounted]="true">
-                      <ng-template>
-                        <ion-datetime id="endDatePicker" presentation="date" [(ngModel)]="endDate" (ionChange)="onCustomDateChange()"></ion-datetime>
-                      </ng-template>
-                    </ion-modal>
-                  </div>
-                </ion-col>
-              </ion-row>
-            </ion-grid>
-
-            <div class="filter-grid">
-              <ion-item>
-                <ion-label position="stacked">Conta bancária</ion-label>
-                <ion-select [(ngModel)]="selectedAccount" interface="popover" [disabled]="loadingFilters">
-                  <ion-select-option value="all">Todas as contas</ion-select-option>
-                  <ion-select-option *ngFor="let account of bankAccounts" [value]="account.id">{{ account.nome }} ({{ account.banco }})</ion-select-option>
-                </ion-select>
-              </ion-item>
-              <ion-item>
-                <ion-label position="stacked">Centro de custo</ion-label>
-                <ion-select [(ngModel)]="selectedCostCenter" interface="popover" [disabled]="loadingFilters">
-                  <ion-select-option value="all">Todos os centros</ion-select-option>
-                  <ion-select-option *ngFor="let center of costCenters" [value]="center.id">{{ center.nome }}</ion-select-option>
-                </ion-select>
-              </ion-item>
-              <ion-item lines="none" class="toggle-item">
-                <ion-label><strong>Incluir provisões</strong><p>Previsto + realizado</p></ion-label>
-                <ion-toggle [(ngModel)]="includeProvisional"></ion-toggle>
-              </ion-item>
-            </div>
-          </ion-card-content>
-        </ion-card>
-
-        <section class="catalog-section">
-          <div class="section-header">
-            <div>
-              <h2>Biblioteca de relatórios</h2>
-              <p>Catálogo organizado por busca, categoria e finalidade de gestão.</p>
-            </div>
-            <ion-badge color="medium">{{ filteredReports.length }} de {{ reports.length }}</ion-badge>
+      <ion-col size="12" size-md="4">
+        <div class="filter-card">
+          <div class="filter-icon">
+            <ion-icon name="business-outline"></ion-icon>
           </div>
-
-          <ion-searchbar placeholder="Buscar por nome, categoria, tag ou indicador..." [(ngModel)]="reportSearch" animated="true" show-clear-button="focus"></ion-searchbar>
-
-          <div *ngIf="loadingReports" class="skeleton-grid" aria-label="Carregando catálogo de relatórios">
-            <article class="report-card skeleton-card" *ngFor="let item of [1,2,3,4]">
-              <div class="report-topline">
-                <ion-skeleton-text animated class="skeleton-icon"></ion-skeleton-text>
-                <ion-skeleton-text animated class="skeleton-badge"></ion-skeleton-text>
-              </div>
-              <ion-skeleton-text animated class="skeleton-title"></ion-skeleton-text>
-              <ion-skeleton-text animated class="skeleton-line"></ion-skeleton-text>
-              <ion-skeleton-text animated class="skeleton-line short"></ion-skeleton-text>
-              <ion-skeleton-text animated class="skeleton-button"></ion-skeleton-text>
-            </article>
+          <div class="filter-content">
+            <small>Obra</small>
+            <strong>{{ reportFilters.obra }}</strong>
           </div>
-
-          <div *ngIf="!loadingReports && filteredReports.length === 0" class="empty-state">
-            <div class="empty-icon"><ion-icon name="file-tray-full-outline"></ion-icon></div>
-            <h3>Nenhum relatório encontrado</h3>
-            <p>Revise a busca ou limpe o filtro para voltar ao catálogo completo de relatórios executivos.</p>
-            <ion-button fill="outline" (click)="reportSearch = ''">
-              <ion-icon name="refresh-outline" slot="start"></ion-icon>
-              Limpar busca
-            </ion-button>
+          <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
+        </div>
+      </ion-col>
+      
+      <ion-col size="12" size-md="4">
+        <div class="filter-card">
+          <div class="filter-icon">
+            <ion-icon name="briefcase-outline"></ion-icon>
           </div>
-
-          <div class="report-grid" *ngIf="!loadingReports && filteredReports.length > 0">
-            <article class="report-card" *ngFor="let report of filteredReports" [class.selected]="isSelected(report.id)" (click)="toggleReport(report.id)">
-              <div class="report-topline">
-                <ion-icon [name]="report.icon || 'document-text-outline'"></ion-icon>
-                <ion-badge [color]="isSelected(report.id) ? 'primary' : 'medium'">{{ isSelected(report.id) ? 'No pacote' : report.category }}</ion-badge>
-              </div>
-              <h3>{{ report.title }}</h3>
-              <p>{{ report.description }}</p>
-              <div class="meta"><span>{{ report.cadence }}</span><span>{{ report.category }}</span></div>
-              <div class="tags"><ion-badge *ngFor="let tag of report.tags" color="success">{{ tag }}</ion-badge></div>
-              <ul><li *ngFor="let item of report.highlights">{{ item }}</li></ul>
-              <ion-button expand="block" [fill]="isSelected(report.id) ? 'solid' : 'outline'" (click)="$event.stopPropagation(); toggleReport(report.id)">
-                <ion-icon [name]="isSelected(report.id) ? 'checkmark-circle-outline' : 'document-text-outline'" slot="start"></ion-icon>
-                {{ isSelected(report.id) ? 'Selecionado' : 'Adicionar ao pacote' }}
-              </ion-button>
-            </article>
+          <div class="filter-content">
+            <small>Centro de Custo</small>
+            <strong>{{ reportFilters.centroCusto }}</strong>
           </div>
-        </section>
+          <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
+        </div>
       </ion-col>
 
-      <ion-col size="12" size-xl="4">
-        <aside class="side-stack">
-          <ion-card class="panel-card package-card">
-            <ion-card-header>
-              <ion-card-title>Pacote de entrega</ion-card-title>
-              <ion-card-subtitle>Selecione conjuntos recomendados ou ajuste manualmente.</ion-card-subtitle>
-            </ion-card-header>
-            <ion-card-content>
-              <div class="quick-actions">
-                <ion-button expand="block" (click)="selectRecommended()" [disabled]="loadingReports">Seleção recomendada</ion-button>
-                <ion-button expand="block" fill="outline" (click)="selectAllFiltered()" [disabled]="loadingReports">Selecionar busca atual</ion-button>
-                <ion-button expand="block" fill="clear" (click)="clearSelection()" [disabled]="selectedCount === 0">Limpar pacote</ion-button>
-              </div>
-              <div class="selected-box">
-                <div class="selected-header"><strong>{{ selectedCount }} selecionado(s)</strong><ion-badge [color]="selectedCount ? 'success' : 'medium'">{{ selectedCount ? 'Pronto' : 'Pendente' }}</ion-badge></div>
-                <ion-list lines="none">
-                  <ion-item *ngFor="let label of selectedLabels"><ion-icon name="checkmark-circle-outline" slot="start" color="success"></ion-icon><ion-label>{{ label }}</ion-label></ion-item>
-                  <ion-item *ngIf="selectedLabels.length === 0" class="empty-selection"><ion-label>Nenhum relatório selecionado.</ion-label></ion-item>
-                </ion-list>
-              </div>
-            </ion-card-content>
-          </ion-card>
-
-          <ion-card class="panel-card result-card" *ngIf="lastGeneration">
-            <ion-card-header><ion-card-title>Última geração</ion-card-title><ion-card-subtitle>{{ lastGeneration.count }} relatório(s) • {{ lastGeneration.generatedAt | date:'short' }}</ion-card-subtitle></ion-card-header>
-            <ion-card-content>
-              <div class="export-panel">
-                <div>
-                  <strong>Exportação executiva</strong>
-                  <p>{{ exportHint }}</p>
-                </div>
-                <div class="export-actions">
-                  <ion-button size="small" fill="outline" (click)="exportPackage('pdf')" [disabled]="exportReadyCount === 0">
-                    <ion-icon name="document-text-outline" slot="start"></ion-icon>
-                    PDF
-                  </ion-button>
-                  <ion-button size="small" fill="outline" (click)="exportPackage('excel')" [disabled]="exportReadyCount === 0">
-                    <ion-icon name="grid-outline" slot="start"></ion-icon>
-                    Excel
-                  </ion-button>
-                  <ion-button size="small" fill="outline" (click)="exportPackage('print')" [disabled]="exportReadyCount === 0">
-                    <ion-icon name="print-outline" slot="start"></ion-icon>
-                    Imprimir
-                  </ion-button>
-                </div>
-              </div>
-              <ion-list lines="none">
-                <ion-item *ngFor="let report of lastGeneration.reports" button (click)="viewReport(report)" [detail]="true">
-                  <ion-icon name="document-text-outline" slot="start" color="primary"></ion-icon>
-                  <ion-label><h3>{{ report.title }}</h3><p>{{ report.status === 'ready' ? 'Pronto para visualizar' : 'Processando...' }}</p></ion-label>
-                </ion-item>
-              </ion-list>
-            </ion-card-content>
-          </ion-card>
-        </aside>
+      <ion-col size="12" size-md="4">
+        <div class="filter-card">
+          <div class="filter-icon">
+            <ion-icon name="calendar-outline"></ion-icon>
+          </div>
+          <div class="filter-content">
+            <small>Período</small>
+            <strong>{{ reportFilters.periodo }}</strong>
+          </div>
+          <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
+        </div>
       </ion-col>
     </ion-row>
   </ion-grid>
 
-  <ion-modal [isOpen]="isModalOpen" (didDismiss)="closeModal()">
-    <ng-template>
-      <ion-header><ion-toolbar><ion-title>{{ viewingReport?.title }}</ion-title><ion-buttons slot="end"><ion-button (click)="closeModal()">Fechar</ion-button></ion-buttons></ion-toolbar></ion-header>
-      <ion-content class="ion-padding"><app-report-viewer [data]="reportData" [title]="viewingReport?.title" [period]="periodLabel"></app-report-viewer></ion-content>
-    </ng-template>
-  </ion-modal>
+  <!-- KPIs Row -->
+  <ion-grid class="kpi-grid">
+    <ion-row>
+      <ion-col size="12" size-sm="6" size-md="4" size-xl="2" *ngFor="let kpi of kpis">
+        <div class="kpi-card">
+          <div class="kpi-icon [color]='kpi.color'">
+            <ion-icon [name]="kpi.icon"></ion-icon>
+          </div>
+          <div class="kpi-details">
+            <small>{{ kpi.label }}</small>
+            <strong>{{ kpi.value }}</strong>
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- Main Chart -->
+  <ion-grid>
+    <ion-row>
+      <ion-col size="12">
+        <div class="chart-card main-chart-card">
+          <div class="chart-header">
+            <ion-icon name="stats-chart"></ion-icon>
+            <h3>1. Gráfico de custo por material</h3>
+          </div>
+          <p class="y-axis-label">Valor (R$)</p>
+          <div class="canvas-container" style="height: 400px;">
+            <canvas baseChart 
+              [data]="materialChart"
+              [options]="materialChart.options"
+              [type]="'bar'">
+            </canvas>
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+
+    <!-- Secondary Charts Grid -->
+    <ion-row>
+      <!-- Labor Cost (Left) -->
+      <ion-col size="12" size-xl="6">
+        <div class="chart-card h-100">
+          <div class="chart-header">
+            <ion-icon name="briefcase-outline"></ion-icon>
+            <h3>2. Gráfico de custo por mão de obra</h3>
+          </div>
+          <div class="canvas-container" style="height: 600px;">
+            <canvas baseChart 
+              [data]="laborChart"
+              [options]="laborChart.options"
+              [type]="'bar'">
+            </canvas>
+          </div>
+          <p class="x-axis-label text-center">Valor (R$)</p>
+        </div>
+      </ion-col>
+
+      <!-- Right Column -->
+      <ion-col size="12" size-xl="6">
+        <ion-row>
+          <!-- Donut Chart -->
+          <ion-col size="12">
+            <div class="chart-card mb-3">
+              <div class="chart-header">
+                <ion-icon name="pie-chart-outline"></ion-icon>
+                <h3>3. Classificação de custo (Material x Mão de obra)</h3>
+              </div>
+              <div class="donut-layout">
+                <div class="canvas-container" style="height: 250px; width: 250px;">
+                  <canvas baseChart 
+                    [data]="donutChart"
+                    [options]="donutChart.options"
+                    [type]="'doughnut'">
+                  </canvas>
+                </div>
+                <div class="donut-legend">
+                  <div class="legend-item">
+                    <span class="dot color-material"></span>
+                    <div>
+                      <strong>Material</strong>
+                      <p>R$ 699.000,00</p>
+                    </div>
+                    <span class="percentage">62%</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="dot color-labor"></span>
+                    <div>
+                      <strong>Mão de obra</strong>
+                      <p>R$ 429.500,00</p>
+                    </div>
+                    <span class="percentage">38%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ion-col>
+          
+          <!-- Small Bar Chart -->
+          <ion-col size="12" size-md="6">
+            <div class="chart-card">
+              <div class="chart-header">
+                <ion-icon name="stats-chart-outline"></ion-icon>
+                <h3>4. Valor por etapa de obra</h3>
+              </div>
+              <div class="canvas-container" style="height: 250px;">
+                <canvas baseChart 
+                  [data]="stageChart"
+                  [options]="stageChart.options"
+                  [type]="'bar'">
+                </canvas>
+              </div>
+            </div>
+          </ion-col>
+
+          <!-- Small Line/Bar Chart -->
+          <ion-col size="12" size-md="6">
+            <div class="chart-card">
+              <div class="chart-header">
+                <ion-icon name="calendar-outline"></ion-icon>
+                <h3>5. Valor por mês de obra</h3>
+              </div>
+              <div class="canvas-container" style="height: 250px;">
+                <!-- We pass 'bar' as default for mixed charts and specify type in datasets -->
+                <canvas baseChart 
+                  [data]="monthlyChart"
+                  [options]="monthlyChart.options"
+                  [type]="'bar'">
+                </canvas>
+              </div>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- Footer Summary -->
+  <ion-grid>
+    <ion-row>
+      <ion-col size="12">
+        <div class="summary-card">
+          <div class="chart-header">
+            <ion-icon name="clipboard-outline"></ion-icon>
+            <h3>Resumo do Relatório</h3>
+          </div>
+          <div class="summary-blocks">
+            <div class="summary-block" *ngFor="let item of summary">
+              <div class="summary-icon" [ngClass]="item.color">
+                <ion-icon [name]="item.icon"></ion-icon>
+              </div>
+              <div class="summary-text">
+                <small>{{ item.label }}:</small>
+                <strong>{{ item.value }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <div class="report-footer">
+    <p>Relatório gerado em 01/07/2024 às 10:35 | Macedo Construtora</p>
+  </div>
+
 </ion-content>

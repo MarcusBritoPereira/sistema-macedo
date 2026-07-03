@@ -555,13 +555,58 @@ $transition-speed: 0.2s;
         }
         
         .col-desc {
-            color: #1a202c;
-            font-weight: 600;
-            font-size: 1rem;
-            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
             overflow: hidden;
-            text-overflow: ellipsis;
             padding-right: 16px;
+
+            .desc-text {
+                color: #1a202c;
+                font-weight: 600;
+                font-size: 1rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .payment-tag {
+                display: inline-flex;
+                align-items: center;
+                padding: 2px 8px;
+                border-radius: 4px;
+                font-size: 0.7rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                white-space: nowrap;
+
+                &.pix {
+                    background: #e6fffa;
+                    color: #285e61;
+                    border: 1px solid #b2f5ea;
+                }
+                &.cartao {
+                    background: #faf5ff;
+                    color: #553c9a;
+                    border: 1px solid #e9d8fd;
+                }
+                &.debito {
+                    background: #ebf8ff;
+                    color: #2b6cb0;
+                    border: 1px solid #bee3f8;
+                }
+                &.transferencia {
+                    background: #f0fff4;
+                    color: #2f855a;
+                    border: 1px solid #c6f6d5;
+                }
+                &.boleto {
+                    background: #fffff0;
+                    color: #975a16;
+                    border: 1px solid #fef08a;
+                }
+            }
         }
         
         .col-status {

@@ -490,6 +490,26 @@ export class ReconciliationPage implements OnInit, OnDestroy {
         }
     }
 
+    getPaymentMethod(descricao: string): { label: string, colorClass: string } | null {
+        const desc = (descricao || '').toLowerCase();
+        if (desc.includes('pix')) {
+            return { label: 'Pix', colorClass: 'pix' };
+        }
+        if (desc.includes('cartao') || desc.includes('cartão') || desc.includes('credito') || desc.includes('crédito')) {
+            return { label: 'Cartão', colorClass: 'cartao' };
+        }
+        if (desc.includes('debito') || desc.includes('débito') || desc.includes('tar') || desc.includes('tarifa')) {
+            return { label: 'Débito', colorClass: 'debito' };
+        }
+        if (desc.includes('ted') || desc.includes('doc')) {
+            return { label: 'Transferência', colorClass: 'transferencia' };
+        }
+        if (desc.includes('boleto')) {
+            return { label: 'Boleto', colorClass: 'boleto' };
+        }
+        return null;
+    }
+
     // --- UI/UX Enhancements ---
 
     expandAll() {

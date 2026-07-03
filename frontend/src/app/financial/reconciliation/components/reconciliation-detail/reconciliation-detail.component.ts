@@ -542,7 +542,7 @@ export class ReconciliationDetailComponent
   isAllocationValid(item: any): boolean {
     return (
       !!item.categoriaId &&
-      Number(item.valor) > 0 &&
+      Number(item.valor) >= 0 &&
       ((item.tipoDestino === 'OBRA' && !!item.obraId) ||
         (this.isCostCenterDestination(item) && !!item.centroCustoId)) &&
       (item.tipoCusto !== 'MATERIAL' || !!item.categoriaCusto?.trim())

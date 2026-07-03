@@ -1,24 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { IonicModule } from '@ionic/angular';
+import { FormsModule } from '@angular/forms';
 import { BaseChartDirective } from 'ng2-charts';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { addIcons } from 'ionicons';
 import {
-  businessOutline,
-  briefcaseOutline,
-  calendarOutline,
-  chevronDownOutline,
-  logoUsd,
-  arrowDownOutline,
-  pieChartOutline,
-  walletOutline,
-  statsChartOutline,
-  pricetagOutline,
-  personOutline,
-  hammerOutline,
-  timeOutline
+  businessOutline, briefcaseOutline, calendarOutline, chevronDownOutline,
+  logoUsd, arrowDownOutline, pieChartOutline, walletOutline, statsChartOutline,
+  pricetagOutline, personOutline, hammerOutline, timeOutline, clipboardOutline
 } from 'ionicons/icons';
+
+import { ObrasService, Obra } from '../../services/financial/obras.service';
+import { FinancialService } from '../../services/financial/financial';
+import { ReportsService } from '../../services/financial/reports.service';
 
 Chart.register(...registerables);
 
@@ -27,51 +22,41 @@ Chart.register(...registerables);
   templateUrl: './reports.page.html',
   styleUrls: ['./reports.page.scss'],
   standalone: true,
-  imports: [CommonModule, IonicModule, BaseChartDirective]
+  imports: [CommonModule, IonicModule, FormsModule, BaseChartDirective]
 })
 export class ReportsPage implements OnInit {
 
-  reportFilters = {
-    obra: 'Obra Juliane',
-    centroCusto: 'Geral',
-    periodo: '01/01/2024 - 30/06/2024'
+  obras: Obra[] = [];
+  centrosCusto: any[] = [];
+  
+  filters = {
+    obraId: 'all',
+    centroCustoId: 'all',
+    startDate: '',
+    endDate: ''
   };
 
   kpis = [
-    { label: 'Valor total da obra', value: 'R$ 1.850.000,00', icon: 'logo-usd', color: 'primary' },
-    { label: 'Valor gasto na obra', value: 'R$ 1.128.500,00', icon: 'arrow-down', color: 'primary' },
-    { label: 'Porcentagem gasta', value: '61%', icon: 'pie-chart', color: 'primary' },
-    { label: 'Porcentagem a receber', value: '39%', icon: 'pie-chart', color: 'primary' },
-    { label: 'Saldo da obra', value: 'R$ 721.500,00', icon: 'wallet', color: 'primary' },
-    { label: 'Custo médio mensal', value: 'R$ 188.083,33', icon: 'stats-chart', color: 'primary' }
+    { label: 'Valor total da obra', value: 'R$ 0,00', icon: 'logo-usd', color: 'primary' },
+    { label: 'Valor gasto na obra', value: 'R$ 0,00', icon: 'arrow-down', color: 'primary' },
+    { label: 'Porcentagem gasta', value: '0%', icon: 'pie-chart', color: 'primary' },
+    { label: 'Porcentagem a receber', value: '100%', icon: 'pie-chart', color: 'primary' },
+    { label: 'Saldo da obra', value: 'R$ 0,00', icon: 'wallet', color: 'primary' },
+    { label: 'Custo médio mensal', value: 'R$ 0,00', icon: 'stats-chart', color: 'primary' }
   ];
 
   summary = [
-    { label: 'Maior custo em material', value: 'Concreto Usinado', icon: 'pricetag', color: 'success' },
-    { label: 'Maior custo de mão de obra', value: 'Pedreiro', icon: 'person', color: 'warning' },
-    { label: 'Etapa com maior consumo', value: 'Estrutura', icon: 'hammer', color: 'purple' },
-    { label: 'Mês com maior gasto', value: 'Maio', icon: 'time', color: 'primary' }
+    { label: 'Maior custo em material', value: '-', icon: 'pricetag', color: 'success' },
+    { label: 'Maior custo de mão de obra', value: '-', icon: 'person', color: 'warning' },
+    { label: 'Etapa com maior consumo', value: '-', icon: 'hammer', color: 'purple' },
+    { label: 'Mês com maior gasto', value: '-', icon: 'time', color: 'primary' }
   ];
 
-  // Chart Data
-  materialCostsData = {
-    labels: ['Porcelanato', 'Cimento', 'Cobertura', 'Pintura', 'Ferragens', 'Impermeáveis e telas', 'Aterro', 'Elétrico', 'Madeira', 'Tijolos e blocos', 'Argamassa', 'Hidrossanitário', 'Refrigeração', 'Areia', 'Pregos/pinos/arame recozido', 'Ferramentas/equipamentos', 'Frete', 'Andaimes', 'Rojuma/espacador/cunha', 'Transporte/refeição/saldo', 'Aluguel', 'Adesivos estrutural', 'Impermeabilizantes', 'EPI/EPC/Fardamento'],
-    values: [142000, 134000, 118000, 96000, 86000, 72000, 68000, 64000, 52000, 49000, 46000, 38000, 36000, 28000, 24000, 18000, 16000, 14000, 10000, 9000, 7000, 6000, 4000, 3000]
-  };
-
-  laborCostsData = {
-    labels: ['Mst obras', 'Repetiro', 'Pedreiro', 'Pintor', 'Ajudante', 'Porcelanato', 'Gesseiro', 'Eletricista', 'Carpinteiro', 'Serralheiro', 'Pedras granito', 'Encanador', 'Emp. fundação', 'Calhas, rufos e pingadeiras', 'Ferreiro', 'Almoxarife', 'Estagiário', 'Meio oficial'].reverse(),
-    values: [60000, 88000, 158000, 67000, 84000, 76000, 64000, 73000, 46000, 36000, 30000, 32000, 24000, 18000, 18000, 10000, 6000, 5000].reverse()
-  };
-
-  stageCostsData = {
-    labels: ['Fundação', 'Estrutura', 'Alvenaria', 'Instalações', 'Revestimentos', 'Pintura', 'Acabamento'],
-    values: [200000, 245000, 342000, 216000, 128500, 103500, 68000]
-  };
-
-  monthlyCostsData = {
-    labels: ['JAN', 'FEV', 'MAR', 'ABR', 'MAI', 'JUN'],
-    values: [80000, 122000, 168500, 201000, 194000, 221500]
+  donutStats = {
+    material: 0,
+    labor: 0,
+    materialPerc: '0%',
+    laborPerc: '0%'
   };
 
   // Chart Configurations
@@ -94,47 +79,83 @@ export class ReportsPage implements OnInit {
     }
   };
 
-  constructor() {
+  currentDate: string;
+
+  constructor(
+    private obrasService: ObrasService,
+    private financialService: FinancialService,
+    private reportsService: ReportsService
+  ) {
     addIcons({
-      businessOutline,
-      briefcaseOutline,
-      calendarOutline,
-      chevronDownOutline,
-      'logo-usd': logoUsd,
-      'arrow-down': arrowDownOutline,
-      'pie-chart': pieChartOutline,
-      'wallet': walletOutline,
-      'stats-chart': statsChartOutline,
-      'pricetag': pricetagOutline,
-      'person': personOutline,
-      'hammer': hammerOutline,
-      'time': timeOutline
+      businessOutline, briefcaseOutline, calendarOutline, chevronDownOutline,
+      'logo-usd': logoUsd, 'arrow-down': arrowDownOutline, 'pie-chart': pieChartOutline,
+      'wallet': walletOutline, 'stats-chart': statsChartOutline, 'pricetag': pricetagOutline,
+      'person': personOutline, 'hammer': hammerOutline, 'time': timeOutline, 'clipboard-outline': clipboardOutline
     });
+    
+    const now = new Date();
+    this.currentDate = now.toLocaleDateString('pt-BR') + ' às ' + now.toLocaleTimeString('pt-BR', {hour: '2-digit', minute:'2-digit'});
   }
 
   ngOnInit() {
-    this.initCharts();
+    this.loadFilters();
+    this.loadDashboardData();
   }
 
-  initCharts() {
+  loadFilters() {
+    this.obrasService.getAll().subscribe(obras => {
+      this.obras = obras;
+    });
+    this.financialService.getCostCenters().subscribe(ccs => {
+      this.centrosCusto = ccs;
+    });
+  }
+
+  onFilterChange() {
+    this.loadDashboardData();
+  }
+
+  loadDashboardData() {
+    this.reportsService.getDashboardData(this.filters).subscribe((data: any) => {
+      // Update KPIs
+      this.kpis[0].value = 'R$ ' + data.kpis.valorTotalObra.toLocaleString('pt-BR');
+      this.kpis[1].value = 'R$ ' + data.kpis.valorGastoObra.toLocaleString('pt-BR');
+      this.kpis[2].value = data.kpis.porcentagemGasta + '%';
+      this.kpis[3].value = data.kpis.porcentagemReceber + '%';
+      this.kpis[4].value = 'R$ ' + data.kpis.saldoObra.toLocaleString('pt-BR');
+      this.kpis[5].value = 'R$ ' + data.kpis.custoMedioMensal.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+      // Update Summary
+      this.summary[0].value = data.summary.maxMaterial;
+      this.summary[1].value = data.summary.maxLabor;
+      this.summary[2].value = data.summary.maxStage;
+      this.summary[3].value = data.summary.maxMonth;
+
+      // Update Donut Stats
+      const total = data.charts.classification.material + data.charts.classification.labor;
+      this.donutStats.material = data.charts.classification.material;
+      this.donutStats.labor = data.charts.classification.labor;
+      this.donutStats.materialPerc = total > 0 ? Math.round((this.donutStats.material / total) * 100) + '%' : '0%';
+      this.donutStats.laborPerc = total > 0 ? Math.round((this.donutStats.labor / total) * 100) + '%' : '0%';
+
+      this.initCharts(data.charts);
+    });
+  }
+
+  initCharts(chartsData: any) {
     const primaryColor = '#0b63f6';
     const lightBlue = '#87bdfb';
     
-    // 1. Gráfico de Custo por Material
     this.materialChart = {
-      labels: this.materialCostsData.labels,
+      labels: chartsData.material.labels,
       datasets: [{
-        data: this.materialCostsData.values,
+        data: chartsData.material.data,
         backgroundColor: primaryColor,
         borderRadius: 4,
         barPercentage: 0.6
       }],
       options: {
         ...this.commonOptions,
-        plugins: {
-          ...this.commonOptions.plugins,
-          datalabels: { display: false } // Optionally we can add chartjs-plugin-datalabels later if needed
-        },
         scales: {
           x: {
             grid: { display: false },
@@ -150,11 +171,10 @@ export class ReportsPage implements OnInit {
       }
     };
 
-    // 2. Gráfico de Custo por Mão de Obra
     this.laborChart = {
-      labels: this.laborCostsData.labels,
+      labels: chartsData.labor.labels,
       datasets: [{
-        data: this.laborCostsData.values,
+        data: chartsData.labor.data,
         backgroundColor: primaryColor,
         borderRadius: 4,
         barPercentage: 0.6
@@ -172,11 +192,10 @@ export class ReportsPage implements OnInit {
       }
     };
 
-    // 3. Classificação de Custo
     this.donutChart = {
       labels: ['Material', 'Mão de obra'],
       datasets: [{
-        data: [699000, 429500],
+        data: [chartsData.classification.material, chartsData.classification.labor],
         backgroundColor: [primaryColor, lightBlue],
         borderWidth: 0,
         cutout: '70%'
@@ -199,11 +218,10 @@ export class ReportsPage implements OnInit {
       }
     };
 
-    // 4. Valor por etapa de obra
     this.stageChart = {
-      labels: this.stageCostsData.labels,
+      labels: chartsData.stage.labels,
       datasets: [{
-        data: this.stageCostsData.values,
+        data: chartsData.stage.data,
         backgroundColor: primaryColor,
         borderRadius: 4,
         barPercentage: 0.5
@@ -220,13 +238,12 @@ export class ReportsPage implements OnInit {
       }
     };
 
-    // 5. Valor por mês de obra
     this.monthlyChart = {
-      labels: this.monthlyCostsData.labels,
+      labels: chartsData.monthly.labels,
       datasets: [
         {
           type: 'line',
-          data: this.monthlyCostsData.values,
+          data: chartsData.monthly.data,
           borderColor: '#0f172a',
           backgroundColor: 'transparent',
           borderWidth: 2,
@@ -236,7 +253,7 @@ export class ReportsPage implements OnInit {
         },
         {
           type: 'bar',
-          data: this.monthlyCostsData.values,
+          data: chartsData.monthly.data,
           backgroundColor: lightBlue,
           borderRadius: 4,
           barPercentage: 0.5,

@@ -11,42 +11,57 @@
   <!-- Top Filters -->
   <ion-grid class="filters-grid">
     <ion-row>
-      <ion-col size="12" size-md="4">
+      <ion-col size="12" size-md="3">
         <div class="filter-card">
           <div class="filter-icon">
             <ion-icon name="business-outline"></ion-icon>
           </div>
           <div class="filter-content">
-            <small>Obra</small>
-            <strong>{{ reportFilters.obra }}</strong>
+            <label>Obra</label>
+            <ion-select [(ngModel)]="filters.obraId" (ionChange)="onFilterChange()" interface="popover">
+              <ion-select-option value="all">Todas</ion-select-option>
+              <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
+            </ion-select>
           </div>
-          <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
         </div>
       </ion-col>
       
-      <ion-col size="12" size-md="4">
+      <ion-col size="12" size-md="3">
         <div class="filter-card">
           <div class="filter-icon">
             <ion-icon name="briefcase-outline"></ion-icon>
           </div>
           <div class="filter-content">
-            <small>Centro de Custo</small>
-            <strong>{{ reportFilters.centroCusto }}</strong>
+            <label>Centro de Custo</label>
+            <ion-select [(ngModel)]="filters.centroCustoId" (ionChange)="onFilterChange()" interface="popover">
+              <ion-select-option value="all">Todos</ion-select-option>
+              <ion-select-option *ngFor="let c of centrosCusto" [value]="c.id">{{ c.nome }}</ion-select-option>
+            </ion-select>
           </div>
-          <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
         </div>
       </ion-col>
 
-      <ion-col size="12" size-md="4">
+      <ion-col size="12" size-md="3">
         <div class="filter-card">
           <div class="filter-icon">
             <ion-icon name="calendar-outline"></ion-icon>
           </div>
           <div class="filter-content">
-            <small>Período</small>
-            <strong>{{ reportFilters.periodo }}</strong>
+            <label>Data Início</label>
+            <input type="date" class="native-date" [(ngModel)]="filters.startDate" (change)="onFilterChange()">
           </div>
-          <ion-icon name="chevron-down-outline" class="dropdown-icon"></ion-icon>
+        </div>
+      </ion-col>
+
+      <ion-col size="12" size-md="3">
+        <div class="filter-card">
+          <div class="filter-icon">
+            <ion-icon name="calendar-outline"></ion-icon>
+          </div>
+          <div class="filter-content">
+            <label>Data Fim</label>
+            <input type="date" class="native-date" [(ngModel)]="filters.endDate" (change)="onFilterChange()">
+          </div>
         </div>
       </ion-col>
     </ion-row>
@@ -133,17 +148,17 @@
                     <span class="dot color-material"></span>
                     <div>
                       <strong>Material</strong>
-                      <p>R$ 699.000,00</p>
+                      <p>R$ {{ donutStats.material | number:'1.2-2':'pt-BR' }}</p>
                     </div>
-                    <span class="percentage">62%</span>
+                    <span class="percentage">{{ donutStats.materialPerc }}</span>
                   </div>
                   <div class="legend-item">
                     <span class="dot color-labor"></span>
                     <div>
                       <strong>Mão de obra</strong>
-                      <p>R$ 429.500,00</p>
+                      <p>R$ {{ donutStats.labor | number:'1.2-2':'pt-BR' }}</p>
                     </div>
-                    <span class="percentage">38%</span>
+                    <span class="percentage">{{ donutStats.laborPerc }}</span>
                   </div>
                 </div>
               </div>
@@ -215,7 +230,7 @@
   </ion-grid>
 
   <div class="report-footer">
-    <p>Relatório gerado em 01/07/2024 às 10:35 | Macedo Construtora</p>
+    <p>Relatório atualizado em {{ currentDate }} | Macedo Construtora</p>
   </div>
 
 </ion-content>

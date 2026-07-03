@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ReportGenerationRequestDto } from './dto/report-generation-request.dto';
+import { DashboardFilterDto } from './dto/dashboard-filter.dto';
 
 export interface ReportDefinition {
   id: string;
@@ -863,5 +864,145 @@ export class ReportsService {
     });
 
     return { summary: null, details };
+  }
+
+  async getDashboardData(filters: DashboardFilterDto) {
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+    if (filters.startDate) startDate = new Date(filters.startDate);
+    if (filters.endDate) {
+      endDate = new Date(filters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+    }
+
+    const where: any = {
+      status: { in: ['REALIZADO', 'CONCILIADO'] }
+    };
+    
+    if (filters.obraId && filters.obraId !== 'all') {
+      where.obraId = filters.obraId;
+    }
+    
+    if (filters.centroCustoId && filters.centroCustoId !== 'all') {
+      const ccIds = await this.obterIdsHierarquia(filters.centroCustoId);
+      where.centroCustoId = { in: ccIds };
+    }
+    
+    if (startDate || endDate) {
+      where.dataVencimento = {};
+      if (startDate) where.dataVencimento.gte = startDate;
+      if (endDate) where.dataVencimento.lte = endDate;
+    }
+
+    const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+      where,
+      include: {
+        obra: true,
+      }
+    });
+
+    // Base KPIs
+    let valorTotalObra = 0;
+    
+    if (filters.obraId && filters.obraId !== 'all') {
+      const obra = await this.prisma.obra.findUnique({ where: { id: filters.obraId } });
+      valorTotalObra = Number(obra?.orcamentoPrevisto || 0);
+    } else {
+      // Sum of all active budgets if no specific obra is selected
+      const obras = await this.prisma.obra.findMany({ where: { ativo: true } });
+      valorTotalObra = obras.reduce((sum, o) => sum + Number(o.orcamentoPrevisto || 0), 0);
+    }
+
+    let valorGastoObra = 0;
+    let materialCost = 0;
+    let laborCost = 0;
+    
+    // Chart Groupings
+    const materialItems: Record<string, number> = {};
+    const laborItems: Record<string, number> = {};
+    const stageItems: Record<string, number> = {};
+    const monthItems: Record<string, number> = {};
+
+    for (const t of transactions) {
+      if (t.tipo !== 'DESPESA') continue;
+      const val = Math.abs(Number(t.valor));
+      valorGastoObra += val;
+
+      if (t.tipoCusto === 'MATERIAL') {
+        materialCost += val;
+        const catName = t.categoriaCusto || 'Geral';
+        materialItems[catName] = (materialItems[catName] || 0) + val;
+      } else if (t.tipoCusto === 'MAO_DE_OBRA') {
+        laborCost += val;
+        const catName = t.categoriaCusto || 'Geral';
+        laborItems[catName] = (laborItems[catName] || 0) + val;
+      }
+
+      // Stages (using category name or classification for grouping if available)
+      const stageName = t.tipoLancamento === 'OBRA' ? 'Estrutura' : 'Instalações'; // Fallback if no real stage
+      stageItems[stageName] = (stageItems[stageName] || 0) + val;
+
+      // Months
+      if (t.dataVencimento) {
+        const date = new Date(t.dataVencimento);
+        const monthStr = date.toLocaleString('pt-BR', { month: 'short', year: 'numeric' }).toUpperCase();
+        monthItems[monthStr] = (monthItems[monthStr] || 0) + val;
+      }
+    }
+
+    const porcentagemGasta = valorTotalObra > 0 ? Math.round((valorGastoObra / valorTotalObra) * 100) : 0;
+    const porcentagemReceber = Math.max(0, 100 - porcentagemGasta);
+    const saldoObra = valorTotalObra - valorGastoObra;
+
+    const monthsCount = Object.keys(monthItems).length || 1;
+    const custoMedioMensal = valorGastoObra / monthsCount;
+
+    // Sort items for charts
+    const sortedMaterial = Object.entries(materialItems).sort((a, b) => b[1] - a[1]);
+    const sortedLabor = Object.entries(laborItems).sort((a, b) => b[1] - a[1]);
+
+    const maxMaterial = sortedMaterial[0]?.[0] || 'N/A';
+    const maxLabor = sortedLabor[0]?.[0] || 'N/A';
+    const maxStage = Object.entries(stageItems).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    const maxMonth = Object.entries(monthItems).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+
+    return {
+      kpis: {
+        valorTotalObra,
+        valorGastoObra,
+        porcentagemGasta,
+        porcentagemReceber,
+        saldoObra,
+        custoMedioMensal
+      },
+      charts: {
+        material: {
+          labels: sortedMaterial.map(x => x[0]),
+          data: sortedMaterial.map(x => x[1]),
+        },
+        labor: {
+          labels: sortedLabor.map(x => x[0]),
+          data: sortedLabor.map(x => x[1]),
+        },
+        classification: {
+          material: materialCost,
+          labor: laborCost
+        },
+        stage: {
+          labels: Object.keys(stageItems),
+          data: Object.values(stageItems)
+        },
+        monthly: {
+          labels: Object.keys(monthItems),
+          data: Object.values(monthItems)
+        }
+      },
+      summary: {
+        maxMaterial,
+        maxLabor,
+        maxStage,
+        maxMonth
+      }
+    };
   }
 }

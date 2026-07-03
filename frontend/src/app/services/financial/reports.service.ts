@@ -46,4 +46,16 @@ export class ReportsService {
   generateReports(payload: ReportGenerationRequest): Observable<ReportGenerationResponse> {
     return this.api.post<ReportGenerationResponse>('financial/reports/generate', payload);
   }
+
+  getDashboardData(filters: any): Observable<any> {
+    const queryParts: string[] = [];
+    if (filters) {
+      if (filters.obraId) queryParts.push(`obraId=${filters.obraId}`);
+      if (filters.centroCustoId) queryParts.push(`centroCustoId=${filters.centroCustoId}`);
+      if (filters.startDate) queryParts.push(`startDate=${filters.startDate}`);
+      if (filters.endDate) queryParts.push(`endDate=${filters.endDate}`);
+    }
+    const queryString = queryParts.length > 0 ? `?${queryParts.join('&')}` : '';
+    return this.api.get<any>(`financial/reports/dashboard${queryString}`);
+  }
 }

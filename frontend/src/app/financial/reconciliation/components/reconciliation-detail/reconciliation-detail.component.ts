@@ -544,8 +544,7 @@ export class ReconciliationDetailComponent
       !!item.categoriaId &&
       Number(item.valor) >= 0 &&
       ((item.tipoDestino === 'OBRA' && !!item.obraId) ||
-        (this.isCostCenterDestination(item) && !!item.centroCustoId)) &&
-      (item.tipoCusto !== 'MATERIAL' || !!item.categoriaCusto?.trim())
+        (this.isCostCenterDestination(item) && !!item.centroCustoId))
     );
   }
 

@@ -736,10 +736,10 @@ export class ReconciliationPage implements OnInit, OnDestroy {
             return parts[parts.length - 1].trim();
         }
 
-        // Pega nomes após 'Cp :12345678-NOME'
-        const cpMatch = cleaned.match(/Cp\s*:\s*[\d]+-(.*)/i);
-        if (cpMatch && cpMatch[1]) {
-            return cpMatch[1].trim();
+        // Pega nomes após 'Cp :12345678-NOME' ou variações (incluindo travessão e espaços)
+        const cpMatch = cleaned.match(/Cp\s*:\s*(.*?)[-–—]\s*(.*)/i);
+        if (cpMatch && cpMatch[2]) {
+            return cpMatch[2].trim();
         }
 
         // Caso geral com traços: pega a última parte

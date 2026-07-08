@@ -725,4 +725,29 @@ export class ReconciliationPage implements OnInit, OnDestroy {
             }
         });
     }
+
+    cleanDescription(desc: string): string {
+        if (!desc) return '';
+        let cleaned = desc;
+
+        // Limpa trechos padronizados
+        if (cleaned.includes('No estabelecimento ')) {
+            const parts = cleaned.split('No estabelecimento ');
+            return parts[parts.length - 1].trim();
+        }
+
+        // Pega nomes após 'Cp :12345678-NOME'
+        const cpMatch = cleaned.match(/Cp\s*:\s*[\d]+-(.*)/i);
+        if (cpMatch && cpMatch[1]) {
+            return cpMatch[1].trim();
+        }
+
+        // Caso geral com traços: pega a última parte
+        if (cleaned.includes(' - ')) {
+            const parts = cleaned.split(' - ');
+            return parts[parts.length - 1].trim();
+        }
+
+        return cleaned.trim();
+    }
 }

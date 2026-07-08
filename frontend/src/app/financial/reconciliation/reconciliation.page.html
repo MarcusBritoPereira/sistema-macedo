@@ -205,11 +205,11 @@
                             {{ formatDate(s.data) }}
                         </div>
                         <div class="row-desc">
-                            <span class="desc-text">{{ s.descricao }}</span>
                             <span *ngIf="getPaymentMethod(s.descricao) as method" 
                                   class="payment-tag" [ngClass]="method.colorClass">
                                 {{ method.label }}
                             </span>
+                            <span class="desc-text" [title]="s.descricao">{{ cleanDescription(s.descricao) }}</span>
                         </div>
                         <div class="row-value" [class.credit]="s.tipo === 'CREDIT'" [class.debit]="s.tipo === 'DEBIT'">
                             {{ s.valor | currency:'BRL' }}

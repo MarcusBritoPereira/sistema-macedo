@@ -497,77 +497,72 @@ $transition-speed: 0.2s;
 }
 
 /* --- Data Content & Table --- */
-.list-header-row {
-    display: grid;
-    /* Grid Template matching rows: Check | Date | Desc | Status | Value | Actions */
-    grid-template-columns: 48px 120px 1fr 140px 140px 60px;
-    padding: 12px 16px;
-    font-size: 0.8rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    color: #718096;
-    letter-spacing: 0.05em;
-    border-bottom: 2px solid #e2e8f0;
-    margin-bottom: 8px;
-}
-
 .statement-wrapper {
     margin-bottom: 8px;
     
     .statement-row {
-        display: grid;
-        grid-template-columns: 48px 120px 1fr 140px 140px 60px;
+        display: flex;
         align-items: center;
         background: #fff;
-        border: 1px solid #e2e8f0;
+        border: 1px solid #d1d9e2;
         border-radius: 8px;
-        padding: 16px; // Taller improved rows
-        transition: all $transition-speed;
+        padding: 12px 16px;
+        margin-bottom: 8px;
         cursor: pointer;
+        transition: all 0.2s;
 
-        &.striped {
-            background: #fafafb; // Subtle stripe
+        @media (max-width: $breakpoint-mobile) {
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 16px;
+            gap: 12px;
         }
 
         &:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            border-color: #cbd5e0;
-            z-index: 1;
+            border-color: #0076a8;
+            box-shadow: 0 4px 12px rgba(0, 118, 168, 0.08);
         }
 
-        &.active {
-            border-color: #3182ce;
-            box-shadow: 0 0 0 2px rgba(49, 130, 206, 0.2);
-            background: #fff;
+        &.conciliated {
+            background: #f8fff9;
+            border-color: #2b8a3e;
         }
-        
-        /* Columns */
-        .col-check {
-             display: flex;
-             align-items: center;
+
+        .row-selection {
+            width: 40px;
+
+            @media (max-width: $breakpoint-mobile) {
+                display: none;
+            }
         }
-        
-        .col-date {
-            color: #4a5568;
+
+        .row-date {
+            width: 100px;
+            color: #5c6770;
             font-size: 0.9rem;
-            font-weight: 500;
+
+            @media (max-width: $breakpoint-mobile) {
+                width: 100%;
+                font-size: 0.8rem;
+                font-weight: 500;
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 4px;
+            }
         }
-        
-        .col-desc {
+
+        .row-desc {
+            flex: 1;
+            font-weight: 600;
+            color: #262e33;
             display: flex;
             align-items: center;
             gap: 8px;
-            overflow: hidden;
-            padding-right: 16px;
 
             .desc-text {
                 color: #1a202c;
                 font-weight: 600;
                 font-size: 1rem;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
             }
 
             .payment-tag {
@@ -581,122 +576,81 @@ $transition-speed: 0.2s;
                 letter-spacing: 0.05em;
                 white-space: nowrap;
 
-                &.pix {
-                    background: #e6fffa;
-                    color: #285e61;
-                    border: 1px solid #b2f5ea;
+                &.pix { background: #e6fffa; color: #285e61; border: 1px solid #b2f5ea; }
+                &.cartao { background: #faf5ff; color: #553c9a; border: 1px solid #e9d8fd; }
+                &.debito { background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+                &.transferencia { background: #f0fff4; color: #2f855a; border: 1px solid #c6f6d5; }
+                &.boleto { background: #fffff0; color: #975a16; border: 1px solid #fef08a; }
+            }
+
+            @media (max-width: $breakpoint-mobile) {
+                width: 100%;
+                white-space: normal;
+                line-height: 1.4;
+                font-size: 1rem;
+                margin-bottom: 4px;
+            }
+        }
+
+        .row-value {
+            width: 140px;
+            text-align: right;
+            font-weight: 700;
+            font-size: 1rem;
+            margin-right: 24px;
+
+            &.credit {
+                color: #2b8a3e;
+            }
+
+            &.debit {
+                color: #c92a2a;
+            }
+
+            @media (max-width: $breakpoint-mobile) {
+                width: 100%;
+                text-align: left;
+                margin-right: 0;
+                font-size: 1.1rem;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .row-status {
+            width: 140px;
+
+            @media (max-width: $breakpoint-mobile) {
+                width: 100%;
+                display: flex;
+                justify-content: flex-start;
+                margin-top: 4px;
+            }
+
+            ion-chip {
+                ion-icon {
+                    margin-right: 4px;
+                    font-size: 16px;
                 }
-                &.cartao {
-                    background: #faf5ff;
-                    color: #553c9a;
-                    border: 1px solid #e9d8fd;
-                }
-                &.debito {
-                    background: #ebf8ff;
-                    color: #2b6cb0;
-                    border: 1px solid #bee3f8;
-                }
-                &.transferencia {
-                    background: #f0fff4;
-                    color: #2f855a;
-                    border: 1px solid #c6f6d5;
-                }
-                &.boleto {
-                    background: #fffff0;
-                    color: #975a16;
-                    border: 1px solid #fef08a;
+
+                @media (max-width: $breakpoint-mobile) {
+                    height: 24px;
+                    font-size: 0.75rem;
+                    margin: 0;
                 }
             }
         }
-        
-        .col-status {
-             .status-indicator {
-                 display: inline-flex;
-                 align-items: center;
-                 gap: 6px;
-                 padding: 4px 10px;
-                 border-radius: 99px;
-                 font-size: 0.8rem;
-                 font-weight: 600;
-                 
-                 &.pending {
-                     background: #fffaf0;
-                     color: #dd6b20;
-                     border: 1px solid #fbd38d;
-                 }
-                 
-                 &.done {
-                     background: #f0fff4;
-                     color: #2f855a;
-                     border: 1px solid #9ae6b4;
-                 }
-                 
-                 ion-icon { font-size: 14px; }
-             }
-        }
-        
-        .col-value {
-            font-weight: 700;
-            font-size: 1.1rem; /* Larger font for value */
-            text-align: right;
-            
-            &.credit { color: #2f855a; }
-            &.debit { color: #c53030; }
-        }
-        
-        .col-actions {
+
+        .row-actions {
             display: flex;
-            align-items: center;
-            justify-content: flex-end;
             gap: 4px;
-            
             .action-btn {
                 --color: #718096;
                 &:hover { --color: #3182ce; }
             }
-            .expand-icon {
-                color: #cbd5e0;
-                transition: color 0.2s;
-            }
-        }
-        &:hover .expand-icon { color: #718096; }
-
-        /* Mobile Responsive */
-        @media (max-width: $breakpoint-mobile) {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 12px;
-            height: auto;
-            position: relative;
-            
-            .col-check {
-                position: absolute;
-                top: 16px;
-                right: 16px;
-            }
-            .col-date {
-                font-size: 0.8rem;
-                text-transform: uppercase;
-                letter-spacing: 0.05em;
-                color: #718096;
-            }
-            .col-desc {
-                white-space: normal;
-                width: 100%;
-                font-size: 1.1rem;
-                padding-right: 40px; /* Space for checkbox */
-            }
-            .col-status {
-                width: 100%;
-            }
-            .col-value {
-                width: 100%;
-                text-align: left;
-                font-size: 1.25rem;
-            }
-            .col-actions {
-                display: none; /* Simplify on mobile */
+            @media (max-width: $breakpoint-mobile) {
+                display: none;
             }
         }
     }

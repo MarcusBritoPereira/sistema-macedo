@@ -194,51 +194,40 @@
 
             <!-- List of Items -->
             <div *ngIf="!loading && filteredStatements.length > 0" class="statements-list">
-                <!-- Header Row for Table-like look -->
-                <div class="list-header-row desktop-only">
-                    <div class="col-check"></div> <!-- Checkbox -->
-                    <div class="col-date">Data</div>
-                    <div class="col-desc">Descrição</div>
-                    <div class="col-status">Status</div>
-                    <div class="col-value">Valor</div>
-                    <div class="col-actions"></div>
-                </div>
-
                 <div *ngFor="let s of filteredStatements; trackBy: trackByFn; let i = index" class="statement-wrapper">
-                    <!-- Added 'even' class for striping manually or via nth-child css -->
                     <div class="statement-row" [class.active]="isExpanded(s.id)" [class.conciliated]="s.conciliado"
-                        [class.striped]="i % 2 !== 0" (click)="toggleExpand(s)">
-
-                        <div class="col-check" (click)="toggleSelection(s, $event)">
+                        (click)="toggleExpand(s)">
+                        <div class="row-selection" (click)="toggleSelection(s, $event)">
                             <ion-checkbox mode="md" [checked]="isSelected(s.id)"
                                 (ionChange)="toggleSelection(s)"></ion-checkbox>
                         </div>
-                        <div class="col-date">
-                            <span class="date-text">{{ formatDate(s.data) }}</span>
+                        <div class="row-date">
+                            {{ formatDate(s.data) }}
                         </div>
-                        <div class="col-desc">
+                        <div class="row-desc">
                             <span class="desc-text">{{ s.descricao }}</span>
                             <span *ngIf="getPaymentMethod(s.descricao) as method" 
                                   class="payment-tag" [ngClass]="method.colorClass">
                                 {{ method.label }}
                             </span>
                         </div>
-                        <div class="col-status">
-                            <div class="status-indicator" [class.done]="s.conciliado" [class.pending]="!s.conciliado">
-                                <ion-icon [name]="s.conciliado ? 'checkmark-circle' : 'alert-circle'"></ion-icon>
-                                <span>{{ s.conciliado ? 'Conciliado' : 'Pendente' }}</span>
-                            </div>
-                        </div>
-                        <div class="col-value" [class.credit]="s.tipo === 'CREDIT'" [class.debit]="s.tipo === 'DEBIT'">
+                        <div class="row-value" [class.credit]="s.tipo === 'CREDIT'" [class.debit]="s.tipo === 'DEBIT'">
                             {{ s.valor | currency:'BRL' }}
                         </div>
-                        <div class="col-actions">
+                        <div class="row-status">
+                            <ion-chip [color]="s.conciliado ? 'success' : 'warning'" mode="ios">
+                                <ion-icon [name]="s.conciliado ? 'checkmark-circle' : 'alert-circle'"></ion-icon>
+                                {{ s.conciliado ? 'Conciliado' : 'Pendente' }}
+                            </ion-chip>
+                        </div>
+                        <div class="row-actions">
                             <ion-button fill="clear" size="small" class="action-btn"
                                 (click)="selectSimilar(s); $event.stopPropagation()" title="Selecionar similares">
                                 <ion-icon name="layers-outline"></ion-icon>
                             </ion-button>
-                            <ion-icon class="expand-icon"
-                                [name]="isExpanded(s.id) ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                            <ion-button fill="clear" size="small" (click)="toggleExpand(s); $event.stopPropagation()">
+                                <ion-icon class="expand-icon" [name]="isExpanded(s.id) ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+                            </ion-button>
                         </div>
                     </div>
 

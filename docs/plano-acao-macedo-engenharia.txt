@@ -1,0 +1,147 @@
+PLANO DE AÇÃO — TRANSFORMAÇÃO DO SISTEMA FINANCEIRO
+MACEDO ENGENHARIA
+
+1) DIAGNÓSTICO RÁPIDO (PONTO DE PARTIDA)
+- O sistema atual já possui base sólida para evolução:
+  - Backend modular (Auth, Financial, Clients, Suppliers, Contracts, AuditLog etc.).
+  - Frontend com rotas para dashboard, DRE, fluxo de caixa, reconciliação, contas bancárias, relatórios, orçamento e categorias.
+  - Modelo de dados com lançamentos financeiros, contas bancárias, integração bancária, categorias e centros de custo.
+  - Infra local com PostgreSQL e Redis.
+- Conclusão: trata-se de evolução orientada ao setor de obras, não reconstrução do zero.
+
+2) GAPS PARA A PROPOSTA MACEDO ENGENHARIA
+- Financeiro orientado por obra (caixa por obra, material x mão de obra, rentabilidade por projeto).
+- Conciliação Banco Inter em tempo real com robustez operacional.
+- Segurança corporativa (2FA, hardening, gestão de segredos, trilha LGPD).
+- Operação em nuvem com monitoramento 24/7 e backup diário automatizado testado.
+- Mobilidade para lançamentos do canteiro (smartphone).
+
+3) PLANO DE EXECUÇÃO EM 4 SEMANAS
+
+SEMANA 1 — REQUISITOS + ARQUITETURA ALVO + MVP DE OBRA
+Objetivo:
+- Fechar escopo funcional e implantar espinha dorsal obra-cêntrica.
+
+Entregáveis:
+- Workshop com diretoria/financeiro (AS-IS, regras de negócio, KPIs).
+- Novo domínio de dados:
+  - Obra (projeto)
+  - vínculo de lançamentos financeiros com obra
+  - classificação por tipo de custo (material, mão de obra, terceiros etc.)
+- Fluxo operacional mínimo:
+  - criar obra
+  - lançar receita/despesa por obra
+  - filtrar fluxo de caixa por obra/categoria/centro de custo
+- Dashboard inicial por obra (saldo, gasto acumulado, previsto x realizado).
+
+Critério de aceite:
+- Equipe registra e consulta movimentos por obra sem planilhas paralelas.
+
+SEMANA 2 — INTEGRAÇÃO BANCÁRIA + CONCILIAÇÃO AUTOMATIZADA
+Objetivo:
+- Reduzir drasticamente retrabalho manual.
+
+Entregáveis:
+- Conector robusto com Banco Inter (ou adaptador de integração).
+- Sincronização de extratos com:
+  - agendamento
+  - reprocessamento
+  - idempotência
+  - auditoria de importações
+- Motor de conciliação:
+  - sugestão automática por valor/data/descrição
+  - fila “pendentes de conferência”
+  - ação manual assistida
+- Alertas operacionais (falha de sincronização, token expirado, divergências).
+
+Critério de aceite:
+- Meta inicial: 70%–80% de transações conciliadas automaticamente.
+
+SEMANA 3 — SEGURANÇA + NUVEM + CONFIABILIDADE
+Objetivo:
+- Preparar o sistema para operação corporativa real.
+
+Entregáveis:
+- 2FA (TOTP) para perfis críticos.
+- Hardening:
+  - TLS/SSL
+  - criptografia de segredos
+  - política de senha e sessão
+  - permissões por perfil
+- Infra em VPS:
+  - deploy automatizado
+  - monitoramento (uptime, CPU, memória, erros)
+  - logs centralizados
+- Backup diário PostgreSQL com teste de restauração documentado.
+- Runbook simples de resposta a incidentes.
+
+Critério de aceite:
+- Checklist de segurança validado + restauração de backup comprovada.
+
+SEMANA 4 — UAT + AJUSTES + GO-LIVE ASSISTIDO
+Objetivo:
+- Entrar em produção com risco controlado.
+
+Entregáveis:
+- UAT com Jéssica (cenários reais).
+- Correções finais e ajustes mobile.
+- Migração das planilhas essenciais.
+- Treinamento rápido da equipe (guia + vídeos curtos).
+- Go-live com acompanhamento intensivo da primeira semana.
+
+Critério de aceite:
+- Operação diária realizada no sistema sem dependência de planilhas paralelas.
+
+4) BACKLOG PRIORIZADO
+
+P1 (obrigatório no ciclo de 4 semanas)
+- Obra + classificação de custo por tipo.
+- Conciliação Banco Inter com sugestão automática.
+- Fluxo de caixa por obra.
+- Mobile-first para lançamento de despesa/receita.
+- 2FA para perfis críticos.
+- Backup automatizado + monitoramento básico.
+
+P2 (primeiro mês pós-go-live)
+- DRE gerencial por obra/unidade.
+- Alertas de estouro de orçamento.
+- Anexo de comprovantes via celular.
+- Aprovação em duas etapas para pagamentos altos.
+
+P3 (evolução contínua)
+- Integrações fiscal/contábil externas.
+- BI avançado e projeções de caixa.
+- App mobile com recursos offline.
+
+5) GOVERNANÇA E MÉTRICAS
+
+KPIs recomendados:
+- % de conciliação automática.
+- Tempo diário gasto em rotinas financeiras.
+- Nº de lançamentos sem classificação correta.
+- Desvio previsto x realizado por obra.
+- Tempo de fechamento mensal.
+
+Metas iniciais (60–90 dias):
+- Redução de 50% do tempo operacional manual.
+- Conciliação automática > 85%.
+- Fechamento mensal em até D+2.
+
+6) RISCOS E MITIGAÇÕES
+- Risco: regras implícitas nas planilhas.
+  Mitigação: workshop e validação de protótipo na semana 1.
+- Risco: instabilidade de integração bancária.
+  Mitigação: fallback OFX/CSV + fila de reprocesso.
+- Risco: baixa adoção da equipe.
+  Mitigação: treinamento orientado ao dia a dia + telas mobile simplificadas.
+- Risco: segurança insuficiente.
+  Mitigação: checklist hardening + 2FA + teste obrigatório de restore.
+
+7) RESUMO EXECUTIVO
+- A proposta é viável em 4 semanas para entrega inicial funcional.
+- O sucesso depende de foco em:
+  1. Obra como unidade financeira principal
+  2. Conciliação automática confiável
+  3. Segurança e operação em nuvem
+  4. Adoção real pela equipe financeira
+

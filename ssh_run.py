@@ -31,5 +31,8 @@ def run_ssh(command, password):
 
 if __name__ == '__main__':
     cmd = sys.argv[1] if len(sys.argv) > 1 else 'echo "SSH OK"'
-    pw = "w(1dD58A;?/OgNxC"
+    pw = os.environ.get("SSH_PASSWORD")
+    if not pw:
+        print("Error: SSH_PASSWORD environment variable is not set.")
+        sys.exit(1)
     run_ssh(cmd, pw)

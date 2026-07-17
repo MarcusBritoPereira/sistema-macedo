@@ -1,0 +1,79 @@
+<ion-content class="stock-content">
+  <div class="loading" *ngIf="loading">
+    <ion-spinner name="crescent" color="primary"></ion-spinner>
+    <p>Carregando painel de estoque...</p>
+  </div>
+
+  <div class="stock-page" *ngIf="!loading">
+    <header class="stock-header">
+      <div>
+        <h1>Dashboard de Estoque</h1>
+        <p>Controle de materiais, saldos e reposição</p>
+      </div>
+      <ion-button routerLink="/stock/materials">
+        <ion-icon name="cube-outline" slot="start"></ion-icon>
+        Materiais
+      </ion-button>
+    </header>
+
+    <section class="cards-grid">
+      <article class="summary-card">
+        <ion-icon name="archive-outline"></ion-icon>
+        <span>Valor total em estoque</span>
+        <strong>{{ summary?.valorTotalEstoque || 0 | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</strong>
+      </article>
+      <article class="summary-card">
+        <ion-icon name="cube-outline"></ion-icon>
+        <span>Materiais cadastrados</span>
+        <strong>{{ summary?.materiaisCadastrados || 0 | number:'1.0-0' }}</strong>
+      </article>
+      <article class="summary-card warning">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <span>Abaixo do mínimo</span>
+        <strong>{{ summary?.materiaisAbaixoMinimo || 0 | number:'1.0-0' }}</strong>
+      </article>
+      <article class="summary-card">
+        <ion-icon name="swap-horizontal-outline"></ion-icon>
+        <span>Qtd. reservada</span>
+        <strong>{{ summary?.quantidadeReservada || 0 | number:'1.2-2' }}</strong>
+      </article>
+    </section>
+
+    <section class="quick-actions">
+      <a routerLink="/stock/balances"><ion-icon name="bar-chart-outline"></ion-icon><span>Saldos</span></a>
+      <a routerLink="/stock/entries"><ion-icon name="archive-outline"></ion-icon><span>Entradas</span></a>
+      <a routerLink="/stock/issues"><ion-icon name="trending-down-outline"></ion-icon><span>Saídas</span></a>
+      <a routerLink="/stock/transfers"><ion-icon name="swap-horizontal-outline"></ion-icon><span>Transferências</span></a>
+      <a routerLink="/stock/locations"><ion-icon name="business-outline"></ion-icon><span>Locais</span></a>
+      <a routerLink="/stock/requests"><ion-icon name="list-outline"></ion-icon><span>Solicitações</span></a>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <h2>Alertas de reposição</h2>
+      </div>
+
+      <table *ngIf="lowStock.length">
+        <thead>
+          <tr>
+            <th>Material</th>
+            <th>Local</th>
+            <th>Disponível</th>
+            <th>Situação</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of lowStock">
+            <td>{{ item.material.codigo }} - {{ item.material.nome }}</td>
+            <td>{{ item.localEstoque.nome }}</td>
+            <td>{{ item.quantidadeDisponivel | number:'1.2-2' }}</td>
+            <td><span class="status" [class.critical]="item.situacao === 'CRITICO' || item.situacao === 'ZERADO' || item.situacao === 'NEGATIVO'">{{ item.situacao }}</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="empty" *ngIf="!lowStock.length">Nenhum material abaixo do ponto de reposição.</div>
+    </section>
+  </div>
+</ion-content>

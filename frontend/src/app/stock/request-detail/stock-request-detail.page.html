@@ -1,0 +1,40 @@
+<ion-content class="stock-content">
+  <div class="loading" *ngIf="loading"><ion-spinner name="crescent"></ion-spinner><p>Carregando solicitação...</p></div>
+  <div class="stock-page" *ngIf="!loading && request">
+    <header class="stock-header">
+      <div><h1>Solicitação {{ request.numero }}</h1><p>{{ request.status }} • {{ request.prioridade }} • {{ request.dataNecessidade | date:'dd/MM/yyyy' }}</p></div>
+      <div class="header-actions-inline">
+        <ion-button fill="outline" routerLink="/stock/requests"><ion-icon name="arrow-back-outline" slot="start"></ion-icon>Voltar</ion-button>
+        <ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Atualizar</ion-button>
+      </div>
+    </header>
+
+    <section class="cards-grid detail-cards">
+      <article class="summary-card"><ion-icon name="list-outline"></ion-icon><span>Obra</span><strong>{{ request.obra?.nome || '-' }}</strong></article>
+      <article class="summary-card"><ion-icon name="list-outline"></ion-icon><span>Destino</span><strong>{{ request.localDestino?.nome || '-' }}</strong></article>
+      <article class="summary-card"><ion-icon name="list-outline"></ion-icon><span>Solicitante</span><strong>{{ request.solicitante?.nome || '-' }}</strong></article>
+      <article class="summary-card"><ion-icon name="list-outline"></ion-icon><span>Aprovador</span><strong>{{ request.aprovador?.nome || '-' }}</strong></article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><ion-icon name="list-outline"></ion-icon><h2>Itens solicitados</h2></div>
+      <table>
+        <thead><tr><th>Material</th><th>Solicitada</th><th>Aprovada</th><th>Atendida</th><th>Observação</th></tr></thead>
+        <tbody>
+          <tr *ngFor="let item of request.itens || []">
+            <td>{{ item.material?.codigo }} - {{ item.material?.nome }}</td>
+            <td>{{ item.quantidadeSolicitada | number:'1.2-2' }}</td>
+            <td>{{ item.quantidadeAprovada || 0 | number:'1.2-2' }}</td>
+            <td>{{ item.quantidadeAtendida || 0 | number:'1.2-2' }}</td>
+            <td>{{ item.observacao || '-' }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title"><ion-icon name="list-outline"></ion-icon><h2>Justificativa e observações</h2></div>
+      <dl class="detail-list"><dt>Justificativa</dt><dd>{{ request.justificativa || '-' }}</dd><dt>Observação</dt><dd>{{ request.observacao || '-' }}</dd></dl>
+    </section>
+  </div>
+</ion-content>

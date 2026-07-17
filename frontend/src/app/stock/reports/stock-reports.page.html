@@ -1,0 +1,47 @@
+<ion-content class="ion-padding stock-page">
+  <section class="stock-hero">
+    <div>
+      <p class="eyebrow">Estoque</p>
+      <h1><ion-icon name="pie-chart-outline"></ion-icon> Relatórios</h1>
+      <p>Consulte posição de estoque, movimentações, consumo por obra, perdas, curva ABC e sugestão de compra.</p>
+    </div>
+    <div class="stock-actions">
+      <ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Gerar</ion-button>
+      <ion-button color="primary" (click)="exportCsv()"><ion-icon name="cloud-download-outline" slot="start"></ion-icon>Exportar CSV</ion-button>
+    </div>
+  </section>
+
+  <section class="stock-card stock-form-grid">
+    <ion-item>
+      <ion-label position="stacked">Relatório</ion-label>
+      <ion-select [(ngModel)]="kind" interface="popover">
+        <ion-select-option *ngFor="let report of reports" [value]="report.value">{{ report.label }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+    <ion-item>
+      <ion-label position="stacked">Data inicial</ion-label>
+      <ion-input type="date" [(ngModel)]="dataInicio"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-label position="stacked">Data final</ion-label>
+      <ion-input type="date" [(ngModel)]="dataFim"></ion-input>
+    </ion-item>
+  </section>
+
+  <ion-spinner *ngIf="loading"></ion-spinner>
+
+  <section class="stock-table" *ngIf="!loading && items.length">
+    <table>
+      <thead><tr><th *ngFor="let header of headers">{{ header }}</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td *ngFor="let header of headers">{{ item[header] }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="stock-card" *ngIf="!loading && !items.length">
+    Selecione os filtros e clique em Gerar para visualizar o relatório.
+  </section>
+</ion-content>

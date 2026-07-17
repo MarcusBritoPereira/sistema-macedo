@@ -173,4 +173,108 @@ export const routes: Routes = [
   },
 
 
+  {
+    path: 'stock/dashboard',
+    loadComponent: () => import('./stock/dashboard/stock-dashboard.page').then(m => m.StockDashboardPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/materials',
+    loadComponent: () => import('./stock/materials/stock-materials.page').then(m => m.StockMaterialsPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/categories',
+    loadComponent: () => import('./stock/categories/stock-categories.page').then(m => m.StockCategoriesPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/locations',
+    loadComponent: () => import('./stock/locations/stock-locations.page').then(m => m.StockLocationsPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/balances',
+    loadComponent: () => import('./stock/balances/stock-balances.page').then(m => m.StockBalancesPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/entries',
+    loadComponent: () => import('./stock/documents/stock-documents.page').then(m => m.StockDocumentsPage),
+    canActivate: [AuthGuard],
+    data: { kind: 'entries' }
+  },
+  {
+    path: 'stock/issues',
+    loadComponent: () => import('./stock/documents/stock-documents.page').then(m => m.StockDocumentsPage),
+    canActivate: [AuthGuard],
+    data: { kind: 'issues' }
+  },
+  {
+    path: 'stock/transfers',
+    loadComponent: () => import('./stock/documents/stock-documents.page').then(m => m.StockDocumentsPage),
+    canActivate: [AuthGuard],
+    data: { kind: 'transfers' }
+  },
+  {
+    path: 'stock/entries/:id',
+    loadComponent: () => import('./stock/document-detail/stock-document-detail.page').then(m => m.StockDocumentDetailPage),
+    canActivate: [AuthGuard],
+    data: { kind: 'entries' }
+  },
+  {
+    path: 'stock/issues/:id',
+    loadComponent: () => import('./stock/document-detail/stock-document-detail.page').then(m => m.StockDocumentDetailPage),
+    canActivate: [AuthGuard],
+    data: { kind: 'issues' }
+  },
+  {
+    path: 'stock/transfers/:id',
+    loadComponent: () => import('./stock/document-detail/stock-document-detail.page').then(m => m.StockDocumentDetailPage),
+    canActivate: [AuthGuard],
+    data: { kind: 'transfers' }
+  },
+  {
+    path: 'stock/requests',
+    loadComponent: () => import('./stock/requests/stock-requests.page').then(m => m.StockRequestsPage),
+    canActivate: [AuthGuard],
+    data: { mode: 'requests' }
+  },
+  {
+    path: 'stock/requests/:id',
+    loadComponent: () => import('./stock/request-detail/stock-request-detail.page').then(m => m.StockRequestDetailPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/reservations',
+    loadComponent: () => import('./stock/requests/stock-requests.page').then(m => m.StockRequestsPage),
+    canActivate: [AuthGuard],
+    data: { mode: 'reservations' }
+  },
+  {
+    path: 'stock/inventories',
+    loadComponent: () => import('./stock/inventories/stock-inventories.page').then(m => m.StockInventoriesPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/inventories/:id',
+    loadComponent: () => import('./stock/inventory-detail/stock-inventory-detail.page').then(m => m.StockInventoryDetailPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/budgets',
+    loadComponent: () => import('./stock/budgets/stock-budgets.page').then(m => m.StockBudgetsPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/budgets/:id',
+    loadComponent: () => import('./stock/budget-detail/stock-budget-detail.page').then(m => m.StockBudgetDetailPage),
+    canActivate: [AuthGuard]
+  },
+  {
+    path: 'stock/reports',
+    loadComponent: () => import('./stock/reports/stock-reports.page').then(m => m.StockReportsPage),
+    canActivate: [AuthGuard]
+  },
+
 ];

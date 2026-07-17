@@ -13,6 +13,7 @@ import { ContractsModule } from './contracts/contracts.module';
 import { FiscalModule } from './fiscal/fiscal.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
 import { HealthModule } from './health/health.module';
+import { StockModule } from './stock/stock.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { HealthModule } from './health/health.module';
     ]),
     SuppliersModule,
     HealthModule,
+    ...(process.env.STOCK_MODULE_ENABLED === 'true' ? [StockModule] : []),
   ],
   controllers: [AppController],
   providers: [AppService],

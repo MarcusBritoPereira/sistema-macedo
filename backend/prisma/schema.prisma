@@ -28,6 +28,23 @@ model Usuario {
 
   logs                    LogAuditoria[]
   centrosCustoResponsavel CentroCusto[]  @relation("CentroCustoResponsavel")
+  materiaisCriados        Material[]     @relation("MaterialCriadoPor")
+  locaisEstoqueResponsavel LocalEstoque[] @relation("LocalEstoqueResponsavel")
+  movimentosSolicitados   MovimentoEstoque[] @relation("MovimentoEstoqueSolicitadoPor")
+  movimentosAprovados     MovimentoEstoque[] @relation("MovimentoEstoqueAprovadoPor")
+  movimentosRegistrados   MovimentoEstoque[] @relation("MovimentoEstoqueRegistradoPor")
+  movimentosCancelados    MovimentoEstoque[] @relation("MovimentoEstoqueCanceladoPor")
+  documentosEstoqueCriados DocumentoEstoque[] @relation("DocumentoEstoqueCriadoPor")
+  documentosEstoqueAprovados DocumentoEstoque[] @relation("DocumentoEstoqueAprovadoPor")
+  documentosEstoqueEfetivados DocumentoEstoque[] @relation("DocumentoEstoqueEfetivadoPor")
+  inventariosCriados      InventarioEstoque[] @relation("InventarioEstoqueCriadoPor")
+  inventariosAprovados    InventarioEstoque[] @relation("InventarioEstoqueAprovadoPor")
+  reservasSolicitadas     ReservaEstoque[] @relation("ReservaEstoqueSolicitadoPor")
+  reservasAprovadas       ReservaEstoque[] @relation("ReservaEstoqueAprovadoPor")
+  solicitacoesMateriais   SolicitacaoMaterial[] @relation("SolicitacaoMaterialSolicitante")
+  aprovacoesSolicitacoes  SolicitacaoMaterial[] @relation("SolicitacaoMaterialAprovador")
+  orcamentosMateriaisCriados OrcamentoMaterialObra[] @relation("OrcamentoMaterialCriadoPor")
+  orcamentosMateriaisAprovados OrcamentoMaterialObra[] @relation("OrcamentoMaterialAprovadoPor")
 
   @@map("usuarios")
 }
@@ -203,6 +220,8 @@ model LancamentoFinanceiro {
 
   conciliacoes ConciliacaoBancaria[]
   parcelaObra  ParcelaObra?
+  movimentosEstoque MovimentoEstoque[]
+  documentosEstoque DocumentoEstoque[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -403,6 +422,8 @@ model CategoriaFinanceira {
 
   lancamentos  LancamentoFinanceiro[]
   rateios      RateioLancamento[]
+  categoriasMaterial CategoriaMaterial[]
+  apropriacoesCustoEstoque ApropriacaoCustoEstoque[]
   regras       RegraClassificacao[]
   centrosCusto CentroCusto[]          @relation("CentroCustoPlanoConta")
 
@@ -568,6 +589,9 @@ model CentroCusto {
   // Relações existentes mantidas
   rateios     RateioLancamento[]
   lancamentos LancamentoFinanceiro[]
+  categoriasMaterialPadrao CategoriaMaterial[]
+  apropriacoesCustoEstoque ApropriacaoCustoEstoque[]
+  itensOrcamentoMaterial ItemOrcamentoMaterialObra[]
   regras      RegraClassificacao[]
   obras       Obra[]                 @relation("ObraMainCentroCusto")
 
@@ -645,6 +669,8 @@ model Fornecedor {
   updatedAt DateTime @updatedAt
 
   lancamentos LancamentoFinanceiro[]
+  documentosEstoque DocumentoEstoque[]
+  movimentosEstoque MovimentoEstoque[]
 
   @@map("fornecedores")
 }
@@ -711,6 +737,13 @@ model Obra {
   lancamentos LancamentoFinanceiro[]
   rateios     RateioLancamento[]
   parcelas    ParcelaObra[]
+  locaisEstoque LocalEstoque[]
+  movimentosEstoque MovimentoEstoque[]
+  documentosEstoque DocumentoEstoque[]
+  reservasEstoque ReservaEstoque[]
+  solicitacoesMaterial SolicitacaoMaterial[]
+  orcamentosMaterial OrcamentoMaterialObra[]
+  apropriacoesCustoEstoque ApropriacaoCustoEstoque[]
 
   ativo     Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -752,4 +785,534 @@ enum StatusParcela {
   PREVISTO
   RECEBIDO
   ATRASADO
+}
+
+
+// --- Fase 2: Controle de Estoque de Materiais ---
+
+enum UnidadeMedidaMaterial {
+  UN
+  KG
+  G
+  T
+  M
+  M2
+  M3
+  L
+  ML
+  CX
+  PCT
+  SC
+  RL
+  BD
+  GL
+}
+
+enum TipoLocalEstoque {
+  ESTOQUE_CENTRAL
+  DEPOSITO
+  ALMOXARIFADO
+  OBRA
+  CANTEIRO
+  LOCAL_TEMPORARIO
+}
+
+enum TipoMovimentoEstoque {
+  ENTRADA_COMPRA
+  ENTRADA_DEVOLUCAO
+  ENTRADA_DOACAO
+  ENTRADA_AJUSTE
+  SAIDA_CONSUMO
+  SAIDA_PERDA
+  SAIDA_DEVOLUCAO_FORNECEDOR
+  SAIDA_AJUSTE
+  TRANSFERENCIA
+  RESERVA
+  LIBERACAO_RESERVA
+  INVENTARIO
+  ESTORNO
+}
+
+enum StatusMovimentoEstoque {
+  RASCUNHO
+  PENDENTE_APROVACAO
+  APROVADO
+  EFETIVADO
+  CANCELADO
+  ESTORNADO
+}
+
+enum TipoDocumentoEstoque {
+  ENTRADA
+  SAIDA
+  TRANSFERENCIA
+  DEVOLUCAO
+  AJUSTE
+  INVENTARIO
+}
+
+enum StatusDocumentoEstoque {
+  RASCUNHO
+  PENDENTE_APROVACAO
+  APROVADO
+  EFETIVADO
+  CANCELADO
+  ESTORNADO
+}
+
+enum StatusReservaEstoque {
+  PENDENTE
+  APROVADA
+  ATENDIDA
+  PARCIALMENTE_ATENDIDA
+  CANCELADA
+  EXPIRADA
+}
+
+enum StatusSolicitacaoMaterial {
+  RASCUNHO
+  ENVIADA
+  EM_ANALISE
+  APROVADA
+  PARCIALMENTE_APROVADA
+  REJEITADA
+  SEPARACAO
+  PARCIALMENTE_ATENDIDA
+  ATENDIDA
+  CANCELADA
+}
+
+enum PrioridadeSolicitacaoMaterial {
+  BAIXA
+  NORMAL
+  ALTA
+  URGENTE
+}
+
+enum StatusInventarioEstoque {
+  ABERTO
+  EM_CONTAGEM
+  PENDENTE_APROVACAO
+  APROVADO
+  FECHADO
+  CANCELADO
+}
+
+enum StatusOrcamentoMaterialObra {
+  RASCUNHO
+  PENDENTE_APROVACAO
+  APROVADO
+  CANCELADO
+  SUBSTITUIDO
+}
+
+model CategoriaMaterial {
+  id                    String  @id @default(uuid())
+  nome                  String
+  descricao             String?
+  parentId              String? @map("parent_id")
+  parent                CategoriaMaterial? @relation("CategoriaMaterialHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children              CategoriaMaterial[] @relation("CategoriaMaterialHierarchy")
+  categoriaFinanceiraId String? @map("categoria_financeira_id")
+  categoriaFinanceira   CategoriaFinanceira? @relation(fields: [categoriaFinanceiraId], references: [id], onDelete: SetNull)
+  centroCustoPadraoId   String? @map("centro_custo_padrao_id")
+  centroCustoPadrao     CentroCusto? @relation(fields: [centroCustoPadraoId], references: [id], onDelete: SetNull)
+  ativo                 Boolean @default(true)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  materiais             Material[]
+  itensOrcamento        ItemOrcamentoMaterialObra[]
+
+  @@index([parentId], map: "idx_categorias_material_parent")
+  @@index([categoriaFinanceiraId], map: "idx_categorias_material_financeira")
+  @@index([centroCustoPadraoId], map: "idx_categorias_material_cc_padrao")
+  @@map("categorias_material")
+}
+
+model Material {
+  id                  String @id @default(uuid())
+  codigo              String @unique
+  nome                String
+  descricao           String?
+  categoriaMaterialId String @map("categoria_material_id")
+  categoriaMaterial   CategoriaMaterial @relation(fields: [categoriaMaterialId], references: [id], onDelete: Restrict)
+  unidade             UnidadeMedidaMaterial
+  codigoBarras        String? @unique @map("codigo_barras")
+  referenciaFornecedor String? @map("referencia_fornecedor")
+  marca               String?
+  fabricante          String?
+  estoqueMinimo       Decimal @default(0) @map("estoque_minimo") @db.Decimal(15, 3)
+  estoqueMaximo       Decimal? @map("estoque_maximo") @db.Decimal(15, 3)
+  pontoReposicao      Decimal @default(0) @map("ponto_reposicao") @db.Decimal(15, 3)
+  custoPadrao         Decimal? @map("custo_padrao") @db.Decimal(15, 4)
+  ultimoCusto         Decimal? @map("ultimo_custo") @db.Decimal(15, 4)
+  custoMedio          Decimal @default(0) @map("custo_medio") @db.Decimal(15, 4)
+  permiteFracionado   Boolean @default(false) @map("permite_fracionado")
+  ativo               Boolean @default(true)
+  observacoes         String?
+  criadoPorId         String? @map("criado_por_id")
+  criadoPor           Usuario? @relation("MaterialCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  saldos              SaldoEstoque[]
+  movimentos          MovimentoEstoque[]
+  itensDocumento      ItemDocumentoEstoque[]
+  itensInventario     ItemInventarioEstoque[]
+  reservas            ReservaEstoque[]
+  itensSolicitacao    ItemSolicitacaoMaterial[]
+  itensOrcamento      ItemOrcamentoMaterialObra[]
+  apropriacoes        ApropriacaoCustoEstoque[]
+
+  @@index([categoriaMaterialId], map: "idx_materiais_categoria")
+  @@index([ativo], map: "idx_materiais_ativo")
+  @@map("materiais")
+}
+
+model LocalEstoque {
+  id                   String @id @default(uuid())
+  nome                 String
+  codigo               String @unique
+  tipo                 TipoLocalEstoque
+  obraId               String? @map("obra_id")
+  obra                 Obra? @relation(fields: [obraId], references: [id], onDelete: SetNull)
+  responsavelId        String? @map("responsavel_id")
+  responsavel          Usuario? @relation("LocalEstoqueResponsavel", fields: [responsavelId], references: [id], onDelete: SetNull)
+  endereco             String?
+  permiteSaldoNegativo Boolean @default(false) @map("permite_saldo_negativo")
+  ativo                Boolean @default(true)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  saldos               SaldoEstoque[]
+  movimentosOrigem     MovimentoEstoque[] @relation("MovimentoEstoqueOrigem")
+  movimentosDestino    MovimentoEstoque[] @relation("MovimentoEstoqueDestino")
+  documentosOrigem     DocumentoEstoque[] @relation("DocumentoEstoqueOrigem")
+  documentosDestino    DocumentoEstoque[] @relation("DocumentoEstoqueDestino")
+  inventarios          InventarioEstoque[]
+  reservas             ReservaEstoque[]
+  solicitacoesDestino  SolicitacaoMaterial[]
+
+  @@index([obraId], map: "idx_locais_estoque_obra")
+  @@index([tipo], map: "idx_locais_estoque_tipo")
+  @@index([ativo], map: "idx_locais_estoque_ativo")
+  @@map("locais_estoque")
+}
+
+model SaldoEstoque {
+  id                  String @id @default(uuid())
+  materialId          String @map("material_id")
+  material            Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  localEstoqueId      String @map("local_estoque_id")
+  localEstoque        LocalEstoque @relation(fields: [localEstoqueId], references: [id], onDelete: Restrict)
+  quantidade          Decimal @default(0) @db.Decimal(15, 3)
+  quantidadeReservada Decimal @default(0) @map("quantidade_reservada") @db.Decimal(15, 3)
+  custoMedio          Decimal @default(0) @map("custo_medio") @db.Decimal(15, 4)
+  valorTotal          Decimal @default(0) @map("valor_total") @db.Decimal(15, 2)
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  @@unique([materialId, localEstoqueId], map: "uq_saldos_material_local")
+  @@index([materialId], map: "idx_saldos_material")
+  @@index([localEstoqueId], map: "idx_saldos_local")
+  @@map("saldos_estoque")
+}
+
+model MovimentoEstoque {
+  id                    String @id @default(uuid())
+  numero                String @unique
+  tipo                  TipoMovimentoEstoque
+  status                StatusMovimentoEstoque @default(EFETIVADO)
+  materialId            String @map("material_id")
+  material              Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  localOrigemId         String? @map("local_origem_id")
+  localOrigem           LocalEstoque? @relation("MovimentoEstoqueOrigem", fields: [localOrigemId], references: [id], onDelete: Restrict)
+  localDestinoId        String? @map("local_destino_id")
+  localDestino          LocalEstoque? @relation("MovimentoEstoqueDestino", fields: [localDestinoId], references: [id], onDelete: Restrict)
+  obraId                String? @map("obra_id")
+  obra                  Obra? @relation(fields: [obraId], references: [id], onDelete: SetNull)
+  fornecedorId          String? @map("fornecedor_id")
+  fornecedor            Fornecedor? @relation(fields: [fornecedorId], references: [id], onDelete: SetNull)
+  quantidade            Decimal @db.Decimal(15, 3)
+  unidade               UnidadeMedidaMaterial
+  custoUnitario         Decimal @default(0) @map("custo_unitario") @db.Decimal(15, 4)
+  custoTotal            Decimal @default(0) @map("custo_total") @db.Decimal(15, 2)
+  saldoAnteriorOrigem   Decimal? @map("saldo_anterior_origem") @db.Decimal(15, 3)
+  saldoPosteriorOrigem  Decimal? @map("saldo_posterior_origem") @db.Decimal(15, 3)
+  saldoAnteriorDestino  Decimal? @map("saldo_anterior_destino") @db.Decimal(15, 3)
+  saldoPosteriorDestino Decimal? @map("saldo_posterior_destino") @db.Decimal(15, 3)
+  dataMovimento         DateTime @default(now()) @map("data_movimento")
+  documentoTipo         String? @map("documento_tipo")
+  documentoNumero       String? @map("documento_numero")
+  notaFiscalNumero      String? @map("nota_fiscal_numero")
+  notaFiscalChave       String? @map("nota_fiscal_chave")
+  observacao            String?
+  movimentoRelacionadoId String? @map("movimento_relacionado_id")
+  movimentoRelacionado  MovimentoEstoque? @relation("MovimentoEstoqueRelacionado", fields: [movimentoRelacionadoId], references: [id], onDelete: SetNull)
+  movimentosRelacionados MovimentoEstoque[] @relation("MovimentoEstoqueRelacionado")
+  documentoEstoqueId    String? @map("documento_estoque_id")
+  documentoEstoque      DocumentoEstoque? @relation(fields: [documentoEstoqueId], references: [id], onDelete: SetNull)
+  transacaoFinanceiraId String? @map("transacao_financeira_id")
+  transacaoFinanceira   LancamentoFinanceiro? @relation(fields: [transacaoFinanceiraId], references: [id], onDelete: SetNull)
+  solicitadoPorId       String? @map("solicitado_por_id")
+  solicitadoPor         Usuario? @relation("MovimentoEstoqueSolicitadoPor", fields: [solicitadoPorId], references: [id], onDelete: SetNull)
+  aprovadoPorId         String? @map("aprovado_por_id")
+  aprovadoPor           Usuario? @relation("MovimentoEstoqueAprovadoPor", fields: [aprovadoPorId], references: [id], onDelete: SetNull)
+  registradoPorId       String? @map("registrado_por_id")
+  registradoPor         Usuario? @relation("MovimentoEstoqueRegistradoPor", fields: [registradoPorId], references: [id], onDelete: SetNull)
+  canceladoPorId        String? @map("cancelado_por_id")
+  canceladoPor          Usuario? @relation("MovimentoEstoqueCanceladoPor", fields: [canceladoPorId], references: [id], onDelete: SetNull)
+  motivoCancelamento    String? @map("motivo_cancelamento")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  apropriacaoCusto      ApropriacaoCustoEstoque?
+
+  @@index([materialId], map: "idx_movimentos_estoque_material")
+  @@index([localOrigemId], map: "idx_movimentos_estoque_origem")
+  @@index([localDestinoId], map: "idx_movimentos_estoque_destino")
+  @@index([obraId, dataMovimento], map: "idx_movimentos_estoque_obra_data")
+  @@index([tipo], map: "idx_movimentos_estoque_tipo")
+  @@index([status, dataMovimento], map: "idx_movimentos_estoque_status_data")
+  @@index([fornecedorId], map: "idx_movimentos_estoque_fornecedor")
+  @@index([documentoNumero], map: "idx_movimentos_estoque_documento")
+  @@index([notaFiscalNumero], map: "idx_movimentos_estoque_nf")
+  @@index([localDestinoId, dataMovimento], map: "idx_movimentos_estoque_destino_data")
+  @@index([localOrigemId, dataMovimento], map: "idx_movimentos_estoque_origem_data")
+  @@map("movimentos_estoque")
+}
+
+model DocumentoEstoque {
+  id                    String @id @default(uuid())
+  numero                String @unique
+  tipo                  TipoDocumentoEstoque
+  status                StatusDocumentoEstoque @default(RASCUNHO)
+  fornecedorId          String? @map("fornecedor_id")
+  fornecedor            Fornecedor? @relation(fields: [fornecedorId], references: [id], onDelete: SetNull)
+  obraId                String? @map("obra_id")
+  obra                  Obra? @relation(fields: [obraId], references: [id], onDelete: SetNull)
+  localOrigemId         String? @map("local_origem_id")
+  localOrigem           LocalEstoque? @relation("DocumentoEstoqueOrigem", fields: [localOrigemId], references: [id], onDelete: Restrict)
+  localDestinoId        String? @map("local_destino_id")
+  localDestino          LocalEstoque? @relation("DocumentoEstoqueDestino", fields: [localDestinoId], references: [id], onDelete: Restrict)
+  dataDocumento         DateTime @default(now()) @map("data_documento")
+  documentoFiscal       String? @map("documento_fiscal")
+  valorTotal            Decimal @default(0) @map("valor_total") @db.Decimal(15, 2)
+  observacao            String?
+  transacaoFinanceiraId String? @map("transacao_financeira_id")
+  transacaoFinanceira   LancamentoFinanceiro? @relation(fields: [transacaoFinanceiraId], references: [id], onDelete: SetNull)
+  criadoPorId           String? @map("criado_por_id")
+  criadoPor             Usuario? @relation("DocumentoEstoqueCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  aprovadoPorId         String? @map("aprovado_por_id")
+  aprovadoPor           Usuario? @relation("DocumentoEstoqueAprovadoPor", fields: [aprovadoPorId], references: [id], onDelete: SetNull)
+  efetivadoPorId        String? @map("efetivado_por_id")
+  efetivadoPor          Usuario? @relation("DocumentoEstoqueEfetivadoPor", fields: [efetivadoPorId], references: [id], onDelete: SetNull)
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  itens                 ItemDocumentoEstoque[]
+  movimentos            MovimentoEstoque[]
+
+  @@index([fornecedorId], map: "idx_documentos_estoque_fornecedor")
+  @@index([obraId], map: "idx_documentos_estoque_obra")
+  @@index([status], map: "idx_documentos_estoque_status")
+  @@index([dataDocumento], map: "idx_documentos_estoque_data")
+  @@index([documentoFiscal], map: "idx_documentos_estoque_documento_fiscal")
+  @@map("documentos_estoque")
+}
+
+model ItemDocumentoEstoque {
+  id                 String @id @default(uuid())
+  documentoEstoqueId String @map("documento_estoque_id")
+  documentoEstoque   DocumentoEstoque @relation(fields: [documentoEstoqueId], references: [id], onDelete: Cascade)
+  materialId         String @map("material_id")
+  material           Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  quantidade         Decimal @db.Decimal(15, 3)
+  custoUnitario      Decimal @default(0) @map("custo_unitario") @db.Decimal(15, 4)
+  custoTotal         Decimal @default(0) @map("custo_total") @db.Decimal(15, 2)
+  lote               String?
+  dataValidade       DateTime? @map("data_validade")
+  observacao         String?
+
+  @@unique([documentoEstoqueId, materialId, lote], map: "uq_itens_documento_material_lote")
+  @@index([materialId], map: "idx_itens_documento_material")
+  @@map("itens_documento_estoque")
+}
+
+model InventarioEstoque {
+  id              String @id @default(uuid())
+  localEstoqueId  String @map("local_estoque_id")
+  localEstoque    LocalEstoque @relation(fields: [localEstoqueId], references: [id], onDelete: Restrict)
+  status          StatusInventarioEstoque @default(ABERTO)
+  dataAbertura    DateTime @default(now()) @map("data_abertura")
+  dataFechamento  DateTime? @map("data_fechamento")
+  criadoPorId     String? @map("criado_por_id")
+  criadoPor       Usuario? @relation("InventarioEstoqueCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  aprovadoPorId   String? @map("aprovado_por_id")
+  aprovadoPor     Usuario? @relation("InventarioEstoqueAprovadoPor", fields: [aprovadoPorId], references: [id], onDelete: SetNull)
+  observacao      String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  itens           ItemInventarioEstoque[]
+
+  @@index([localEstoqueId], map: "idx_inventarios_estoque_local")
+  @@index([status], map: "idx_inventarios_estoque_status")
+  @@map("inventarios_estoque")
+}
+
+model ItemInventarioEstoque {
+  id                String @id @default(uuid())
+  inventarioId      String @map("inventario_id")
+  inventario        InventarioEstoque @relation(fields: [inventarioId], references: [id], onDelete: Cascade)
+  materialId        String @map("material_id")
+  material          Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  quantidadeSistema Decimal @map("quantidade_sistema") @db.Decimal(15, 3)
+  quantidadeContada Decimal @map("quantidade_contada") @db.Decimal(15, 3)
+  diferenca         Decimal @db.Decimal(15, 3)
+  custoMedio        Decimal @map("custo_medio") @db.Decimal(15, 4)
+  valorDiferenca    Decimal @map("valor_diferenca") @db.Decimal(15, 2)
+  justificativa     String?
+
+  @@unique([inventarioId, materialId], map: "uq_itens_inventario_material")
+  @@index([materialId], map: "idx_itens_inventario_material")
+  @@map("itens_inventario_estoque")
+}
+
+model ReservaEstoque {
+  id              String @id @default(uuid())
+  materialId      String @map("material_id")
+  material        Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  localEstoqueId  String @map("local_estoque_id")
+  localEstoque    LocalEstoque @relation(fields: [localEstoqueId], references: [id], onDelete: Restrict)
+  obraId          String? @map("obra_id")
+  obra            Obra? @relation(fields: [obraId], references: [id], onDelete: SetNull)
+  quantidade      Decimal @db.Decimal(15, 3)
+  status          StatusReservaEstoque @default(PENDENTE)
+  finalidade      String?
+  solicitadoPorId String? @map("solicitado_por_id")
+  solicitadoPor   Usuario? @relation("ReservaEstoqueSolicitadoPor", fields: [solicitadoPorId], references: [id], onDelete: SetNull)
+  aprovadoPorId   String? @map("aprovado_por_id")
+  aprovadoPor     Usuario? @relation("ReservaEstoqueAprovadoPor", fields: [aprovadoPorId], references: [id], onDelete: SetNull)
+  dataNecessidade DateTime? @map("data_necessidade")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([materialId, localEstoqueId], map: "idx_reservas_material_local")
+  @@index([obraId], map: "idx_reservas_obra")
+  @@index([status], map: "idx_reservas_status")
+  @@map("reservas_estoque")
+}
+
+model SolicitacaoMaterial {
+  id              String @id @default(uuid())
+  numero          String @unique
+  obraId          String @map("obra_id")
+  obra            Obra @relation(fields: [obraId], references: [id], onDelete: Restrict)
+  localDestinoId  String? @map("local_destino_id")
+  localDestino    LocalEstoque? @relation(fields: [localDestinoId], references: [id], onDelete: SetNull)
+  solicitanteId   String @map("solicitante_id")
+  solicitante     Usuario @relation("SolicitacaoMaterialSolicitante", fields: [solicitanteId], references: [id], onDelete: Restrict)
+  aprovadorId     String? @map("aprovador_id")
+  aprovador       Usuario? @relation("SolicitacaoMaterialAprovador", fields: [aprovadorId], references: [id], onDelete: SetNull)
+  status          StatusSolicitacaoMaterial @default(RASCUNHO)
+  prioridade      PrioridadeSolicitacaoMaterial @default(NORMAL)
+  dataNecessidade DateTime? @map("data_necessidade")
+  justificativa   String?
+  observacao      String?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  itens           ItemSolicitacaoMaterial[]
+
+  @@index([obraId], map: "idx_solicitacoes_material_obra")
+  @@index([status], map: "idx_solicitacoes_material_status")
+  @@index([dataNecessidade], map: "idx_solicitacoes_material_necessidade")
+  @@map("solicitacoes_material")
+}
+
+model ItemSolicitacaoMaterial {
+  id                   String @id @default(uuid())
+  solicitacaoId         String @map("solicitacao_id")
+  solicitacao           SolicitacaoMaterial @relation(fields: [solicitacaoId], references: [id], onDelete: Cascade)
+  materialId            String @map("material_id")
+  material              Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  quantidadeSolicitada  Decimal @map("quantidade_solicitada") @db.Decimal(15, 3)
+  quantidadeAprovada    Decimal? @map("quantidade_aprovada") @db.Decimal(15, 3)
+  quantidadeAtendida    Decimal @default(0) @map("quantidade_atendida") @db.Decimal(15, 3)
+  observacao            String?
+
+  @@unique([solicitacaoId, materialId], map: "uq_itens_solicitacao_material")
+  @@index([materialId], map: "idx_itens_solicitacao_material")
+  @@map("itens_solicitacao_material")
+}
+
+model OrcamentoMaterialObra {
+  id             String @id @default(uuid())
+  obraId         String @map("obra_id")
+  obra           Obra @relation(fields: [obraId], references: [id], onDelete: Restrict)
+  versao         Int @default(1)
+  status         StatusOrcamentoMaterialObra @default(RASCUNHO)
+  dataReferencia DateTime @map("data_referencia")
+  observacao     String?
+  criadoPorId    String? @map("criado_por_id")
+  criadoPor      Usuario? @relation("OrcamentoMaterialCriadoPor", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  aprovadoPorId  String? @map("aprovado_por_id")
+  aprovadoPor    Usuario? @relation("OrcamentoMaterialAprovadoPor", fields: [aprovadoPorId], references: [id], onDelete: SetNull)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  itens          ItemOrcamentoMaterialObra[]
+
+  @@unique([obraId, versao], map: "uq_orcamentos_material_obra_versao")
+  @@index([status], map: "idx_orcamentos_material_status")
+  @@map("orcamentos_material_obra")
+}
+
+model ItemOrcamentoMaterialObra {
+  id                  String @id @default(uuid())
+  orcamentoId         String @map("orcamento_id")
+  orcamento           OrcamentoMaterialObra @relation(fields: [orcamentoId], references: [id], onDelete: Cascade)
+  materialId          String @map("material_id")
+  material            Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  categoriaMaterialId String? @map("categoria_material_id")
+  categoriaMaterial   CategoriaMaterial? @relation(fields: [categoriaMaterialId], references: [id], onDelete: SetNull)
+  quantidadeOrcada    Decimal @map("quantidade_orcada") @db.Decimal(15, 3)
+  custoUnitarioOrcado Decimal @map("custo_unitario_orcado") @db.Decimal(15, 4)
+  custoTotalOrcado    Decimal @map("custo_total_orcado") @db.Decimal(15, 2)
+  etapaObra           String? @map("etapa_obra")
+  centroCustoId       String? @map("centro_custo_id")
+  centroCusto         CentroCusto? @relation(fields: [centroCustoId], references: [id], onDelete: SetNull)
+  observacao          String?
+
+  @@unique([orcamentoId, materialId, etapaObra], map: "uq_itens_orcamento_material_etapa")
+  @@index([materialId], map: "idx_itens_orcamento_material")
+  @@index([categoriaMaterialId], map: "idx_itens_orcamento_categoria")
+  @@index([centroCustoId], map: "idx_itens_orcamento_cc")
+  @@map("itens_orcamento_material_obra")
+}
+
+model ApropriacaoCustoEstoque {
+  id                String @id @default(uuid())
+  movimentoEstoqueId String @unique @map("movimento_estoque_id")
+  movimentoEstoque MovimentoEstoque @relation(fields: [movimentoEstoqueId], references: [id], onDelete: Restrict)
+  obraId            String @map("obra_id")
+  obra              Obra @relation(fields: [obraId], references: [id], onDelete: Restrict)
+  centroCustoId     String? @map("centro_custo_id")
+  centroCusto       CentroCusto? @relation(fields: [centroCustoId], references: [id], onDelete: SetNull)
+  categoriaId       String? @map("categoria_id")
+  categoria         CategoriaFinanceira? @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  materialId        String @map("material_id")
+  material          Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
+  quantidade        Decimal @db.Decimal(15, 3)
+  custoUnitario     Decimal @map("custo_unitario") @db.Decimal(15, 4)
+  custoTotal        Decimal @map("custo_total") @db.Decimal(15, 2)
+  dataCompetencia   DateTime @map("data_competencia")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([obraId, dataCompetencia], map: "idx_apropriacoes_estoque_obra_data")
+  @@index([centroCustoId], map: "idx_apropriacoes_estoque_cc")
+  @@index([categoriaId], map: "idx_apropriacoes_estoque_categoria")
+  @@index([materialId], map: "idx_apropriacoes_estoque_material")
+  @@map("apropriacoes_custo_estoque")
 }

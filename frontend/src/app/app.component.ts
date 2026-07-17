@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { IonApp, IonRouterOutlet, IonSplitPane, IonMenu, IonContent, IonList, IonMenuToggle, IonItem, IonIcon, IonLabel, IonAccordionGroup, IonAccordion, IonFooter, IonButton } from '@ionic/angular/standalone';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { addIcons } from 'ionicons';
-import { homeOutline, homeSharp, peopleOutline, peopleSharp, cashOutline, cashSharp, logOutOutline, logOutSharp, documentTextOutline, documentTextSharp, pricetagOutline, pricetagSharp, walletOutline, walletSharp, listOutline, listSharp, barChartOutline, barChartSharp, settingsOutline, settingsSharp, arrowDownCircleOutline, arrowDownCircleSharp, arrowUpCircleOutline, arrowUpCircleSharp, statsChartOutline, statsChartSharp, calendarOutline, calendarSharp, trendingUpOutline, trendingUpSharp, lockClosedOutline, lockClosedSharp, receiptOutline, receiptSharp, libraryOutline, librarySharp, listCircleOutline, listCircleSharp, timeOutline, timeSharp, gitCompareOutline, gitCompareSharp, globeOutline, globeSharp, businessOutline, businessSharp, chevronBackOutline, chevronForwardOutline, cardOutline, cardSharp, pieChartOutline, pieChartSharp, analyticsOutline, analyticsSharp, buildOutline, buildSharp } from 'ionicons/icons';
+import { homeOutline, homeSharp, peopleOutline, peopleSharp, cashOutline, cashSharp, logOutOutline, logOutSharp, documentTextOutline, documentTextSharp, pricetagOutline, pricetagSharp, walletOutline, walletSharp, listOutline, listSharp, barChartOutline, barChartSharp, settingsOutline, settingsSharp, arrowDownCircleOutline, arrowDownCircleSharp, arrowUpCircleOutline, arrowUpCircleSharp, statsChartOutline, statsChartSharp, calendarOutline, calendarSharp, trendingUpOutline, trendingUpSharp, lockClosedOutline, lockClosedSharp, receiptOutline, receiptSharp, libraryOutline, librarySharp, listCircleOutline, listCircleSharp, timeOutline, timeSharp, gitCompareOutline, gitCompareSharp, globeOutline, globeSharp, businessOutline, businessSharp, chevronBackOutline, chevronForwardOutline, cardOutline, cardSharp, pieChartOutline, pieChartSharp, analyticsOutline, analyticsSharp, buildOutline, buildSharp, cubeOutline, cubeSharp, archiveOutline, archiveSharp, trendingDownOutline, trendingDownSharp, swapHorizontalOutline, swapHorizontalSharp } from 'ionicons/icons';
 import { AuthService } from './services/auth/auth.service';
 
 @Component({
@@ -31,7 +31,8 @@ export class AppComponent {
       gitCompareSharp, globeOutline, globeSharp, businessOutline, businessSharp,
       chevronBackOutline, chevronForwardOutline, cardOutline, cardSharp,
       pieChartOutline, pieChartSharp, analyticsOutline, analyticsSharp,
-      buildOutline, buildSharp
+      buildOutline, buildSharp, cubeOutline, cubeSharp, archiveOutline, archiveSharp,
+      trendingDownOutline, trendingDownSharp, swapHorizontalOutline, swapHorizontalSharp
     });
   }
 

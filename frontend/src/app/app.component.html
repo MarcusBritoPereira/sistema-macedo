@@ -202,6 +202,73 @@
               </ion-accordion>
             </ion-accordion-group>
 
+
+            <!-- Level 1: Estoque (Accordion) -->
+            <ion-accordion-group *ngIf="auth.hasPermission('ESTOQUE_VISUALIZAR')">
+              <ion-accordion value="stock_group" class="menu-accordion">
+                <ion-item slot="header" lines="none">
+                  <ion-icon slot="start" ios="build-outline" md="build-sharp"></ion-icon>
+                  <ion-label>Estoque</ion-label>
+                </ion-item>
+                <div class="ion-padding-start" slot="content">
+                  <ion-menu-toggle auto-hide="false">
+                    <ion-item routerDirection="root" routerLink="/stock/dashboard" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="bar-chart-outline" md="bar-chart-sharp"></ion-icon>
+                      <ion-label>Dashboard</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/materials" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="cube-outline" md="cube-sharp"></ion-icon>
+                      <ion-label>Materiais</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/categories" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_CONFIGURACOES')">
+                      <ion-icon slot="start" ios="pricetag-outline" md="pricetag-sharp"></ion-icon>
+                      <ion-label>Categorias</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/locations" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_LOCAL_GERENCIAR') || auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="business-outline" md="business-sharp"></ion-icon>
+                      <ion-label>Locais de estoque</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/balances" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="list-circle-outline" md="list-circle-sharp"></ion-icon>
+                      <ion-label>Saldos</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/entries" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_ENTRADA_CRIAR') || auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="archive-outline" md="archive-sharp"></ion-icon>
+                      <ion-label>Entradas</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/issues" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_SAIDA_CRIAR') || auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="trending-down-outline" md="trending-down-sharp"></ion-icon>
+                      <ion-label>Saídas</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/transfers" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_TRANSFERIR') || auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="swap-horizontal-outline" md="swap-horizontal-sharp"></ion-icon>
+                      <ion-label>Transferências</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/requests" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_SOLICITAR') || auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="document-text-outline" md="document-text-sharp"></ion-icon>
+                      <ion-label>Solicitações</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/reservations" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="calendar-outline" md="calendar-sharp"></ion-icon>
+                      <ion-label>Reservas</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/inventories" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_INVENTARIO_CRIAR') || auth.hasPermission('ESTOQUE_VISUALIZAR')">
+                      <ion-icon slot="start" ios="clipboard-outline" md="clipboard-sharp"></ion-icon>
+                      <ion-label>Inventários</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/budgets" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_RELATORIOS') || auth.hasPermission('ESTOQUE_CONFIGURACOES')">
+                      <ion-icon slot="start" ios="calculator-outline" md="calculator-sharp"></ion-icon>
+                      <ion-label>Orçamento por obra</ion-label>
+                    </ion-item>
+                    <ion-item routerDirection="root" routerLink="/stock/reports" lines="none" detail="false" routerLinkActive="selected" *ngIf="auth.hasPermission('ESTOQUE_RELATORIOS')">
+                      <ion-icon slot="start" ios="pie-chart-outline" md="pie-chart-sharp"></ion-icon>
+                      <ion-label>Relatórios</ion-label>
+                    </ion-item>
+                  </ion-menu-toggle>
+                </div>
+              </ion-accordion>
+            </ion-accordion-group>
+
             <!-- Level 1: Configurações (Accordion) -->
             <ion-accordion-group>
               <ion-accordion value="config_group" class="menu-accordion">

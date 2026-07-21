@@ -359,7 +359,7 @@
                 </div>
 
                 <!-- Tipo de Custo -->
-                <div class="premium-field-wrapper">
+                <div class="premium-field-wrapper" *ngIf="statement.tipo !== 'CREDIT'">
                   <label class="premium-label">Tipo de Custo</label>
                   <div class="premium-input-container">
                     <select [(ngModel)]="form.tipoCusto" class="premium-select">
@@ -556,7 +556,7 @@
                   </select>
                 </div>
 
-                <div class="premium-field-wrapper">
+                <div class="premium-field-wrapper" *ngIf="statement.tipo !== 'CREDIT'">
                   <label class="premium-label">Tipo de custo *</label>
                   <select
                     [(ngModel)]="item.tipoCusto"

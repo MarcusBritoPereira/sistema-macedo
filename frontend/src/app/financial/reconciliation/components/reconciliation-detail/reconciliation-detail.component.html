@@ -494,6 +494,7 @@
                     class="premium-select compact"
                   >
                     <option value="OBRA">Obra</option>
+                    <option value="POS_OBRA">Pós-obra</option>
                     <option value="DEPOSITO">Depósito</option>
                     <option value="ESCRITORIO">Escritório</option>
                     <option value="CENTRO_CUSTO">Centro de custo</option>
@@ -502,7 +503,7 @@
 
                 <div
                   class="premium-field-wrapper"
-                  *ngIf="item.tipoDestino === 'OBRA'"
+                  *ngIf="item.tipoDestino === 'OBRA' || item.tipoDestino === 'POS_OBRA'"
                 >
                   <label class="premium-label">Obra *</label>
                   <select
@@ -557,7 +558,7 @@
                 </div>
 
                 <div class="premium-field-wrapper" *ngIf="statement.tipo !== 'CREDIT'">
-                  <label class="premium-label">Tipo de custo *</label>
+                  <label class="premium-label">Tipo de custo</label>
                   <select
                     [(ngModel)]="item.tipoCusto"
                     class="premium-select compact"

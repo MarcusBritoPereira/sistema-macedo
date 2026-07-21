@@ -543,7 +543,7 @@ export class ReconciliationDetailComponent
     return (
       !!item.categoriaId &&
       Number(item.valor) >= 0 &&
-      ((item.tipoDestino === 'OBRA' && !!item.obraId) ||
+      (((item.tipoDestino === 'OBRA' || item.tipoDestino === 'POS_OBRA') && !!item.obraId) ||
         (this.isCostCenterDestination(item) && !!item.centroCustoId))
     );
   }

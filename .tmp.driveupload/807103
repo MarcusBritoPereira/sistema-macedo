@@ -1,0 +1,45 @@
+<ion-content class="ion-padding stock-page">
+  <section class="stock-hero">
+    <div>
+      <p class="eyebrow">Orçamento de materiais</p>
+      <h1><ion-icon name="calculator-outline"></ion-icon> Real versus orçado</h1>
+      <p>{{ comparison?.budget?.obra?.nome || budget?.obra?.nome || '-' }} • versão {{ comparison?.budget?.versao || budget?.versao }}</p>
+    </div>
+    <div class="stock-actions">
+      <ion-button fill="outline" routerLink="/stock/budgets">Voltar</ion-button>
+      <ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Atualizar</ion-button>
+      <ion-button color="success" (click)="approve()" [disabled]="saving || budget?.status === 'APROVADO'"><ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>Aprovar</ion-button>
+    </div>
+  </section>
+
+  <ion-spinner *ngIf="loading"></ion-spinner>
+
+  <section class="stock-kpis" *ngIf="!loading && comparison">
+    <article><span>Custo orçado</span><strong>{{ comparison.totals.custoOrcado | currency:'BRL':'symbol':'1.2-2' }}</strong></article>
+    <article><span>Custo real</span><strong>{{ comparison.totals.custoReal | currency:'BRL':'symbol':'1.2-2' }}</strong></article>
+    <article><span>Desvio de custo</span><strong>{{ comparison.totals.desvioCusto | currency:'BRL':'symbol':'1.2-2' }}</strong></article>
+    <article><span>Qtd. consumida</span><strong>{{ comparison.totals.quantidadeConsumida }}</strong></article>
+  </section>
+
+  <section class="stock-table" *ngIf="!loading && comparison">
+    <table>
+      <thead>
+        <tr><th>Material</th><th>Categoria</th><th>Etapa</th><th>Qtd. orçada</th><th>Qtd. consumida</th><th>Dif. qtd.</th><th>Custo orçado</th><th>Custo real</th><th>Desvio</th><th>Situação</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of comparison.items">
+          <td><strong>{{ item.codigo }}</strong><br>{{ item.material }}</td>
+          <td>{{ item.categoria || '-' }}</td>
+          <td>{{ item.etapaObra || '-' }}</td>
+          <td>{{ item.quantidadeOrcada }}</td>
+          <td>{{ item.quantidadeConsumida }}</td>
+          <td>{{ item.diferencaQuantidade }}</td>
+          <td>{{ item.custoOrcado | currency:'BRL':'symbol':'1.2-2' }}</td>
+          <td>{{ item.custoReal | currency:'BRL':'symbol':'1.2-2' }}</td>
+          <td>{{ item.desvioCusto | currency:'BRL':'symbol':'1.2-2' }}</td>
+          <td><span class="stock-badge" [class.danger]="item.situacao === 'ACIMA'">{{ item.situacao }}</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</ion-content>

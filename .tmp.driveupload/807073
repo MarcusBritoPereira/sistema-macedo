@@ -1,0 +1,47 @@
+<ion-content class="ion-padding stock-page">
+  <section class="stock-hero">
+    <div>
+      <p class="eyebrow">Inventário</p>
+      <h1><ion-icon name="clipboard-outline"></ion-icon> {{ inventory?.localEstoque?.nome || 'Carregando...' }}</h1>
+      <p>Status <strong>{{ inventory?.status }}</strong> • Aberto em {{ inventory?.dataAbertura | date:'short' }}</p>
+    </div>
+    <div class="stock-actions">
+      <ion-button fill="outline" routerLink="/stock/inventories">Voltar</ion-button>
+      <ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Atualizar</ion-button>
+    </div>
+  </section>
+
+  <ion-spinner *ngIf="loading"></ion-spinner>
+
+  <section class="stock-card" *ngIf="!loading && inventory">
+    <p><strong>Observação:</strong> {{ inventory.observacao || '-' }}</p>
+    <p><strong>Criado por:</strong> {{ inventory.criadoPor?.nome || '-' }} • <strong>Aprovado por:</strong> {{ inventory.aprovadoPor?.nome || '-' }}</p>
+    <div class="stock-actions">
+      <ion-button color="primary" (click)="saveCount()" [disabled]="saving || !canCount()"><ion-icon name="save-outline" slot="start"></ion-icon>Salvar contagem</ion-button>
+      <ion-button color="success" (click)="approve()" [disabled]="saving || inventory.status !== 'EM_CONTAGEM'"><ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>Aprovar</ion-button>
+      <ion-button color="warning" (click)="close()" [disabled]="saving || inventory.status !== 'APROVADO'"><ion-icon name="lock-closed-outline" slot="start"></ion-icon>Fechar e ajustar</ion-button>
+    </div>
+  </section>
+
+  <section class="stock-table" *ngIf="!loading && items.length">
+    <table>
+      <thead>
+        <tr><th>Material</th><th>Sistema</th><th>Contado</th><th>Diferença</th><th>Valor diferença</th><th>Justificativa</th></tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of items">
+          <td><strong>{{ item.codigo }}</strong><br>{{ item.nome }}</td>
+          <td>{{ item.quantidadeSistema }}</td>
+          <td><ion-item><ion-input type="number" [(ngModel)]="item.quantidadeContada" [disabled]="!canCount()"></ion-input></ion-item></td>
+          <td>{{ item.diferenca }}</td>
+          <td>{{ item.valorDiferenca | currency:'BRL':'symbol':'1.2-2' }}</td>
+          <td><ion-item><ion-textarea [(ngModel)]="item.justificativa" [disabled]="!canCount()" placeholder="Obrigatório quando houver divergência"></ion-textarea></ion-item></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="stock-card" *ngIf="!loading && !items.length">
+    Nenhum saldo encontrado para este local no momento da abertura.
+  </section>
+</ion-content>

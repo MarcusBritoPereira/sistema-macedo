@@ -115,12 +115,13 @@
 
                             <ion-col size="12" size-md="6">
                                 <div class="input-group">
-                                    <ion-label position="stacked">Centro de Custo (Opcional)</ion-label>
-                                    <ion-select formControlName="centroCustoId" interface="action-sheet" placeholder="Nenhum selecionado">
+                                    <ion-label position="stacked">Tipo de obra (Opcional)</ion-label>
+                                    <ion-select formControlName="tipoObra" interface="action-sheet" placeholder="Nenhum selecionado">
                                         <ion-select-option [value]="null">Nenhum</ion-select-option>
-                                        <ion-select-option *ngFor="let cc of centrosCusto" [value]="cc.id">
-                                            {{ cc.nome }}
-                                        </ion-select-option>
+                                        <ion-select-option value="ADMINISTRACAO">Administração</ion-select-option>
+                                        <ion-select-option value="EMPREITADA_PARCIAL">Empreitada Parcial</ion-select-option>
+                                        <ion-select-option value="EMPREITADA_GLOBAL">Empreitada Global</ion-select-option>
+                                        <ion-select-option value="APENAS_MAO_DE_OBRA">Apenas Mão de Obra</ion-select-option>
                                     </ion-select>
                                 </div>
                             </ion-col>

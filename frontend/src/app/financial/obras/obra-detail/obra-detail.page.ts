@@ -50,7 +50,7 @@ export class ObraDetailPage implements OnInit {
       orcamentoPrevisto: [0],
       endereco: [''],
       clienteId: [null],
-      centroCustoId: [null],
+      tipoObra: [null],
       ativo: [true]
     });
   }
@@ -87,7 +87,7 @@ export class ObraDetailPage implements OnInit {
           orcamentoPrevisto: obra.orcamentoPrevisto,
           endereco: obra.endereco,
           clienteId: obra.clienteId,
-          centroCustoId: obra.centroCustoId,
+          tipoObra: obra.tipoObra,
           ativo: obra.ativo
         });
         this.loading = false;
@@ -120,7 +120,7 @@ export class ObraDetailPage implements OnInit {
     data.dataPrevisaoFim = sanitize(data.dataPrevisaoFim);
     data.dataConclusao = sanitize(data.dataConclusao);
     data.clienteId = sanitize(data.clienteId);
-    data.centroCustoId = sanitize(data.centroCustoId);
+    data.tipoObra = sanitize(data.tipoObra);
     data.endereco = sanitize(data.endereco);
     data.descricao = sanitize(data.descricao);
     

@@ -14,6 +14,7 @@ export interface Obra {
   endereco?: string;
   clienteId?: string;
   centroCustoId?: string;
+  tipoObra?: string;
   ativo?: boolean;
   cliente?: any;
   centroCusto?: any;

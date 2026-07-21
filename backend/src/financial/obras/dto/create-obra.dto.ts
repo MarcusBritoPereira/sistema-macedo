@@ -1,5 +1,5 @@
 import { IsString, IsOptional, IsEnum, IsNumber, IsDateString, IsBoolean } from 'class-validator';
-import { StatusObra } from '@prisma/client';
+import { StatusObra, TipoObra } from '@prisma/client';
 import { Transform } from 'class-transformer';
 
 export class CreateObraDto {
@@ -46,9 +46,8 @@ export class CreateObraDto {
   clienteId?: string;
 
   @IsOptional()
-  @IsString()
-  @Transform(({ value }) => (value === '' || value === 'null' ? undefined : value))
-  centroCustoId?: string;
+  @IsEnum(TipoObra)
+  tipoObra?: TipoObra;
 
   @IsOptional()
   @IsBoolean()

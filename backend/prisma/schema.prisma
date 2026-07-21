@@ -716,6 +716,13 @@ model RegraClassificacao {
 
 // --- V2: Gestão de Obras ---
 
+enum TipoObra {
+  ADMINISTRACAO
+  EMPREITADA_PARCIAL
+  EMPREITADA_GLOBAL
+  APENAS_MAO_DE_OBRA
+}
+
 model Obra {
   id                String     @id @default(uuid())
   nome              String
@@ -726,6 +733,7 @@ model Obra {
   status            StatusObra @default(PLANEJAMENTO)
   orcamentoPrevisto Decimal?   @db.Decimal(10, 2)
   endereco          String?
+  tipoObra          TipoObra?
 
   clienteId String?
   cliente   Cliente? @relation(fields: [clienteId], references: [id])

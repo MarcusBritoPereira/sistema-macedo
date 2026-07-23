@@ -317,14 +317,12 @@ export class BankingIntegrationService {
         allStatements = [...allStatements, ...pageTrans];
         log(`[Sync] Page ${currentPage} returned ${pageTrans.length} items.`);
 
-        // Check pagination
-        // If fewer items than requested (100), it's the last page.
-        // Also check totalPaginas if provided.
-        const pageSize = 100;
+        // Inter V2 Extrato API ignores pagina/tamanhoPagina and returns all items for the period.
+        // If we check pageTrans.length < pageSize, we get stuck in an infinite loop when it returns > pageSize items.
+        // We now break immediately unless totalPaginas is explicitly provided and we haven't reached the end.
         if (
-          pageTrans.length < pageSize ||
-          (responseData.totalPaginas !== undefined &&
-            currentPage >= responseData.totalPaginas - 1)
+          responseData.totalPaginas === undefined ||
+          currentPage >= responseData.totalPaginas - 1
         ) {
           hasMore = false;
         } else {

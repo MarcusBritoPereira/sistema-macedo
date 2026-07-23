@@ -1,8 +1,0 @@
-export declare class CountStockInventoryItemDto {
-    materialId: string;
-    quantidadeContada: string;
-    justificativa?: string;
-}
-export declare class CountStockInventoryDto {
-    items: CountStockInventoryItemDto[];
-}

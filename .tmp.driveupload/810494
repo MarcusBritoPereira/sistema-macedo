@@ -1,4 +1,0 @@
-export declare class FulfillStockRequestDto {
-    localOrigemId: string;
-    observacao?: string;
-}

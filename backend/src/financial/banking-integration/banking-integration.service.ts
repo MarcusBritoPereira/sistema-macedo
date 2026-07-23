@@ -280,7 +280,8 @@ export class BankingIntegrationService {
 
         let responseData;
         let retries = 0;
-        while (retries < 3) {
+        const maxRetries = 5;
+        while (retries < maxRetries) {
           try {
             responseData = await this.fetchInterStatements(
               accessToken,
@@ -295,9 +296,13 @@ export class BankingIntegrationService {
           } catch (err) {
             if (axios.isAxiosError(err) && err.response?.status === 429) {
               retries++;
-              log(`[Sync] Rate limited (429). Retrying in ${retries * 2}s...`);
+              if (retries >= maxRetries) {
+                throw new Error('Muitas requisições (429). Aguarde alguns minutos antes de tentar sincronizar novamente.');
+              }
+              const waitTime = retries * 5000;
+              log(`[Sync] Rate limited (429). Retrying in ${waitTime / 1000}s...`);
               await new Promise((resolve) =>
-                setTimeout(resolve, retries * 2000),
+                setTimeout(resolve, waitTime),
               );
             } else {
               throw err;
@@ -306,16 +311,16 @@ export class BankingIntegrationService {
         }
 
         if (!responseData)
-          throw new Error('API do banco não respondeu após várias tentativas.');
+          throw new Error('API do banco retornou uma resposta vazia.');
 
         const pageTrans = responseData.transacoes || [];
         allStatements = [...allStatements, ...pageTrans];
         log(`[Sync] Page ${currentPage} returned ${pageTrans.length} items.`);
 
         // Check pagination
-        // If fewer items than requested (1000), it's the last page.
+        // If fewer items than requested (100), it's the last page.
         // Also check totalPaginas if provided.
-        const pageSize = 1000;
+        const pageSize = 100;
         if (
           pageTrans.length < pageSize ||
           (responseData.totalPaginas !== undefined &&
@@ -979,8 +984,8 @@ export class BankingIntegrationService {
   ) {
     const agent = new https.Agent({ cert, key, rejectUnauthorized: false });
 
-    // Inter V2 API Pagination: pagina (starting at 0) and tamanhoPagina (max 1000)
-    const url = `${this.INTER_API_URL}?dataInicio=${dataInicio}&dataFim=${dataFim}&pagina=${pagina}&tamanhoPagina=1000`;
+    // Inter V2 API Pagination: pagina (starting at 0) and tamanhoPagina (max 100)
+    const url = `${this.INTER_API_URL}?dataInicio=${dataInicio}&dataFim=${dataFim}&pagina=${pagina}&tamanhoPagina=100`;
 
     const headers: any = {
       Authorization: `Bearer ${token}`,

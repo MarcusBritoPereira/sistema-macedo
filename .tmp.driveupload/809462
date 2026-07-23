@@ -1,0 +1,5 @@
+import { CreateStockCategoryDto } from './create-stock-category.dto';
+declare const UpdateStockCategoryDto_base: import("@nestjs/mapped-types").MappedType<Partial<CreateStockCategoryDto>>;
+export declare class UpdateStockCategoryDto extends UpdateStockCategoryDto_base {
+}
+export {};

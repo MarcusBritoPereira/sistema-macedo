@@ -1,0 +1,20 @@
+export declare class CreateStockDocumentItemDto {
+    materialId: string;
+    quantidade: string;
+    custoUnitario?: string;
+    lote?: string;
+    dataValidade?: string;
+    observacao?: string;
+}
+export declare class CreateStockDocumentDto {
+    numero?: string;
+    fornecedorId?: string;
+    obraId?: string;
+    localOrigemId?: string;
+    localDestinoId?: string;
+    dataDocumento?: string;
+    documentoFiscal?: string;
+    observacao?: string;
+    transacaoFinanceiraId?: string;
+    items: CreateStockDocumentItemDto[];
+}

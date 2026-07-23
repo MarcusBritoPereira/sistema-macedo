@@ -1,0 +1,4 @@
+export declare class CreateStockInventoryDto {
+    localEstoqueId: string;
+    observacao?: string;
+}

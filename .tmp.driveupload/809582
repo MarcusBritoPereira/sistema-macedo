@@ -1,0 +1,12 @@
+export declare class ReportGenerationFiltersDto {
+    period: string;
+    startDate?: string | null;
+    endDate?: string | null;
+    accountId?: string | null;
+    costCenterId?: string | null;
+    includeProvisional?: boolean;
+}
+export declare class ReportGenerationRequestDto {
+    reportIds: string[];
+    filters: ReportGenerationFiltersDto;
+}

@@ -1,0 +1,47 @@
+import { ReportsService } from './reports.service';
+import { ReportGenerationRequestDto } from './dto/report-generation-request.dto';
+import { DashboardFilterDto } from './dto/dashboard-filter.dto';
+export declare class ReportsController {
+    private readonly reportsService;
+    constructor(reportsService: ReportsService);
+    getReports(): import("./reports.service").ReportDefinition[];
+    generateReports(payload: ReportGenerationRequestDto): Promise<import("./reports.service").ReportGenerationResponse>;
+    getDashboardData(filters: DashboardFilterDto): Promise<{
+        kpis: {
+            valorTotalObra: number;
+            valorGastoObra: number;
+            porcentagemGasta: number;
+            porcentagemReceber: number;
+            saldoObra: number;
+            custoMedioMensal: number;
+        };
+        charts: {
+            material: {
+                labels: string[];
+                data: number[];
+            };
+            labor: {
+                labels: string[];
+                data: number[];
+            };
+            classification: {
+                material: number;
+                labor: number;
+            };
+            stage: {
+                labels: string[];
+                data: number[];
+            };
+            monthly: {
+                labels: string[];
+                data: number[];
+            };
+        };
+        summary: {
+            maxMaterial: string;
+            maxLabor: string;
+            maxStage: string;
+            maxMonth: string;
+        };
+    }>;
+}

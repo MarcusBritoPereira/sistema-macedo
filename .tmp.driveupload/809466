@@ -1,0 +1,10 @@
+export declare class StockBalanceQueryDto {
+    search?: string;
+    materialId?: string;
+    localEstoqueId?: string;
+    obraId?: string;
+    categoriaMaterialId?: string;
+    situacao?: 'NORMAL' | 'BAIXO' | 'CRITICO' | 'ZERADO' | 'NEGATIVO';
+    skip?: string;
+    take?: string;
+}

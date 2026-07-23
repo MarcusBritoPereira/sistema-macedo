@@ -1,0 +1,161 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StockCategoriesService = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../prisma/prisma.service");
+const stock_common_1 = require("./stock-common");
+let StockCategoriesService = class StockCategoriesService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async create(dto, userId) {
+        const data = await this.sanitize(dto);
+        await this.ensureUniqueName(data.nome, data.parentId);
+        const category = await this.prisma.categoriaMaterial.create({
+            data: data,
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_CATEGORIA_CRIADA', category.id, null, category);
+        return category;
+    }
+    async findAll(query) {
+        const { skip, take } = (0, stock_common_1.normalizePagination)(query.skip, query.take);
+        const where = {
+            ...(query.search
+                ? {
+                    OR: [
+                        { nome: { contains: query.search, mode: 'insensitive' } },
+                        { descricao: { contains: query.search, mode: 'insensitive' } },
+                    ],
+                }
+                : {}),
+        };
+        const [items, total] = await this.prisma.$transaction([
+            this.prisma.categoriaMaterial.findMany({
+                where,
+                skip,
+                take,
+                include: this.includeRelations(),
+                orderBy: [{ nome: 'asc' }],
+            }),
+            this.prisma.categoriaMaterial.count({ where }),
+        ]);
+        return { items, total, skip, take };
+    }
+    findTree() {
+        return this.prisma.categoriaMaterial.findMany({
+            where: { parentId: null },
+            include: {
+                children: { include: { children: true }, orderBy: { nome: 'asc' } },
+                categoriaFinanceira: true,
+                centroCustoPadrao: true,
+            },
+            orderBy: { nome: 'asc' },
+        });
+    }
+    async findOne(id) {
+        const category = await this.prisma.categoriaMaterial.findUnique({
+            where: { id },
+            include: this.includeRelations(),
+        });
+        if (!category)
+            throw new common_1.NotFoundException('Categoria de material não encontrada');
+        return category;
+    }
+    async update(id, dto, userId) {
+        const current = await this.findOne(id);
+        const data = await this.sanitize(dto, id);
+        const desiredName = data.nome ?? current.nome;
+        const desiredParent = data.parentId === undefined ? current.parentId : data.parentId;
+        await this.ensureUniqueName(desiredName, desiredParent, id);
+        const updated = await this.prisma.categoriaMaterial.update({
+            where: { id },
+            data: data,
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_CATEGORIA_ATUALIZADA', id, current, updated);
+        return updated;
+    }
+    async remove(id, userId) {
+        const current = await this.findOne(id);
+        const updated = await this.prisma.categoriaMaterial.update({
+            where: { id },
+            data: { ativo: false },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_CATEGORIA_INATIVADA', id, current, updated);
+        return updated;
+    }
+    includeRelations() {
+        return {
+            parent: true,
+            children: { orderBy: { nome: 'asc' } },
+            categoriaFinanceira: true,
+            centroCustoPadrao: true,
+        };
+    }
+    async sanitize(dto, currentId) {
+        const data = {};
+        if (dto.nome !== undefined) {
+            const nome = dto.nome.trim();
+            if (!nome)
+                throw new common_1.BadRequestException('Nome da categoria é obrigatório');
+            data.nome = nome;
+        }
+        if (dto.descricao !== undefined)
+            data.descricao = (0, stock_common_1.cleanString)(dto.descricao);
+        if (dto.parentId !== undefined) {
+            if (dto.parentId === currentId)
+                throw new common_1.BadRequestException('Categoria não pode ser pai dela mesma');
+            data.parentId = dto.parentId || null;
+        }
+        if (dto.categoriaFinanceiraId !== undefined)
+            data.categoriaFinanceiraId = dto.categoriaFinanceiraId || null;
+        if (dto.centroCustoPadraoId !== undefined)
+            data.centroCustoPadraoId = dto.centroCustoPadraoId || null;
+        if (dto.ativo !== undefined)
+            data.ativo = dto.ativo;
+        return data;
+    }
+    async ensureUniqueName(nome, parentId, currentId) {
+        const existing = await this.prisma.categoriaMaterial.findFirst({
+            where: {
+                nome: { equals: nome, mode: 'insensitive' },
+                parentId: parentId || null,
+                ...(currentId ? { id: { not: currentId } } : {}),
+            },
+            select: { id: true },
+        });
+        if (existing)
+            throw new common_1.ConflictException('Já existe uma categoria de material com este nome neste nível');
+    }
+    audit(userId, acao, registroId, oldValue, newValue) {
+        return this.prisma.logAuditoria.create({
+            data: {
+                acao,
+                tabela: 'categorias_material',
+                registroId,
+                valorAntigo: (0, stock_common_1.stringifyAudit)(oldValue),
+                valorNovo: (0, stock_common_1.stringifyAudit)(newValue),
+                motivo: 'Cadastro de categoria de material',
+                usuarioId: userId,
+            },
+        });
+    }
+};
+exports.StockCategoriesService = StockCategoriesService;
+exports.StockCategoriesService = StockCategoriesService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], StockCategoriesService);
+//# sourceMappingURL=stock-categories.service.js.map

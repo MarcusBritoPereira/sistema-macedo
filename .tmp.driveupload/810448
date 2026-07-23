@@ -1,0 +1,5 @@
+export declare class PaginationQueryDto {
+    search?: string;
+    skip?: string;
+    take?: string;
+}

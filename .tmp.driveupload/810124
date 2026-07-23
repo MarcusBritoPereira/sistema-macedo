@@ -1,0 +1,1046 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FinancialDashboardService = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../../prisma/prisma.service");
+const client_1 = require("@prisma/client");
+const banking_integration_service_1 = require("../banking-integration/banking-integration.service");
+let FinancialDashboardService = class FinancialDashboardService {
+    prisma;
+    bankingService;
+    constructor(prisma, bankingService) {
+        this.prisma = prisma;
+        this.bankingService = bankingService;
+    }
+    async getDRE(startDate, endDate) {
+        const transactions = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                dataVencimento: {
+                    gte: startDate,
+                    lte: endDate,
+                },
+                categoria: {
+                    isNot: null,
+                },
+            },
+            include: {
+                categoria: true,
+            },
+        });
+        const receivables = transactions.filter((t) => t.tipo === 'RECEITA');
+        const payables = transactions.filter((t) => t.tipo === 'DESPESA');
+        const totals = {
+            [client_1.ClassificacaoDRE.RECEITA_RECORRENTE]: 0,
+            [client_1.ClassificacaoDRE.RECEITA_NAO_RECORRENTE]: 0,
+            [client_1.ClassificacaoDRE.DEDUCOES_RECEITA]: 0,
+            [client_1.ClassificacaoDRE.CUSTO_SERVICOS_PRESTADOS]: 0,
+            [client_1.ClassificacaoDRE.DESPESA_ADMINISTRATIVA]: 0,
+            [client_1.ClassificacaoDRE.DESPESA_COMERCIAL]: 0,
+            [client_1.ClassificacaoDRE.DESPESA_ESTRUTURAL]: 0,
+            [client_1.ClassificacaoDRE.DESPESA_SOCIOS]: 0,
+            [client_1.ClassificacaoDRE.DESPESA_FINANCEIRA]: 0,
+            [client_1.ClassificacaoDRE.RECEITA_FINANCEIRA]: 0,
+            [client_1.ClassificacaoDRE.IMPOSTOS_LUCRO]: 0,
+            [client_1.ClassificacaoDRE.OUTROS]: 0,
+        };
+        receivables.forEach((r) => {
+            const clf = r.categoria?.classificacao;
+            if (clf && totals[clf] !== undefined) {
+                totals[clf] += Number(r.valor);
+            }
+        });
+        payables.forEach((p) => {
+            const clf = p.categoria?.classificacao;
+            if (clf && totals[clf] !== undefined) {
+                totals[clf] += Number(p.valor);
+            }
+        });
+        const receitasOperacionais = totals.RECEITA_RECORRENTE + totals.RECEITA_NAO_RECORRENTE;
+        const receitaBruta = receitasOperacionais;
+        const deducoes = totals.DEDUCOES_RECEITA;
+        const receitaLiquida = receitaBruta - deducoes;
+        const csp = totals.CUSTO_SERVICOS_PRESTADOS;
+        const lucroBruto = receitaLiquida - csp;
+        const despesasOperacionais = totals.DESPESA_ADMINISTRATIVA +
+            totals.DESPESA_COMERCIAL +
+            totals.DESPESA_ESTRUTURAL +
+            totals.DESPESA_SOCIOS;
+        const ebit = lucroBruto - despesasOperacionais;
+        const resultadoFinanceiro = totals.RECEITA_FINANCEIRA - totals.DESPESA_FINANCEIRA;
+        const lair = ebit + resultadoFinanceiro;
+        const impostosLucro = totals.IMPOSTOS_LUCRO;
+        const lucroLiquido = lair - impostosLucro;
+        const outrasReceitasDespesasNaoOperacionais = totals.OUTROS;
+        const lucroLiquidoAposNaoOperacional = lucroLiquido + outrasReceitasDespesasNaoOperacionais;
+        const despesasInvestimentosEmprestimos = Math.max(0, -outrasReceitasDespesasNaoOperacionais);
+        const lucroPrejuizoFinal = lucroLiquidoAposNaoOperacional - despesasInvestimentosEmprestimos;
+        const estruturaGerencial = [
+            {
+                chave: 'receitasOperacionais',
+                titulo: 'Receitas Operacionais',
+                descricao: 'Vendas diretamente ligadas à atividade econômica da empresa.',
+                valor: receitasOperacionais,
+            },
+            {
+                chave: 'deducoesReceitaBruta',
+                titulo: '(-) Deduções da Receita Bruta',
+                descricao: 'Devoluções, descontos concedidos, comissões e impostos incidentes sobre as vendas.',
+                valor: deducoes,
+            },
+            {
+                chave: 'receitaLiquidaVendas',
+                titulo: '(=) Receita Líquida de Vendas',
+                descricao: 'Receitas operacionais descontando deduções e impostos sobre vendas.',
+                valor: receitaLiquida,
+            },
+            {
+                chave: 'custosOperacionais',
+                titulo: '(-) Custos Operacionais',
+                descricao: 'Custos diretamente ligados à geração da receita.',
+                valor: csp,
+            },
+            {
+                chave: 'lucroBruto',
+                titulo: '(=) Lucro Bruto',
+                descricao: 'Resultado antes das despesas operacionais.',
+                valor: lucroBruto,
+            },
+            {
+                chave: 'despesasOperacionais',
+                titulo: '(-) Despesas Operacionais',
+                descricao: 'Gastos administrativos, comerciais, estruturais e com sócios.',
+                valor: despesasOperacionais,
+            },
+            {
+                chave: 'lucroOperacional',
+                titulo: '(=) Lucro/Prejuízo Operacional',
+                descricao: 'Diferença entre receita líquida e gastos da operação.',
+                valor: ebit,
+            },
+            {
+                chave: 'resultadoFinanceiro',
+                titulo: '(+) Resultado Financeiro',
+                descricao: 'Receitas financeiras menos despesas financeiras.',
+                valor: resultadoFinanceiro,
+            },
+            {
+                chave: 'lucroLiquido',
+                titulo: '(=) Lucro/Prejuízo Líquido',
+                descricao: 'Resultado após impostos sobre o lucro.',
+                valor: lucroLiquido,
+            },
+            {
+                chave: 'naoOperacional',
+                titulo: '(±) Outras Receitas e Despesas Não Operacionais',
+                descricao: 'Eventos não recorrentes e não ligados à operação principal.',
+                valor: outrasReceitasDespesasNaoOperacionais,
+            },
+            {
+                chave: 'investimentosEmprestimos',
+                titulo: '(-) Despesas com Investimentos e Empréstimos',
+                descricao: 'Parcelas programadas de financiamentos, empréstimos e aquisições de ativos.',
+                valor: despesasInvestimentosEmprestimos,
+            },
+            {
+                chave: 'lucroFinal',
+                titulo: '(=) Lucro/Prejuízo Final',
+                descricao: 'Resultado final do período após todos os custos e despesas.',
+                valor: lucroPrejuizoFinal,
+            },
+        ];
+        return {
+            period: { start: startDate, end: endDate },
+            breakdown: totals,
+            estruturaGerencial,
+            summary: {
+                receitasOperacionais,
+                receitaBruta,
+                deducoes,
+                receitaLiquida,
+                csp,
+                lucroBruto,
+                despesasOperacionais,
+                ebit,
+                resultadoFinanceiro,
+                lair,
+                impostosLucro,
+                lucroLiquido,
+                outrasReceitasDespesasNaoOperacionais,
+                despesasInvestimentosEmprestimos,
+                lucroPrejuizoFinal,
+            },
+        };
+    }
+    async getExecutiveDashboard(month, year) {
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0);
+        const totalReceita = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'RECEITA',
+                status: { in: ['REALIZADO', 'CONCILIADO'] },
+                dataPagamento: { gte: startDate, lte: endDate },
+            },
+        });
+        const totalDespesas = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'DESPESA',
+                status: { in: ['REALIZADO', 'CONCILIADO'] },
+                dataPagamento: { gte: startDate, lte: endDate },
+            },
+        });
+        const contasReceber = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'RECEITA',
+                status: 'PREVISTO',
+                dataVencimento: { gte: startDate, lte: endDate },
+            },
+        });
+        const contasPagar = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'DESPESA',
+                status: 'PREVISTO',
+                dataVencimento: { gte: startDate, lte: endDate },
+            },
+        });
+        const receitaVal = Number(totalReceita._sum.valor || 0);
+        const despesaVal = Number(totalDespesas._sum.valor || 0);
+        const lucroLiquido = receitaVal - despesaVal;
+        const margemLucro = receitaVal > 0 ? (lucroLiquido / receitaVal) * 100 : 0;
+        const allIn = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'RECEITA',
+                status: { in: ['REALIZADO', 'CONCILIADO'] },
+                dataPagamento: { lte: endDate },
+            },
+        });
+        const allOut = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'DESPESA',
+                status: { in: ['REALIZADO', 'CONCILIADO'] },
+                dataPagamento: { lte: endDate },
+            },
+        });
+        const saldoFinal = Number(allIn._sum.valor || 0) - Number(allOut._sum.valor || 0);
+        const arVal = Number(contasReceber._sum.valor || 0);
+        const apVal = Number(contasPagar._sum.valor || 0);
+        const liquidezReduzida = apVal > 0 ? (saldoFinal + arVal) / apVal : 0;
+        const liquidezGeral = apVal > 0 ? (saldoFinal + arVal) / apVal : 0;
+        const budget = await this.prisma.financialBudget.findUnique({
+            where: { mes_ano: { mes: month, ano: year } },
+        });
+        const history = [];
+        for (let i = 11; i >= 0; i--) {
+            const d = new Date(year, month - 1 - i, 1);
+            const m = d.getMonth() + 1;
+            const y = d.getFullYear();
+            const startM = new Date(y, m - 1, 1);
+            const endM = new Date(y, m, 0);
+            const rev = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    tipo: 'RECEITA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: startM, lte: endM },
+                },
+            });
+            const exp = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    tipo: 'DESPESA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: startM, lte: endM },
+                },
+            });
+            history.push({
+                label: `${m}/${y}`,
+                receita: Number(rev._sum.valor || 0),
+                despesa: Number(exp._sum.valor || 0),
+                lucro: Number(rev._sum.valor || 0) - Number(exp._sum.valor || 0),
+            });
+        }
+        return {
+            kpis: {
+                totalReceita: receitaVal,
+                totalDespesas: despesaVal,
+                contasReceber: arVal,
+                contasPagar: apVal,
+                lucroLiquido,
+                margemLucro,
+                saldoFinal,
+                liquidezReduzida,
+                liquidezGeral,
+            },
+            budget: {
+                receitaMeta: Number(budget?.receitaMeta || 0),
+                despesaMeta: Number(budget?.despesaMeta || 0),
+                receitaPct: Number(budget?.receitaMeta || 0) > 0
+                    ? (receitaVal / Number(budget?.receitaMeta || 1)) * 100
+                    : 0,
+                despesaPct: Number(budget?.despesaMeta || 0) > 0
+                    ? (despesaVal / Number(budget?.despesaMeta || 1)) * 100
+                    : 0,
+            },
+            history,
+        };
+    }
+    async getOperationalDashboard() {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+        const dailyFlowStart = new Date(now);
+        dailyFlowStart.setDate(dailyFlowStart.getDate() - 13);
+        dailyFlowStart.setHours(0, 0, 0, 0);
+        const monthlyHistStart = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+        const [accountsWithBalance, receivables, payables, dailyFlowIn, dailyFlowOut, monthlyHistoryRaw, ccs, monthlyExpenses, monthlyRateios,] = await Promise.all([
+            this.getAccountsWithRealTimeBalance(),
+            this.prisma.lancamentoFinanceiro.findMany({
+                where: { tipo: 'RECEITA', status: 'PREVISTO' },
+                select: { valor: true, dataVencimento: true },
+            }),
+            this.prisma.lancamentoFinanceiro.findMany({
+                where: { tipo: 'DESPESA', status: 'PREVISTO' },
+                select: { valor: true, dataVencimento: true },
+            }),
+            this.prisma.lancamentoFinanceiro.findMany({
+                where: {
+                    tipo: 'RECEITA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: dailyFlowStart, lte: now },
+                },
+                select: { valor: true, dataPagamento: true },
+            }),
+            this.prisma.lancamentoFinanceiro.findMany({
+                where: {
+                    tipo: 'DESPESA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: dailyFlowStart, lte: now },
+                },
+                select: { valor: true, dataPagamento: true },
+            }),
+            this.prisma.lancamentoFinanceiro.findMany({
+                where: {
+                    tipo: 'RECEITA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: monthlyHistStart, lte: endOfMonth },
+                },
+                select: { valor: true, dataPagamento: true },
+            }),
+            this.prisma.centroCusto.findMany({
+                where: { ativo: true },
+            }),
+            this.prisma.lancamentoFinanceiro.findMany({
+                where: {
+                    tipo: 'DESPESA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: startOfMonth, lte: endOfMonth },
+                },
+                select: { valor: true, centroCustoId: true },
+            }),
+            this.prisma.rateioLancamento.findMany({
+                where: {
+                    lancamento: {
+                        tipo: 'DESPESA',
+                        status: { in: ['REALIZADO', 'CONCILIADO'] },
+                        dataPagamento: { gte: startOfMonth, lte: endOfMonth },
+                    },
+                },
+                include: {
+                    lancamento: { select: { centroCustoId: true } },
+                },
+            }),
+        ]);
+        const totalBalance = accountsWithBalance.reduce((acc, curr) => acc + curr.saldo, 0);
+        const recOverdue = receivables
+            .filter((t) => t.dataVencimento < todayStart)
+            .reduce((s, t) => s + Number(t.valor), 0);
+        const recToday = receivables
+            .filter((t) => t.dataVencimento >= todayStart && t.dataVencimento <= todayEnd)
+            .reduce((s, t) => s + Number(t.valor), 0);
+        const recRemaining = receivables
+            .filter((t) => t.dataVencimento > todayEnd && t.dataVencimento <= endOfMonth)
+            .reduce((s, t) => s + Number(t.valor), 0);
+        const payOverdue = payables
+            .filter((t) => t.dataVencimento < todayStart)
+            .reduce((s, t) => s + Number(t.valor), 0);
+        const payToday = payables
+            .filter((t) => t.dataVencimento >= todayStart && t.dataVencimento <= todayEnd)
+            .reduce((s, t) => s + Number(t.valor), 0);
+        const payRemaining = payables
+            .filter((t) => t.dataVencimento > todayEnd && t.dataVencimento <= endOfMonth)
+            .reduce((s, t) => s + Number(t.valor), 0);
+        const dailyFlowMap = {};
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            dailyFlowMap[key] = { recebimentos: 0, pagamentos: 0 };
+        }
+        for (const t of dailyFlowIn) {
+            if (t.dataPagamento) {
+                const d = t.dataPagamento;
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                if (dailyFlowMap[key]) {
+                    dailyFlowMap[key].recebimentos += Number(t.valor);
+                }
+            }
+        }
+        for (const t of dailyFlowOut) {
+            if (t.dataPagamento) {
+                const d = t.dataPagamento;
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                if (dailyFlowMap[key]) {
+                    dailyFlowMap[key].pagamentos += Number(t.valor);
+                }
+            }
+        }
+        const dailyFlow = [];
+        for (let i = 13; i >= 0; i--) {
+            const d = new Date(now);
+            d.setDate(d.getDate() - i);
+            const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+            const entry = dailyFlowMap[key] || { recebimentos: 0, pagamentos: 0 };
+            dailyFlow.push({
+                date: d.toISOString(),
+                label: d.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: 'short',
+                }),
+                recebimentos: entry.recebimentos,
+                pagamentos: entry.pagamentos,
+                saldo: entry.recebimentos - entry.pagamentos,
+            });
+        }
+        const monthlyMap = {};
+        for (const t of monthlyHistoryRaw) {
+            if (t.dataPagamento) {
+                const d = t.dataPagamento;
+                const key = `${d.getFullYear()}-${d.getMonth()}`;
+                monthlyMap[key] = (monthlyMap[key] || 0) + Number(t.valor);
+            }
+        }
+        const monthlyHistory = [];
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            const key = `${d.getFullYear()}-${d.getMonth()}`;
+            monthlyHistory.push({
+                label: d.toLocaleDateString('pt-BR', { month: 'short' }),
+                valor: monthlyMap[key] || 0,
+            });
+        }
+        const ccRealizado = {};
+        ccs.forEach((c) => (ccRealizado[c.id] = 0));
+        monthlyExpenses.forEach((t) => {
+            if (t.centroCustoId && ccRealizado[t.centroCustoId] !== undefined) {
+                ccRealizado[t.centroCustoId] += Number(t.valor);
+            }
+        });
+        monthlyRateios.forEach((r) => {
+            if (r.lancamento?.centroCustoId &&
+                ccRealizado[r.lancamento.centroCustoId] !== undefined) {
+                ccRealizado[r.lancamento.centroCustoId] += Number(r.valor);
+            }
+        });
+        const expensesByCostCenter = ccs
+            .map((c) => ({
+            id: c.id,
+            nome: c.nome,
+            codigo: c.codigo,
+            total: ccRealizado[c.id] || 0,
+            cor: c.cor || '#475569',
+        }))
+            .filter((item) => item.total > 0)
+            .sort((a, b) => b.total - a.total);
+        const deviations = ccs
+            .filter((c) => c.orcamentoPrevisto && Number(c.orcamentoPrevisto) > 0)
+            .map((c) => {
+            const realizado = ccRealizado[c.id] || 0;
+            const previsto = Number(c.orcamentoPrevisto);
+            const desvio = realizado - previsto;
+            return {
+                id: c.id,
+                nome: c.nome,
+                codigo: c.codigo,
+                previsto,
+                realizado,
+                desvio,
+                limiteMaximo: c.limiteMaximo ? Number(c.limiteMaximo) : null,
+            };
+        })
+            .filter((d) => d.realizado > 0)
+            .sort((a, b) => b.realizado - a.realizado);
+        const productionTargets = ccs
+            .filter((c) => c.unidadeMedida && c.metaFisica && Number(c.metaFisica) > 0)
+            .map((c) => {
+            const realizadoVal = ccRealizado[c.id] || 0;
+            const meta = Number(c.metaFisica);
+            const custoUnitario = meta > 0 ? realizadoVal / meta : 0;
+            const custoUnitarioPrevisto = c.orcamentoPrevisto
+                ? Number(c.orcamentoPrevisto) / meta
+                : 0;
+            return {
+                id: c.id,
+                nome: c.nome,
+                codigo: c.codigo,
+                metaFisica: meta,
+                realizado: realizadoVal,
+                unidadeMedida: c.unidadeMedida || 'un',
+                custoUnitario,
+                custoUnitarioPrevisto,
+            };
+        });
+        const tagMap = {};
+        ccs.forEach((c) => {
+            const tags = c.tags ? c.tags.split(',') : [];
+            const realizado = ccRealizado[c.id] || 0;
+            if (realizado > 0) {
+                tags.forEach((tag) => {
+                    const tName = tag.trim();
+                    if (tName) {
+                        tagMap[tName] = (tagMap[tName] || 0) + realizado;
+                    }
+                });
+            }
+        });
+        const expensesByTag = Object.entries(tagMap)
+            .map(([tag, total]) => ({ tag, total }))
+            .sort((a, b) => b.total - a.total);
+        const costCenterKpis = {
+            expensesByCostCenter,
+            deviations,
+            productionTargets,
+            expensesByTag,
+        };
+        return {
+            receivables: {
+                overdue: recOverdue,
+                today: recToday,
+                remainingMonth: recRemaining,
+            },
+            payables: {
+                overdue: payOverdue,
+                today: payToday,
+                remainingMonth: payRemaining,
+            },
+            accounts: accountsWithBalance,
+            totalBalance,
+            dailyFlow,
+            monthlyHistory,
+            costCenterKpis,
+            lastUpdate: now.toISOString(),
+        };
+    }
+    async getCashFlowDashboard(month, year) {
+        const now = new Date();
+        const m = month || now.getMonth() + 1;
+        const y = year || now.getFullYear();
+        const startOfMonth = new Date(y, m - 1, 1);
+        const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
+        const accountsWithBalance = await this.getAccountsWithRealTimeBalance(endOfMonth);
+        const currentBalance = accountsWithBalance.reduce((acc, curr) => acc + curr.saldo, 0);
+        const endOfPrevMonth = new Date(y, m - 1, 0, 23, 59, 59, 999);
+        const accountsWithBalanceStart = await this.getAccountsWithRealTimeBalance(endOfPrevMonth);
+        const saldoInicialMes = accountsWithBalanceStart.reduce((acc, curr) => acc + curr.saldo, 0);
+        const receivables = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                tipo: 'RECEITA',
+                OR: [
+                    { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
+                    { dataPagamento: { gte: startOfMonth, lte: endOfMonth } },
+                ],
+            },
+        });
+        const recReceived = receivables
+            .filter((t) => ['REALIZADO', 'CONCILIADO'].includes(t.status) &&
+            t.dataPagamento &&
+            t.dataPagamento >= startOfMonth &&
+            t.dataPagamento <= endOfMonth)
+            .reduce((sum, t) => sum + Number(t.valor), 0);
+        const recPending = receivables
+            .filter((t) => t.status === 'PREVISTO' &&
+            t.dataVencimento >= startOfMonth &&
+            t.dataVencimento <= endOfMonth)
+            .reduce((sum, t) => sum + Number(t.valor), 0);
+        const recTotal = recReceived + recPending;
+        const payables = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                tipo: 'DESPESA',
+                OR: [
+                    { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
+                    { dataPagamento: { gte: startOfMonth, lte: endOfMonth } },
+                ],
+            },
+        });
+        const payPaid = payables
+            .filter((t) => ['REALIZADO', 'CONCILIADO'].includes(t.status) &&
+            t.dataPagamento &&
+            t.dataPagamento >= startOfMonth &&
+            t.dataPagamento <= endOfMonth)
+            .reduce((sum, t) => sum + Number(t.valor), 0);
+        const payPending = payables
+            .filter((t) => t.status === 'PREVISTO' &&
+            t.dataVencimento >= startOfMonth &&
+            t.dataVencimento <= endOfMonth)
+            .reduce((sum, t) => sum + Number(t.valor), 0);
+        const payTotal = payPaid + payPending;
+        const projectedBalance = currentBalance + recPending - payPending;
+        const accounts = await this.prisma.contaBancaria.findMany();
+        const preBalanceAccounts = await Promise.all(accounts.map(async (acc) => {
+            const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    contaBancariaId: acc.id,
+                    tipo: 'RECEITA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { lt: startOfMonth },
+                },
+            });
+            const totalOut = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    contaBancariaId: acc.id,
+                    tipo: 'DESPESA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { lt: startOfMonth },
+                },
+            });
+            return (Number(acc.saldoInicial || 0) +
+                Number(totalIn._sum.valor || 0) -
+                Number(totalOut._sum.valor || 0));
+        }));
+        let runningBalance = preBalanceAccounts.reduce((sum, val) => sum + val, 0);
+        const daysInMonth = new Date(y, m, 0).getDate();
+        const dailyFlow = [];
+        for (let d = 1; d <= daysInMonth; d++) {
+            const date = new Date(y, m - 1, d);
+            const dateStr = date.toDateString();
+            const dayInRealized = receivables.filter((t) => ['REALIZADO', 'CONCILIADO'].includes(t.status) &&
+                t.dataPagamento &&
+                t.dataPagamento.toDateString() === dateStr);
+            const dayInProjected = receivables.filter((t) => t.status === 'PREVISTO' &&
+                t.dataVencimento.toDateString() === dateStr);
+            const dayInVal = dayInRealized.reduce((s, t) => s + Number(t.valor), 0) +
+                dayInProjected.reduce((s, t) => s + Number(t.valor), 0);
+            const dayOutRealized = payables.filter((t) => ['REALIZADO', 'CONCILIADO'].includes(t.status) &&
+                t.dataPagamento &&
+                t.dataPagamento.toDateString() === dateStr);
+            const dayOutProjected = payables.filter((t) => t.status === 'PREVISTO' &&
+                t.dataVencimento.toDateString() === dateStr);
+            const dayOutVal = dayOutRealized.reduce((s, t) => s + Number(t.valor), 0) +
+                dayOutProjected.reduce((s, t) => s + Number(t.valor), 0);
+            runningBalance += dayInVal - dayOutVal;
+            dailyFlow.push({
+                date: date.toISOString(),
+                label: d.toString(),
+                entradas: dayInVal,
+                saidas: dayOutVal,
+                saldoAcumulado: runningBalance,
+            });
+        }
+        const transactionsList = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                OR: [
+                    { dataVencimento: { gte: startOfMonth, lte: endOfMonth } },
+                    { dataPagamento: { gte: startOfMonth, lte: endOfMonth } },
+                ],
+            },
+            include: {
+                categoria: true,
+                contaBancaria: true,
+            },
+            orderBy: { dataVencimento: 'asc' },
+        });
+        const formattedTransactions = transactionsList.map((t) => ({
+            id: t.id,
+            data: t.status === 'PREVISTO' ? t.dataVencimento : t.dataPagamento,
+            descricao: t.descricao,
+            conta: t.contaBancaria?.nome,
+            categoria: t.categoria?.nome,
+            tipo: t.tipo,
+            valor: Number(t.valor),
+            status: t.status,
+        }));
+        return {
+            period: { month: m, year: y },
+            kpis: {
+                saldoAtual: currentBalance,
+                saldoInicialMes,
+                saldoFinalMes: currentBalance,
+                aReceber: {
+                    total: recTotal,
+                    recebido: recReceived,
+                    pendente: recPending,
+                },
+                aPagar: { total: payTotal, pago: payPaid, pendente: payPending },
+                saldoProjetado: projectedBalance,
+            },
+            summary: {
+                entradasMes: recTotal,
+                recebidoReal: recReceived,
+                previstoReceber: recPending,
+                saidasMes: payTotal,
+            },
+            chart: dailyFlow,
+            transactions: formattedTransactions,
+            accounts: accountsWithBalance,
+            lastUpdate: now.toISOString(),
+        };
+    }
+    async getBalanceSheet(asOf) {
+        const referenceDate = new Date(asOf);
+        const endOfDay = new Date(referenceDate.getFullYear(), referenceDate.getMonth(), referenceDate.getDate(), 23, 59, 59, 999);
+        const contasReceber = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'RECEITA',
+                status: 'PREVISTO',
+                dataVencimento: { lte: endOfDay },
+            },
+        });
+        const contasPagar = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'DESPESA',
+                status: 'PREVISTO',
+                dataVencimento: { lte: endOfDay },
+            },
+        });
+        const contas = await this.prisma.contaBancaria.findMany();
+        const contasComSaldo = await Promise.all(contas.map(async (acc) => {
+            const movimentacoes = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    contaBancariaId: acc.id,
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { lte: endOfDay },
+                    tipo: 'RECEITA',
+                },
+            });
+            const saidas = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    contaBancariaId: acc.id,
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { lte: endOfDay },
+                    tipo: 'DESPESA',
+                },
+            });
+            const saldo = Number(acc.saldoInicial || 0) +
+                Number(movimentacoes._sum.valor || 0) -
+                Number(saidas._sum.valor || 0);
+            return {
+                id: acc.id,
+                nome: acc.nome,
+                banco: acc.banco,
+                saldo,
+            };
+        }));
+        const totalCaixaBancos = contasComSaldo.reduce((sum, acc) => sum + acc.saldo, 0);
+        const totalReceber = Number(contasReceber._sum.valor || 0);
+        const totalPagar = Number(contasPagar._sum.valor || 0);
+        const totalAtivos = totalCaixaBancos + totalReceber;
+        const totalPassivos = totalPagar;
+        const patrimonioLiquido = totalAtivos - totalPassivos;
+        return {
+            asOf: endOfDay.toISOString(),
+            assets: {
+                cashAndBanks: totalCaixaBancos,
+                accountsReceivable: totalReceber,
+                total: totalAtivos,
+                accounts: contasComSaldo,
+            },
+            liabilities: {
+                accountsPayable: totalPagar,
+                total: totalPassivos,
+            },
+            equity: {
+                total: patrimonioLiquido,
+            },
+        };
+    }
+    async getAccountsWithRealTimeBalance(lteDate) {
+        const accounts = await this.prisma.contaBancaria.findMany();
+        return Promise.all(accounts.map(async (acc) => {
+            const whereClause = {
+                contaBancariaId: acc.id,
+                status: { in: ['REALIZADO', 'CONCILIADO'] },
+            };
+            if (lteDate) {
+                whereClause.dataPagamento = { lte: lteDate };
+            }
+            const totalIn = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: { ...whereClause, tipo: 'RECEITA' },
+            });
+            const totalOut = await this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: { ...whereClause, tipo: 'DESPESA' },
+            });
+            let bal = Number(acc.saldoInicial || 0) +
+                Number(totalIn._sum.valor || 0) -
+                Number(totalOut._sum.valor || 0);
+            if (!lteDate) {
+                try {
+                    const integration = await this.prisma.integracaoBancaria.findUnique({
+                        where: { contaBancariaId: acc.id },
+                    });
+                    if (integration && integration.status === 'CONNECTED') {
+                        const realTimeBal = await Promise.race([
+                            this.bankingService.getAccountBalance(acc.id),
+                            new Promise((_, reject) => setTimeout(() => reject(new Error('Banking API timeout (5s)')), 5000)),
+                        ]);
+                        bal = realTimeBal;
+                    }
+                }
+                catch (e) {
+                    console.error(`[Dashboard] Failed to fetch real-time balance for ${acc.nome} (${acc.id}):`, e.message);
+                }
+            }
+            return {
+                ...acc,
+                saldo: bal,
+            };
+        }));
+    }
+    async getSummaryDashboard(year, month) {
+        const now = new Date();
+        const targetYear = year || now.getFullYear();
+        const targetMonth = month !== undefined ? month : now.getMonth();
+        const startOfMonth = new Date(targetYear, targetMonth, 1);
+        const endOfMonth = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+        const accounts = await this.getAccountsWithRealTimeBalance();
+        const currentBalance = accounts.reduce((acc, curr) => acc + curr.saldo, 0);
+        const [incomeQuery, expenseQuery, recQuery, payQuery] = await Promise.all([
+            this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    tipo: 'RECEITA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: startOfMonth, lte: endOfMonth },
+                },
+            }),
+            this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    tipo: 'DESPESA',
+                    status: { in: ['REALIZADO', 'CONCILIADO'] },
+                    dataPagamento: { gte: startOfMonth, lte: endOfMonth },
+                },
+            }),
+            this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    tipo: 'RECEITA',
+                    status: 'PREVISTO',
+                    dataVencimento: { gte: startOfMonth, lte: endOfMonth },
+                },
+            }),
+            this.prisma.lancamentoFinanceiro.aggregate({
+                _sum: { valor: true },
+                where: {
+                    tipo: 'DESPESA',
+                    status: 'PREVISTO',
+                    dataVencimento: { gte: startOfMonth, lte: endOfMonth },
+                },
+            }),
+        ]);
+        const monthlyIncome = Number(incomeQuery._sum.valor || 0);
+        const monthlyExpense = Number(expenseQuery._sum.valor || 0);
+        const monthlyResult = monthlyIncome - monthlyExpense;
+        const receivable = Number(recQuery._sum.valor || 0);
+        const payable = Number(payQuery._sum.valor || 0);
+        const projectedBalance = currentBalance + (receivable - payable);
+        const rawReceivables = await this.prisma.lancamentoFinanceiro.findMany({
+            take: 5,
+            where: { tipo: 'RECEITA', status: 'PREVISTO' },
+            orderBy: { dataVencimento: 'asc' },
+            include: { cliente: true },
+        });
+        const receivables = rawReceivables.map((r) => {
+            const clientName = r.cliente?.nomeFantasia || r.cliente?.razaoSocial || 'Cliente Geral';
+            const statusStr = r.dataVencimento < now ? 'Atrasado' : 'A vencer';
+            return {
+                client: clientName,
+                dueDate: r.dataVencimento.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                }),
+                value: Number(r.valor),
+                status: statusStr,
+            };
+        });
+        const rawPayables = await this.prisma.lancamentoFinanceiro.findMany({
+            take: 5,
+            where: { tipo: 'DESPESA', status: 'PREVISTO' },
+            orderBy: { dataVencimento: 'asc' },
+            include: { fornecedor: true, categoria: true },
+        });
+        const payables = rawPayables.map((p) => {
+            const supplierName = p.fornecedor?.nomeFantasia || p.fornecedorNome || 'Fornecedor Geral';
+            return {
+                supplier: supplierName,
+                dueDate: p.dataVencimento.toLocaleDateString('pt-BR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                }),
+                value: Number(p.valor),
+                category: p.categoria?.nome || 'Sem categoria',
+            };
+        });
+        const startOfYear = new Date(year, 0, 1);
+        const endOfYear = new Date(year, 11, 31, 23, 59, 59, 999);
+        const yearExpenses = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                tipo: 'DESPESA',
+                OR: [
+                    { dataPagamento: { gte: startOfYear, lte: endOfYear } },
+                    { dataVencimento: { gte: startOfYear, lte: endOfYear } },
+                ],
+            },
+            select: {
+                valor: true,
+                status: true,
+                dataPagamento: true,
+                dataVencimento: true,
+            },
+        });
+        const payableForecast = Array(12).fill(0);
+        for (const exp of yearExpenses) {
+            const date = ['REALIZADO', 'CONCILIADO'].includes(exp.status) && exp.dataPagamento
+                ? exp.dataPagamento
+                : exp.dataVencimento;
+            if (date && date.getFullYear() === year) {
+                const m = date.getMonth();
+                payableForecast[m] += Number(exp.valor);
+            }
+        }
+        const rawSupplierExpenses = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                tipo: 'DESPESA',
+                status: { in: ['REALIZADO', 'CONCILIADO'] },
+            },
+            select: {
+                valor: true,
+                fornecedor: { select: { nomeFantasia: true } },
+                fornecedorNome: true,
+            },
+        });
+        const supplierMap = {};
+        for (const exp of rawSupplierExpenses) {
+            const name = exp.fornecedor?.nomeFantasia || exp.fornecedorNome || 'Outros';
+            supplierMap[name] = (supplierMap[name] || 0) + Number(exp.valor);
+        }
+        const supplierExpenses = Object.entries(supplierMap)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 8);
+        const rawCategoryExpenses = await this.prisma.lancamentoFinanceiro.findMany({
+            where: {
+                tipo: 'DESPESA',
+                status: { in: ['REALIZADO', 'CONCILIADO'] },
+            },
+            select: { valor: true, categoria: { select: { nome: true } } },
+        });
+        const categoryMap = {};
+        for (const exp of rawCategoryExpenses) {
+            const name = exp.categoria?.nome || 'Sem categoria';
+            categoryMap[name] = (categoryMap[name] || 0) + Number(exp.valor);
+        }
+        const costTypeExpenses = Object.entries(categoryMap)
+            .map(([name, value]) => ({ name, value }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 7);
+        const alerts = [];
+        const overduePayablesSum = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'DESPESA',
+                status: 'PREVISTO',
+                dataVencimento: { lt: now },
+            },
+        });
+        const overduePaySum = Number(overduePayablesSum._sum.valor || 0);
+        if (overduePaySum > 0) {
+            alerts.push({
+                color: 'red',
+                text: `R$ ${overduePaySum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em contas a pagar atrasadas`,
+            });
+        }
+        const overdueReceivablesSum = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'RECEITA',
+                status: 'PREVISTO',
+                dataVencimento: { lt: now },
+            },
+        });
+        const overdueRecSum = Number(overdueReceivablesSum._sum.valor || 0);
+        if (overdueRecSum > 0) {
+            alerts.push({
+                color: 'orange',
+                text: `R$ ${overdueRecSum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em recebimentos atrasados`,
+            });
+        }
+        const next7Days = new Date();
+        next7Days.setDate(next7Days.getDate() + 7);
+        const upcomingPayables = await this.prisma.lancamentoFinanceiro.aggregate({
+            _sum: { valor: true },
+            where: {
+                tipo: 'DESPESA',
+                status: 'PREVISTO',
+                dataVencimento: { gte: now, lte: next7Days },
+            },
+        });
+        const upcomingPaySum = Number(upcomingPayables._sum.valor || 0);
+        if (upcomingPaySum > 0) {
+            alerts.push({
+                color: 'blue',
+                text: `R$ ${upcomingPaySum.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em contas vencendo nos próximos 7 dias`,
+            });
+        }
+        alerts.push({
+            color: projectedBalance >= 0 ? 'blue' : 'red',
+            text: `Saldo projetado para o fim do mês: R$ ${projectedBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
+        });
+        return {
+            cards: {
+                currentBalance,
+                monthlyIncome,
+                monthlyExpense,
+                monthlyResult,
+                receivable,
+                payable,
+                projectedBalance,
+            },
+            receivables,
+            payables,
+            payableForecast,
+            supplierExpenses,
+            costTypeExpenses,
+            alerts,
+        };
+    }
+};
+exports.FinancialDashboardService = FinancialDashboardService;
+exports.FinancialDashboardService = FinancialDashboardService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        banking_integration_service_1.BankingIntegrationService])
+], FinancialDashboardService);
+//# sourceMappingURL=financial-dashboard.service.js.map

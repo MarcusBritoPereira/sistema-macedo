@@ -1,0 +1,5 @@
+import { CreateStockLocationDto } from './create-stock-location.dto';
+declare const UpdateStockLocationDto_base: import("@nestjs/mapped-types").MappedType<Partial<CreateStockLocationDto>>;
+export declare class UpdateStockLocationDto extends UpdateStockLocationDto_base {
+}
+export {};

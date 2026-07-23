@@ -471,6 +471,7 @@ model RateioLancamento {
 enum TipoDestinoRateio {
   OBRA
   CENTRO_CUSTO
+  POS_OBRA
 }
 
 model RateioHistorico {

@@ -1,0 +1,242 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StockMaterialsService = void 0;
+const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const prisma_service_1 = require("../../prisma/prisma.service");
+const stock_common_1 = require("./stock-common");
+let StockMaterialsService = class StockMaterialsService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async create(dto, userId) {
+        const data = await this.sanitize(dto, userId);
+        await this.ensureUnique(dto.codigo, dto.codigoBarras);
+        await this.ensureActiveCategory(data.categoriaMaterialId);
+        const material = await this.prisma.material.create({
+            data: data,
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_MATERIAL_CRIADO', material.id, null, material);
+        return material;
+    }
+    async findAll(query) {
+        const { skip, take } = (0, stock_common_1.normalizePagination)(query.skip, query.take);
+        const where = {
+            ...(query.categoriaMaterialId ? { categoriaMaterialId: query.categoriaMaterialId } : {}),
+            ...(query.ativo !== undefined ? { ativo: query.ativo === 'true' } : {}),
+            ...(query.search
+                ? {
+                    OR: [
+                        { codigo: { contains: query.search, mode: 'insensitive' } },
+                        { nome: { contains: query.search, mode: 'insensitive' } },
+                        { descricao: { contains: query.search, mode: 'insensitive' } },
+                        { codigoBarras: { contains: query.search, mode: 'insensitive' } },
+                        { marca: { contains: query.search, mode: 'insensitive' } },
+                        { fabricante: { contains: query.search, mode: 'insensitive' } },
+                    ],
+                }
+                : {}),
+        };
+        const [items, total] = await this.prisma.$transaction([
+            this.prisma.material.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    ...this.includeRelations(),
+                    saldos: { select: { quantidade: true, valorTotal: true } },
+                },
+                orderBy: [{ nome: 'asc' }],
+            }),
+            this.prisma.material.count({ where }),
+        ]);
+        return {
+            items: items.map((item) => ({
+                ...item,
+                saldoTotal: item.saldos.reduce((acc, saldo) => acc.plus(saldo.quantidade), new client_1.Prisma.Decimal(0)),
+                valorTotalEstoque: item.saldos.reduce((acc, saldo) => acc.plus(saldo.valorTotal), new client_1.Prisma.Decimal(0)),
+            })),
+            total,
+            skip,
+            take,
+        };
+    }
+    async findOne(id) {
+        const material = await this.prisma.material.findUnique({
+            where: { id },
+            include: this.includeRelations(),
+        });
+        if (!material)
+            throw new common_1.NotFoundException('Material não encontrado');
+        return material;
+    }
+    async update(id, dto, userId) {
+        const current = await this.findOne(id);
+        const data = await this.sanitize(dto);
+        if (data.codigo || data.codigoBarras !== undefined) {
+            await this.ensureUnique(data.codigo, data.codigoBarras, id);
+        }
+        if (data.categoriaMaterialId)
+            await this.ensureActiveCategory(data.categoriaMaterialId);
+        const updated = await this.prisma.material.update({
+            where: { id },
+            data: data,
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_MATERIAL_ATUALIZADO', id, current, updated);
+        return updated;
+    }
+    async remove(id, userId) {
+        const current = await this.findOne(id);
+        const movementCount = await this.prisma.movimentoEstoque.count({ where: { materialId: id } });
+        if (movementCount > 0) {
+            const updated = await this.prisma.material.update({
+                where: { id },
+                data: { ativo: false },
+                include: this.includeRelations(),
+            });
+            await this.audit(userId, 'ESTOQUE_MATERIAL_INATIVADO', id, current, updated);
+            return updated;
+        }
+        const deleted = await this.prisma.material.delete({ where: { id } });
+        await this.audit(userId, 'ESTOQUE_MATERIAL_REMOVIDO', id, current, deleted);
+        return deleted;
+    }
+    async balances(id) {
+        await this.findOne(id);
+        return this.prisma.saldoEstoque.findMany({
+            where: { materialId: id },
+            include: { localEstoque: { include: { obra: true, responsavel: true } } },
+            orderBy: { localEstoque: { nome: 'asc' } },
+        });
+    }
+    async movements(id, query) {
+        await this.findOne(id);
+        const { skip, take } = (0, stock_common_1.normalizePagination)(query.skip, query.take);
+        const [items, total] = await this.prisma.$transaction([
+            this.prisma.movimentoEstoque.findMany({
+                where: { materialId: id },
+                skip,
+                take,
+                include: {
+                    localOrigem: true,
+                    localDestino: true,
+                    obra: true,
+                    fornecedor: true,
+                    registradoPor: { select: { id: true, nome: true, email: true } },
+                },
+                orderBy: { dataMovimento: 'desc' },
+            }),
+            this.prisma.movimentoEstoque.count({ where: { materialId: id } }),
+        ]);
+        return { items, total, skip, take };
+    }
+    includeRelations() {
+        return {
+            categoriaMaterial: { include: { categoriaFinanceira: true, centroCustoPadrao: true } },
+            criadoPor: { select: { id: true, nome: true, email: true } },
+        };
+    }
+    async sanitize(dto, userId) {
+        const data = {};
+        if (dto.codigo !== undefined) {
+            const codigo = dto.codigo.trim();
+            if (!codigo)
+                throw new common_1.BadRequestException('Código do material é obrigatório');
+            data.codigo = codigo;
+        }
+        if (dto.nome !== undefined) {
+            const nome = dto.nome.trim();
+            if (!nome)
+                throw new common_1.BadRequestException('Nome do material é obrigatório');
+            data.nome = nome;
+        }
+        if (dto.descricao !== undefined)
+            data.descricao = (0, stock_common_1.cleanString)(dto.descricao);
+        if (dto.categoriaMaterialId !== undefined)
+            data.categoriaMaterialId = dto.categoriaMaterialId;
+        if (dto.unidade !== undefined)
+            data.unidade = dto.unidade;
+        if (dto.codigoBarras !== undefined)
+            data.codigoBarras = (0, stock_common_1.cleanString)(dto.codigoBarras);
+        if (dto.referenciaFornecedor !== undefined)
+            data.referenciaFornecedor = (0, stock_common_1.cleanString)(dto.referenciaFornecedor);
+        if (dto.marca !== undefined)
+            data.marca = (0, stock_common_1.cleanString)(dto.marca);
+        if (dto.fabricante !== undefined)
+            data.fabricante = (0, stock_common_1.cleanString)(dto.fabricante);
+        if (dto.estoqueMinimo !== undefined)
+            data.estoqueMinimo = this.nonNegative(dto.estoqueMinimo, 'estoque mínimo');
+        if (dto.estoqueMaximo !== undefined)
+            data.estoqueMaximo = (0, stock_common_1.toOptionalDecimal)(dto.estoqueMaximo) ?? null;
+        if (dto.pontoReposicao !== undefined)
+            data.pontoReposicao = this.nonNegative(dto.pontoReposicao, 'ponto de reposição');
+        if (dto.custoPadrao !== undefined)
+            data.custoPadrao = (0, stock_common_1.toOptionalDecimal)(dto.custoPadrao) ?? null;
+        if (dto.permiteFracionado !== undefined)
+            data.permiteFracionado = dto.permiteFracionado;
+        if (dto.ativo !== undefined)
+            data.ativo = dto.ativo;
+        if (dto.observacoes !== undefined)
+            data.observacoes = (0, stock_common_1.cleanString)(dto.observacoes);
+        if (userId)
+            data.criadoPorId = userId;
+        return data;
+    }
+    nonNegative(value, field) {
+        const decimal = new client_1.Prisma.Decimal(value);
+        if (decimal.lt(0))
+            throw new common_1.BadRequestException(`${field} não pode ser negativo`);
+        return decimal;
+    }
+    async ensureUnique(codigo, codigoBarras, currentId) {
+        const or = [];
+        if (codigo)
+            or.push({ codigo });
+        if (codigoBarras)
+            or.push({ codigoBarras });
+        if (!or.length)
+            return;
+        const existing = await this.prisma.material.findFirst({
+            where: { OR: or, ...(currentId ? { id: { not: currentId } } : {}) },
+            select: { id: true, codigo: true, codigoBarras: true },
+        });
+        if (existing)
+            throw new common_1.ConflictException('Código ou código de barras já cadastrado para outro material');
+    }
+    async ensureActiveCategory(id) {
+        const category = await this.prisma.categoriaMaterial.findUnique({ where: { id } });
+        if (!category || !category.ativo)
+            throw new common_1.BadRequestException('Categoria de material ativa não encontrada');
+    }
+    audit(userId, acao, registroId, oldValue, newValue) {
+        return this.prisma.logAuditoria.create({
+            data: {
+                acao,
+                tabela: 'materiais',
+                registroId,
+                valorAntigo: (0, stock_common_1.stringifyAudit)(oldValue),
+                valorNovo: (0, stock_common_1.stringifyAudit)(newValue),
+                motivo: 'Cadastro de material',
+                usuarioId: userId,
+            },
+        });
+    }
+};
+exports.StockMaterialsService = StockMaterialsService;
+exports.StockMaterialsService = StockMaterialsService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], StockMaterialsService);
+//# sourceMappingURL=stock-materials.service.js.map

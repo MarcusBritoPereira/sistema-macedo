@@ -1,0 +1,109 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StockBalancesService = void 0;
+const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const prisma_service_1 = require("../../prisma/prisma.service");
+const stock_common_1 = require("./stock-common");
+let StockBalancesService = class StockBalancesService {
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
+    }
+    async findAll(query) {
+        const { skip, take } = (0, stock_common_1.normalizePagination)(query.skip, query.take);
+        const where = {
+            ...(query.materialId ? { materialId: query.materialId } : {}),
+            ...(query.localEstoqueId ? { localEstoqueId: query.localEstoqueId } : {}),
+            ...(query.obraId ? { localEstoque: { obraId: query.obraId } } : {}),
+            ...(query.categoriaMaterialId ? { material: { categoriaMaterialId: query.categoriaMaterialId } } : {}),
+            ...(query.search
+                ? {
+                    OR: [
+                        { material: { nome: { contains: query.search, mode: 'insensitive' } } },
+                        { material: { codigo: { contains: query.search, mode: 'insensitive' } } },
+                        { localEstoque: { nome: { contains: query.search, mode: 'insensitive' } } },
+                        { localEstoque: { codigo: { contains: query.search, mode: 'insensitive' } } },
+                    ],
+                }
+                : {}),
+        };
+        const [items, total] = await this.prisma.$transaction([
+            this.prisma.saldoEstoque.findMany({
+                where,
+                skip,
+                take,
+                include: {
+                    material: { include: { categoriaMaterial: true } },
+                    localEstoque: { include: { obra: true } },
+                },
+                orderBy: [{ material: { nome: 'asc' } }, { localEstoque: { nome: 'asc' } }],
+            }),
+            this.prisma.saldoEstoque.count({ where }),
+        ]);
+        const mapped = items.map((item) => this.mapBalance(item));
+        const filtered = query.situacao ? mapped.filter((item) => item.situacao === query.situacao) : mapped;
+        return { items: filtered, total: query.situacao ? filtered.length : total, skip, take };
+    }
+    async summary() {
+        const aggregate = await this.prisma.saldoEstoque.aggregate({
+            _sum: { valorTotal: true, quantidade: true, quantidadeReservada: true },
+        });
+        const materiaisCadastrados = await this.prisma.material.count({ where: { ativo: true } });
+        const lowStock = await this.lowStock({ take: '1000' });
+        return {
+            valorTotalEstoque: aggregate._sum.valorTotal || new client_1.Prisma.Decimal(0),
+            quantidadeFisica: aggregate._sum.quantidade || new client_1.Prisma.Decimal(0),
+            quantidadeReservada: aggregate._sum.quantidadeReservada || new client_1.Prisma.Decimal(0),
+            materiaisCadastrados,
+            materiaisAbaixoMinimo: lowStock.total,
+        };
+    }
+    async lowStock(query = {}) {
+        const { skip, take } = (0, stock_common_1.normalizePagination)(query.skip, query.take);
+        const items = await this.prisma.saldoEstoque.findMany({
+            where: { material: { ativo: true } },
+            include: {
+                material: { include: { categoriaMaterial: true } },
+                localEstoque: { include: { obra: true } },
+            },
+            orderBy: [{ material: { nome: 'asc' } }],
+        });
+        const mapped = items
+            .map((item) => this.mapBalance(item))
+            .filter((item) => ['BAIXO', 'CRITICO', 'ZERADO', 'NEGATIVO'].includes(item.situacao));
+        return { items: mapped.slice(skip, skip + take), total: mapped.length, skip, take };
+    }
+    mapBalance(item) {
+        const quantidade = new client_1.Prisma.Decimal(item.quantidade);
+        const reservada = new client_1.Prisma.Decimal(item.quantidadeReservada);
+        const disponivel = quantidade.minus(reservada);
+        const minimo = new client_1.Prisma.Decimal(item.material.estoqueMinimo || 0);
+        const reposicao = new client_1.Prisma.Decimal(item.material.pontoReposicao || 0);
+        let situacao = 'NORMAL';
+        if (quantidade.lt(0))
+            situacao = 'NEGATIVO';
+        else if (quantidade.eq(0))
+            situacao = 'ZERADO';
+        else if (minimo.gt(0) && quantidade.lte(minimo))
+            situacao = 'CRITICO';
+        else if (reposicao.gt(0) && quantidade.lte(reposicao))
+            situacao = 'BAIXO';
+        return { ...item, quantidadeDisponivel: disponivel, situacao };
+    }
+};
+exports.StockBalancesService = StockBalancesService;
+exports.StockBalancesService = StockBalancesService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+], StockBalancesService);
+//# sourceMappingURL=stock-balances.service.js.map

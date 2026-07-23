@@ -1,0 +1,9 @@
+export declare class ApproveStockRequestItemDto {
+    itemId: string;
+    quantidadeAprovada: string;
+}
+export declare class ApproveStockRequestDto {
+    localReservaId: string;
+    items: ApproveStockRequestItemDto[];
+    observacao?: string;
+}

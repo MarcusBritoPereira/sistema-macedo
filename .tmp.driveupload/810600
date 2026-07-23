@@ -1,0 +1,81 @@
+import { TipoMovimentoEstoque } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
+import { PaginationQueryDto } from '../dto/pagination-query.dto';
+type ReportQuery = PaginationQueryDto & {
+    formato?: 'json' | 'csv';
+    dataInicio?: string;
+    dataFim?: string;
+    obraId?: string;
+    materialId?: string;
+    localEstoqueId?: string;
+    categoriaMaterialId?: string;
+    tipo?: TipoMovimentoEstoque;
+    status?: string;
+};
+export declare class StockReportsService {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    position(query: ReportQuery): Promise<{
+        filename: string;
+        mimeType: string;
+        content: string;
+    } | {
+        items: Record<string, unknown>[];
+        filename?: undefined;
+        mimeType?: undefined;
+        content?: undefined;
+    }>;
+    movements(query: ReportQuery): Promise<{
+        filename: string;
+        mimeType: string;
+        content: string;
+    } | {
+        items: Record<string, unknown>[];
+        filename?: undefined;
+        mimeType?: undefined;
+        content?: undefined;
+    }>;
+    consumptionByProject(query: ReportQuery): Promise<{
+        filename: string;
+        mimeType: string;
+        content: string;
+    } | {
+        items: Record<string, unknown>[];
+        filename?: undefined;
+        mimeType?: undefined;
+        content?: undefined;
+    }>;
+    losses(query: ReportQuery): Promise<{
+        filename: string;
+        mimeType: string;
+        content: string;
+    } | {
+        items: Record<string, unknown>[];
+        filename?: undefined;
+        mimeType?: undefined;
+        content?: undefined;
+    }>;
+    abc(query: ReportQuery): Promise<{
+        filename: string;
+        mimeType: string;
+        content: string;
+    } | {
+        items: Record<string, unknown>[];
+        filename?: undefined;
+        mimeType?: undefined;
+        content?: undefined;
+    }>;
+    purchaseSuggestion(query: ReportQuery): Promise<{
+        filename: string;
+        mimeType: string;
+        content: string;
+    } | {
+        items: Record<string, unknown>[];
+        filename?: undefined;
+        mimeType?: undefined;
+        content?: undefined;
+    }>;
+    private respond;
+    private toCsv;
+}
+export {};

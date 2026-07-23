@@ -405,7 +405,7 @@ export class ReconciliationDetailComponent
   }
 
   onAllocationDestinationChange(item: any) {
-    if (item.tipoDestino === 'OBRA') {
+    if (item.tipoDestino === 'OBRA' || item.tipoDestino === 'POS_OBRA') {
       item.centroCustoId = '';
     } else {
       item.obraId = '';
@@ -607,7 +607,7 @@ export class ReconciliationDetailComponent
   }
 
   getRateioDestination(rateio: any): string {
-    if (rateio?.tipoDestino === 'OBRA') return rateio.obra?.nome || 'Obra';
+    if (rateio?.tipoDestino === 'OBRA' || rateio?.tipoDestino === 'POS_OBRA') return rateio.obra?.nome || 'Obra';
     return rateio?.centroCusto?.nome || 'Centro de custo';
   }
 
@@ -735,8 +735,8 @@ export class ReconciliationDetailComponent
               categoria: 'OUTROS',
               categoriaFinanceiraId: item.categoriaId,
               tipoDestino:
-                item.tipoDestino === 'OBRA' ? 'OBRA' : 'CENTRO_CUSTO',
-              obraId: item.tipoDestino === 'OBRA' ? item.obraId : null,
+                (item.tipoDestino === 'OBRA' || item.tipoDestino === 'POS_OBRA') ? item.tipoDestino : 'CENTRO_CUSTO',
+              obraId: (item.tipoDestino === 'OBRA' || item.tipoDestino === 'POS_OBRA') ? item.obraId : null,
               centroCustoId: item.centroCustoId || null,
               tipoCusto: item.tipoCusto,
               categoriaCusto: item.categoriaCusto,

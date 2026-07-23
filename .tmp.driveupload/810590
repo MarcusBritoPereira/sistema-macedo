@@ -1,0 +1,322 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StockRequestsService = void 0;
+const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const prisma_service_1 = require("../../prisma/prisma.service");
+const stock_common_1 = require("./stock-common");
+const stock_movement_service_1 = require("./stock-movement.service");
+let StockRequestsService = class StockRequestsService {
+    prisma;
+    movementService;
+    constructor(prisma, movementService) {
+        this.prisma = prisma;
+        this.movementService = movementService;
+    }
+    async create(dto, userId) {
+        await this.ensureActiveProject(dto.obraId);
+        const numero = await this.nextRequestNumber();
+        const items = dto.items.map((item) => {
+            const quantidade = new client_1.Prisma.Decimal(item.quantidadeSolicitada);
+            if (quantidade.lte(0))
+                throw new common_1.BadRequestException('Quantidade solicitada deve ser maior que zero');
+            return {
+                materialId: item.materialId,
+                quantidadeSolicitada: quantidade,
+                observacao: item.observacao?.trim() || null,
+            };
+        });
+        const request = await this.prisma.solicitacaoMaterial.create({
+            data: {
+                numero,
+                obraId: dto.obraId,
+                localDestinoId: dto.localDestinoId,
+                solicitanteId: userId,
+                prioridade: dto.prioridade,
+                dataNecessidade: dto.dataNecessidade ? new Date(dto.dataNecessidade) : null,
+                justificativa: dto.justificativa?.trim() || null,
+                observacao: dto.observacao?.trim() || null,
+                itens: { create: items },
+            },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_SOLICITACAO_CRIADA', request.id, null, request);
+        return request;
+    }
+    async findAll(query) {
+        const { skip, take } = (0, stock_common_1.normalizePagination)(query.skip, query.take);
+        const where = {
+            ...(query.status ? { status: query.status } : {}),
+            ...(query.obraId ? { obraId: query.obraId } : {}),
+            ...(query.search
+                ? {
+                    OR: [
+                        { numero: { contains: query.search, mode: 'insensitive' } },
+                        { justificativa: { contains: query.search, mode: 'insensitive' } },
+                        { observacao: { contains: query.search, mode: 'insensitive' } },
+                    ],
+                }
+                : {}),
+        };
+        const [items, total] = await this.prisma.$transaction([
+            this.prisma.solicitacaoMaterial.findMany({
+                where,
+                skip,
+                take,
+                include: this.includeRelations(),
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.solicitacaoMaterial.count({ where }),
+        ]);
+        return { items, total, skip, take };
+    }
+    async findOne(id) {
+        const request = await this.prisma.solicitacaoMaterial.findUnique({
+            where: { id },
+            include: this.includeRelations(),
+        });
+        if (!request)
+            throw new common_1.NotFoundException('Solicitação de material não encontrada');
+        return request;
+    }
+    async submit(id, userId) {
+        const current = await this.findOne(id);
+        if (current.status !== client_1.StatusSolicitacaoMaterial.RASCUNHO) {
+            throw new common_1.BadRequestException('Somente rascunhos podem ser enviados');
+        }
+        const updated = await this.prisma.solicitacaoMaterial.update({
+            where: { id },
+            data: { status: client_1.StatusSolicitacaoMaterial.ENVIADA },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_SOLICITACAO_ENVIADA', id, current, updated);
+        return updated;
+    }
+    async approve(id, dto, userId) {
+        const request = await this.findOne(id);
+        if (request.status !== client_1.StatusSolicitacaoMaterial.ENVIADA && request.status !== client_1.StatusSolicitacaoMaterial.EM_ANALISE && request.status !== client_1.StatusSolicitacaoMaterial.RASCUNHO) {
+            throw new common_1.BadRequestException('Solicitação não pode ser aprovada no status atual');
+        }
+        const approvals = new Map(dto.items.map((item) => [item.itemId, new client_1.Prisma.Decimal(item.quantidadeAprovada)]));
+        return this.prisma.$transaction(async (tx) => {
+            let approvedCount = 0;
+            for (const item of request.itens) {
+                const approved = approvals.get(item.id) || new client_1.Prisma.Decimal(0);
+                if (approved.lt(0))
+                    throw new common_1.BadRequestException('Quantidade aprovada não pode ser negativa');
+                if (approved.gt(item.quantidadeSolicitada))
+                    throw new common_1.BadRequestException('Quantidade aprovada não pode exceder solicitada');
+                await tx.itemSolicitacaoMaterial.update({
+                    where: { id: item.id },
+                    data: { quantidadeAprovada: approved },
+                });
+                if (approved.gt(0)) {
+                    approvedCount++;
+                    await this.reserveStock(tx, {
+                        materialId: item.materialId,
+                        localEstoqueId: dto.localReservaId,
+                        obraId: request.obraId,
+                        quantidade: approved,
+                        finalidade: `Solicitação ${request.numero}`,
+                        solicitadoPorId: request.solicitanteId,
+                        aprovadoPorId: userId,
+                        dataNecessidade: request.dataNecessidade,
+                    });
+                }
+            }
+            const status = approvedCount === 0
+                ? client_1.StatusSolicitacaoMaterial.REJEITADA
+                : approvedCount === request.itens.length
+                    ? client_1.StatusSolicitacaoMaterial.APROVADA
+                    : client_1.StatusSolicitacaoMaterial.PARCIALMENTE_APROVADA;
+            const updated = await tx.solicitacaoMaterial.update({
+                where: { id },
+                data: { status, aprovadorId: userId, observacao: dto.observacao || request.observacao },
+                include: this.includeRelations(),
+            });
+            await tx.logAuditoria.create({
+                data: {
+                    acao: 'ESTOQUE_SOLICITACAO_APROVADA',
+                    tabela: 'solicitacoes_material',
+                    registroId: id,
+                    valorAntigo: (0, stock_common_1.stringifyAudit)(request),
+                    valorNovo: (0, stock_common_1.stringifyAudit)(updated),
+                    motivo: 'Aprovação e reserva de solicitação de material',
+                    usuarioId: userId,
+                },
+            });
+            return updated;
+        });
+    }
+    async reject(id, motivo, userId) {
+        if (!motivo?.trim())
+            throw new common_1.BadRequestException('Motivo da rejeição é obrigatório');
+        const current = await this.findOne(id);
+        const updated = await this.prisma.solicitacaoMaterial.update({
+            where: { id },
+            data: { status: client_1.StatusSolicitacaoMaterial.REJEITADA, aprovadorId: userId, observacao: motivo },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_SOLICITACAO_REJEITADA', id, current, updated);
+        return updated;
+    }
+    async fulfill(id, dto, userId) {
+        const request = await this.findOne(id);
+        if (request.status !== client_1.StatusSolicitacaoMaterial.APROVADA && request.status !== client_1.StatusSolicitacaoMaterial.PARCIALMENTE_APROVADA && request.status !== client_1.StatusSolicitacaoMaterial.SEPARACAO) {
+            throw new common_1.BadRequestException('Solicitação não pode ser atendida no status atual');
+        }
+        const movements = [];
+        for (const item of request.itens) {
+            const approved = item.quantidadeAprovada || new client_1.Prisma.Decimal(0);
+            const remaining = approved.minus(item.quantidadeAtendida);
+            if (remaining.lte(0))
+                continue;
+            const movement = await this.movementService.execute({
+                tipo: request.localDestinoId ? client_1.TipoMovimentoEstoque.TRANSFERENCIA : client_1.TipoMovimentoEstoque.SAIDA_CONSUMO,
+                materialId: item.materialId,
+                localOrigemId: dto.localOrigemId,
+                localDestinoId: request.localDestinoId || undefined,
+                obraId: request.obraId,
+                quantidade: remaining.toString(),
+                unidade: item.material.unidade,
+                documentoTipo: 'SOLICITACAO_MATERIAL',
+                documentoNumero: request.numero,
+                observacao: dto.observacao || request.observacao || undefined,
+            }, userId);
+            movements.push(movement);
+            await this.prisma.itemSolicitacaoMaterial.update({
+                where: { id: item.id },
+                data: { quantidadeAtendida: approved },
+            });
+            await this.releaseReservations(item.materialId, dto.localOrigemId, remaining);
+        }
+        const refreshed = await this.prisma.solicitacaoMaterial.findUnique({ where: { id }, include: { itens: true } });
+        const allFulfilled = refreshed?.itens.every((item) => (item.quantidadeAprovada || new client_1.Prisma.Decimal(0)).lte(item.quantidadeAtendida));
+        const updated = await this.prisma.solicitacaoMaterial.update({
+            where: { id },
+            data: { status: allFulfilled ? client_1.StatusSolicitacaoMaterial.ATENDIDA : client_1.StatusSolicitacaoMaterial.PARCIALMENTE_ATENDIDA },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_SOLICITACAO_ATENDIDA', id, request, updated);
+        return { request: updated, movements };
+    }
+    async cancel(id, userId) {
+        const current = await this.findOne(id);
+        const updated = await this.prisma.solicitacaoMaterial.update({
+            where: { id },
+            data: { status: client_1.StatusSolicitacaoMaterial.CANCELADA },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_SOLICITACAO_CANCELADA', id, current, updated);
+        return updated;
+    }
+    async reservations(query) {
+        const { skip, take } = (0, stock_common_1.normalizePagination)(query.skip, query.take);
+        const where = {
+            ...(query.status ? { status: query.status } : {}),
+            ...(query.obraId ? { obraId: query.obraId } : {}),
+            ...(query.materialId ? { materialId: query.materialId } : {}),
+        };
+        const [items, total] = await this.prisma.$transaction([
+            this.prisma.reservaEstoque.findMany({
+                where,
+                skip,
+                take,
+                include: { material: true, localEstoque: true, obra: true, solicitadoPor: true, aprovadoPor: true },
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.reservaEstoque.count({ where }),
+        ]);
+        return { items, total, skip, take };
+    }
+    async reserveStock(tx, data) {
+        await tx.saldoEstoque.upsert({
+            where: { materialId_localEstoqueId: { materialId: data.materialId, localEstoqueId: data.localEstoqueId } },
+            create: {
+                materialId: data.materialId,
+                localEstoqueId: data.localEstoqueId,
+                quantidadeReservada: data.quantidade,
+            },
+            update: { quantidadeReservada: { increment: data.quantidade } },
+        });
+        await tx.reservaEstoque.create({
+            data: {
+                materialId: data.materialId,
+                localEstoqueId: data.localEstoqueId,
+                obraId: data.obraId,
+                quantidade: data.quantidade,
+                status: client_1.StatusReservaEstoque.APROVADA,
+                finalidade: data.finalidade,
+                solicitadoPorId: data.solicitadoPorId,
+                aprovadoPorId: data.aprovadoPorId,
+                dataNecessidade: data.dataNecessidade,
+            },
+        });
+    }
+    async releaseReservations(materialId, localEstoqueId, quantity) {
+        await this.prisma.saldoEstoque.update({
+            where: { materialId_localEstoqueId: { materialId, localEstoqueId } },
+            data: { quantidadeReservada: { decrement: quantity } },
+        });
+        const reservations = await this.prisma.reservaEstoque.findMany({
+            where: { materialId, localEstoqueId, status: client_1.StatusReservaEstoque.APROVADA },
+            orderBy: { createdAt: 'asc' },
+        });
+        let remaining = quantity;
+        for (const reservation of reservations) {
+            if (remaining.lte(0))
+                break;
+            if (new client_1.Prisma.Decimal(reservation.quantidade).lte(remaining)) {
+                remaining = remaining.minus(reservation.quantidade);
+                await this.prisma.reservaEstoque.update({ where: { id: reservation.id }, data: { status: client_1.StatusReservaEstoque.ATENDIDA } });
+            }
+        }
+    }
+    includeRelations() {
+        return {
+            obra: true,
+            localDestino: true,
+            solicitante: { select: { id: true, nome: true, email: true } },
+            aprovador: { select: { id: true, nome: true, email: true } },
+            itens: { include: { material: true }, orderBy: { material: { nome: 'asc' } } },
+        };
+    }
+    async ensureActiveProject(obraId) {
+        const obra = await this.prisma.obra.findUnique({ where: { id: obraId } });
+        if (!obra || !obra.ativo)
+            throw new common_1.BadRequestException('Obra ativa não encontrada');
+    }
+    async nextRequestNumber() {
+        const count = await this.prisma.solicitacaoMaterial.count();
+        return `SOL-${String(count + 1).padStart(8, '0')}`;
+    }
+    audit(userId, acao, registroId, oldValue, newValue) {
+        return this.prisma.logAuditoria.create({
+            data: {
+                acao,
+                tabela: 'solicitacoes_material',
+                registroId,
+                valorAntigo: (0, stock_common_1.stringifyAudit)(oldValue),
+                valorNovo: (0, stock_common_1.stringifyAudit)(newValue),
+                motivo: 'Fluxo de solicitação de material',
+                usuarioId: userId,
+            },
+        });
+    }
+};
+exports.StockRequestsService = StockRequestsService;
+exports.StockRequestsService = StockRequestsService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        stock_movement_service_1.StockMovementService])
+], StockRequestsService);
+//# sourceMappingURL=stock-requests.service.js.map

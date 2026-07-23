@@ -562,6 +562,7 @@ export class ReconciliationService {
             rateio.valor <= 0 ||
             !rateio.categoriaFinanceiraId ||
             (rateio.tipoDestino === 'OBRA' && !rateio.obraId) ||
+            (rateio.tipoDestino === 'POS_OBRA' && !rateio.obraId) ||
             (rateio.tipoDestino === 'CENTRO_CUSTO' && !rateio.centroCustoId) ||
             (rateio.tipoCusto === 'MATERIAL' && !rateio.categoriaCusto),
         );

@@ -6,9 +6,14 @@ import { UpdateStockMaterialDto } from '../dto/update-stock-material.dto';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
 import { cleanString, normalizePagination, stringifyAudit, toOptionalDecimal } from './stock-common';
 
+import { StockMovementService } from './stock-movement.service';
+
 @Injectable()
 export class StockMaterialsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly movementService: StockMovementService,
+  ) {}
 
   async create(dto: CreateStockMaterialDto, userId: string) {
     const data = await this.sanitize(dto, userId);
@@ -19,6 +24,23 @@ export class StockMaterialsService {
       data: data as any,
       include: this.includeRelations(),
     });
+
+    if (dto.estoqueInicial && dto.localEstoqueInicialId) {
+      const quantidade = new Prisma.Decimal(dto.estoqueInicial);
+      if (quantidade.gt(0)) {
+        await this.movementService.execute({
+          tipo: 'ENTRADA_AJUSTE',
+          materialId: material.id,
+          localDestinoId: dto.localEstoqueInicialId,
+          quantidade: quantidade.toString(),
+          unidade: material.unidade,
+          custoUnitario: dto.custoUnitarioInicial || dto.custoPadrao || '0',
+          observacao: 'Estoque inicial',
+          dataMovimento: new Date().toISOString(),
+        }, userId);
+      }
+    }
+
     await this.audit(userId, 'ESTOQUE_MATERIAL_CRIADO', material.id, null, material);
     return material;
   }

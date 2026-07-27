@@ -61,4 +61,16 @@ export class CreateStockMaterialDto {
   @IsString()
   @IsOptional()
   observacoes?: string;
+
+  @IsString()
+  @IsOptional()
+  estoqueInicial?: string;
+
+  @IsString()
+  @IsOptional()
+  custoUnitarioInicial?: string;
+
+  @IsUUID()
+  @IsOptional()
+  localEstoqueInicialId?: string;
 }

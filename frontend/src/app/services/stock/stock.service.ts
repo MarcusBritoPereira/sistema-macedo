@@ -79,6 +79,9 @@ export interface StockMaterial {
     | 'ZERADO'
     | 'NEGATIVO'
     | 'INATIVO';
+  estoqueInicial?: string | number;
+  custoUnitarioInicial?: string | number;
+  localEstoqueInicialId?: string;
 }
 
 export interface StockLocation {

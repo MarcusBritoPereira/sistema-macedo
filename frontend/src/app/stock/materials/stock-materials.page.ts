@@ -26,6 +26,7 @@ import {
 } from 'ionicons/icons';
 import {
   StockCategory,
+  StockLocation,
   StockMaterial,
   StockService,
 } from '../../services/stock/stock.service';
@@ -69,6 +70,7 @@ export class StockMaterialsPage implements OnInit {
   materials: StockMaterial[] = [];
   filteredMaterials: StockMaterial[] = [];
   categories: StockCategory[] = [];
+  locations: StockLocation[] = [];
 
   form: StockMaterial = this.emptyForm();
 
@@ -129,6 +131,17 @@ export class StockMaterialsPage implements OnInit {
         },
         error: () => {
           this.categories = [];
+        },
+      });
+
+    this.stock
+      .getLocations({ take: 500 })
+      .subscribe({
+        next: (response) => {
+          this.locations = response.items || [];
+        },
+        error: () => {
+          this.locations = [];
         },
       });
 
@@ -259,6 +272,18 @@ export class StockMaterialsPage implements OnInit {
           ? null
           : String(this.form.custoPadrao),
     };
+
+    if (!payload.id) {
+      if (this.form.estoqueInicial && Number(this.form.estoqueInicial) > 0) {
+        payload.estoqueInicial = String(this.form.estoqueInicial);
+        if (this.form.custoUnitarioInicial) {
+          payload.custoUnitarioInicial = String(this.form.custoUnitarioInicial);
+        }
+        if (this.form.localEstoqueInicialId) {
+          payload.localEstoqueInicialId = this.form.localEstoqueInicialId;
+        }
+      }
+    }
 
     const request = payload.id
       ? this.stock.updateMaterial(payload.id, payload)
@@ -430,6 +455,9 @@ export class StockMaterialsPage implements OnInit {
       permiteFracionado: false,
       ativo: true,
       observacoes: '',
+      estoqueInicial: '0',
+      custoUnitarioInicial: '',
+      localEstoqueInicialId: '',
     };
   }
 

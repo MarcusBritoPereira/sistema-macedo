@@ -615,6 +615,53 @@
         </div>
       </section>
 
+      <section class="form-section" *ngIf="!form.id">
+        <div class="form-section-title">
+          <ion-icon name="layers-outline"></ion-icon>
+
+          <div>
+            <h3>Estoque inicial</h3>
+            <p>Saldo de abertura do material</p>
+          </div>
+        </div>
+
+        <div class="drawer-form-grid" style="grid-template-columns: 1fr 1fr 1.5fr;">
+          <label>
+            <span>Quantidade</span>
+            <input
+              type="number"
+              min="0"
+              [(ngModel)]="form.estoqueInicial"
+              placeholder="0"
+            />
+          </label>
+
+          <label>
+            <span>Custo unitário</span>
+            <input
+              type="number"
+              min="0"
+              step="0.01"
+              [(ngModel)]="form.custoUnitarioInicial"
+              placeholder="0,00"
+            />
+          </label>
+
+          <label>
+            <span>Local de estoque</span>
+            <select [(ngModel)]="form.localEstoqueInicialId">
+              <option value="">Selecione...</option>
+              <option
+                *ngFor="let local of locations"
+                [value]="local.id"
+              >
+                {{ local.nome }}
+              </option>
+            </select>
+          </label>
+        </div>
+      </section>
+
       <section class="form-section">
         <div class="form-section-title">
           <ion-icon name="checkmark-circle-outline"></ion-icon>

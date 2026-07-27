@@ -288,6 +288,43 @@ export class FinancialDetailPage implements OnInit {
     }
   }
 
+  async quickCreateSupplier() {
+    const modal = await this.modalCtrl.create({
+      component: QuickCreateModalComponent,
+      componentProps: {
+        entityType: 'SUPPLIER'
+      }
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data) {
+      this.suppliers.push(data);
+      // Sort alphabetically if they want it alphabetical
+      this.suppliers.sort((a, b) => (a.nomeFantasia || '').localeCompare(b.nomeFantasia || ''));
+      this.financialForm.patchValue({
+        fornecedorId: data.id
+      });
+    }
+  }
+
+  async quickCreateClient() {
+    const modal = await this.modalCtrl.create({
+      component: QuickCreateModalComponent,
+      componentProps: {
+        entityType: 'CLIENT'
+      }
+    });
+    await modal.present();
+    const { data } = await modal.onWillDismiss();
+    if (data) {
+      this.clients.push(data);
+      this.clients.sort((a, b) => (a.razaoSocial || '').localeCompare(b.razaoSocial || ''));
+      this.financialForm.patchValue({
+        clienteId: data.id
+      });
+    }
+  }
+
   async onSubmit() {
     if (this.financialForm.valid) {
       const formValue = this.financialForm.value;

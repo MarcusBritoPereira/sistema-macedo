@@ -69,7 +69,7 @@ export class ObrasService {
         cliente: true,
         centroCusto: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { nome: 'asc' },
     });
   }
 

@@ -20,7 +20,7 @@ export class ClientsListPage implements OnInit {
   filteredClients: ClientExecutiveDTO[] = [];
   errorMessage: string | null = null;
   activeFilter: 'ALL' | 'RISK' | 'TOP_REVENUE' | 'OLD' | 'DEFAULTERS' | 'ARCHIVED' = 'ALL';
-  sortBy: 'REVENUE' | 'HEALTH' | 'OLD' | 'NEW' = 'REVENUE';
+  sortBy: 'NAME' | 'REVENUE' | 'HEALTH' | 'OLD' | 'NEW' = 'NAME';
   searchTerm: string = '';
   isImporting: boolean = false;
 
@@ -125,6 +125,13 @@ export class ClientsListPage implements OnInit {
 
     // Sort
     switch (this.sortBy) {
+      case 'NAME':
+        result.sort((a, b) => {
+          const nameA = a.razaoSocial || a.nomeFantasia || '';
+          const nameB = b.razaoSocial || b.nomeFantasia || '';
+          return nameA.localeCompare(nameB);
+        });
+        break;
       case 'REVENUE':
         result.sort((a, b) => b.revenue - a.revenue);
         break;

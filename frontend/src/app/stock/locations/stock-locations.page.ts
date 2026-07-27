@@ -234,18 +234,20 @@ export class StockLocationsPage implements OnInit {
 
     this.saving = true;
 
-    const payload: StockLocation = {
-      ...this.form,
+    const payload: Partial<StockLocation> = {
       codigo: this.form.codigo.trim(),
       nome: this.form.nome.trim(),
+      tipo: this.form.tipo,
       endereco: this.form.endereco?.trim() || null,
       obraId: this.form.obraId || null,
       responsavelId: this.form.responsavelId || null,
+      permiteSaldoNegativo: this.form.permiteSaldoNegativo,
+      ativo: this.form.ativo,
     };
 
-    const request = payload.id
-      ? this.stock.updateLocation(payload.id, payload)
-      : this.stock.createLocation(payload);
+    const request = this.form.id
+      ? this.stock.updateLocation(this.form.id, payload as any)
+      : this.stock.createLocation(payload as any);
 
     request.subscribe({
       next: async () => {

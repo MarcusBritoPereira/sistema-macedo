@@ -187,20 +187,18 @@ export class StockCategoriesPage implements OnInit {
 
     this.saving = true;
 
-    const payload: StockCategory = {
-      ...this.form,
+    const payload: Partial<StockCategory> = {
       nome: this.form.nome.trim(),
       descricao: this.form.descricao?.trim() || null,
       parentId: this.form.parentId || null,
-      categoriaFinanceiraId:
-        this.form.categoriaFinanceiraId || null,
-      centroCustoPadraoId:
-        this.form.centroCustoPadraoId || null,
+      categoriaFinanceiraId: this.form.categoriaFinanceiraId || null,
+      centroCustoPadraoId: this.form.centroCustoPadraoId || null,
+      ativo: this.form.ativo,
     };
 
-    const request = payload.id
-      ? this.stock.updateCategory(payload.id, payload)
-      : this.stock.createCategory(payload);
+    const request = this.form.id
+      ? this.stock.updateCategory(this.form.id, payload as any)
+      : this.stock.createCategory(payload as any);
 
     request.subscribe({
       next: async () => {

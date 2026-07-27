@@ -17,6 +17,33 @@ export interface StockCategory {
   categoriaFinanceiraId?: string | null;
   centroCustoPadraoId?: string | null;
   ativo?: boolean;
+
+  parent?: {
+    id: string;
+    nome: string;
+    ativo?: boolean;
+  } | null;
+
+  children?: Array<{
+    id: string;
+    nome: string;
+    ativo?: boolean;
+  }>;
+
+  categoriaFinanceira?: {
+    id: string;
+    nome: string;
+  } | null;
+
+  centroCustoPadrao?: {
+    id: string;
+    nome: string;
+  } | null;
+
+  _count?: {
+    materiais: number;
+    children: number;
+  };
 }
 
 export interface StockMaterial {
@@ -41,7 +68,17 @@ export interface StockMaterial {
   ativo?: boolean;
   observacoes?: string | null;
   saldoTotal?: string | number;
+  saldoReservado?: string | number;
+  saldoDisponivel?: string | number;
   valorTotalEstoque?: string | number;
+  quantidadeLocais?: number;
+  situacaoEstoque?:
+    | 'NORMAL'
+    | 'REPOSICAO'
+    | 'BAIXO'
+    | 'ZERADO'
+    | 'NEGATIVO'
+    | 'INATIVO';
 }
 
 export interface StockLocation {
@@ -54,7 +91,25 @@ export interface StockLocation {
   endereco?: string | null;
   permiteSaldoNegativo?: boolean;
   ativo?: boolean;
-  obra?: { id: string; nome: string } | null;
+
+  obra?: {
+    id: string;
+    nome: string;
+    status?: string;
+    ativo?: boolean;
+  } | null;
+
+  responsavel?: {
+    id: string;
+    nome: string;
+    email?: string | null;
+  } | null;
+
+  quantidadeMateriais?: number;
+  quantidadeFisica?: string | number;
+  quantidadeReservada?: string | number;
+  quantidadeDisponivel?: string | number;
+  valorTotalEstoque?: string | number;
 }
 
 export interface StockBalance {
@@ -68,13 +123,19 @@ export interface StockBalance {
   quantidadeDisponivel: string | number;
   custoMedio: string | number;
   valorTotal: string | number;
-  situacao: 'NORMAL' | 'BAIXO' | 'CRITICO' | 'ZERADO' | 'NEGATIVO';
+  situacao:
+    | 'NORMAL'
+    | 'REPOSICAO'
+    | 'BAIXO'
+    | 'ZERADO'
+    | 'NEGATIVO';
 }
 
 export interface StockSummary {
   valorTotalEstoque: string | number;
   quantidadeFisica: string | number;
   quantidadeReservada: string | number;
+  quantidadeDisponivel?: string | number;
   materiaisCadastrados: number;
   materiaisAbaixoMinimo: number;
 }
@@ -160,6 +221,7 @@ export interface StockInventoryItem {
   material: StockMaterial;
   quantidadeSistema: string | number;
   quantidadeContada: string | number;
+  contado?: boolean;
   diferenca: string | number;
   custoMedio: string | number;
   valorDiferenca: string | number;
@@ -215,8 +277,11 @@ export interface StockBudget {
   status: string;
   dataReferencia: string;
   observacao?: string | null;
+  criadoPor?: { id: string; nome: string } | null;
+  aprovadoPor?: { id: string; nome: string } | null;
   itens?: Array<StockBudgetItemPayload & { id: string; material?: StockMaterial; custoTotalOrcado: string | number }>;
   _count?: { itens: number };
+  valorTotalOrcado?: string | number;
 }
 
 export interface StockActualVsBudget {
@@ -401,6 +466,13 @@ export class StockService {
     return this.api.post<StockInventory>(`stock/inventories/${id}/count`, payload);
   }
 
+  submitInventory(id: string): Observable<StockInventory> {
+    return this.api.post<StockInventory>(
+      `stock/inventories/${id}/submit`,
+      {}
+    );
+  }
+
   approveInventory(id: string): Observable<StockInventory> {
     return this.api.post<StockInventory>(`stock/inventories/${id}/approve`, {});
   }
@@ -421,8 +493,22 @@ export class StockService {
     return this.api.post<StockBudget>('stock/budgets', payload);
   }
 
+  submitBudget(id: string): Observable<StockBudget> {
+    return this.api.post<StockBudget>(
+      `stock/budgets/${id}/submit`,
+      {}
+    );
+  }
+
   approveBudget(id: string): Observable<StockBudget> {
     return this.api.post<StockBudget>(`stock/budgets/${id}/approve`, {});
+  }
+
+  cancelBudget(id: string): Observable<StockBudget> {
+    return this.api.post<StockBudget>(
+      `stock/budgets/${id}/cancel`,
+      {}
+    );
   }
 
   getActualVsBudget(id: string): Observable<StockActualVsBudget> {

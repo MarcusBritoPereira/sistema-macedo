@@ -17,8 +17,12 @@ const lancamentoDetailInclude = {
   categoria: true,
   centroCusto: true,
   cliente: true,
+  contrato: true,
   fornecedor: true,
   obra: true,
+  recebimentos: {
+    orderBy: { dataRecebimento: 'asc' as const },
+  },
   rateios: {
     include: {
       categoriaFinanceira: true,
@@ -431,6 +435,320 @@ export class ReconciliationService {
     });
   }
 
+  async getOpenReceivables(filters?: {
+    clienteId?: string;
+    search?: string;
+  }) {
+    const where: any = {
+      tipo: 'RECEITA',
+      status: {
+        in: ['PREVISTO', 'PARCIAL'],
+      },
+    };
+
+    if (filters?.clienteId) {
+      where.clienteId = filters.clienteId;
+    }
+
+    if (filters?.search) {
+      where.OR = [
+        {
+          descricao: {
+            contains: filters.search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          cliente: {
+            razaoSocial: {
+              contains: filters.search,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          cliente: {
+            nomeFantasia: {
+              contains: filters.search,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          contrato: {
+            descricao: {
+              contains: filters.search,
+              mode: 'insensitive',
+            },
+          },
+        },
+      ];
+    }
+
+    const lancamentos = await this.prisma.lancamentoFinanceiro.findMany({
+      where,
+      include: {
+        cliente: true,
+        contrato: true,
+        categoria: true,
+        recebimentos: {
+          orderBy: {
+            dataRecebimento: 'asc',
+          },
+        },
+      },
+      orderBy: [
+        {
+          dataVencimento: 'asc',
+        },
+        {
+          createdAt: 'asc',
+        },
+      ],
+      take: 500,
+    });
+
+    return lancamentos
+      .map((lancamento) => {
+        const valorOriginal = Number(lancamento.valor);
+
+        const valorRecebido = lancamento.recebimentos.reduce(
+          (total, recebimento) => total + Number(recebimento.valor),
+          0,
+        );
+
+        const saldoReceber = Math.max(
+          0,
+          Number((valorOriginal - valorRecebido).toFixed(2)),
+        );
+
+        return {
+          ...lancamento,
+          valorOriginal,
+          valorRecebido: Number(valorRecebido.toFixed(2)),
+          saldoReceber,
+        };
+      })
+      .filter((lancamento) => lancamento.saldoReceber > 0.009);
+  }
+
+  private async recalculateReceivableStatus(
+    tx: any,
+    lancamentoId: string,
+  ) {
+    const lancamento = await tx.lancamentoFinanceiro.findUnique({
+      where: {
+        id: lancamentoId,
+      },
+      include: {
+        recebimentos: {
+          orderBy: {
+            dataRecebimento: 'desc',
+          },
+        },
+      },
+    });
+
+    if (!lancamento) {
+      throw new NotFoundException('Conta a receber não encontrada');
+    }
+
+    const valorOriginal = Number(lancamento.valor);
+
+    const valorRecebido = lancamento.recebimentos.reduce(
+      (total: number, recebimento: any) =>
+        total + Number(recebimento.valor),
+      0,
+    );
+
+    const saldoReceber = Number(
+      Math.max(0, valorOriginal - valorRecebido).toFixed(2),
+    );
+
+    let status: StatusLancamento = 'PREVISTO';
+    let dataPagamento: Date | null = null;
+
+    if (valorRecebido >= valorOriginal - 0.009) {
+      status = 'CONCILIADO';
+      dataPagamento =
+        lancamento.recebimentos[0]?.dataRecebimento || new Date();
+    } else if (valorRecebido > 0.009) {
+      status = 'PARCIAL';
+    }
+
+    await tx.lancamentoFinanceiro.update({
+      where: {
+        id: lancamentoId,
+      },
+      data: {
+        status,
+        dataPagamento,
+      },
+    });
+
+    return {
+      valorOriginal,
+      valorRecebido: Number(valorRecebido.toFixed(2)),
+      saldoReceber,
+      status,
+      dataPagamento,
+    };
+  }
+
+  async linkReceivablePayment(
+    statementId: string,
+    lancamentoId: string,
+    confirmacaoManual?: boolean,
+    userId?: string,
+  ) {
+    if (!confirmacaoManual) {
+      throw new BadRequestException(
+        'Confirmação manual obrigatória para conciliar',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const statement = await tx.extratoBancario.findUnique({
+        where: {
+          id: statementId,
+        },
+      });
+
+      if (!statement) {
+        throw new NotFoundException('Extrato não encontrado');
+      }
+
+      if (statement.conciliado) {
+        throw new BadRequestException('Extrato já conciliado');
+      }
+
+      if (statement.tipo !== 'CREDIT') {
+        throw new BadRequestException(
+          'Somente créditos bancários podem ser vinculados a contas a receber',
+        );
+      }
+
+      const lancamento = await tx.lancamentoFinanceiro.findUnique({
+        where: {
+          id: lancamentoId,
+        },
+        include: {
+          cliente: true,
+          contrato: true,
+          recebimentos: true,
+        },
+      });
+
+      if (!lancamento) {
+        throw new NotFoundException('Conta a receber não encontrada');
+      }
+
+      if (lancamento.tipo !== 'RECEITA') {
+        throw new BadRequestException(
+          'O lançamento selecionado não é uma conta a receber',
+        );
+      }
+
+      if (lancamento.status === 'CANCELADO') {
+        throw new BadRequestException(
+          'Não é possível receber uma parcela cancelada',
+        );
+      }
+
+      const valorOriginal = Number(lancamento.valor);
+
+      const valorJaRecebido = lancamento.recebimentos.reduce(
+        (total, recebimento) => total + Number(recebimento.valor),
+        0,
+      );
+
+      const saldoAtual = Number(
+        Math.max(0, valorOriginal - valorJaRecebido).toFixed(2),
+      );
+
+      if (saldoAtual <= 0.009) {
+        throw new BadRequestException(
+          'Esta conta a receber já está integralmente recebida',
+        );
+      }
+
+      const valorPagamento = Math.abs(Number(statement.valor));
+
+      if (!Number.isFinite(valorPagamento) || valorPagamento <= 0) {
+        throw new BadRequestException(
+          'O valor do crédito bancário é inválido',
+        );
+      }
+
+      if (valorPagamento > saldoAtual + 0.009) {
+        throw new BadRequestException(
+          `O crédito de R$ ${valorPagamento.toFixed(
+            2,
+          )} é maior que o saldo da parcela de R$ ${saldoAtual.toFixed(2)}.`,
+        );
+      }
+
+      const conciliacao = await tx.conciliacaoBancaria.create({
+        data: {
+          extratoBancarioId: statementId,
+          lancamentoFinanceiroId: lancamentoId,
+          type: 'MANUAL_LINK',
+        },
+      });
+
+      await tx.recebimentoLancamento.create({
+        data: {
+          lancamentoFinanceiroId: lancamentoId,
+          extratoBancarioId: statementId,
+          conciliacaoBancariaId: conciliacao.id,
+          valor: valorPagamento,
+          dataRecebimento: statement.data,
+          observacao: `Recebimento vinculado ao extrato: ${statement.descricao}`,
+        },
+      });
+
+      await tx.extratoBancario.update({
+        where: {
+          id: statementId,
+        },
+        data: {
+          conciliado: true,
+        },
+      });
+
+      const resultado = await this.recalculateReceivableStatus(
+        tx,
+        lancamentoId,
+      );
+
+      if (userId) {
+        await tx.logAuditoria.create({
+          data: {
+            acao: 'RECEBIMENTO_CONTA_RECEBER',
+            tabela: 'recebimentos_lancamentos',
+            registroId: conciliacao.id,
+            motivo: `Recebimento da conta a receber pelo extrato ${statementId}`,
+            usuarioId: userId,
+            valorAntigo: JSON.stringify({
+              valorOriginal,
+              valorRecebido: valorJaRecebido,
+              saldoReceber: saldoAtual,
+            }),
+            valorNovo: JSON.stringify(resultado),
+          },
+        });
+      }
+
+      return {
+        success: true,
+        conciliacaoId: conciliacao.id,
+        lancamentoId,
+        valorPagamento,
+        ...resultado,
+      };
+    });
+  }
+
   async linkManual(
     statementId: string,
     lancamentoId: string,
@@ -556,19 +874,65 @@ export class ReconciliationService {
       }));
 
       if (!isTransfer && normalizedRateios.length > 0) {
-        const invalid = normalizedRateios.find(
-          (rateio: any) =>
-            !Number.isFinite(rateio.valor) ||
-            rateio.valor <= 0 ||
-            !rateio.categoriaFinanceiraId ||
-            (rateio.tipoDestino === 'OBRA' && !rateio.obraId) ||
-            (rateio.tipoDestino === 'POS_OBRA' && !rateio.obraId) ||
-            (rateio.tipoDestino === 'CENTRO_CUSTO' && !rateio.centroCustoId) ||
-            (rateio.tipoCusto === 'MATERIAL' && !rateio.categoriaCusto),
-        );
+        const invalid = normalizedRateios
+          .map((rateio: any) => {
+            const camposAusentes: string[] = [];
+
+            if (!Number.isFinite(rateio.valor) || rateio.valor <= 0) {
+              camposAusentes.push('valor');
+            }
+
+            if (!rateio.categoriaFinanceiraId) {
+              camposAusentes.push('categoria financeira');
+            }
+
+            if (
+              (rateio.tipoDestino === 'OBRA' ||
+                rateio.tipoDestino === 'POS_OBRA') &&
+              !rateio.obraId
+            ) {
+              camposAusentes.push('obra');
+            }
+
+            if (
+              rateio.tipoDestino === 'CENTRO_CUSTO' &&
+              !rateio.centroCustoId
+            ) {
+              camposAusentes.push('centro de custo');
+            }
+
+            if (
+              rateio.tipoCusto === 'MATERIAL' &&
+              !rateio.categoriaCusto
+            ) {
+              camposAusentes.push('material/insumo');
+            }
+
+            return {
+              ...rateio,
+              camposAusentes,
+            };
+          })
+          .find((rateio: any) => rateio.camposAusentes.length > 0);
+
         if (invalid) {
+          console.error(
+            '[RATEIO INVÁLIDO]',
+            JSON.stringify({
+              numero: invalid.index + 1,
+              tipoDestino: invalid.tipoDestino,
+              tipoCusto: invalid.tipoCusto,
+              valor: invalid.valor,
+              obraId: invalid.obraId,
+              centroCustoId: invalid.centroCustoId,
+              categoriaFinanceiraId: invalid.categoriaFinanceiraId,
+              categoriaCusto: invalid.categoriaCusto,
+              camposAusentes: invalid.camposAusentes,
+            }),
+          );
+
           throw new BadRequestException(
-            `Rateio ${invalid.index + 1} incompleto. Informe destino, categoria, valor e material quando aplicável.`,
+            `Rateio ${invalid.index + 1} incompleto. Verifique: ${invalid.camposAusentes.join(', ')}.`,
           );
         }
 
@@ -623,17 +987,27 @@ export class ReconciliationService {
         }
       }
 
-      if (!isTransfer && !fornecedorId && !clienteId) {
+      if (
+        !isTransfer &&
+        statement.tipo !== 'CREDIT' &&
+        !fornecedorId
+      ) {
+        throw new BadRequestException(
+          'Fornecedor é obrigatório para conciliar um pagamento.',
+        );
+      }
+
+      if (
+        !isTransfer &&
+        statement.tipo === 'CREDIT' &&
+        !clienteId
+      ) {
         const suggestion = await this.suggestEntityForStatement({
           tipo: statement.tipo,
           descricao: data.descricao || statement.descricao,
         });
 
-        if (statement.tipo === 'CREDIT') {
-          clienteId = suggestion.cliente?.id || null;
-        } else {
-          fornecedorId = suggestion.fornecedor?.id || null;
-        }
+        clienteId = suggestion.cliente?.id || null;
       }
 
       let createdLancamentoId: string;
@@ -786,39 +1160,77 @@ export class ReconciliationService {
   async unlink(conciliacaoId: string, userId?: string) {
     return this.prisma.$transaction(async (tx) => {
       const link = await tx.conciliacaoBancaria.findUnique({
-        where: { id: conciliacaoId },
+        where: {
+          id: conciliacaoId,
+        },
+        include: {
+          recebimento: true,
+          lancamentoFinanceiro: true,
+        },
       });
 
-      if (!link) throw new NotFoundException('Conciliação não encontrada');
+      if (!link) {
+        throw new NotFoundException('Conciliação não encontrada');
+      }
 
-      await tx.conciliacaoBancaria.delete({ where: { id: conciliacaoId } });
+      const eraRecebimentoContaReceber = Boolean(link.recebimento);
+
+      await tx.conciliacaoBancaria.delete({
+        where: {
+          id: conciliacaoId,
+        },
+      });
 
       await tx.extratoBancario.update({
-        where: { id: link.extratoBancarioId },
-        data: { conciliado: false },
+        where: {
+          id: link.extratoBancarioId,
+        },
+        data: {
+          conciliado: false,
+        },
       });
 
-      await tx.lancamentoFinanceiro.update({
-        where: { id: link.lancamentoFinanceiroId },
-        data: { status: 'REALIZADO' }, // Revert to Paid
-      });
+      let valorNovo = 'REALIZADO';
 
-      // Audit Log
-      if (userId) {
-        await this.auditLogService.createLog({
-          acao: 'DESCONCILIACAO',
-          tabela: 'conciliacoes_bancarias',
-          registroId: link.lancamentoFinanceiroId,
-          motivo: `Desconciliação manual da conciliação ${conciliacaoId}`,
-          usuarioId: userId,
-          valorAntigo: 'CONCILIADO',
-          valorNovo: 'REALIZADO',
+      if (eraRecebimentoContaReceber) {
+        const resultado = await this.recalculateReceivableStatus(
+          tx,
+          link.lancamentoFinanceiroId,
+        );
+
+        valorNovo = resultado.status;
+      } else {
+        await tx.lancamentoFinanceiro.update({
+          where: {
+            id: link.lancamentoFinanceiroId,
+          },
+          data: {
+            status: 'REALIZADO',
+          },
         });
       }
 
-      return { success: true };
+      if (userId) {
+        await tx.logAuditoria.create({
+          data: {
+            acao: 'DESCONCILIACAO',
+            tabela: 'conciliacoes_bancarias',
+            registroId: link.lancamentoFinanceiroId,
+            motivo: `Desconciliação manual da conciliação ${conciliacaoId}`,
+            usuarioId: userId,
+            valorAntigo: link.lancamentoFinanceiro.status,
+            valorNovo,
+          },
+        });
+      }
+
+      return {
+        success: true,
+        statusLancamento: valorNovo,
+      };
     });
   }
+
   async findAutoSuggestions(statementIds: string[]) {
     if (!statementIds.length) return [];
 

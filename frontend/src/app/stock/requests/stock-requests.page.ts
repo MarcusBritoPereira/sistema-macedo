@@ -2,7 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { IonButton, IonContent, IonIcon, IonInput, IonItem, IonLabel, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonTextarea } from '@ionic/angular/standalone';
+import { IonButton, IonContent, IonIcon, IonInput, IonItem, IonLabel, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonTextarea, ToastController } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { addOutline, checkmarkCircleOutline, closeCircleOutline, listOutline, playCircleOutline, refreshOutline, saveOutline, sendOutline, trashOutline } from 'ionicons/icons';
 import { Obra, ObrasService } from '../../services/financial/obras.service';
@@ -19,8 +19,11 @@ export class StockRequestsPage implements OnInit {
   loading = true;
   saving = false;
   search = '';
+  statusFilter = '';
   mode: 'requests' | 'reservations' = 'requests';
   rows: any[] = [];
+
+  drawerOpen = false;
   obras: Obra[] = [];
   locations: StockLocation[] = [];
   materials: StockMaterial[] = [];
@@ -30,7 +33,12 @@ export class StockRequestsPage implements OnInit {
   approvalForm: ApproveStockRequestPayload = this.emptyApprovalForm();
   fulfillmentForm: FulfillStockRequestPayload = this.emptyFulfillmentForm();
 
-  constructor(private route: ActivatedRoute, private stock: StockService, private obrasService: ObrasService) {
+  constructor(
+    private route: ActivatedRoute,
+    private stock: StockService,
+    private obrasService: ObrasService,
+    private toastController: ToastController,
+  ) {
     addIcons({ addOutline, checkmarkCircleOutline, closeCircleOutline, listOutline, playCircleOutline, refreshOutline, saveOutline, sendOutline, trashOutline });
   }
 
@@ -50,8 +58,34 @@ export class StockRequestsPage implements OnInit {
 
   load(): void {
     this.loading = true;
-    const request = this.mode === 'reservations' ? this.stock.getReservations({ take: 100, search: this.search }) : this.stock.getRequests({ take: 100, search: this.search });
-    request.subscribe({ next: r => { this.rows = r.items || []; this.loading = false; }, error: () => this.loading = false });
+
+    const params: any = {
+      take: 100,
+      search: this.search?.trim() || undefined,
+    };
+
+    if (this.statusFilter) {
+      params.status = this.statusFilter;
+    }
+
+    const request =
+      this.mode === 'reservations'
+        ? this.stock.getReservations(params)
+        : this.stock.getRequests(params);
+
+    request.subscribe({
+      next: (response) => {
+        this.rows = response.items || [];
+        this.loading = false;
+      },
+      error: async () => {
+        this.loading = false;
+        await this.toast(
+          'Não foi possível carregar os registros.',
+          'danger',
+        );
+      },
+    });
   }
 
   addItem(): void { this.form.items.push({ materialId: '', quantidadeSolicitada: '1' }); }
@@ -60,10 +94,30 @@ export class StockRequestsPage implements OnInit {
 
   save(): void {
     if (!this.isValid()) return;
+
     this.saving = true;
+
     this.stock.createRequest(this.form).subscribe({
-      next: () => { this.form = this.emptyForm(); this.saving = false; this.load(); },
-      error: () => this.saving = false
+      next: async () => {
+        this.form = this.emptyForm();
+        this.saving = false;
+        this.drawerOpen = false;
+        this.load();
+
+        await this.toast(
+          'Solicitação criada com sucesso.',
+          'success',
+        );
+      },
+      error: async (error) => {
+        this.saving = false;
+
+        await this.toast(
+          error?.error?.message ||
+            'Não foi possível criar a solicitação.',
+          'danger',
+        );
+      },
     });
   }
 
@@ -71,9 +125,178 @@ export class StockRequestsPage implements OnInit {
     return !!this.form.obraId && this.form.items.every(item => item.materialId && Number(item.quantidadeSolicitada) > 0);
   }
 
-  reset(): void { this.form = this.emptyForm(); }
+  reset(): void {
+    this.form = this.emptyForm();
+    this.drawerOpen = true;
+  }
 
+  closeDrawer(): void {
+    this.drawerOpen = false;
+    this.form = this.emptyForm();
+  }
 
+  clearFilters(): void {
+    this.search = '';
+    this.statusFilter = '';
+    this.load();
+  }
+
+  get totalRequests(): number {
+    return this.rows.length;
+  }
+
+  get pendingRequests(): number {
+    return this.rows.filter(
+      (row) =>
+        ![
+          'ATENDIDA',
+          'CANCELADA',
+          'REJEITADA',
+        ].includes(row.status),
+    ).length;
+  }
+
+  get approvedRequests(): number {
+    return this.rows.filter(
+      (row) =>
+        [
+          'APROVADA',
+          'PARCIALMENTE_APROVADA',
+          'SEPARACAO',
+        ].includes(row.status),
+    ).length;
+  }
+
+  get fulfilledRequests(): number {
+    return this.rows.filter(
+      (row) => row.status === 'ATENDIDA',
+    ).length;
+  }
+
+  get activeReservations(): number {
+    return this.rows.filter(
+      (row) =>
+        [
+          'PENDENTE',
+          'APROVADA',
+          'PARCIALMENTE_ATENDIDA',
+        ].includes(row.status),
+    ).length;
+  }
+
+  get activeReservedQuantity(): number {
+    return this.rows
+      .filter(
+        (row) =>
+          [
+            'PENDENTE',
+            'APROVADA',
+            'PARCIALMENTE_ATENDIDA',
+          ].includes(row.status),
+      )
+      .reduce(
+        (total: number, row: any) =>
+          total + Number(row.quantidade || 0),
+        0,
+      );
+  }
+
+  get attendedReservations(): number {
+    return this.rows.filter(
+      (row) => row.status === 'ATENDIDA',
+    ).length;
+  }
+
+  get canceledReservations(): number {
+    return this.rows.filter(
+      (row) => row.status === 'CANCELADA',
+    ).length;
+  }
+
+  get expiredReservations(): number {
+    return this.rows.filter(
+      (row) => row.status === 'EXPIRADA',
+    ).length;
+  }
+
+  requestRequested(row: any): number {
+    return (row?.itens || []).reduce(
+      (total: number, item: any) =>
+        total +
+        Number(
+          item.quantidadeSolicitada || 0,
+        ),
+      0,
+    );
+  }
+
+  requestApproved(row: any): number {
+    return (row?.itens || []).reduce(
+      (total: number, item: any) =>
+        total +
+        Number(
+          item.quantidadeAprovada || 0,
+        ),
+      0,
+    );
+  }
+
+  requestFulfilled(row: any): number {
+    return (row?.itens || []).reduce(
+      (total: number, item: any) =>
+        total +
+        Number(
+          item.quantidadeAtendida || 0,
+        ),
+      0,
+    );
+  }
+
+  requestPending(row: any): number {
+    return Math.max(
+      0,
+      this.requestApproved(row) -
+        this.requestFulfilled(row),
+    );
+  }
+
+  getStatusLabel(status: string): string {
+    const labels: Record<string, string> = {
+      PENDENTE: 'Pendente',
+      RASCUNHO: 'Rascunho',
+      ENVIADA: 'Enviada',
+      EM_ANALISE: 'Em análise',
+      APROVADA: 'Aprovada',
+      PARCIALMENTE_APROVADA:
+        'Parcialmente aprovada',
+      SEPARACAO: 'Em separação',
+      PARCIALMENTE_ATENDIDA:
+        'Parcialmente atendida',
+      ATENDIDA: 'Atendida',
+      REJEITADA: 'Rejeitada',
+      CANCELADA: 'Cancelada',
+      EXPIRADA: 'Expirada',
+    };
+
+    return labels[status] || status || '—';
+  }
+
+  getStatusClass(status: string): string {
+    return `status-${String(status || '')
+      .toLowerCase()
+      .replace(/_/g, '-')}`;
+  }
+
+  getPriorityLabel(priority: string): string {
+    const labels: Record<string, string> = {
+      BAIXA: 'Baixa',
+      NORMAL: 'Normal',
+      ALTA: 'Alta',
+      URGENTE: 'Urgente',
+    };
+
+    return labels[priority] || priority || '—';
+  }
 
   prepareApproval(row: any): void {
     this.selectedRequest = row;
@@ -91,7 +314,21 @@ export class StockRequestsPage implements OnInit {
   approveSelected(): void {
     if (!this.selectedRequest || !this.approvalForm.localReservaId) return;
     this.stock.approveRequest(this.selectedRequest.id, this.approvalForm).subscribe({
-      next: () => { this.clearWorkflowForms(); this.load(); }
+      next: async () => {
+        this.clearWorkflowForms();
+        this.load();
+        await this.toast(
+          'Solicitação aprovada e reserva criada.',
+          'success',
+        );
+      },
+      error: async (error) => {
+        await this.toast(
+          error?.error?.message ||
+            'Não foi possível aprovar a solicitação.',
+          'danger',
+        );
+      },
     });
   }
 
@@ -100,7 +337,21 @@ export class StockRequestsPage implements OnInit {
     const motivo = window.prompt('Informe o motivo da rejeição:');
     if (!motivo) return;
     this.stock.rejectRequest(this.selectedRequest.id, motivo).subscribe({
-      next: () => { this.clearWorkflowForms(); this.load(); }
+      next: async () => {
+        this.clearWorkflowForms();
+        this.load();
+        await this.toast(
+          'Solicitação rejeitada.',
+          'success',
+        );
+      },
+      error: async (error) => {
+        await this.toast(
+          error?.error?.message ||
+            'Não foi possível rejeitar a solicitação.',
+          'danger',
+        );
+      },
     });
   }
 
@@ -113,7 +364,21 @@ export class StockRequestsPage implements OnInit {
   fulfillSelected(): void {
     if (!this.selectedRequest || !this.fulfillmentForm.localOrigemId) return;
     this.stock.fulfillRequest(this.selectedRequest.id, this.fulfillmentForm).subscribe({
-      next: () => { this.clearWorkflowForms(); this.load(); }
+      next: async () => {
+        this.clearWorkflowForms();
+        this.load();
+        await this.toast(
+          'Solicitação atendida com sucesso.',
+          'success',
+        );
+      },
+      error: async (error) => {
+        await this.toast(
+          error?.error?.message ||
+            'Não foi possível atender a solicitação.',
+          'danger',
+        );
+      },
     });
   }
 
@@ -124,12 +389,51 @@ export class StockRequestsPage implements OnInit {
   }
 
   submit(row: any): void {
-    this.stock.submitRequest(row.id).subscribe({ next: () => this.load() });
+    this.stock.submitRequest(row.id).subscribe({
+      next: async () => {
+        this.load();
+
+        await this.toast(
+          'Solicitação enviada para análise.',
+          'success',
+        );
+      },
+      error: async (error) => {
+        await this.toast(
+          error?.error?.message ||
+            'Não foi possível enviar a solicitação.',
+          'danger',
+        );
+      },
+    });
   }
 
   cancel(row: any): void {
-    if (!window.confirm('Cancelar esta solicitação?')) return;
-    this.stock.cancelRequest(row.id).subscribe({ next: () => this.load() });
+    if (
+      !window.confirm(
+        'Cancelar esta solicitação? As reservas ainda pendentes serão liberadas.',
+      )
+    ) {
+      return;
+    }
+
+    this.stock.cancelRequest(row.id).subscribe({
+      next: async () => {
+        this.load();
+
+        await this.toast(
+          'Solicitação cancelada e reservas liberadas.',
+          'success',
+        );
+      },
+      error: async (error) => {
+        await this.toast(
+          error?.error?.message ||
+            'Não foi possível cancelar a solicitação.',
+          'danger',
+        );
+      },
+    });
   }
 
   canSubmit(row: any): boolean {
@@ -137,7 +441,14 @@ export class StockRequestsPage implements OnInit {
   }
 
   canCancel(row: any): boolean {
-    return this.mode === 'requests' && !['CANCELADA', 'ATENDIDA'].includes(row.status);
+    return (
+      this.mode === 'requests' &&
+      ![
+        'CANCELADA',
+        'ATENDIDA',
+        'REJEITADA',
+      ].includes(row.status)
+    );
   }
 
   canApprove(row: any): boolean {
@@ -151,6 +462,25 @@ export class StockRequestsPage implements OnInit {
   getSelectedItemLabel(itemId: string): string {
     const item = this.selectedRequest?.itens?.find((row: any) => row.id === itemId);
     return item ? `${item.material?.codigo || ''} ${item.material?.nome || ''}`.trim() : itemId;
+  }
+
+  private async toast(
+    message: string,
+    color:
+      | 'success'
+      | 'danger'
+      | 'warning'
+      | 'primary' = 'primary',
+  ): Promise<void> {
+    const toast =
+      await this.toastController.create({
+        message,
+        color,
+        duration: 3500,
+        position: 'top',
+      });
+
+    await toast.present();
   }
 
   private emptyApprovalForm(): ApproveStockRequestPayload {

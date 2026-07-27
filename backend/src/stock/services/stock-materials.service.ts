@@ -49,7 +49,14 @@ export class StockMaterialsService {
         take,
         include: {
           ...this.includeRelations(),
-          saldos: { select: { quantidade: true, valorTotal: true } },
+          saldos: {
+            select: {
+              quantidade: true,
+              quantidadeReservada: true,
+              custoMedio: true,
+              valorTotal: true,
+            },
+          },
         },
         orderBy: [{ nome: 'asc' }],
       }),
@@ -57,11 +64,74 @@ export class StockMaterialsService {
     ]);
 
     return {
-      items: items.map((item) => ({
-        ...item,
-        saldoTotal: item.saldos.reduce((acc, saldo) => acc.plus(saldo.quantidade), new Prisma.Decimal(0)),
-        valorTotalEstoque: item.saldos.reduce((acc, saldo) => acc.plus(saldo.valorTotal), new Prisma.Decimal(0)),
-      })),
+      items: items.map((item) => {
+        const saldoTotal = item.saldos.reduce(
+          (acc, saldo) => acc.plus(saldo.quantidade),
+          new Prisma.Decimal(0),
+        );
+
+        const saldoReservado = item.saldos.reduce(
+          (acc, saldo) => acc.plus(saldo.quantidadeReservada),
+          new Prisma.Decimal(0),
+        );
+
+        const saldoDisponivel = saldoTotal.minus(saldoReservado);
+
+        const valorTotalEstoque = item.saldos.reduce(
+          (acc, saldo) => acc.plus(saldo.valorTotal),
+          new Prisma.Decimal(0),
+        );
+
+        const custoMedio =
+          saldoTotal.gt(0)
+            ? valorTotalEstoque.div(saldoTotal)
+            : item.custoMedio || new Prisma.Decimal(0);
+
+        const estoqueMinimo =
+          item.estoqueMinimo || new Prisma.Decimal(0);
+
+        const pontoReposicao =
+          item.pontoReposicao || new Prisma.Decimal(0);
+
+        let situacaoEstoque:
+          | 'NORMAL'
+          | 'REPOSICAO'
+          | 'BAIXO'
+          | 'ZERADO'
+          | 'NEGATIVO'
+          | 'INATIVO' = 'NORMAL';
+
+        if (!item.ativo) {
+          situacaoEstoque = 'INATIVO';
+        } else if (saldoDisponivel.lt(0)) {
+          situacaoEstoque = 'NEGATIVO';
+        } else if (saldoDisponivel.eq(0)) {
+          situacaoEstoque = 'ZERADO';
+        } else if (
+          estoqueMinimo.gt(0) &&
+          saldoDisponivel.lte(estoqueMinimo)
+        ) {
+          situacaoEstoque = 'BAIXO';
+        } else if (
+          pontoReposicao.gt(0) &&
+          saldoDisponivel.lte(pontoReposicao)
+        ) {
+          situacaoEstoque = 'REPOSICAO';
+        }
+
+        const { saldos, ...material } = item;
+
+        return {
+          ...material,
+          saldoTotal,
+          saldoReservado,
+          saldoDisponivel,
+          custoMedio,
+          valorTotalEstoque,
+          situacaoEstoque,
+          quantidadeLocais: saldos.length,
+        };
+      }),
       total,
       skip,
       take,

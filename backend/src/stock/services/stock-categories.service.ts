@@ -22,14 +22,64 @@ export class StockCategoriesService {
     return category;
   }
 
-  async findAll(query: PaginationQueryDto) {
+  async findAll(
+    query: PaginationQueryDto & {
+      ativo?: string;
+      parentId?: string;
+    },
+  ) {
     const { skip, take } = normalizePagination(query.skip, query.take);
     const where: Prisma.CategoriaMaterialWhereInput = {
+      ...(query.ativo !== undefined
+        ? { ativo: query.ativo === 'true' }
+        : {}),
+      ...(query.parentId
+        ? {
+            parentId:
+              query.parentId === 'ROOT'
+                ? null
+                : query.parentId,
+          }
+        : {}),
       ...(query.search
         ? {
             OR: [
-              { nome: { contains: query.search, mode: 'insensitive' } },
-              { descricao: { contains: query.search, mode: 'insensitive' } },
+              {
+                nome: {
+                  contains: query.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                descricao: {
+                  contains: query.search,
+                  mode: 'insensitive',
+                },
+              },
+              {
+                parent: {
+                  nome: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                categoriaFinanceira: {
+                  nome: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
+              {
+                centroCustoPadrao: {
+                  nome: {
+                    contains: query.search,
+                    mode: 'insensitive',
+                  },
+                },
+              },
             ],
           }
         : {}),
@@ -99,10 +149,41 @@ export class StockCategoriesService {
 
   private includeRelations() {
     return {
-      parent: true,
-      children: { orderBy: { nome: 'asc' } as const },
-      categoriaFinanceira: true,
-      centroCustoPadrao: true,
+      parent: {
+        select: {
+          id: true,
+          nome: true,
+          ativo: true,
+        },
+      },
+      children: {
+        orderBy: {
+          nome: 'asc',
+        } as const,
+        select: {
+          id: true,
+          nome: true,
+          ativo: true,
+        },
+      },
+      categoriaFinanceira: {
+        select: {
+          id: true,
+          nome: true,
+        },
+      },
+      centroCustoPadrao: {
+        select: {
+          id: true,
+          nome: true,
+        },
+      },
+      _count: {
+        select: {
+          materiais: true,
+          children: true,
+        },
+      },
     };
   }
 

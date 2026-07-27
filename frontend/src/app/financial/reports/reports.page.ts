@@ -46,8 +46,8 @@ export class ReportsPage implements OnInit {
   ];
 
   summary = [
-    { label: 'Maior custo em material', value: '-', icon: 'pricetag', color: 'success' },
-    { label: 'Maior custo de mão de obra', value: '-', icon: 'person', color: 'warning' },
+    { label: 'Categoria com maior custo', value: '-', icon: 'pricetag', color: 'success' },
+    { label: 'Categoria de mão de obra com maior custo', value: '-', icon: 'person', color: 'warning' },
     { label: 'Etapa com maior consumo', value: '-', icon: 'hammer', color: 'purple' },
     { label: 'Mês com maior gasto', value: '-', icon: 'time', color: 'primary' }
   ];

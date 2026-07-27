@@ -50,6 +50,7 @@ import {
 import {
   BankStatement,
   SuggestedMatch,
+  OpenReceivable,
 } from '../../../../services/financial/reconciliation';
 import { ReconciliationService } from '../../../../services/financial/reconciliation.service';
 import {
@@ -138,8 +139,13 @@ export class ReconciliationDetailComponent
   private draftRestored = false;
 
   // UI State
-  activeTab: 'NEW' | 'TRANSFER' = 'NEW';
+  activeTab: 'NEW' | 'RECEIVABLE' | 'TRANSFER' = 'NEW';
   mode: 'FORM' | 'SEARCH' = 'FORM';
+
+  openReceivables: OpenReceivable[] = [];
+  selectedReceivableId = '';
+  receivableSearch = '';
+  loadingReceivables = false;
 
   // Form for new transaction
   form: any = {
@@ -210,7 +216,9 @@ export class ReconciliationDetailComponent
 
   ngOnInit() {
     if (this.statement) {
-      this.form.descricao = this.statement.descricao;
+      this.form.descricao =
+        this.statement.descricaoPix?.trim() ||
+        this.statement.descricao;
       this.form.valor = Math.abs(Number(this.statement.valor));
 
       const dateStr = this.statement.data
@@ -259,6 +267,11 @@ export class ReconciliationDetailComponent
       }
 
       this.loadAuxData();
+
+      if (this.statement.tipo === 'CREDIT') {
+        this.loadOpenReceivables();
+      }
+
       this.restoreDraft();
       this.draftTimer = setInterval(() => this.saveDraft(), 1000);
 
@@ -276,6 +289,102 @@ export class ReconciliationDetailComponent
         setTimeout(() => this.searchBar?.setFocus(), 100);
       }
     }
+  }
+
+
+  selectTab(tab: 'NEW' | 'RECEIVABLE' | 'TRANSFER') {
+    this.activeTab = tab;
+
+    if (tab === 'RECEIVABLE') {
+      this.mode = 'FORM';
+      this.loadOpenReceivables();
+    }
+  }
+
+  loadOpenReceivables() {
+    if (!this.statement || this.statement.tipo !== 'CREDIT') {
+      this.openReceivables = [];
+      return;
+    }
+
+    this.loadingReceivables = true;
+
+    this.reconciliationService
+      .getOpenReceivables({
+        search: this.receivableSearch || undefined,
+      })
+      .subscribe({
+        next: (items) => {
+          this.openReceivables = items || [];
+
+          if (
+            this.selectedReceivableId &&
+            !this.openReceivables.some(
+              (item) => item.id === this.selectedReceivableId,
+            )
+          ) {
+            this.selectedReceivableId = '';
+          }
+
+          this.loadingReceivables = false;
+        },
+        error: (err) => {
+          console.error('Erro ao carregar contas a receber:', err);
+          this.openReceivables = [];
+          this.loadingReceivables = false;
+
+          this.presentToast(
+            'Não foi possível carregar as contas a receber.',
+            'danger',
+          );
+        },
+      });
+  }
+
+  getSelectedReceivable(): OpenReceivable | undefined {
+    return this.openReceivables.find(
+      (item) => item.id === this.selectedReceivableId,
+    );
+  }
+
+  getReceivableClientName(item: OpenReceivable): string {
+    return (
+      item.cliente?.nomeFantasia ||
+      item.cliente?.razaoSocial ||
+      'Cliente não informado'
+    );
+  }
+
+  getReceivableContractName(item: OpenReceivable): string {
+    return item.contrato?.descricao || 'Sem descrição de contrato';
+  }
+
+  getReceivableBalanceAfterPayment(item: OpenReceivable): number {
+    const payment = Math.abs(Number(this.statement?.valor || 0));
+
+    return Math.max(
+      0,
+      Number((Number(item.saldoReceber || 0) - payment).toFixed(2)),
+    );
+  }
+
+  isReceivablePaymentValid(): boolean {
+    const item = this.getSelectedReceivable();
+
+    if (!item || this.statement.tipo !== 'CREDIT') {
+      return false;
+    }
+
+    const payment = Math.abs(Number(this.statement.valor || 0));
+    const balance = Number(item.saldoReceber || 0);
+
+    return (
+      Number.isFinite(payment) &&
+      payment > 0 &&
+      Number.isFinite(balance) &&
+      balance > 0 &&
+      payment <= balance + 0.009
+    );
   }
 
   toggleMode() {
@@ -497,6 +606,10 @@ export class ReconciliationDetailComponent
   }
 
   isFormValid(): boolean {
+    if (this.activeTab === 'RECEIVABLE') {
+      return this.isReceivablePaymentValid();
+    }
+
     if (this.activeTab === 'TRANSFER') {
       return !!this.form.contaDestinoId && !!this.form.dataCompetencia;
     }
@@ -674,8 +787,75 @@ export class ReconciliationDetailComponent
 
     this.loadingAction = true;
 
+    if (this.activeTab === 'RECEIVABLE') {
+      const receivable = this.getSelectedReceivable();
+
+      if (!receivable) {
+        this.loadingAction = false;
+        this.presentToast(
+          'Selecione uma conta a receber.',
+          'warning',
+        );
+        return;
+      }
+
+      this.reconciliationService
+        .linkReceivablePayment(
+          this.statement.id,
+          receivable.id,
+          true,
+        )
+        .subscribe({
+          next: (result: any) => {
+            this.loadingAction = false;
+            this.clearDraft();
+
+            const remaining = Number(result?.saldoReceber || 0);
+
+            this.presentToast(
+              remaining > 0.009
+                ? `Pagamento parcial registrado. Saldo restante: ${remaining.toLocaleString(
+                    'pt-BR',
+                    {
+                      style: 'currency',
+                      currency: 'BRL',
+                    },
+                  )}`
+                : 'Conta a receber integralmente quitada.',
+              'success',
+            );
+
+            this.complete.emit();
+          },
+          error: (err: any) => {
+            console.error(err);
+            this.loadingAction = false;
+
+            const errorMsg =
+              err.error?.message ||
+              'Erro ao vincular o pagamento à conta a receber.';
+
+            this.presentToast(errorMsg, 'danger');
+          },
+        });
+
+      return;
+    }
+
     const entityId = this.form.fornecedorId;
     const isCredit = this.statement.tipo === 'CREDIT';
+
+    if (
+      this.activeTab !== 'TRANSFER' &&
+      !isCredit &&
+      !entityId
+    ) {
+      this.presentToast(
+        'Selecione um fornecedor antes de conciliar o pagamento.',
+        'danger',
+      );
+      return;
+    }
 
     let observacoes = '';
     if (

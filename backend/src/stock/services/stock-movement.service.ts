@@ -38,7 +38,16 @@ export class StockMovementService {
     private readonly auditLog: AuditLogService,
   ) {}
 
-  async execute(dto: ExecuteStockMovementDto, userId: string) {
+  async execute(
+    dto: ExecuteStockMovementDto,
+    userId: string,
+    options?: {
+      reservedAllowance?:
+        | string
+        | number
+        | Prisma.Decimal;
+    },
+  ) {
     if (process.env.STOCK_MODULE_ENABLED !== 'true') {
       throw new ForbiddenException('Módulo de estoque desativado');
     }
@@ -64,6 +73,23 @@ export class StockMovementService {
           'quantidade',
         );
 
+        const reservedAllowance =
+          new Prisma.Decimal(
+            options?.reservedAllowance ?? 0,
+          );
+
+        if (reservedAllowance.lt(0)) {
+          throw new BadRequestException(
+            'Reserva utilizada não pode ser negativa',
+          );
+        }
+
+        if (reservedAllowance.gt(quantidade)) {
+          throw new BadRequestException(
+            'Reserva utilizada não pode exceder a quantidade movimentada',
+          );
+        }
+
         if (dto.localOrigemId && dto.localDestinoId && dto.localOrigemId === dto.localDestinoId) {
           throw new BadRequestException('Local de origem deve ser diferente do destino');
         }
@@ -84,14 +110,30 @@ export class StockMovementService {
           if (!dto.localOrigemId) {
             throw new BadRequestException('Saída exige local de origem');
           }
-          return this.applyIssue(tx, dto, userId, numero, dataMovimento, quantidade);
+          return this.applyIssue(
+            tx,
+            dto,
+            userId,
+            numero,
+            dataMovimento,
+            quantidade,
+            reservedAllowance,
+          );
         }
 
         if (dto.tipo === TipoMovimentoEstoque.TRANSFERENCIA) {
           if (!dto.localOrigemId || !dto.localDestinoId) {
             throw new BadRequestException('Transferência exige origem e destino');
           }
-          return this.applyTransfer(tx, dto, userId, numero, dataMovimento, quantidade);
+          return this.applyTransfer(
+            tx,
+            dto,
+            userId,
+            numero,
+            dataMovimento,
+            quantidade,
+            reservedAllowance,
+          );
         }
 
         throw new BadRequestException('Tipo de movimento ainda não suportado pelo serviço central');
@@ -315,6 +357,7 @@ export class StockMovementService {
     numero: string,
     dataMovimento: Date,
     quantidade: Prisma.Decimal,
+    reservedAllowance: Prisma.Decimal,
   ) {
     const origem = await this.getActiveLocation(tx, dto.localOrigemId!);
     const saldoOrigem = await this.getOrCreateLockedBalance(
@@ -322,7 +365,20 @@ export class StockMovementService {
       dto.materialId,
       origem.id,
     );
-    const disponivel = saldoOrigem.quantidade.minus(saldoOrigem.quantidadeReservada);
+
+    if (
+      reservedAllowance.gt(
+        saldoOrigem.quantidadeReservada,
+      )
+    ) {
+      throw new BadRequestException(
+        'Reserva utilizada excede a quantidade reservada',
+      );
+    }
+
+    const disponivel = saldoOrigem.quantidade
+      .minus(saldoOrigem.quantidadeReservada)
+      .plus(reservedAllowance);
     const saldoPosterior = saldoOrigem.quantidade.minus(quantidade);
 
     if (disponivel.lt(quantidade)) {
@@ -395,12 +451,26 @@ export class StockMovementService {
     numero: string,
     dataMovimento: Date,
     quantidade: Prisma.Decimal,
+    reservedAllowance: Prisma.Decimal,
   ) {
     const origem = await this.getActiveLocation(tx, dto.localOrigemId!);
     const destino = await this.getActiveLocation(tx, dto.localDestinoId!);
     const saldoOrigem = await this.getOrCreateLockedBalance(tx, dto.materialId, origem.id);
     const saldoDestino = await this.getOrCreateLockedBalance(tx, dto.materialId, destino.id);
-    const disponivel = saldoOrigem.quantidade.minus(saldoOrigem.quantidadeReservada);
+
+    if (
+      reservedAllowance.gt(
+        saldoOrigem.quantidadeReservada,
+      )
+    ) {
+      throw new BadRequestException(
+        'Reserva utilizada excede a quantidade reservada',
+      );
+    }
+
+    const disponivel = saldoOrigem.quantidade
+      .minus(saldoOrigem.quantidadeReservada)
+      .plus(reservedAllowance);
 
     if (disponivel.lt(quantidade)) {
       throw new BadRequestException('Saldo disponível insuficiente para transferência');

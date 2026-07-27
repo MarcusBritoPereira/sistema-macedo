@@ -1,0 +1,239 @@
+<div class="table-container">
+  <div class="actions-header">
+    <h3>Cronograma de Pagamento</h3>
+    <div class="buttons">
+      <ion-button size="small" fill="outline" color="secondary" (click)="openGenerator()">
+        <ion-icon name="flash-outline" slot="start"></ion-icon>
+        Gerador
+      </ion-button>
+      <ion-button size="small" color="primary" (click)="addParcelaManual()">
+        <ion-icon name="add-outline" slot="start"></ion-icon>
+        Adicionar
+      </ion-button>
+    </div>
+  </div>
+
+  <table class="parcelas-table">
+    <thead>
+      <tr>
+        <th class="col-parcela">Parcelas</th>
+        <th class="col-percent">%</th>
+        <th class="col-valor">Valor da parcela</th>
+        <th class="col-prazo">Prazo de pagamento</th>
+        <th class="col-status">Status</th>
+        <th class="col-actions">Ações</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of parcelas; let i = index">
+        <td>Parcela {{ i + 1 }}</td>
+        <td>{{ p.porcentagem ? (p.porcentagem + '%') : '-' }}</td>
+        <td class="valor">{{ p.valor | currency:'BRL' }}</td>
+        <td>
+          <span *ngIf="p.descricao">{{ p.descricao }} – </span>
+          {{ p.dataVencimento | date:'dd/MM/yyyy' }}
+        </td>
+        <td>
+          <ion-badge [color]="p.status === 'RECEBIDO' ? 'success' : (p.status === 'ATRASADO' ? 'danger' : 'warning')">
+            {{ p.status }}
+          </ion-badge>
+        </td>
+        <td class="actions">
+          <ion-button
+            fill="outline"
+            size="small"
+            color="primary"
+            (click)="editParcela(p)"
+          >
+            Editar
+          </ion-button>
+
+          <ion-button
+            fill="clear"
+            size="small"
+            color="danger"
+            (click)="removeParcela(p)"
+          >
+            Excluir
+          </ion-button>
+        </td>
+      </tr>
+      <tr *ngIf="parcelas.length === 0">
+        <td colspan="6" class="empty-state">
+          Nenhuma parcela cadastrada. Use o Gerador para criar automaticamente.
+        </td>
+      </tr>
+    </tbody>
+    <tfoot>
+      <tr>
+        <td class="total-label">TOTAL</td>
+        <td class="total-percent">{{ totalPorcentagem }}%</td>
+        <td class="total-valor">{{ totalValor | currency:'BRL' }}</td>
+        <td colspan="3"></td>
+      </tr>
+    </tfoot>
+  </table>
+
+<div
+  class="edit-parcela-overlay"
+  *ngIf="editModalOpen"
+>
+  <div
+    class="edit-parcela-backdrop"
+    (click)="closeEditModal()"
+  ></div>
+
+  <section class="edit-parcela-modal">
+    <header class="modal-header">
+      <div>
+        <h2>Editar Parcela</h2>
+        <p>
+          Edite as informações desta parcela do cronograma de pagamento.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="close-button"
+        (click)="closeEditModal()"
+      >
+        ×
+      </button>
+    </header>
+
+    <div class="modal-body">
+      <label class="field full">
+        <span>Nome da parcela</span>
+
+        <div class="input-shell">
+          <span class="input-prefix">▣</span>
+
+          <input
+            type="text"
+            [(ngModel)]="editForm.descricao"
+            placeholder="Ex: Parcela 1"
+          />
+        </div>
+      </label>
+
+      <div class="two-columns">
+        <label class="field">
+          <span>Percentual (%)</span>
+
+          <div class="input-shell">
+            <span class="input-prefix">%</span>
+
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              [(ngModel)]="editForm.porcentagem"
+            />
+          </div>
+        </label>
+
+        <label class="field">
+          <span>Valor da parcela</span>
+
+          <div class="input-shell">
+            <span class="input-prefix">R$</span>
+
+            <input
+              type="text"
+              inputmode="decimal"
+              [(ngModel)]="editForm.valor"
+              placeholder="0,00"
+              (blur)="normalizeCurrencyInput()"
+            />
+          </div>
+        </label>
+      </div>
+
+      <label class="field full">
+        <span>Vencimento</span>
+
+        <div class="date-input-shell">
+          <span class="input-prefix">▦</span>
+
+          <input
+            type="text"
+            inputmode="numeric"
+            maxlength="10"
+            placeholder="DD/MM/AAAA"
+            [value]="editForm.dataVencimentoTexto"
+            (input)="onDateTextInput($event)"
+          />
+
+          <button
+            type="button"
+            class="calendar-button"
+            title="Selecionar no calendário"
+            (click)="openDatePicker(calendarInput)"
+          >
+            📅
+          </button>
+
+          <input
+            #calendarInput
+            class="native-date-picker"
+            type="date"
+            [value]="editForm.dataVencimento"
+            (change)="onCalendarDateChange(calendarInput.value)"
+          />
+        </div>
+      </label>
+
+      <label class="field full">
+        <span>Observação (opcional)</span>
+
+        <textarea
+          rows="3"
+          maxlength="200"
+          [(ngModel)]="editForm.observacao"
+          placeholder="Adicione uma observação sobre esta parcela..."
+        ></textarea>
+
+        <small class="counter">
+          {{ editForm.observacao.length }}/200
+        </small>
+      </label>
+    </div>
+
+    <footer class="modal-footer">
+      <button
+        type="button"
+        class="delete-link"
+        *ngIf="editingParcela"
+        (click)="removeParcela(editingParcela)"
+      >
+        Excluir parcela
+      </button>
+
+      <div class="footer-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="closeEditModal()"
+          [disabled]="savingEdit"
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          class="primary-button"
+          (click)="saveEditParcela()"
+          [disabled]="savingEdit"
+        >
+          {{
+            savingEdit
+              ? 'Salvando...'
+              : 'Salvar alterações'
+          }}
+        </button>
+      </div>
+    </footer>
+  </section>
+</div>
+</div>

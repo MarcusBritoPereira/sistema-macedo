@@ -1,47 +1,411 @@
 <ion-content class="ion-padding stock-page">
-  <section class="stock-hero">
+
+  <section class="page-header">
     <div>
-      <p class="eyebrow">Estoque</p>
-      <h1><ion-icon name="pie-chart-outline"></ion-icon> Relatórios</h1>
-      <p>Consulte posição de estoque, movimentações, consumo por obra, perdas, curva ABC e sugestão de compra.</p>
+      <p class="eyebrow">ESTOQUE</p>
+
+      <h1>
+        <ion-icon name="analytics-outline"></ion-icon>
+        Relatórios
+      </h1>
+
+      <p>
+        Analise saldos, movimentações, consumo,
+        perdas, curva ABC e necessidades de compra.
+      </p>
     </div>
-    <div class="stock-actions">
-      <ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Gerar</ion-button>
-      <ion-button color="primary" (click)="exportCsv()"><ion-icon name="cloud-download-outline" slot="start"></ion-icon>Exportar CSV</ion-button>
+
+    <div class="header-actions">
+      <ion-button
+        fill="outline"
+        (click)="load()"
+        [disabled]="loading"
+      >
+        <ion-icon
+          name="refresh-outline"
+          slot="start"
+        ></ion-icon>
+        Gerar relatório
+      </ion-button>
+
+      <ion-button
+        (click)="exportCsv()"
+        [disabled]="exporting || loading"
+      >
+        <ion-icon
+          name="cloud-download-outline"
+          slot="start"
+        ></ion-icon>
+
+        {{
+          exporting
+            ? 'Exportando...'
+            : 'Exportar CSV'
+        }}
+      </ion-button>
     </div>
   </section>
 
-  <section class="stock-card stock-form-grid">
-    <ion-item>
-      <ion-label position="stacked">Relatório</ion-label>
-      <ion-select [(ngModel)]="kind" interface="popover">
-        <ion-select-option *ngFor="let report of reports" [value]="report.value">{{ report.label }}</ion-select-option>
+  <section class="report-selector">
+    <button
+      *ngFor="let report of reports"
+      type="button"
+      class="report-option"
+      [class.active]="kind === report.value"
+      (click)="selectReport(report.value)"
+    >
+      <div class="report-icon">
+        <ion-icon [name]="report.icon"></ion-icon>
+      </div>
+
+      <div>
+        <strong>{{ report.label }}</strong>
+        <span>{{ report.description }}</span>
+      </div>
+    </button>
+  </section>
+
+  <section class="filters-card">
+    <div
+      class="filter-field"
+      *ngIf="usesPeriod"
+    >
+      <label>Data inicial</label>
+
+      <ion-input
+        type="date"
+        [(ngModel)]="dataInicio"
+      ></ion-input>
+    </div>
+
+    <div
+      class="filter-field"
+      *ngIf="usesPeriod"
+    >
+      <label>Data final</label>
+
+      <ion-input
+        type="date"
+        [(ngModel)]="dataFim"
+      ></ion-input>
+    </div>
+
+    <div
+      class="filter-field"
+      *ngIf="usesProject"
+    >
+      <label>Obra</label>
+
+      <ion-select
+        [(ngModel)]="obraId"
+        interface="popover"
+        placeholder="Todas"
+      >
+        <ion-select-option value="">
+          Todas as obras
+        </ion-select-option>
+
+        <ion-select-option
+          *ngFor="let obra of obras"
+          [value]="obra.id"
+        >
+          {{ obra.nome }}
+        </ion-select-option>
       </ion-select>
-    </ion-item>
-    <ion-item>
-      <ion-label position="stacked">Data inicial</ion-label>
-      <ion-input type="date" [(ngModel)]="dataInicio"></ion-input>
-    </ion-item>
-    <ion-item>
-      <ion-label position="stacked">Data final</ion-label>
-      <ion-input type="date" [(ngModel)]="dataFim"></ion-input>
-    </ion-item>
+    </div>
+
+    <div class="filter-field">
+      <label>Material</label>
+
+      <ion-select
+        [(ngModel)]="materialId"
+        interface="popover"
+        placeholder="Todos"
+      >
+        <ion-select-option value="">
+          Todos os materiais
+        </ion-select-option>
+
+        <ion-select-option
+          *ngFor="let material of materials"
+          [value]="material.id"
+        >
+          {{ material.codigo }} -
+          {{ material.nome }}
+        </ion-select-option>
+      </ion-select>
+    </div>
+
+    <div
+      class="filter-field"
+      *ngIf="usesLocation"
+    >
+      <label>Local de estoque</label>
+
+      <ion-select
+        [(ngModel)]="localEstoqueId"
+        interface="popover"
+        placeholder="Todos"
+      >
+        <ion-select-option value="">
+          Todos os locais
+        </ion-select-option>
+
+        <ion-select-option
+          *ngFor="let location of locations"
+          [value]="location.id"
+        >
+          {{ location.nome }}
+        </ion-select-option>
+      </ion-select>
+    </div>
+
+    <div
+      class="filter-field"
+      *ngIf="usesCategory"
+    >
+      <label>Categoria</label>
+
+      <ion-select
+        [(ngModel)]="categoriaMaterialId"
+        interface="popover"
+        placeholder="Todas"
+      >
+        <ion-select-option value="">
+          Todas as categorias
+        </ion-select-option>
+
+        <ion-select-option
+          *ngFor="let category of categories"
+          [value]="category.id"
+        >
+          {{ category.nome }}
+        </ion-select-option>
+      </ion-select>
+    </div>
+
+    <div class="filter-actions">
+      <button
+        type="button"
+        class="clear-button"
+        (click)="clearFilters()"
+      >
+        Limpar filtros
+      </button>
+
+      <ion-button
+        (click)="load()"
+        [disabled]="loading"
+      >
+        Gerar
+      </ion-button>
+    </div>
   </section>
 
-  <ion-spinner *ngIf="loading"></ion-spinner>
+  <div
+    class="error-banner"
+    *ngIf="errorMessage"
+  >
+    {{ errorMessage }}
+  </div>
 
-  <section class="stock-table" *ngIf="!loading && items.length">
-    <table>
-      <thead><tr><th *ngFor="let header of headers">{{ header }}</th></tr></thead>
-      <tbody>
-        <tr *ngFor="let item of items">
-          <td *ngFor="let header of headers">{{ item[header] }}</td>
-        </tr>
-      </tbody>
-    </table>
+  <div
+    class="loading-area"
+    *ngIf="loading"
+  >
+    <ion-spinner></ion-spinner>
+    <strong>Gerando relatório...</strong>
+    <span>
+      Consultando os dados de estoque.
+    </span>
+  </div>
+
+  <ng-container *ngIf="!loading && generated">
+
+    <section class="report-summary">
+      <article>
+        <span>Registros</span>
+        <strong>{{ totalRecords }}</strong>
+        <small>
+          Linhas exibidas no relatório
+        </small>
+      </article>
+
+      <article>
+        <span>{{ valueLabel() }}</span>
+        <strong>
+          {{
+            totalValue
+              | currency:'BRL':'symbol':'1.2-2'
+          }}
+        </strong>
+        <small>
+          Total dos dados exibidos
+        </small>
+      </article>
+
+      <article>
+        <span>{{ quantityLabel() }}</span>
+        <strong>
+          {{
+            totalQuantity
+              | number:'1.0-3'
+          }}
+        </strong>
+        <small>
+          Quantidade consolidada
+        </small>
+      </article>
+
+      <article>
+        <span>{{ thirdMetricLabel }}</span>
+        <strong>
+          {{
+            thirdMetricValue
+              | number:'1.0-3'
+          }}
+        </strong>
+        <small>
+          Indicador do relatório
+        </small>
+      </article>
+    </section>
+
+    <section class="results-card">
+      <div class="results-header">
+        <div class="results-title">
+          <div class="results-icon">
+            <ion-icon
+              [name]="activeReport.icon"
+            ></ion-icon>
+          </div>
+
+          <div>
+            <h2>{{ activeReport.label }}</h2>
+            <p>
+              {{ activeReport.description }}
+            </p>
+          </div>
+        </div>
+
+        <span class="result-count">
+          {{ items.length }}
+          registro(s)
+        </span>
+      </div>
+
+      <div
+        class="table-scroll"
+        *ngIf="items.length"
+      >
+        <table>
+          <thead>
+            <tr>
+              <th
+                *ngFor="let column of columns"
+                [class.number-column]="
+                  column.type === 'number' ||
+                  column.type === 'currency'
+                "
+              >
+                {{ column.label }}
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of items">
+              <td
+                *ngFor="let column of columns"
+                [class.number-column]="
+                  column.type === 'number' ||
+                  column.type === 'currency'
+                "
+              >
+                <ng-container
+                  *ngIf="
+                    column.type !== 'abc' &&
+                    column.type !== 'status'
+                  "
+                >
+                  {{
+                    formatValue(
+                      item[column.key],
+                      column
+                    )
+                  }}
+                </ng-container>
+
+                <span
+                  *ngIf="column.type === 'status'"
+                  class="status-pill"
+                  [attr.data-value]="
+                    item[column.key]
+                  "
+                >
+                  {{
+                    formatValue(
+                      item[column.key],
+                      column
+                    )
+                  }}
+                </span>
+
+                <span
+                  *ngIf="column.type === 'abc'"
+                  class="abc-badge"
+                  [attr.data-class]="
+                    item[column.key]
+                  "
+                >
+                  {{ item[column.key] }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div
+        class="empty-state"
+        *ngIf="!items.length"
+      >
+        <ion-icon
+          [name]="activeReport.icon"
+        ></ion-icon>
+
+        <strong>
+          Nenhum resultado encontrado
+        </strong>
+
+        <p>
+          Não existem dados para os filtros
+          selecionados neste relatório.
+        </p>
+      </div>
+    </section>
+
+  </ng-container>
+
+  <section
+    class="initial-state"
+    *ngIf="!loading && !generated"
+  >
+    <div class="initial-icon">
+      <ion-icon
+        [name]="activeReport.icon"
+      ></ion-icon>
+    </div>
+
+    <strong>
+      {{ activeReport.label }}
+    </strong>
+
+    <p>
+      {{ activeReport.description }}
+      Selecione os filtros necessários e clique
+      em <b>Gerar relatório</b>.
+    </p>
   </section>
 
-  <section class="stock-card" *ngIf="!loading && !items.length">
-    Selecione os filtros e clique em Gerar para visualizar o relatório.
-  </section>
 </ion-content>

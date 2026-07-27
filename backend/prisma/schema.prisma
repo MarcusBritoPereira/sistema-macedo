@@ -219,6 +219,7 @@ model LancamentoFinanceiro {
   rateiosHistorico RateioHistorico[]
 
   conciliacoes ConciliacaoBancaria[]
+  recebimentos RecebimentoLancamento[]
   parcelaObra  ParcelaObra?
   movimentosEstoque MovimentoEstoque[]
   documentosEstoque DocumentoEstoque[]
@@ -259,6 +260,7 @@ enum TipoCustoLancamento {
 
 enum StatusLancamento {
   PREVISTO
+  PARCIAL
   REALIZADO
   CONCILIADO
   CANCELADO
@@ -323,9 +325,14 @@ model ExtratoBancario {
   hash      String        @unique // Para evitar duplicatas
 
   // V2: Campos para importação robusta (CSV/OFX)
-  fitid           String? // ID único do OFX ou gerado
-  sourceType      SourceType @default(CSV)
-  balance         Decimal?   @db.Decimal(10, 2)
+  fitid             String? // ID único do OFX ou gerado
+  sourceType        SourceType @default(CSV)
+  balance           Decimal?   @db.Decimal(10, 2)
+
+  // Detalhes enriquecidos da API bancária
+  descricaoPix      String?
+  endToEndId        String?
+  idTransacaoBanco  String?
   matchConfidence Int? // 0-100
   currency        String     @default("BRL")
   importedAt      DateTime   @default(now())
@@ -338,6 +345,7 @@ model ExtratoBancario {
   conciliado Boolean @default(false)
 
   conciliacoes ConciliacaoBancaria[]
+  recebimentos RecebimentoLancamento[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -385,15 +393,40 @@ model ConciliacaoBancaria {
 
   type TipoConciliacao @default(SYSTEM_MATCH)
 
-  lancamentoFinanceiroId String               @unique // 1 para 1 geralmente
+  lancamentoFinanceiroId String
   lancamentoFinanceiro   LancamentoFinanceiro @relation(fields: [lancamentoFinanceiroId], references: [id])
 
   extratoBancarioId String          @unique
   extratoBancario   ExtratoBancario @relation(fields: [extratoBancarioId], references: [id])
 
+  recebimento RecebimentoLancamento?
+
   @@index([lancamentoFinanceiroId], map: "idx_conciliacao_lancamento")
   @@index([extratoBancarioId], map: "idx_conciliacao_extrato")
   @@map("conciliacoes_bancarias")
+}
+
+
+model RecebimentoLancamento {
+  id String @id @default(uuid())
+
+  lancamentoFinanceiroId String
+  lancamentoFinanceiro   LancamentoFinanceiro @relation(fields: [lancamentoFinanceiroId], references: [id], onDelete: Cascade)
+
+  extratoBancarioId String @unique
+  extratoBancario   ExtratoBancario @relation(fields: [extratoBancarioId], references: [id], onDelete: Restrict)
+
+  conciliacaoBancariaId String @unique
+  conciliacaoBancaria   ConciliacaoBancaria @relation(fields: [conciliacaoBancariaId], references: [id], onDelete: Cascade)
+
+  valor           Decimal  @db.Decimal(15, 2)
+  dataRecebimento DateTime
+  observacao      String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([lancamentoFinanceiroId, dataRecebimento], map: "idx_recebimento_lancamento_data")
+  @@map("recebimentos_lancamentos")
 }
 
 enum TipoConciliacao {
@@ -1178,6 +1211,7 @@ model ItemInventarioEstoque {
   material          Material @relation(fields: [materialId], references: [id], onDelete: Restrict)
   quantidadeSistema Decimal @map("quantidade_sistema") @db.Decimal(15, 3)
   quantidadeContada Decimal @map("quantidade_contada") @db.Decimal(15, 3)
+  contado           Boolean @default(false)
   diferenca         Decimal @db.Decimal(15, 3)
   custoMedio        Decimal @map("custo_medio") @db.Decimal(15, 4)
   valorDiferenca    Decimal @map("valor_diferenca") @db.Decimal(15, 2)
@@ -1196,6 +1230,8 @@ model ReservaEstoque {
   localEstoque    LocalEstoque @relation(fields: [localEstoqueId], references: [id], onDelete: Restrict)
   obraId          String? @map("obra_id")
   obra            Obra? @relation(fields: [obraId], references: [id], onDelete: SetNull)
+  solicitacaoId   String? @map("solicitacao_id")
+  solicitacao     SolicitacaoMaterial? @relation(fields: [solicitacaoId], references: [id], onDelete: SetNull)
   quantidade      Decimal @db.Decimal(15, 3)
   status          StatusReservaEstoque @default(PENDENTE)
   finalidade      String?
@@ -1209,6 +1245,7 @@ model ReservaEstoque {
 
   @@index([materialId, localEstoqueId], map: "idx_reservas_material_local")
   @@index([obraId], map: "idx_reservas_obra")
+  @@index([solicitacaoId], map: "idx_reservas_solicitacao")
   @@index([status], map: "idx_reservas_status")
   @@map("reservas_estoque")
 }
@@ -1233,6 +1270,7 @@ model SolicitacaoMaterial {
   updatedAt       DateTime @updatedAt @map("updated_at")
 
   itens           ItemSolicitacaoMaterial[]
+  reservas        ReservaEstoque[]
 
   @@index([obraId], map: "idx_solicitacoes_material_obra")
   @@index([status], map: "idx_solicitacoes_material_status")

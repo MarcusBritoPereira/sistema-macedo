@@ -53,10 +53,19 @@ export class StockBalancesService {
     const materiaisCadastrados = await this.prisma.material.count({ where: { ativo: true } });
     const lowStock = await this.lowStock({ take: '1000' });
 
+    const quantidadeFisica =
+      aggregate._sum.quantidade || new Prisma.Decimal(0);
+
+    const quantidadeReservada =
+      aggregate._sum.quantidadeReservada || new Prisma.Decimal(0);
+
     return {
-      valorTotalEstoque: aggregate._sum.valorTotal || new Prisma.Decimal(0),
-      quantidadeFisica: aggregate._sum.quantidade || new Prisma.Decimal(0),
-      quantidadeReservada: aggregate._sum.quantidadeReservada || new Prisma.Decimal(0),
+      valorTotalEstoque:
+        aggregate._sum.valorTotal || new Prisma.Decimal(0),
+      quantidadeFisica,
+      quantidadeReservada,
+      quantidadeDisponivel:
+        quantidadeFisica.minus(quantidadeReservada),
       materiaisCadastrados,
       materiaisAbaixoMinimo: lowStock.total,
     };
@@ -74,7 +83,7 @@ export class StockBalancesService {
     });
     const mapped = items
       .map((item) => this.mapBalance(item))
-      .filter((item) => ['BAIXO', 'CRITICO', 'ZERADO', 'NEGATIVO'].includes(item.situacao));
+      .filter((item) => ['REPOSICAO', 'BAIXO', 'ZERADO', 'NEGATIVO'].includes(item.situacao));
     return { items: mapped.slice(skip, skip + take), total: mapped.length, skip, take };
   }
 
@@ -85,12 +94,27 @@ export class StockBalancesService {
     const minimo = new Prisma.Decimal(item.material.estoqueMinimo || 0);
     const reposicao = new Prisma.Decimal(item.material.pontoReposicao || 0);
 
-    let situacao: 'NORMAL' | 'BAIXO' | 'CRITICO' | 'ZERADO' | 'NEGATIVO' = 'NORMAL';
-    if (quantidade.lt(0)) situacao = 'NEGATIVO';
-    else if (quantidade.eq(0)) situacao = 'ZERADO';
-    else if (minimo.gt(0) && quantidade.lte(minimo)) situacao = 'CRITICO';
-    else if (reposicao.gt(0) && quantidade.lte(reposicao)) situacao = 'BAIXO';
+    let situacao:
+      | 'NORMAL'
+      | 'REPOSICAO'
+      | 'BAIXO'
+      | 'ZERADO'
+      | 'NEGATIVO' = 'NORMAL';
 
-    return { ...item, quantidadeDisponivel: disponivel, situacao };
+    if (disponivel.lt(0)) {
+      situacao = 'NEGATIVO';
+    } else if (disponivel.eq(0)) {
+      situacao = 'ZERADO';
+    } else if (minimo.gt(0) && disponivel.lte(minimo)) {
+      situacao = 'BAIXO';
+    } else if (reposicao.gt(0) && disponivel.lte(reposicao)) {
+      situacao = 'REPOSICAO';
+    }
+
+    return {
+      ...item,
+      quantidadeDisponivel: disponivel,
+      situacao,
+    };
   }
 }

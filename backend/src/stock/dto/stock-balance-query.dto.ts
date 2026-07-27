@@ -23,7 +23,7 @@ export class StockBalanceQueryDto {
 
   @IsString()
   @IsOptional()
-  situacao?: 'NORMAL' | 'BAIXO' | 'CRITICO' | 'ZERADO' | 'NEGATIVO';
+  situacao?: 'NORMAL' | 'REPOSICAO' | 'BAIXO' | 'ZERADO' | 'NEGATIVO';
 
   @IsString()
   @IsOptional()

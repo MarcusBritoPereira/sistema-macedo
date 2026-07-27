@@ -1,0 +1,236 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding dashboard-page">
+
+  <!-- Top Filters -->
+  <ion-grid class="filters-grid">
+    <ion-row>
+      <ion-col size="12" size-md="3">
+        <div class="filter-card">
+          <div class="filter-icon">
+            <ion-icon name="business-outline"></ion-icon>
+          </div>
+          <div class="filter-content">
+            <label>Obra</label>
+            <ion-select [(ngModel)]="filters.obraId" (ionChange)="onFilterChange()" interface="popover">
+              <ion-select-option value="all">Todas</ion-select-option>
+              <ion-select-option *ngFor="let o of obras" [value]="o.id">{{ o.nome }}</ion-select-option>
+            </ion-select>
+          </div>
+        </div>
+      </ion-col>
+      
+      <ion-col size="12" size-md="3">
+        <div class="filter-card">
+          <div class="filter-icon">
+            <ion-icon name="briefcase-outline"></ion-icon>
+          </div>
+          <div class="filter-content">
+            <label>Centro de Custo</label>
+            <ion-select [(ngModel)]="filters.centroCustoId" (ionChange)="onFilterChange()" interface="popover">
+              <ion-select-option value="all">Todos</ion-select-option>
+              <ion-select-option *ngFor="let c of centrosCusto" [value]="c.id">{{ c.nome }}</ion-select-option>
+            </ion-select>
+          </div>
+        </div>
+      </ion-col>
+
+      <ion-col size="12" size-md="3">
+        <div class="filter-card">
+          <div class="filter-icon">
+            <ion-icon name="calendar-outline"></ion-icon>
+          </div>
+          <div class="filter-content">
+            <label>Data Início</label>
+            <input type="date" class="native-date" [(ngModel)]="filters.startDate" (change)="onFilterChange()">
+          </div>
+        </div>
+      </ion-col>
+
+      <ion-col size="12" size-md="3">
+        <div class="filter-card">
+          <div class="filter-icon">
+            <ion-icon name="calendar-outline"></ion-icon>
+          </div>
+          <div class="filter-content">
+            <label>Data Fim</label>
+            <input type="date" class="native-date" [(ngModel)]="filters.endDate" (change)="onFilterChange()">
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- KPIs Row -->
+  <ion-grid class="kpi-grid">
+    <ion-row>
+      <ion-col size="12" size-sm="6" size-md="4" size-xl="2" *ngFor="let kpi of kpis">
+        <div class="kpi-card">
+          <div class="kpi-icon [color]='kpi.color'">
+            <ion-icon [name]="kpi.icon"></ion-icon>
+          </div>
+          <div class="kpi-details">
+            <small>{{ kpi.label }}</small>
+            <strong>{{ kpi.value }}</strong>
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- Main Chart -->
+  <ion-grid>
+    <ion-row>
+      <ion-col size="12">
+        <div class="chart-card main-chart-card">
+          <div class="chart-header">
+            <ion-icon name="stats-chart"></ion-icon>
+            <h3>1. Gráfico de custo por material</h3>
+          </div>
+          <p class="y-axis-label">Valor (R$)</p>
+          <div class="canvas-container" style="height: 400px;">
+            <canvas baseChart 
+              [data]="materialChart"
+              [options]="materialChart.options"
+              [type]="'bar'">
+            </canvas>
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+
+    <!-- Secondary Charts Grid -->
+    <ion-row>
+      <!-- Labor Cost (Left) -->
+      <ion-col size="12" size-xl="6">
+        <div class="chart-card h-100">
+          <div class="chart-header">
+            <ion-icon name="briefcase-outline"></ion-icon>
+            <h3>2. Gráfico de custo por mão de obra</h3>
+          </div>
+          <div class="canvas-container" style="height: 600px;">
+            <canvas baseChart 
+              [data]="laborChart"
+              [options]="laborChart.options"
+              [type]="'bar'">
+            </canvas>
+          </div>
+          <p class="x-axis-label text-center">Valor (R$)</p>
+        </div>
+      </ion-col>
+
+      <!-- Right Column -->
+      <ion-col size="12" size-xl="6">
+        <ion-row>
+          <!-- Donut Chart -->
+          <ion-col size="12">
+            <div class="chart-card mb-3">
+              <div class="chart-header">
+                <ion-icon name="pie-chart-outline"></ion-icon>
+                <h3>3. Classificação de custo (Material x Mão de obra)</h3>
+              </div>
+              <div class="donut-layout">
+                <div class="canvas-container" style="height: 250px; width: 250px;">
+                  <canvas baseChart 
+                    [data]="donutChart"
+                    [options]="donutChart.options"
+                    [type]="'doughnut'">
+                  </canvas>
+                </div>
+                <div class="donut-legend">
+                  <div class="legend-item">
+                    <span class="dot color-material"></span>
+                    <div>
+                      <strong>Material</strong>
+                      <p>R$ {{ donutStats.material | number:'1.2-2':'pt-BR' }}</p>
+                    </div>
+                    <span class="percentage">{{ donutStats.materialPerc }}</span>
+                  </div>
+                  <div class="legend-item">
+                    <span class="dot color-labor"></span>
+                    <div>
+                      <strong>Mão de obra</strong>
+                      <p>R$ {{ donutStats.labor | number:'1.2-2':'pt-BR' }}</p>
+                    </div>
+                    <span class="percentage">{{ donutStats.laborPerc }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ion-col>
+          
+          <!-- Small Bar Chart -->
+          <ion-col size="12" size-md="6">
+            <div class="chart-card">
+              <div class="chart-header">
+                <ion-icon name="stats-chart-outline"></ion-icon>
+                <h3>4. Valor por etapa de obra</h3>
+              </div>
+              <div class="canvas-container" style="height: 250px;">
+                <canvas baseChart 
+                  [data]="stageChart"
+                  [options]="stageChart.options"
+                  [type]="'bar'">
+                </canvas>
+              </div>
+            </div>
+          </ion-col>
+
+          <!-- Small Line/Bar Chart -->
+          <ion-col size="12" size-md="6">
+            <div class="chart-card">
+              <div class="chart-header">
+                <ion-icon name="calendar-outline"></ion-icon>
+                <h3>5. Valor por mês de obra</h3>
+              </div>
+              <div class="canvas-container" style="height: 250px;">
+                <!-- We pass 'bar' as default for mixed charts and specify type in datasets -->
+                <canvas baseChart 
+                  [data]="monthlyChart"
+                  [options]="monthlyChart.options"
+                  [type]="'bar'">
+                </canvas>
+              </div>
+            </div>
+          </ion-col>
+        </ion-row>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- Footer Summary -->
+  <ion-grid>
+    <ion-row>
+      <ion-col size="12">
+        <div class="summary-card">
+          <div class="chart-header">
+            <ion-icon name="clipboard-outline"></ion-icon>
+            <h3>Resumo do Relatório</h3>
+          </div>
+          <div class="summary-blocks">
+            <div class="summary-block" *ngFor="let item of summary">
+              <div class="summary-icon" [ngClass]="item.color">
+                <ion-icon [name]="item.icon"></ion-icon>
+              </div>
+              <div class="summary-text">
+                <small>{{ item.label }}:</small>
+                <strong>{{ item.value }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <div class="report-footer">
+    <p>Relatório atualizado em {{ currentDate }} | Macedo Construtora</p>
+  </div>
+
+</ion-content>

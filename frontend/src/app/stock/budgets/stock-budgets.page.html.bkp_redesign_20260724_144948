@@ -1,0 +1,76 @@
+<ion-content class="ion-padding stock-page">
+  <section class="stock-hero">
+    <div>
+      <p class="eyebrow">Estoque</p>
+      <h1><ion-icon name="calculator-outline"></ion-icon> Orçamento por obra</h1>
+      <p>Cadastre versões de orçamento de materiais para comparar consumo real e custo apropriado por obra.</p>
+    </div>
+    <ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Atualizar</ion-button>
+  </section>
+
+  <section class="stock-card stock-form-grid">
+    <ion-item>
+      <ion-label position="stacked">Obra</ion-label>
+      <ion-select [(ngModel)]="form.obraId" interface="popover" placeholder="Selecione a obra">
+        <ion-select-option *ngFor="let obra of obras" [value]="obra.id">{{ obra.nome }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+    <ion-item>
+      <ion-label position="stacked">Data de referência</ion-label>
+      <ion-input type="date" [(ngModel)]="form.dataReferencia"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-label position="stacked">Observação</ion-label>
+      <ion-textarea [(ngModel)]="form.observacao"></ion-textarea>
+    </ion-item>
+  </section>
+
+  <section class="stock-card">
+    <div class="stock-actions">
+      <strong>Itens orçados</strong>
+      <ion-button size="small" fill="outline" (click)="addItem()"><ion-icon name="add-outline" slot="start"></ion-icon>Adicionar item</ion-button>
+    </div>
+    <div class="stock-row-form" *ngFor="let item of form.items; let i = index">
+      <ion-item>
+        <ion-label position="stacked">Material</ion-label>
+        <ion-select [(ngModel)]="item.materialId" interface="popover">
+          <ion-select-option *ngFor="let material of materials" [value]="material.id">{{ material.codigo }} - {{ material.nome }}</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Quantidade</ion-label>
+        <ion-input type="number" [(ngModel)]="item.quantidadeOrcada"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Custo unitário</ion-label>
+        <ion-input type="number" [(ngModel)]="item.custoUnitarioOrcado"></ion-input>
+      </ion-item>
+      <ion-item>
+        <ion-label position="stacked">Etapa</ion-label>
+        <ion-input [(ngModel)]="item.etapaObra" placeholder="Ex.: Fundação"></ion-input>
+      </ion-item>
+      <div class="stock-row-total">{{ itemTotal(item) | currency:'BRL':'symbol':'1.2-2' }}</div>
+      <ion-button fill="clear" color="danger" (click)="removeItem(i)"><ion-icon name="trash-outline"></ion-icon></ion-button>
+    </div>
+    <ion-button (click)="save()" [disabled]="saving || !isValid()"><ion-icon name="save-outline" slot="start"></ion-icon>Salvar orçamento</ion-button>
+  </section>
+
+  <ion-searchbar [(ngModel)]="search" (ionInput)="load()" placeholder="Buscar por obra ou observação"></ion-searchbar>
+  <ion-spinner *ngIf="loading"></ion-spinner>
+
+  <section class="stock-table" *ngIf="!loading">
+    <table>
+      <thead><tr><th>Obra</th><th>Versão</th><th>Status</th><th>Referência</th><th>Itens</th><th>Ações</th></tr></thead>
+      <tbody>
+        <tr *ngFor="let budget of budgets">
+          <td>{{ budget.obra?.nome || '-' }}</td>
+          <td>v{{ budget.versao }}</td>
+          <td><span class="stock-badge">{{ budget.status }}</span></td>
+          <td>{{ budget.dataReferencia | date:'shortDate' }}</td>
+          <td>{{ budget._count?.itens || budget.itens?.length || 0 }}</td>
+          <td><ion-button size="small" fill="outline" [routerLink]="['/stock/budgets', budget.id]">Real x orçado</ion-button></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</ion-content>

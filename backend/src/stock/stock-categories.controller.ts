@@ -26,7 +26,13 @@ export class StockCategoriesController {
 
   @Get()
   @RequirePermissions('ESTOQUE_VISUALIZAR')
-  findAll(@Query() query: PaginationQueryDto) {
+  findAll(
+    @Query()
+    query: PaginationQueryDto & {
+      ativo?: string;
+      parentId?: string;
+    },
+  ) {
     return this.service.findAll(query);
   }
 

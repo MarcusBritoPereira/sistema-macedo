@@ -1,4 +1,17 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, UseInterceptors, UploadedFile, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  UseInterceptors,
+  UploadedFile,
+  Res,
+  Req,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { ObrasService } from './obras.service';
@@ -72,6 +85,30 @@ export class ObrasController {
   @RequirePermissions('financeiro.obras.write')
   updateParcela(@Param('parcelaId') parcelaId: string, @Body() body: any) {
     return this.obrasService.updateParcela(parcelaId, body);
+  }
+
+  @Post('parcelas/:parcelaId/lancar-contas-receber')
+  @RequirePermissions('financeiro.obras.write')
+  lancarParcelaContasReceber(
+    @Param('parcelaId') parcelaId: string,
+    @Req() req: any,
+  ) {
+    return this.obrasService.lancarParcelaContasReceber(
+      parcelaId,
+      req.user.id,
+    );
+  }
+
+  @Post(':id/parcelas/lancar-contas-receber')
+  @RequirePermissions('financeiro.obras.write')
+  lancarTodasParcelasContasReceber(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    return this.obrasService.lancarTodasParcelasContasReceber(
+      id,
+      req.user.id,
+    );
   }
 
   @Delete('parcelas/:parcelaId')

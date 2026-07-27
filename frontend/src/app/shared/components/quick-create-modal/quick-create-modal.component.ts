@@ -125,10 +125,13 @@ export class QuickCreateModalComponent implements OnInit {
     }
 
     private createSupplier() {
+        const digits =
+            this.form.cpfCnpj?.replace(/\D/g, '') || '';
+
         const payload = {
-            nomeFantasia: this.form.nome,
-            razaoSocial: this.form.nome, // Default to same
-            cnpj: this.form.cpfCnpj,
+            nomeFantasia: this.form.nome.trim(),
+            razaoSocial: this.form.nome.trim(),
+            cnpj: digits || undefined,
             ativo: true
         };
         this.suppliersService.create(payload).subscribe({

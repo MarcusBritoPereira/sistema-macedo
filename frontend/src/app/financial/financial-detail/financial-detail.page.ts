@@ -299,13 +299,58 @@ export class FinancialDetailPage implements OnInit {
       }
 
       const transactionData: any = {
-        ...formValue,
+        descricao: formValue.descricao,
         valor: parseFloat(formValue.valor),
         dataVencimento: formValue.vencimento,
+        dataCompetencia: formValue.dataCompetencia,
         status: statusValue,
         tipo: this.type === 'receivables' ? 'RECEITA' : 'DESPESA',
-        // Send the subcategory ID if selected, otherwise parent category ID
-        categoriaId: formValue.subcategoriaId || formValue.categoriaId
+        observacoes: formValue.observacoes || undefined,
+
+        contaBancariaId: formValue.contaBancariaId || undefined,
+        categoriaId:
+          formValue.subcategoriaId ||
+          formValue.categoriaId ||
+          undefined,
+
+        clienteId:
+          this.type === 'receivables'
+            ? formValue.clienteId || undefined
+            : undefined,
+
+        fornecedorId:
+          this.type === 'payables'
+            ? formValue.fornecedorId || undefined
+            : undefined,
+
+        centroCustoId:
+          this.type === 'payables'
+            ? formValue.centroCustoId || undefined
+            : undefined,
+
+        tipoLancamento:
+          this.type === 'payables'
+            ? formValue.tipoLancamento || undefined
+            : undefined,
+
+        tipoCusto:
+          this.type === 'payables'
+            ? formValue.tipoCusto || undefined
+            : undefined,
+
+        categoriaCusto:
+          this.type === 'payables'
+            ? formValue.categoriaCusto || undefined
+            : undefined,
+
+        obraId:
+          this.type === 'payables' &&
+          (
+            formValue.tipoLancamento === 'OBRA' ||
+            formValue.tipoLancamento === 'POS_OBRA'
+          )
+            ? formValue.obraId || undefined
+            : undefined
       };
 
       if (this.isObraTipoSelecionado() && !formValue.obraId) {
@@ -375,7 +420,17 @@ export class FinancialDetailPage implements OnInit {
               this.router.navigate(['/financial']);
             }
           },
-          error: () => this.showToast('Erro ao criar registro.')
+          error: (err: any) => {
+            console.error('Erro ao criar lançamento:', err);
+
+            const backendMessage = err?.error?.message;
+
+            const message = Array.isArray(backendMessage)
+              ? backendMessage.join(' ')
+              : backendMessage || 'Erro ao criar registro.';
+
+            this.showToast(message);
+          }
         });
       }
     } else {

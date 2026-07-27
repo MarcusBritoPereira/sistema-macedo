@@ -55,7 +55,7 @@ export class LoginPage implements OnInit {
             
             const { data } = await modal.onDidDismiss();
             if (data && data.success) {
-              window.location.href = '/financial/dashboard';
+              window.location.href = this.auth.getDefaultRoute(res.user);
             } else {
               this.auth.logout();
             }

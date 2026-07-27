@@ -21,7 +21,14 @@ export class ChangePasswordModalComponent {
     private auth: AuthService
   ) {
     this.passwordForm = this.fb.group({
-      novaSenha: ['', [Validators.required, Validators.minLength(6)]],
+      novaSenha: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(8),
+          Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$/)
+        ]
+      ],
       confirmarSenha: ['', [Validators.required]]
     }, { validators: this.passwordMatchValidator });
   }
@@ -42,7 +49,12 @@ export class ChangePasswordModalComponent {
           this.modalCtrl.dismiss({ success: true });
         },
         error: (err) => {
-          this.errorMessage = 'Erro ao alterar a senha. Tente novamente.';
+          const backendMessage = err?.error?.message;
+
+          this.errorMessage = Array.isArray(backendMessage)
+            ? backendMessage.join(' ')
+            : backendMessage ||
+              'Erro ao alterar a senha. Tente novamente.';
           this.isSubmitting = false;
           console.error(err);
         }

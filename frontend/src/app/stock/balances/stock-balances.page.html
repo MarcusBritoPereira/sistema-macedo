@@ -1,1 +1,410 @@
-<ion-content class="stock-content"><div class="stock-page"><header class="stock-header"><div><h1>Saldos de estoque</h1><p>Saldo físico, reservado, disponível e valorizado por local</p></div></header><div class="loading" *ngIf="loading"><ion-spinner name="crescent"></ion-spinner><p>Carregando saldos...</p></div><section class="panel" *ngIf="!loading"><div class="toolbar-row"><ion-searchbar [(ngModel)]="search" placeholder="Buscar material ou local" (ionInput)="load()"></ion-searchbar><ion-select [(ngModel)]="situacao" interface="popover" (ionChange)="load()"><ion-select-option *ngFor="let item of situations" [value]="item">{{ item || 'Todas as situações' }}</ion-select-option></ion-select><ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Atualizar</ion-button></div><table><thead><tr><th>Material</th><th>Categoria</th><th>Local</th><th>Físico</th><th>Reservado</th><th>Disponível</th><th>Custo médio</th><th>Valor</th><th>Situação</th></tr></thead><tbody><tr *ngFor="let item of balances"><td>{{ item.material.codigo }} - {{ item.material.nome }}</td><td>{{ item.material.categoriaMaterial?.nome || '-' }}</td><td>{{ item.localEstoque.nome }}</td><td>{{ item.quantidade | number:'1.2-2' }}</td><td>{{ item.quantidadeReservada | number:'1.2-2' }}</td><td>{{ item.quantidadeDisponivel | number:'1.2-2' }}</td><td>{{ item.custoMedio | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td><td>{{ item.valorTotal | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td><td><span class="status" [class.critical]="item.situacao !== 'NORMAL'">{{ item.situacao }}</span></td></tr></tbody></table><div class="empty" *ngIf="!balances.length">Nenhum saldo encontrado.</div></section></div></ion-content>
+<ion-content class="balances-content">
+  <div class="balances-page">
+    <header class="page-header">
+      <div>
+        <h1>Saldos de estoque</h1>
+        <p>
+          Acompanhe estoque físico, reservado, disponível e valorizado por local
+        </p>
+      </div>
+
+      <ion-button
+        fill="outline"
+        class="refresh-header"
+        (click)="load()"
+      >
+        <ion-icon
+          name="refresh-outline"
+          slot="start"
+        ></ion-icon>
+        Atualizar
+      </ion-button>
+    </header>
+
+    <div class="loading-state" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Carregando posição de estoque...</p>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <section class="kpi-grid five">
+        <article class="kpi-card">
+          <div class="kpi-icon blue">
+            <ion-icon name="cash-outline"></ion-icon>
+          </div>
+
+          <div>
+            <span>Valor em estoque</span>
+            <strong>
+              {{
+                toNumber(summary.valorTotalEstoque)
+                  | currency:
+                      "BRL":
+                      "symbol":
+                      "1.2-2":
+                      "pt-BR"
+              }}
+            </strong>
+            <small>Valor contábil armazenado</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon purple">
+            <ion-icon name="cube-outline"></ion-icon>
+          </div>
+
+          <div>
+            <span>Quantidade física</span>
+            <strong>
+              {{
+                toNumber(summary.quantidadeFisica)
+                  | number: "1.2-3" : "pt-BR"
+              }}
+            </strong>
+            <small>Quantidade registrada</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon orange">
+            <ion-icon name="time-outline"></ion-icon>
+          </div>
+
+          <div>
+            <span>Reservado</span>
+            <strong>
+              {{
+                toNumber(summary.quantidadeReservada)
+                  | number: "1.2-3" : "pt-BR"
+              }}
+            </strong>
+            <small>Comprometido com solicitações</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon green">
+            <ion-icon name="layers-outline"></ion-icon>
+          </div>
+
+          <div>
+            <span>Disponível</span>
+            <strong>
+              {{
+                totalAvailable
+                  | number: "1.2-3" : "pt-BR"
+              }}
+            </strong>
+            <small>Livre para novas operações</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon red">
+            <ion-icon
+              name="alert-circle-outline"
+            ></ion-icon>
+          </div>
+
+          <div>
+            <span>Itens críticos</span>
+            <strong>{{ criticalItems }}</strong>
+            <small>Baixo, zerado ou negativo</small>
+          </div>
+        </article>
+      </section>
+
+      <section class="balances-panel">
+        <div class="filters">
+          <div class="search-field">
+            <ion-icon name="search-outline"></ion-icon>
+
+            <input
+              type="text"
+              [(ngModel)]="search"
+              (input)="applyFilters()"
+              placeholder="Buscar material, código, local ou obra"
+            />
+          </div>
+
+          <select
+            [(ngModel)]="categoryFilter"
+            (change)="applyFilters()"
+          >
+            <option value="">Todas as categorias</option>
+
+            <option
+              *ngFor="let category of categories"
+              [value]="category.id"
+            >
+              {{ category.nome }}
+            </option>
+          </select>
+
+          <select
+            [(ngModel)]="locationFilter"
+            (change)="applyFilters()"
+          >
+            <option value="">Todos os locais</option>
+
+            <option
+              *ngFor="let location of locations"
+              [value]="location.id"
+            >
+              {{ location.nome }}
+            </option>
+          </select>
+
+          <select
+            [(ngModel)]="obraFilter"
+            (change)="applyFilters()"
+          >
+            <option value="">Todas as obras</option>
+
+            <option
+              *ngFor="let obra of obras"
+              [value]="obra.id"
+            >
+              {{ obra.nome }}
+            </option>
+          </select>
+
+          <select
+            [(ngModel)]="situationFilter"
+            (change)="applyFilters()"
+          >
+            <option value="">Todas as situações</option>
+            <option value="NORMAL">Normal</option>
+            <option value="REPOSICAO">
+              Reposição
+            </option>
+            <option value="BAIXO">
+              Estoque baixo
+            </option>
+            <option value="ZERADO">Zerado</option>
+            <option value="NEGATIVO">Negativo</option>
+          </select>
+
+          <select
+            [(ngModel)]="availabilityFilter"
+            (change)="applyFilters()"
+          >
+            <option value="ALL">
+              Com e sem estoque
+            </option>
+            <option value="WITH_STOCK">
+              Somente com saldo
+            </option>
+            <option value="EMPTY">
+              Somente zerados
+            </option>
+            <option value="RESERVED">
+              Somente reservados
+            </option>
+          </select>
+
+          <button
+            type="button"
+            class="filter-action"
+            (click)="clearFilters()"
+          >
+            Limpar filtros
+          </button>
+        </div>
+
+        <div class="result-summary">
+          <div>
+            <strong>{{ filteredBalances.length }}</strong>
+            posição(ões) encontrada(s)
+          </div>
+
+          <div
+            class="active-location-filter"
+            *ngIf="locationFilter"
+          >
+            Local selecionado pela tela anterior
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="balances-table">
+            <thead>
+              <tr>
+                <th>Material</th>
+                <th>Categoria</th>
+                <th>Local</th>
+                <th>Obra</th>
+                <th class="number">Físico</th>
+                <th class="number">Reservado</th>
+                <th class="number">Disponível</th>
+                <th class="number">Custo médio</th>
+                <th class="number">Valor</th>
+                <th>Situação</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                *ngFor="
+                  let item of filteredBalances;
+                  trackBy: trackByBalance
+                "
+              >
+                <td>
+                  <div class="material-cell">
+                    <div class="material-icon">
+                      <ion-icon
+                        name="cube-outline"
+                      ></ion-icon>
+                    </div>
+
+                    <div>
+                      <strong>
+                        {{ item.material.nome }}
+                      </strong>
+
+                      <span>
+                        {{ item.material.codigo }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  {{
+                    item.material.categoriaMaterial?.nome ||
+                      "—"
+                  }}
+                </td>
+
+                <td>
+                  <div class="location-cell">
+                    <strong>
+                      {{ item.localEstoque.nome }}
+                    </strong>
+
+                    <span>
+                      {{ item.localEstoque.codigo }}
+                    </span>
+                  </div>
+                </td>
+
+                <td>
+                  {{ item.localEstoque.obra?.nome || "—" }}
+                </td>
+
+                <td class="number">
+                  {{
+                    toNumber(item.quantidade)
+                      | number: "1.2-3" : "pt-BR"
+                  }}
+                </td>
+
+                <td class="number reserved">
+                  {{
+                    toNumber(item.quantidadeReservada)
+                      | number: "1.2-3" : "pt-BR"
+                  }}
+                </td>
+
+                <td
+                  class="number available"
+                  [class.negative]="
+                    toNumber(
+                      item.quantidadeDisponivel
+                    ) < 0
+                  "
+                >
+                  {{
+                    toNumber(item.quantidadeDisponivel)
+                      | number: "1.2-3" : "pt-BR"
+                  }}
+                </td>
+
+                <td class="number">
+                  {{
+                    toNumber(item.custoMedio)
+                      | currency:
+                          "BRL":
+                          "symbol":
+                          "1.2-4":
+                          "pt-BR"
+                  }}
+                </td>
+
+                <td class="number value">
+                  {{
+                    toNumber(item.valorTotal)
+                      | currency:
+                          "BRL":
+                          "symbol":
+                          "1.2-2":
+                          "pt-BR"
+                  }}
+                </td>
+
+                <td>
+                  <span
+                    class="situation-badge"
+                    [ngClass]="
+                      getSituationClass(
+                        item.situacao
+                      )
+                    "
+                  >
+                    {{
+                      getSituationLabel(
+                        item.situacao
+                      )
+                    }}
+                  </span>
+                </td>
+
+                <td>
+                  <div class="row-actions">
+                    <button
+                      type="button"
+                      class="icon-action history"
+                      title="Ver movimentações"
+                      (click)="openMovements(item)"
+                    >
+                      <ion-icon
+                        name="bar-chart-outline"
+                      ></ion-icon>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="icon-action transfer"
+                      title="Transferir material"
+                      (click)="openTransfer(item)"
+                    >
+                      <ion-icon
+                        name="swap-horizontal-outline"
+                      ></ion-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div
+          class="empty-state"
+          *ngIf="filteredBalances.length === 0"
+        >
+          <ion-icon name="layers-outline"></ion-icon>
+
+          <h3>Nenhum saldo encontrado</h3>
+
+          <p>
+            Revise os filtros ou verifique se já existem movimentações de estoque.
+          </p>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+</ion-content>

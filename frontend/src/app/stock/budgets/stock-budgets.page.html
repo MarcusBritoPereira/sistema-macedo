@@ -1,76 +1,502 @@
 <ion-content class="ion-padding stock-page">
-  <section class="stock-hero">
+
+  <section class="page-header">
     <div>
-      <p class="eyebrow">Estoque</p>
-      <h1><ion-icon name="calculator-outline"></ion-icon> Orçamento por obra</h1>
-      <p>Cadastre versões de orçamento de materiais para comparar consumo real e custo apropriado por obra.</p>
+      <p class="eyebrow">ESTOQUE</p>
+
+      <h1>
+        <ion-icon name="calculator-outline"></ion-icon>
+        Orçamento por obra
+      </h1>
+
+      <p>
+        Planeje materiais e custos e acompanhe
+        o consumo real de cada obra.
+      </p>
     </div>
-    <ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Atualizar</ion-button>
+
+    <ion-button (click)="openDrawer()">
+      <ion-icon
+        name="add-outline"
+        slot="start"
+      ></ion-icon>
+      Novo orçamento
+    </ion-button>
   </section>
 
-  <section class="stock-card stock-form-grid">
-    <ion-item>
-      <ion-label position="stacked">Obra</ion-label>
-      <ion-select [(ngModel)]="form.obraId" interface="popover" placeholder="Selecione a obra">
-        <ion-select-option *ngFor="let obra of obras" [value]="obra.id">{{ obra.nome }}</ion-select-option>
+  <section class="kpi-grid">
+    <article class="kpi-card">
+      <span>Orçamentos</span>
+      <strong>{{ totalBudgets }}</strong>
+      <small>Registros encontrados</small>
+    </article>
+
+    <article class="kpi-card">
+      <span>Rascunhos</span>
+      <strong>{{ drafts }}</strong>
+      <small>Em elaboração</small>
+    </article>
+
+    <article
+      class="kpi-card"
+      [class.warning]="pending > 0"
+    >
+      <span>Aguardando aprovação</span>
+      <strong>{{ pending }}</strong>
+      <small>Pendentes de decisão</small>
+    </article>
+
+    <article class="kpi-card">
+      <span>Aprovados</span>
+      <strong>{{ approved }}</strong>
+      <small>Versões vigentes</small>
+    </article>
+
+    <article class="kpi-card value-card">
+      <span>Valor listado</span>
+      <strong>
+        {{
+          totalValue
+            | currency:'BRL':'symbol':'1.2-2'
+        }}
+      </strong>
+      <small>Soma dos registros exibidos</small>
+    </article>
+  </section>
+
+  <section class="filters-card">
+    <ion-searchbar
+      [(ngModel)]="search"
+      (ionInput)="load()"
+      debounce="350"
+      placeholder="Buscar por obra ou observação"
+    ></ion-searchbar>
+
+    <div class="filter-field">
+      <label>Obra</label>
+
+      <ion-select
+        [(ngModel)]="obraFilter"
+        (ionChange)="load()"
+        interface="popover"
+        placeholder="Todas"
+      >
+        <ion-select-option value="">
+          Todas
+        </ion-select-option>
+
+        <ion-select-option
+          *ngFor="let obra of obras"
+          [value]="obra.id"
+        >
+          {{ obra.nome }}
+        </ion-select-option>
       </ion-select>
-    </ion-item>
-    <ion-item>
-      <ion-label position="stacked">Data de referência</ion-label>
-      <ion-input type="date" [(ngModel)]="form.dataReferencia"></ion-input>
-    </ion-item>
-    <ion-item>
-      <ion-label position="stacked">Observação</ion-label>
-      <ion-textarea [(ngModel)]="form.observacao"></ion-textarea>
-    </ion-item>
-  </section>
-
-  <section class="stock-card">
-    <div class="stock-actions">
-      <strong>Itens orçados</strong>
-      <ion-button size="small" fill="outline" (click)="addItem()"><ion-icon name="add-outline" slot="start"></ion-icon>Adicionar item</ion-button>
     </div>
-    <div class="stock-row-form" *ngFor="let item of form.items; let i = index">
-      <ion-item>
-        <ion-label position="stacked">Material</ion-label>
-        <ion-select [(ngModel)]="item.materialId" interface="popover">
-          <ion-select-option *ngFor="let material of materials" [value]="material.id">{{ material.codigo }} - {{ material.nome }}</ion-select-option>
-        </ion-select>
-      </ion-item>
-      <ion-item>
-        <ion-label position="stacked">Quantidade</ion-label>
-        <ion-input type="number" [(ngModel)]="item.quantidadeOrcada"></ion-input>
-      </ion-item>
-      <ion-item>
-        <ion-label position="stacked">Custo unitário</ion-label>
-        <ion-input type="number" [(ngModel)]="item.custoUnitarioOrcado"></ion-input>
-      </ion-item>
-      <ion-item>
-        <ion-label position="stacked">Etapa</ion-label>
-        <ion-input [(ngModel)]="item.etapaObra" placeholder="Ex.: Fundação"></ion-input>
-      </ion-item>
-      <div class="stock-row-total">{{ itemTotal(item) | currency:'BRL':'symbol':'1.2-2' }}</div>
-      <ion-button fill="clear" color="danger" (click)="removeItem(i)"><ion-icon name="trash-outline"></ion-icon></ion-button>
+
+    <div class="filter-field">
+      <label>Status</label>
+
+      <ion-select
+        [(ngModel)]="statusFilter"
+        (ionChange)="load()"
+        interface="popover"
+        placeholder="Todos"
+      >
+        <ion-select-option value="">
+          Todos
+        </ion-select-option>
+
+        <ion-select-option value="RASCUNHO">
+          Rascunho
+        </ion-select-option>
+
+        <ion-select-option value="PENDENTE_APROVACAO">
+          Aguardando aprovação
+        </ion-select-option>
+
+        <ion-select-option value="APROVADO">
+          Aprovado
+        </ion-select-option>
+
+        <ion-select-option value="SUBSTITUIDO">
+          Substituído
+        </ion-select-option>
+
+        <ion-select-option value="CANCELADO">
+          Cancelado
+        </ion-select-option>
+      </ion-select>
     </div>
-    <ion-button (click)="save()" [disabled]="saving || !isValid()"><ion-icon name="save-outline" slot="start"></ion-icon>Salvar orçamento</ion-button>
+
+    <div class="filter-actions">
+      <button
+        class="clear-button"
+        type="button"
+        (click)="clearFilters()"
+      >
+        Limpar
+      </button>
+
+      <ion-button
+        fill="outline"
+        (click)="load()"
+      >
+        <ion-icon
+          name="refresh-outline"
+          slot="start"
+        ></ion-icon>
+        Atualizar
+      </ion-button>
+    </div>
   </section>
 
-  <ion-searchbar [(ngModel)]="search" (ionInput)="load()" placeholder="Buscar por obra ou observação"></ion-searchbar>
-  <ion-spinner *ngIf="loading"></ion-spinner>
+  <div class="loading-area" *ngIf="loading">
+    <ion-spinner></ion-spinner>
+    <span>Carregando orçamentos...</span>
+  </div>
 
-  <section class="stock-table" *ngIf="!loading">
-    <table>
-      <thead><tr><th>Obra</th><th>Versão</th><th>Status</th><th>Referência</th><th>Itens</th><th>Ações</th></tr></thead>
-      <tbody>
-        <tr *ngFor="let budget of budgets">
-          <td>{{ budget.obra?.nome || '-' }}</td>
-          <td>v{{ budget.versao }}</td>
-          <td><span class="stock-badge">{{ budget.status }}</span></td>
-          <td>{{ budget.dataReferencia | date:'shortDate' }}</td>
-          <td>{{ budget._count?.itens || budget.itens?.length || 0 }}</td>
-          <td><ion-button size="small" fill="outline" [routerLink]="['/stock/budgets', budget.id]">Real x orçado</ion-button></td>
-        </tr>
-      </tbody>
-    </table>
+  <section
+    class="table-card"
+    *ngIf="!loading"
+  >
+    <div class="table-heading">
+      <div>
+        <h2>Orçamentos de materiais</h2>
+        <p>
+          {{ budgets.length }}
+          registro(s) encontrado(s)
+        </p>
+      </div>
+    </div>
+
+    <div
+      class="table-scroll"
+      *ngIf="budgets.length"
+    >
+      <table>
+        <thead>
+          <tr>
+            <th>Obra</th>
+            <th>Versão</th>
+            <th>Status</th>
+            <th>Referência</th>
+            <th>Itens</th>
+            <th>Valor orçado</th>
+            <th>Criado por</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let budget of budgets">
+            <td class="obra-cell">
+              <strong>
+                {{ budget.obra?.nome || '-' }}
+              </strong>
+            </td>
+
+            <td>
+              <span class="version-pill">
+                v{{ budget.versao }}
+              </span>
+            </td>
+
+            <td>
+              <span
+                class="status-badge"
+                [attr.data-status]="budget.status"
+              >
+                {{ statusLabel(budget.status) }}
+              </span>
+            </td>
+
+            <td>
+              {{
+                budget.dataReferencia
+                  | date:'dd/MM/yyyy'
+              }}
+            </td>
+
+            <td>
+              {{
+                budget._count?.itens ||
+                budget.itens?.length ||
+                0
+              }}
+            </td>
+
+            <td class="money-cell">
+              {{
+                budget.valorTotalOrcado || 0
+                  | currency:'BRL':'symbol':'1.2-2'
+              }}
+            </td>
+
+            <td>
+              {{ budget.criadoPor?.nome || '-' }}
+            </td>
+
+            <td>
+              <a
+                class="view-button"
+                [routerLink]="[
+                  '/stock/budgets',
+                  budget.id
+                ]"
+              >
+                Real x orçado
+              </a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div
+      class="empty-state"
+      *ngIf="!budgets.length"
+    >
+      <ion-icon name="calculator-outline"></ion-icon>
+
+      <strong>Nenhum orçamento encontrado</strong>
+
+      <p>
+        Crie o primeiro orçamento de materiais
+        para uma obra.
+      </p>
+
+      <ion-button
+        size="small"
+        (click)="openDrawer()"
+      >
+        Novo orçamento
+      </ion-button>
+    </div>
   </section>
+
+  <div
+    class="drawer-overlay"
+    *ngIf="drawerOpen"
+  >
+    <div
+      class="drawer-backdrop"
+      (click)="closeDrawer()"
+    ></div>
+
+    <aside class="drawer-panel">
+      <header class="drawer-header">
+        <div>
+          <span>NOVO ORÇAMENTO</span>
+          <h2>Orçamento de materiais</h2>
+          <p>
+            Cadastre os materiais planejados
+            para esta versão do orçamento.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          class="drawer-close"
+          (click)="closeDrawer()"
+        >
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
+      </header>
+
+      <div class="drawer-body">
+
+        <div class="main-fields">
+          <div class="form-field">
+            <label>Obra *</label>
+
+            <ion-select
+              [(ngModel)]="form.obraId"
+              interface="popover"
+              placeholder="Selecione"
+            >
+              <ion-select-option
+                *ngFor="let obra of obras"
+                [value]="obra.id"
+              >
+                {{ obra.nome }}
+              </ion-select-option>
+            </ion-select>
+          </div>
+
+          <div class="form-field">
+            <label>Data de referência *</label>
+
+            <ion-input
+              type="date"
+              [(ngModel)]="form.dataReferencia"
+            ></ion-input>
+          </div>
+        </div>
+
+        <div class="form-field">
+          <label>Observação</label>
+
+          <ion-textarea
+            rows="3"
+            maxlength="500"
+            [(ngModel)]="form.observacao"
+            placeholder="Observações sobre esta versão"
+          ></ion-textarea>
+        </div>
+
+        <section class="items-section">
+          <div class="items-header">
+            <div>
+              <strong>Itens orçados</strong>
+              <span>
+                {{ form.items.length }}
+                item(ns)
+              </span>
+            </div>
+
+            <ion-button
+              size="small"
+              fill="outline"
+              (click)="addItem()"
+            >
+              <ion-icon
+                name="add-outline"
+                slot="start"
+              ></ion-icon>
+              Adicionar
+            </ion-button>
+          </div>
+
+          <div
+            class="budget-item"
+            *ngFor="
+              let item of form.items;
+              let i = index
+            "
+          >
+            <div class="item-number">
+              {{ i + 1 }}
+            </div>
+
+            <div class="item-fields">
+              <div class="form-field material-field">
+                <label>Material *</label>
+
+                <ion-select
+                  [(ngModel)]="item.materialId"
+                  interface="popover"
+                  placeholder="Selecione o material"
+                >
+                  <ion-select-option
+                    *ngFor="let material of materials"
+                    [value]="material.id"
+                  >
+                    {{ material.codigo }} -
+                    {{ material.nome }}
+                  </ion-select-option>
+                </ion-select>
+              </div>
+
+              <div class="item-numbers">
+                <div class="form-field">
+                  <label>Quantidade *</label>
+
+                  <ion-input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    [(ngModel)]="item.quantidadeOrcada"
+                  ></ion-input>
+                </div>
+
+                <div class="form-field">
+                  <label>Custo unitário *</label>
+
+                  <ion-input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    [(ngModel)]="item.custoUnitarioOrcado"
+                  ></ion-input>
+                </div>
+
+                <div class="form-field">
+                  <label>Etapa</label>
+
+                  <ion-input
+                    [(ngModel)]="item.etapaObra"
+                    placeholder="Ex.: Fundação"
+                  ></ion-input>
+                </div>
+              </div>
+            </div>
+
+            <div class="item-total">
+              <span>Total</span>
+              <strong>
+                {{
+                  itemTotal(item)
+                    | currency:'BRL':'symbol':'1.2-2'
+                }}
+              </strong>
+            </div>
+
+            <button
+              type="button"
+              class="remove-item"
+              [disabled]="form.items.length === 1"
+              (click)="removeItem(i)"
+              title="Remover item"
+            >
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+        </section>
+
+        <div
+          class="form-error"
+          *ngIf="errorMessage"
+        >
+          {{ errorMessage }}
+        </div>
+
+      </div>
+
+      <footer class="drawer-footer">
+        <div class="budget-total">
+          <span>Total do orçamento</span>
+          <strong>
+            {{
+              formTotal
+                | currency:'BRL':'symbol':'1.2-2'
+            }}
+          </strong>
+        </div>
+
+        <div class="drawer-actions">
+          <button
+            type="button"
+            class="cancel-button"
+            (click)="closeDrawer()"
+            [disabled]="saving"
+          >
+            Cancelar
+          </button>
+
+          <ion-button
+            (click)="save()"
+            [disabled]="saving || !isValid()"
+          >
+            {{
+              saving
+                ? 'Salvando...'
+                : 'Salvar orçamento'
+            }}
+          </ion-button>
+        </div>
+      </footer>
+    </aside>
+  </div>
+
 </ion-content>

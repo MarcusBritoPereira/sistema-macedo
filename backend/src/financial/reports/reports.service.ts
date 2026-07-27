@@ -898,6 +898,7 @@ export class ReportsService {
       where,
       include: {
         obra: true,
+        categoria: true,
       }
     });
 
@@ -930,11 +931,11 @@ export class ReportsService {
 
       if (t.tipoCusto === 'MATERIAL') {
         materialCost += val;
-        const catName = t.categoriaCusto || 'Geral';
+        const catName = t.categoria?.nome || 'Sem categoria';
         materialItems[catName] = (materialItems[catName] || 0) + val;
       } else if (t.tipoCusto === 'MAO_DE_OBRA') {
         laborCost += val;
-        const catName = t.categoriaCusto || 'Geral';
+        const catName = t.categoria?.nome || 'Sem categoria';
         laborItems[catName] = (laborItems[catName] || 0) + val;
       }
 

@@ -20,6 +20,30 @@ type ReportQuery = PaginationQueryDto & {
 export class StockReportsService {
   constructor(private readonly prisma: PrismaService) {}
 
+  private dateRange(
+    dataInicio?: string,
+    dataFim?: string,
+  ): Prisma.DateTimeFilter | undefined {
+    if (!dataInicio && !dataFim) {
+      return undefined;
+    }
+
+    const filter: Prisma.DateTimeFilter = {};
+
+    if (dataInicio) {
+      filter.gte = new Date(`${dataInicio}T00:00:00.000`);
+    }
+
+    if (dataFim) {
+      const end = new Date(`${dataFim}T00:00:00.000`);
+      end.setDate(end.getDate() + 1);
+
+      filter.lt = end;
+    }
+
+    return filter;
+  }
+
   async position(query: ReportQuery) {
     const { skip, take } = normalizePagination(query.skip, query.take);
     const where: Prisma.SaldoEstoqueWhereInput = {
@@ -61,7 +85,14 @@ export class StockReportsService {
       ...(query.localEstoqueId ? { OR: [{ localOrigemId: query.localEstoqueId }, { localDestinoId: query.localEstoqueId }] } : {}),
       ...(query.tipo ? { tipo: query.tipo } : {}),
       ...(query.status ? { status: query.status as any } : {}),
-      ...(query.dataInicio || query.dataFim ? { dataMovimento: { ...(query.dataInicio ? { gte: new Date(query.dataInicio) } : {}), ...(query.dataFim ? { lte: new Date(query.dataFim) } : {}) } } : {}),
+      ...(this.dateRange(query.dataInicio, query.dataFim)
+        ? {
+            dataMovimento: this.dateRange(
+              query.dataInicio,
+              query.dataFim,
+            ),
+          }
+        : {}),
     };
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.movimentoEstoque.findMany({
@@ -96,7 +127,14 @@ export class StockReportsService {
     const where: Prisma.ApropriacaoCustoEstoqueWhereInput = {
       ...(query.obraId ? { obraId: query.obraId } : {}),
       ...(query.materialId ? { materialId: query.materialId } : {}),
-      ...(query.dataInicio || query.dataFim ? { dataCompetencia: { ...(query.dataInicio ? { gte: new Date(query.dataInicio) } : {}), ...(query.dataFim ? { lte: new Date(query.dataFim) } : {}) } } : {}),
+      ...(this.dateRange(query.dataInicio, query.dataFim)
+        ? {
+            dataCompetencia: this.dateRange(
+              query.dataInicio,
+              query.dataFim,
+            ),
+          }
+        : {}),
     };
     const grouped = await this.prisma.apropriacaoCustoEstoque.groupBy({
       by: ['obraId', 'materialId', 'centroCustoId'],
@@ -127,15 +165,155 @@ export class StockReportsService {
   }
 
   async losses(query: ReportQuery) {
-    return this.movements({ ...query, tipo: TipoMovimentoEstoque.SAIDA_PERDA });
+    const report =
+      await this.movements({
+        ...query,
+        tipo: TipoMovimentoEstoque.SAIDA_PERDA,
+        formato: 'json',
+      }) as any;
+
+    const items = report.items || [];
+
+    return this.respond(
+      items,
+      {
+        total: report.total || items.length,
+        skip: report.skip || 0,
+        take: report.take || items.length,
+      },
+      query,
+      'perdas_desperdicios_estoque',
+    );
   }
 
   async abc(query: ReportQuery) {
-    const report = await this.consumptionByProject(query) as any;
-    const items = [...report.items]
-      .sort((a, b) => Number(b.custoTotal) - Number(a.custoTotal))
-      .map((item, index) => ({ ...item, posicao: index + 1, classe: index < 10 ? 'A' : index < 30 ? 'B' : 'C' }));
-    return this.respond(items, { total: items.length, skip: 0, take: items.length }, query, 'curva_abc_estoque');
+    const baseQuery = {
+      ...query,
+      formato: 'json' as const,
+    };
+
+    const report =
+      await this.consumptionByProject(baseQuery) as any;
+
+    const groupedByMaterial = new Map<
+      string,
+      {
+        materialCodigo: string;
+        material: string;
+        quantidadeConsumida: Prisma.Decimal;
+        custoTotal: Prisma.Decimal;
+      }
+    >();
+
+    for (const item of report.items || []) {
+      const key = item.materialCodigo;
+
+      const existing = groupedByMaterial.get(key);
+
+      if (existing) {
+        existing.quantidadeConsumida =
+          existing.quantidadeConsumida.plus(
+            item.quantidadeConsumida || 0,
+          );
+
+        existing.custoTotal =
+          existing.custoTotal.plus(
+            item.custoTotal || 0,
+          );
+
+        continue;
+      }
+
+      groupedByMaterial.set(key, {
+        materialCodigo: item.materialCodigo,
+        material: item.material,
+        quantidadeConsumida:
+          new Prisma.Decimal(
+            item.quantidadeConsumida || 0,
+          ),
+        custoTotal:
+          new Prisma.Decimal(
+            item.custoTotal || 0,
+          ),
+      });
+    }
+
+    const sorted = Array.from(
+      groupedByMaterial.values(),
+    ).sort(
+      (a, b) =>
+        b.custoTotal.comparedTo(a.custoTotal),
+    );
+
+    const totalValue = sorted.reduce(
+      (sum, item) =>
+        sum.plus(item.custoTotal),
+      new Prisma.Decimal(0),
+    );
+
+    let accumulated =
+      new Prisma.Decimal(0);
+
+    const items = sorted.map(
+      (item, index) => {
+        accumulated =
+          accumulated.plus(item.custoTotal);
+
+        const percentual =
+          totalValue.gt(0)
+            ? item.custoTotal
+                .div(totalValue)
+                .mul(100)
+            : new Prisma.Decimal(0);
+
+        const percentualAcumulado =
+          totalValue.gt(0)
+            ? accumulated
+                .div(totalValue)
+                .mul(100)
+            : new Prisma.Decimal(0);
+
+        let classe = 'C';
+
+        if (
+          percentualAcumulado.lte(80)
+        ) {
+          classe = 'A';
+        } else if (
+          percentualAcumulado.lte(95)
+        ) {
+          classe = 'B';
+        }
+
+        return {
+          posicao: index + 1,
+          materialCodigo:
+            item.materialCodigo,
+          material:
+            item.material,
+          quantidadeConsumida:
+            item.quantidadeConsumida.toString(),
+          custoTotal:
+            item.custoTotal.toString(),
+          percentual:
+            percentual.toFixed(2),
+          percentualAcumulado:
+            percentualAcumulado.toFixed(2),
+          classe,
+        };
+      },
+    );
+
+    return this.respond(
+      items,
+      {
+        total: items.length,
+        skip: 0,
+        take: items.length,
+      },
+      query,
+      'curva_abc_estoque',
+    );
   }
 
   async purchaseSuggestion(query: ReportQuery) {

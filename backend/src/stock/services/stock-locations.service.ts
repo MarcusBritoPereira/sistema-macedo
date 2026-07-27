@@ -42,12 +42,62 @@ export class StockLocationsService {
         where,
         skip,
         take,
-        include: this.includeRelations(),
+        include: {
+          ...this.includeRelations(),
+          saldos: {
+            select: {
+              quantidade: true,
+              quantidadeReservada: true,
+              valorTotal: true,
+              materialId: true,
+            },
+          },
+        },
         orderBy: [{ nome: 'asc' }],
       }),
       this.prisma.localEstoque.count({ where }),
     ]);
-    return { items, total, skip, take };
+    return {
+      items: items.map((item) => {
+        const quantidadeFisica = item.saldos.reduce(
+          (acc, saldo) => acc.plus(saldo.quantidade),
+          new Prisma.Decimal(0),
+        );
+
+        const quantidadeReservada = item.saldos.reduce(
+          (acc, saldo) => acc.plus(saldo.quantidadeReservada),
+          new Prisma.Decimal(0),
+        );
+
+        const quantidadeDisponivel =
+          quantidadeFisica.minus(quantidadeReservada);
+
+        const valorTotalEstoque = item.saldos.reduce(
+          (acc, saldo) => acc.plus(saldo.valorTotal),
+          new Prisma.Decimal(0),
+        );
+
+        const materiaisComSaldo = item.saldos.filter(
+          (saldo) =>
+            !new Prisma.Decimal(saldo.quantidade).eq(0) ||
+            !new Prisma.Decimal(saldo.quantidadeReservada).eq(0),
+        ).length;
+
+        const { saldos, ...location } = item;
+
+        return {
+          ...location,
+          quantidadeMateriais: materiaisComSaldo,
+          quantidadeFisica,
+          quantidadeReservada,
+          quantidadeDisponivel,
+          valorTotalEstoque,
+        };
+      }),
+      total,
+      skip,
+      take,
+    };
   }
 
   async findOne(id: string) {

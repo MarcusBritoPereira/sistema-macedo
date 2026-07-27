@@ -31,6 +31,12 @@ export class StockIssuesController {
     return this.documents.findOne(id);
   }
 
+  @Post(':id/submit')
+  @RequirePermissions('ESTOQUE_SAIDA_CRIAR')
+  submit(@Param('id') id: string, @Req() req: any) {
+    return this.documents.submit(id, req.user.id);
+  }
+
   @Post(':id/approve')
   @RequirePermissions('ESTOQUE_SAIDA_APROVAR')
   approve(@Param('id') id: string, @Req() req: any) {

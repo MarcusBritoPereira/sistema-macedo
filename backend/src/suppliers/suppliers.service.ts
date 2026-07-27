@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
@@ -10,17 +10,33 @@ export class SuppliersService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateSupplierDto) {
-    return this.prisma.fornecedor.create({
-      data: {
-        nomeFantasia: dto.nomeFantasia,
-        razaoSocial: dto.razaoSocial,
-        cnpj: dto.cnpj,
-        email: dto.email,
-        telefone: dto.telefone,
-        categoriaDefaultId: dto.categoriaDefaultId,
-        ativo: dto.ativo ?? true,
-      },
-    });
+    const cnpj = dto.cnpj?.replace(/\D/g, '').trim() || null;
+
+    try {
+      return await this.prisma.fornecedor.create({
+        data: {
+          nomeFantasia: dto.nomeFantasia,
+          razaoSocial: dto.razaoSocial,
+          cnpj,
+          email: dto.email || null,
+          telefone: dto.telefone || null,
+          categoriaDefaultId: dto.categoriaDefaultId || null,
+          ativo: dto.ativo ?? true,
+        },
+      });
+    } catch (error: any) {
+      if (
+        error?.code === 'P2002' &&
+        Array.isArray(error?.meta?.target) &&
+        error.meta.target.includes('cnpj')
+      ) {
+        throw new ConflictException(
+          'Já existe um fornecedor cadastrado com este CPF/CNPJ.',
+        );
+      }
+
+      throw error;
+    }
   }
 
   getTemplate(res: Response) {

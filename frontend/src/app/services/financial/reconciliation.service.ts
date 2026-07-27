@@ -2,7 +2,12 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '../api/api.service';
 import { Observable } from 'rxjs';
-import { BankStatement, SuggestedMatch, PaginatedStatementsResponse } from './reconciliation';
+import {
+    BankStatement,
+    SuggestedMatch,
+    PaginatedStatementsResponse,
+    OpenReceivable
+} from './reconciliation';
 
 @Injectable({
     providedIn: 'root'
@@ -28,6 +33,42 @@ export class ReconciliationService {
 
     getSuggestedMatches(statementId: string): Observable<SuggestedMatch[]> {
         return this.api.get<SuggestedMatch[]>(`financial/reconciliation/suggested-matches/${statementId}`);
+    }
+
+    getOpenReceivables(filters?: {
+        clienteId?: string;
+        search?: string;
+    }): Observable<OpenReceivable[]> {
+        const parts: string[] = [];
+
+        if (filters?.clienteId) {
+            parts.push(`clienteId=${encodeURIComponent(filters.clienteId)}`);
+        }
+
+        if (filters?.search) {
+            parts.push(`search=${encodeURIComponent(filters.search)}`);
+        }
+
+        const query = parts.length ? `?${parts.join('&')}` : '';
+
+        return this.api.get<OpenReceivable[]>(
+            `financial/reconciliation/receivables/open${query}`
+        );
+    }
+
+    linkReceivablePayment(
+        statementId: string,
+        lancamentoId: string,
+        confirmacaoManual: boolean = false
+    ): Observable<any> {
+        return this.api.post(
+            'financial/reconciliation/receivable-payment',
+            {
+                statementId,
+                lancamentoId,
+                confirmacaoManual
+            }
+        );
     }
 
     linkManual(statementId: string, lancamentoId: string, confirmacaoManual: boolean = false): Observable<any> {

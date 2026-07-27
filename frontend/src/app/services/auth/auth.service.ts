@@ -53,7 +53,7 @@ export class AuthService {
           this.isAuthenticated = true;
           // Só redireciona se não precisar trocar a senha
           if (!res.user.precisaTrocarSenha) {
-            window.location.href = '/financial/dashboard';
+            window.location.href = this.getDefaultRoute(res.user);
           }
         }
       }),
@@ -100,6 +100,16 @@ export class AuthService {
     sessionStorage.removeItem('user');
     this.isAuthenticated = false;
     this.userSubject.next(null);
+  }
+
+  isStockProfile(user: any = this.userSubject.value): boolean {
+    return user?.perfil?.nome === 'ESTOQUE';
+  }
+
+  getDefaultRoute(user: any = this.userSubject.value): string {
+    return this.isStockProfile(user)
+      ? '/stock/dashboard'
+      : '/financial/dashboard';
   }
 
   hasPermission(

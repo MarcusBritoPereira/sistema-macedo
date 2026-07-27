@@ -68,7 +68,7 @@
             <td>{{ item.material.codigo }} - {{ item.material.nome }}</td>
             <td>{{ item.localEstoque.nome }}</td>
             <td>{{ item.quantidadeDisponivel | number:'1.2-2' }}</td>
-            <td><span class="status" [class.critical]="item.situacao === 'CRITICO' || item.situacao === 'ZERADO' || item.situacao === 'NEGATIVO'">{{ item.situacao }}</span></td>
+            <td><span class="status" [class.critical]="item.situacao === 'BAIXO' || item.situacao === 'ZERADO' || item.situacao === 'NEGATIVO'">{{ item.situacao }}</span></td>
           </tr>
         </tbody>
       </table>

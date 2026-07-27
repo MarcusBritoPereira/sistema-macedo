@@ -15,6 +15,19 @@ export class ParcelasTableComponent implements OnInit {
   @Input() obraId!: string;
   @Input() orcamentoPrevisto: number = 0;
   @Input() parcelas: ParcelaObra[] = [];
+
+  editModalOpen = false;
+  savingEdit = false;
+  editingParcela: ParcelaObra | null = null;
+
+  editForm = {
+    descricao: '',
+    porcentagem: '',
+    valor: '',
+    dataVencimento: '',
+    dataVencimentoTexto: '',
+    observacao: ''
+  };
   
   @Output() parcelasChanged = new EventEmitter<void>();
 
@@ -74,6 +87,24 @@ export class ParcelasTableComponent implements OnInit {
   }
 
   async generateParcelas(qtd: number, dataInicioStr: string, intervaloDias: number) {
+    const parcelasLancadas = this.parcelas.filter(
+      p => !!p.transacaoId
+    );
+
+    if (parcelasLancadas.length > 0) {
+      const alert = await this.alertCtrl.create({
+        header: 'Cronograma já lançado',
+        message:
+          'Existem parcelas já lançadas em contas a receber. ' +
+          'O Gerador não pode recriar o cronograma enquanto houver ' +
+          'parcelas vinculadas ao financeiro.',
+        buttons: ['OK']
+      });
+
+      await alert.present();
+      return;
+    }
+
     if (!this.orcamentoPrevisto) {
       const alert = await this.alertCtrl.create({
         header: 'Aviso',
@@ -125,58 +156,377 @@ export class ParcelasTableComponent implements OnInit {
     this.parcelasChanged.emit();
   }
 
-  async editParcela(parcela: ParcelaObra) {
-    const alert = await this.alertCtrl.create({
-      header: 'Editar Parcela',
-      inputs: [
-        {
-          name: 'descricao',
-          type: 'text',
-          placeholder: 'Descrição (Ex: Entrada - 13/04)',
-          value: parcela.descricao || ''
-        },
-        {
-          name: 'porcentagem',
-          type: 'number',
-          placeholder: 'Percentual (%)',
-          value: parcela.porcentagem || ''
-        },
-        {
-          name: 'valor',
-          type: 'number',
-          placeholder: 'Valor (R$)',
-          value: parcela.valor || ''
-        },
-        {
-          name: 'dataVencimento',
-          type: 'date',
-          value: parcela.dataVencimento ? parcela.dataVencimento.split('T')[0] : ''
-        }
-      ],
-      buttons: [
-        { text: 'Cancelar', role: 'cancel' },
-        {
-          text: 'Salvar',
-          handler: async (data) => {
-            const payload: Partial<ParcelaObra> = {
-              descricao: data.descricao,
-              porcentagem: data.porcentagem ? Number(data.porcentagem) : undefined,
-              valor: data.valor ? Number(data.valor) : undefined,
-              dataVencimento: data.dataVencimento ? new Date(data.dataVencimento + 'T12:00:00Z').toISOString() : undefined
-            };
+  async lancarParcelaContasReceber(
+    parcela: ParcelaObra
+  ) {
+    if (!parcela.id || parcela.transacaoId) {
+      return;
+    }
 
-            try {
-              await this.obrasService.updateParcela(this.obraId, parcela.id!, payload).toPromise();
-              this.parcelasChanged.emit();
-            } catch (err) {
-              console.error(err);
-            }
-            return true;
+    const alert = await this.alertCtrl.create({
+      header: 'Lançar em contas a receber',
+      message:
+        `Deseja lançar esta parcela de ` +
+        `${new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(Number(parcela.valor || 0))} ` +
+        `em contas a receber?`,
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Lançar',
+          handler: () => {
+            this.obrasService
+              .lancarParcelaContasReceber(parcela.id!)
+              .subscribe({
+                next: async () => {
+                  const success =
+                    await this.alertCtrl.create({
+                      header: 'Lançamento realizado',
+                      message:
+                        'A parcela foi lançada em contas a receber.',
+                      buttons: ['OK']
+                    });
+
+                  await success.present();
+                  this.parcelasChanged.emit();
+                },
+                error: async (err: any) => {
+                  const backendMessage =
+                    err?.error?.message;
+
+                  const message =
+                    Array.isArray(backendMessage)
+                      ? backendMessage.join(' ')
+                      : backendMessage ||
+                        'Não foi possível lançar a parcela.';
+
+                  const errorAlert =
+                    await this.alertCtrl.create({
+                      header: 'Erro',
+                      message,
+                      buttons: ['OK']
+                    });
+
+                  await errorAlert.present();
+                }
+              });
           }
         }
       ]
     });
+
     await alert.present();
+  }
+
+  async lancarTodasContasReceber() {
+    const pendentes = this.parcelas.filter(
+      p => !p.transacaoId
+    );
+
+    if (pendentes.length === 0) {
+      const alert = await this.alertCtrl.create({
+        header: 'Contas a receber',
+        message:
+          'Todas as parcelas já estão lançadas em contas a receber.',
+        buttons: ['OK']
+      });
+
+      await alert.present();
+      return;
+    }
+
+    const total = pendentes.reduce(
+      (sum, p) => sum + Number(p.valor || 0),
+      0
+    );
+
+    const alert = await this.alertCtrl.create({
+      header: 'Lançar parcelas',
+      message:
+        `Serão lançadas ${pendentes.length} parcela(s), ` +
+        `totalizando ${new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL'
+        }).format(total)} em contas a receber. Confirmar?`,
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel'
+        },
+        {
+          text: 'Lançar todas',
+          handler: () => {
+            this.obrasService
+              .lancarTodasParcelasContasReceber(
+                this.obraId
+              )
+              .subscribe({
+                next: async (result: any) => {
+                  const success =
+                    await this.alertCtrl.create({
+                      header: 'Lançamentos realizados',
+                      message:
+                        `${result?.lancadas || pendentes.length} ` +
+                        `parcela(s) lançada(s) em contas a receber.`,
+                      buttons: ['OK']
+                    });
+
+                  await success.present();
+                  this.parcelasChanged.emit();
+                },
+                error: async (err: any) => {
+                  const backendMessage =
+                    err?.error?.message;
+
+                  const message =
+                    Array.isArray(backendMessage)
+                      ? backendMessage.join(' ')
+                      : backendMessage ||
+                        'Não foi possível lançar as parcelas.';
+
+                  const errorAlert =
+                    await this.alertCtrl.create({
+                      header: 'Erro',
+                      message,
+                      buttons: ['OK']
+                    });
+
+                  await errorAlert.present();
+                }
+              });
+          }
+        }
+      ]
+    });
+
+    await alert.present();
+  }
+
+  editParcela(parcela: ParcelaObra) {
+    this.editingParcela = parcela;
+
+    this.editForm = {
+      descricao: parcela.descricao || '',
+      porcentagem: String(parcela.porcentagem ?? ''),
+      valor: this.formatCurrencyInput(parcela.valor),
+      dataVencimento: parcela.dataVencimento
+        ? parcela.dataVencimento.split('T')[0]
+        : '',
+      dataVencimentoTexto: parcela.dataVencimento
+        ? this.formatDateBr(
+            parcela.dataVencimento.split('T')[0]
+          )
+        : '',
+      observacao: ''
+    };
+
+    this.editModalOpen = true;
+  }
+
+  formatDateBr(value: string): string {
+    if (!value) return '';
+
+    const parts = value.split('-');
+
+    if (parts.length !== 3) {
+      return '';
+    }
+
+    const [year, month, day] = parts;
+
+    return `${day}/${month}/${year}`;
+  }
+
+  onDateTextInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+
+    let value = input.value.replace(/\D/g, '');
+
+    if (value.length > 8) {
+      value = value.slice(0, 8);
+    }
+
+    if (value.length >= 5) {
+      value =
+        value.slice(0, 2) +
+        '/' +
+        value.slice(2, 4) +
+        '/' +
+        value.slice(4);
+    } else if (value.length >= 3) {
+      value =
+        value.slice(0, 2) +
+        '/' +
+        value.slice(2);
+    }
+
+    this.editForm.dataVencimentoTexto = value;
+
+    if (value.length === 10) {
+      const [day, month, year] =
+        value.split('/');
+
+      const dayNumber = Number(day);
+      const monthNumber = Number(month);
+      const yearNumber = Number(year);
+
+      const date = new Date(
+        yearNumber,
+        monthNumber - 1,
+        dayNumber
+      );
+
+      const valid =
+        date.getFullYear() === yearNumber &&
+        date.getMonth() === monthNumber - 1 &&
+        date.getDate() === dayNumber;
+
+      if (valid) {
+        this.editForm.dataVencimento =
+          `${year}-${month}-${day}`;
+      } else {
+        this.editForm.dataVencimento = '';
+      }
+    } else {
+      this.editForm.dataVencimento = '';
+    }
+  }
+
+  onCalendarDateChange(value: string): void {
+    this.editForm.dataVencimento = value || '';
+    this.editForm.dataVencimentoTexto =
+      value ? this.formatDateBr(value) : '';
+  }
+
+  openDatePicker(
+    input: HTMLInputElement
+  ): void {
+    const picker = input as HTMLInputElement & {
+      showPicker?: () => void;
+    };
+
+    if (picker.showPicker) {
+      picker.showPicker();
+    } else {
+      picker.focus();
+      picker.click();
+    }
+  }
+
+  formatCurrencyInput(value: string | number | null | undefined): string {
+    const numeric = Number(value ?? 0);
+
+    if (!Number.isFinite(numeric)) {
+      return '';
+    }
+
+    return new Intl.NumberFormat('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(numeric);
+  }
+
+  normalizeCurrencyInput(): void {
+    const raw = String(this.editForm.valor || '')
+      .replace(/\s/g, '')
+      .replace(/\./g, '')
+      .replace(',', '.');
+
+    const numeric = Number(raw);
+
+    if (!Number.isFinite(numeric)) {
+      return;
+    }
+
+    this.editForm.valor =
+      this.formatCurrencyInput(numeric);
+  }
+
+  closeEditModal() {
+    if (this.savingEdit) return;
+
+    this.editModalOpen = false;
+    this.editingParcela = null;
+  }
+
+  async saveEditParcela() {
+    if (!this.editingParcela?.id) return;
+
+    const porcentagem = Number(
+      String(this.editForm.porcentagem)
+        .replace(',', '.')
+    );
+
+    const valor = Number(
+      String(this.editForm.valor)
+        .replace(/\./g, '')
+        .replace(',', '.')
+    );
+
+    if (
+      !this.editForm.dataVencimento ||
+      !Number.isFinite(valor) ||
+      valor < 0 ||
+      !Number.isFinite(porcentagem) ||
+      porcentagem < 0 ||
+      porcentagem > 100
+    ) {
+      const alerta = await this.alertCtrl.create({
+        header: 'Dados inválidos',
+        message:
+          'Informe percentual entre 0 e 100, valor válido e vencimento.',
+        buttons: ['OK']
+      });
+
+      await alerta.present();
+      return;
+    }
+
+    const payload: Partial<ParcelaObra> = {
+      descricao:
+        this.editForm.descricao.trim() || '',
+      porcentagem,
+      valor,
+      dataVencimento: new Date(
+        this.editForm.dataVencimento +
+          'T12:00:00Z'
+      ).toISOString()
+    };
+
+    this.savingEdit = true;
+
+    try {
+      await this.obrasService
+        .updateParcela(
+          this.obraId,
+          this.editingParcela.id,
+          payload
+        )
+        .toPromise();
+
+      this.editModalOpen = false;
+      this.editingParcela = null;
+
+      this.parcelasChanged.emit();
+    } catch (err: any) {
+      const alerta = await this.alertCtrl.create({
+        header: 'Erro ao alterar parcela',
+        message:
+          err?.error?.message ||
+          err?.message ||
+          'Não foi possível salvar as alterações.',
+        buttons: ['OK']
+      });
+
+      await alerta.present();
+    } finally {
+      this.savingEdit = false;
+    }
   }
 
   async removeParcela(parcela: ParcelaObra) {

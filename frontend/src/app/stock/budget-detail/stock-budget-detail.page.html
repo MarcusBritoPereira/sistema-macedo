@@ -1,45 +1,368 @@
 <ion-content class="ion-padding stock-page">
-  <section class="stock-hero">
+
+  <section class="detail-header">
     <div>
-      <p class="eyebrow">Orçamento de materiais</p>
-      <h1><ion-icon name="calculator-outline"></ion-icon> Real versus orçado</h1>
-      <p>{{ comparison?.budget?.obra?.nome || budget?.obra?.nome || '-' }} • versão {{ comparison?.budget?.versao || budget?.versao }}</p>
+      <a
+        routerLink="/stock/budgets"
+        class="back-link"
+      >
+        <ion-icon name="arrow-back-outline"></ion-icon>
+        Orçamentos
+      </a>
+
+      <p class="eyebrow">
+        REAL X ORÇADO
+      </p>
+
+      <div class="title-line">
+        <div>
+          <h1>
+            {{
+              comparison?.budget?.obra?.nome ||
+              budget?.obra?.nome ||
+              'Orçamento'
+            }}
+          </h1>
+
+          <p *ngIf="budget">
+            Versão {{ budget.versao }}
+            <span>•</span>
+            Referência
+            {{
+              budget.dataReferencia
+                | date:'dd/MM/yyyy'
+            }}
+          </p>
+        </div>
+
+        <span
+          class="status-badge"
+          [attr.data-status]="budget?.status"
+          *ngIf="budget"
+        >
+          {{ statusLabel(budget.status) }}
+        </span>
+      </div>
     </div>
-    <div class="stock-actions">
-      <ion-button fill="outline" routerLink="/stock/budgets">Voltar</ion-button>
-      <ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Atualizar</ion-button>
-      <ion-button color="success" (click)="approve()" [disabled]="saving || budget?.status === 'APROVADO'"><ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>Aprovar</ion-button>
+
+    <div class="header-actions">
+      <ion-button
+        fill="outline"
+        (click)="load()"
+        [disabled]="loading || saving"
+      >
+        <ion-icon
+          name="refresh-outline"
+          slot="start"
+        ></ion-icon>
+        Atualizar
+      </ion-button>
+
+      <ion-button
+        *ngIf="budget?.status === 'RASCUNHO'"
+        (click)="submit()"
+        [disabled]="saving"
+      >
+        <ion-icon
+          name="send-outline"
+          slot="start"
+        ></ion-icon>
+        Enviar para aprovação
+      </ion-button>
+
+      <ion-button
+        color="success"
+        *ngIf="
+          budget?.status ===
+          'PENDENTE_APROVACAO'
+        "
+        (click)="approve()"
+        [disabled]="saving"
+      >
+        <ion-icon
+          name="checkmark-circle-outline"
+          slot="start"
+        ></ion-icon>
+        Aprovar
+      </ion-button>
+
+      <ion-button
+        fill="outline"
+        color="danger"
+        *ngIf="
+          budget?.status === 'RASCUNHO' ||
+          budget?.status ===
+            'PENDENTE_APROVACAO'
+        "
+        (click)="cancel()"
+        [disabled]="saving"
+      >
+        Cancelar
+      </ion-button>
     </div>
   </section>
 
-  <ion-spinner *ngIf="loading"></ion-spinner>
+  <div
+    class="error-banner"
+    *ngIf="errorMessage"
+  >
+    {{ errorMessage }}
+  </div>
 
-  <section class="stock-kpis" *ngIf="!loading && comparison">
-    <article><span>Custo orçado</span><strong>{{ comparison.totals.custoOrcado | currency:'BRL':'symbol':'1.2-2' }}</strong></article>
-    <article><span>Custo real</span><strong>{{ comparison.totals.custoReal | currency:'BRL':'symbol':'1.2-2' }}</strong></article>
-    <article><span>Desvio de custo</span><strong>{{ comparison.totals.desvioCusto | currency:'BRL':'symbol':'1.2-2' }}</strong></article>
-    <article><span>Qtd. consumida</span><strong>{{ comparison.totals.quantidadeConsumida }}</strong></article>
-  </section>
+  <div class="loading-area" *ngIf="loading">
+    <ion-spinner></ion-spinner>
+    <span>Carregando comparação...</span>
+  </div>
 
-  <section class="stock-table" *ngIf="!loading && comparison">
-    <table>
-      <thead>
-        <tr><th>Material</th><th>Categoria</th><th>Etapa</th><th>Qtd. orçada</th><th>Qtd. consumida</th><th>Dif. qtd.</th><th>Custo orçado</th><th>Custo real</th><th>Desvio</th><th>Situação</th></tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of comparison.items">
-          <td><strong>{{ item.codigo }}</strong><br>{{ item.material }}</td>
-          <td>{{ item.categoria || '-' }}</td>
-          <td>{{ item.etapaObra || '-' }}</td>
-          <td>{{ item.quantidadeOrcada }}</td>
-          <td>{{ item.quantidadeConsumida }}</td>
-          <td>{{ item.diferencaQuantidade }}</td>
-          <td>{{ item.custoOrcado | currency:'BRL':'symbol':'1.2-2' }}</td>
-          <td>{{ item.custoReal | currency:'BRL':'symbol':'1.2-2' }}</td>
-          <td>{{ item.desvioCusto | currency:'BRL':'symbol':'1.2-2' }}</td>
-          <td><span class="stock-badge" [class.danger]="item.situacao === 'ACIMA'">{{ item.situacao }}</span></td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+  <ng-container
+    *ngIf="!loading && comparison"
+  >
+    <section class="kpi-grid">
+      <article>
+        <span>Custo orçado</span>
+        <strong>
+          {{
+            budgetCost
+              | currency:'BRL':'symbol':'1.2-2'
+          }}
+        </strong>
+        <small>Valor planejado</small>
+      </article>
+
+      <article>
+        <span>Custo real</span>
+        <strong>
+          {{
+            realCost
+              | currency:'BRL':'symbol':'1.2-2'
+          }}
+        </strong>
+        <small>Valor apropriado</small>
+      </article>
+
+      <article
+        [class.danger-card]="deviation > 0"
+        [class.success-card]="deviation <= 0"
+      >
+        <span>Desvio de custo</span>
+
+        <strong
+          [class.negative]="deviation > 0"
+          [class.positive]="deviation <= 0"
+        >
+          {{
+            deviation
+              | currency:'BRL':'symbol':'1.2-2'
+          }}
+        </strong>
+
+        <small>
+          {{
+            deviation > 0
+              ? 'Acima do orçamento'
+              : 'Dentro do orçamento'
+          }}
+        </small>
+      </article>
+
+      <article>
+        <span>Consumo financeiro</span>
+        <strong>
+          {{
+            costUsagePercent
+              | number:'1.1-1'
+          }}%
+        </strong>
+        <small>
+          Percentual do orçamento utilizado
+        </small>
+      </article>
+
+      <article
+        [class.danger-card]="
+          aboveBudgetItems > 0
+        "
+      >
+        <span>Materiais acima</span>
+        <strong>
+          {{ aboveBudgetItems }}
+        </strong>
+        <small>
+          Itens com quantidade ou custo excedido
+        </small>
+      </article>
+    </section>
+
+    <section class="usage-card">
+      <div class="usage-header">
+        <div>
+          <strong>Utilização do orçamento</strong>
+          <span>
+            Custo real sobre o custo planejado
+          </span>
+        </div>
+
+        <strong>
+          {{
+            costUsagePercent
+              | number:'1.1-1'
+          }}%
+        </strong>
+      </div>
+
+      <div class="usage-track">
+        <div
+          class="usage-fill"
+          [class.over]="costUsagePercent > 100"
+          [style.width.%]="
+            costUsagePercent > 100
+              ? 100
+              : costUsagePercent
+          "
+        ></div>
+      </div>
+    </section>
+
+    <section class="comparison-card">
+      <div class="table-heading">
+        <div>
+          <h2>Comparativo por material</h2>
+          <p>
+            Quantidades e custos consolidados
+            por material.
+          </p>
+        </div>
+      </div>
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th>Categoria</th>
+              <th>Etapas</th>
+              <th class="number">
+                Qtd. orçada
+              </th>
+              <th class="number">
+                Qtd. consumida
+              </th>
+              <th class="number">
+                Consumo %
+              </th>
+              <th class="number">
+                Custo orçado
+              </th>
+              <th class="number">
+                Custo real
+              </th>
+              <th class="number">
+                Desvio
+              </th>
+              <th>Situação</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr
+              *ngFor="let item of comparison.items"
+              [class.row-over]="
+                item.situacao === 'ACIMA'
+              "
+            >
+              <td class="material-cell">
+                <strong>
+                  {{ item.material }}
+                </strong>
+
+                <span>
+                  {{ item.codigo }}
+                </span>
+              </td>
+
+              <td>
+                {{ item.categoria || '-' }}
+              </td>
+
+              <td>
+                {{ item.etapaObra || '-' }}
+              </td>
+
+              <td class="number">
+                {{
+                  item.quantidadeOrcada
+                    | number:'1.0-3'
+                }}
+              </td>
+
+              <td class="number">
+                {{
+                  item.quantidadeConsumida
+                    | number:'1.0-3'
+                }}
+              </td>
+
+              <td
+                class="number"
+                [class.negative]="
+                  +item.percentualQuantidade > 100
+                "
+              >
+                {{
+                  +item.percentualQuantidade
+                    | number:'1.1-1'
+                }}%
+              </td>
+
+              <td class="number">
+                {{
+                  item.custoOrcado
+                    | currency:'BRL':'symbol':'1.2-2'
+                }}
+              </td>
+
+              <td class="number">
+                {{
+                  item.custoReal
+                    | currency:'BRL':'symbol':'1.2-2'
+                }}
+              </td>
+
+              <td
+                class="number deviation"
+                [class.negative]="
+                  +item.desvioCusto > 0
+                "
+                [class.positive]="
+                  +item.desvioCusto <= 0
+                "
+              >
+                {{
+                  item.desvioCusto
+                    | currency:'BRL':'symbol':'1.2-2'
+                }}
+              </td>
+
+              <td>
+                <span
+                  class="situation-badge"
+                  [class.over]="
+                    item.situacao === 'ACIMA'
+                  "
+                >
+                  {{
+                    item.situacao === 'ACIMA'
+                      ? 'Acima'
+                      : 'Dentro'
+                  }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </ng-container>
+
 </ion-content>

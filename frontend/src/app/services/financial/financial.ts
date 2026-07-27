@@ -11,7 +11,7 @@ export interface Transaction {
   dataVencimento: string;
   dataPagamento?: string;
   tipo: 'RECEITA' | 'DESPESA';
-  status: 'PREVISTO' | 'REALIZADO' | 'CONCILIADO' | 'CANCELADO';
+  status: 'PREVISTO' | 'PARCIAL' | 'REALIZADO' | 'CONCILIADO' | 'CANCELADO';
   categoriaId?: string;
   centroCustoId?: string;
   contratoId?: string;

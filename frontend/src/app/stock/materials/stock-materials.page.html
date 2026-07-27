@@ -1,19 +1,699 @@
-<ion-content class="stock-content"><div class="stock-page">
-<header class="stock-header"><div><h1>Materiais</h1><p>Catálogo central de insumos e materiais da construção civil</p></div><ion-button (click)="reset()"><ion-icon name="add-outline" slot="start"></ion-icon>Novo</ion-button></header>
-<div class="loading" *ngIf="loading"><ion-spinner name="crescent"></ion-spinner><p>Carregando materiais...</p></div>
-<section class="form-panel" *ngIf="!loading"><div class="panel-title"><ion-icon name="cube-outline"></ion-icon><h2>{{ form.id ? 'Editar material' : 'Cadastrar material' }}</h2></div><div class="form-grid">
-<ion-item><ion-label position="stacked">Código *</ion-label><ion-input [(ngModel)]="form.codigo"></ion-input></ion-item>
-<ion-item class="wide"><ion-label position="stacked">Nome *</ion-label><ion-input [(ngModel)]="form.nome"></ion-input></ion-item>
-<ion-item><ion-label position="stacked">Unidade *</ion-label><ion-select [(ngModel)]="form.unidade"><ion-select-option *ngFor="let unit of units" [value]="unit">{{ unit }}</ion-select-option></ion-select></ion-item>
-<ion-item class="wide"><ion-label position="stacked">Categoria *</ion-label><ion-select [(ngModel)]="form.categoriaMaterialId"><ion-select-option *ngFor="let cat of categories" [value]="cat.id">{{ cat.nome }}</ion-select-option></ion-select></ion-item>
-<ion-item><ion-label position="stacked">Estoque mínimo</ion-label><ion-input type="number" [(ngModel)]="form.estoqueMinimo"></ion-input></ion-item>
-<ion-item><ion-label position="stacked">Ponto reposição</ion-label><ion-input type="number" [(ngModel)]="form.pontoReposicao"></ion-input></ion-item>
-<ion-item><ion-label position="stacked">Custo padrão</ion-label><ion-input type="number" [(ngModel)]="form.custoPadrao"></ion-input></ion-item>
-<ion-item><ion-label position="stacked">Marca</ion-label><ion-input [(ngModel)]="form.marca"></ion-input></ion-item>
-<ion-item><ion-label position="stacked">Código de barras</ion-label><ion-input [(ngModel)]="form.codigoBarras"></ion-input></ion-item>
-<ion-item><ion-label>Fracionado</ion-label><ion-toggle [(ngModel)]="form.permiteFracionado"></ion-toggle></ion-item>
-<ion-item><ion-label>Ativo</ion-label><ion-toggle [(ngModel)]="form.ativo"></ion-toggle></ion-item>
-<ion-item class="wide"><ion-label position="stacked">Observações</ion-label><ion-textarea [(ngModel)]="form.observacoes"></ion-textarea></ion-item>
-</div><div class="form-actions"><ion-button fill="outline" (click)="reset()">Limpar</ion-button><ion-button (click)="save()" [disabled]="saving || !form.codigo || !form.nome || !form.categoriaMaterialId"><ion-icon name="save-outline" slot="start"></ion-icon>Salvar</ion-button></div></section>
-<section class="panel" *ngIf="!loading"><div class="toolbar-row"><ion-searchbar placeholder="Buscar por código, nome, marca..." [(ngModel)]="search" (ionInput)="load()"></ion-searchbar><ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Atualizar</ion-button></div><table><thead><tr><th>Código</th><th>Material</th><th>Categoria</th><th>Un.</th><th>Saldo</th><th>Valor</th><th>Status</th></tr></thead><tbody><tr *ngFor="let item of materials" (click)="edit(item)"><td>{{ item.codigo }}</td><td>{{ item.nome }}</td><td>{{ item.categoriaMaterial?.nome || '-' }}</td><td>{{ item.unidade }}</td><td>{{ item.saldoTotal || 0 | number:'1.2-2' }}</td><td>{{ item.valorTotalEstoque || 0 | currency:'BRL':'symbol':'1.2-2':'pt-BR' }}</td><td><span class="status" [class.critical]="!item.ativo">{{ item.ativo === false ? 'INATIVO' : 'ATIVO' }}</span></td></tr></tbody></table><div class="empty" *ngIf="!materials.length">Nenhum material encontrado.</div></section>
-</div></ion-content>
+<ion-content class="materials-content">
+  <div class="materials-page">
+    <header class="page-header">
+      <div>
+        <h1>Materiais</h1>
+        <p>
+          Cadastro, consulta e acompanhamento dos materiais em estoque
+        </p>
+      </div>
+
+      <ion-button class="new-button" (click)="openNew()">
+        <ion-icon name="add-outline" slot="start"></ion-icon>
+        Novo material
+      </ion-button>
+    </header>
+
+    <div class="loading-state" *ngIf="loading">
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Carregando materiais...</p>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <section class="kpi-grid">
+        <article class="kpi-card">
+          <div class="kpi-icon blue">
+            <ion-icon name="cube-outline"></ion-icon>
+          </div>
+
+          <div>
+            <span class="kpi-label">Materiais cadastrados</span>
+            <strong>{{ totalMaterials }}</strong>
+            <small>{{ activeMaterials }} ativos</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon red">
+            <ion-icon name="alert-circle-outline"></ion-icon>
+          </div>
+
+          <div>
+            <span class="kpi-label">Estoque crítico</span>
+            <strong>{{ lowStockMaterials }}</strong>
+            <small>Baixo, zerado ou negativo</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon orange">
+            <ion-icon name="refresh-outline"></ion-icon>
+          </div>
+
+          <div>
+            <span class="kpi-label">Precisam de reposição</span>
+            <strong>{{ reorderMaterials }}</strong>
+            <small>Atingiram o ponto de reposição</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon green">
+            <ion-icon name="cash-outline"></ion-icon>
+          </div>
+
+          <div>
+            <span class="kpi-label">Valor em estoque</span>
+            <strong>
+              {{
+                totalStockValue
+                  | currency: "BRL" : "symbol" : "1.2-2" : "pt-BR"
+              }}
+            </strong>
+            <small>Valor total armazenado</small>
+          </div>
+        </article>
+      </section>
+
+      <section class="materials-panel">
+        <div class="filters">
+          <div class="search-field">
+            <ion-icon name="search-outline"></ion-icon>
+
+            <input
+              type="text"
+              [(ngModel)]="search"
+              (input)="applyFilters()"
+              placeholder="Buscar por código, material, marca ou código de barras"
+            />
+          </div>
+
+          <select
+            [(ngModel)]="categoryFilter"
+            (change)="applyFilters()"
+          >
+            <option value="">Todas as categorias</option>
+
+            <option
+              *ngFor="let category of categories"
+              [value]="category.id"
+            >
+              {{ category.nome }}
+            </option>
+          </select>
+
+          <select
+            [(ngModel)]="statusFilter"
+            (change)="applyFilters()"
+          >
+            <option value="ALL">Ativos e inativos</option>
+            <option value="ACTIVE">Somente ativos</option>
+            <option value="INACTIVE">Somente inativos</option>
+          </select>
+
+          <select
+            [(ngModel)]="stockFilter"
+            (change)="applyFilters()"
+          >
+            <option value="ALL">Todas as situações</option>
+            <option value="NORMAL">Estoque normal</option>
+            <option value="REPOSICAO">Precisa repor</option>
+            <option value="BAIXO">Estoque baixo</option>
+            <option value="ZERADO">Sem estoque</option>
+            <option value="NEGATIVO">Saldo negativo</option>
+          </select>
+
+          <button
+            type="button"
+            class="filter-action"
+            (click)="clearFilters()"
+          >
+            Limpar filtros
+          </button>
+
+          <button
+            type="button"
+            class="refresh-action"
+            (click)="load()"
+          >
+            <ion-icon name="refresh-outline"></ion-icon>
+            Atualizar
+          </button>
+        </div>
+
+        <div class="result-summary">
+          <span>
+            <strong>{{ filteredMaterials.length }}</strong>
+            material(is) encontrado(s)
+          </span>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="materials-table">
+            <thead>
+              <tr>
+                <th>Material</th>
+                <th>Categoria</th>
+                <th class="center">Un.</th>
+                <th class="number">Saldo</th>
+                <th class="number">Reservado</th>
+                <th class="number">Disponível</th>
+                <th class="number">Custo médio</th>
+                <th class="number">Valor total</th>
+                <th>Situação</th>
+                <th class="actions-column">Ações</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                *ngFor="
+                  let material of filteredMaterials;
+                  trackBy: trackByMaterial
+                "
+              >
+                <td>
+                  <div class="material-cell">
+                    <div class="material-avatar">
+                      <ion-icon name="cube-outline"></ion-icon>
+                    </div>
+
+                    <div>
+                      <strong>{{ material.nome }}</strong>
+                      <span>
+                        {{ material.codigo }}
+
+                        <ng-container *ngIf="material.marca">
+                          · {{ material.marca }}
+                        </ng-container>
+                      </span>
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  {{ material.categoriaMaterial?.nome || "Sem categoria" }}
+                </td>
+
+                <td class="center">
+                  {{ material.unidade }}
+                </td>
+
+                <td class="number">
+                  {{
+                    toNumber(material.saldoTotal)
+                      | number: "1.2-3" : "pt-BR"
+                  }}
+                </td>
+
+                <td class="number reserved">
+                  {{
+                    toNumber(material.saldoReservado)
+                      | number: "1.2-3" : "pt-BR"
+                  }}
+                </td>
+
+                <td class="number available">
+                  {{
+                    toNumber(material.saldoDisponivel)
+                      | number: "1.2-3" : "pt-BR"
+                  }}
+                </td>
+
+                <td class="number">
+                  {{
+                    toNumber(material.custoMedio)
+                      | currency: "BRL" : "symbol" : "1.2-4" : "pt-BR"
+                  }}
+                </td>
+
+                <td class="number value">
+                  {{
+                    toNumber(material.valorTotalEstoque)
+                      | currency: "BRL" : "symbol" : "1.2-2" : "pt-BR"
+                  }}
+                </td>
+
+                <td>
+                  <span
+                    class="situation-badge"
+                    [ngClass]="getSituationClass(material)"
+                  >
+                    {{ getSituationLabel(material) }}
+                  </span>
+                </td>
+
+                <td>
+                  <div class="row-actions">
+                    <button
+                      type="button"
+                      class="icon-action edit"
+                      title="Editar material"
+                      (click)="edit(material)"
+                    >
+                      <ion-icon name="create-outline"></ion-icon>
+                    </button>
+
+                    <button
+                      type="button"
+                      class="icon-action remove"
+                      title="Remover ou inativar"
+                      (click)="removeMaterial(material)"
+                    >
+                      <ion-icon
+                        [name]="
+                          material.ativo === false
+                            ? 'power-outline'
+                            : 'trash-outline'
+                        "
+                      ></ion-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div
+          class="empty-state"
+          *ngIf="filteredMaterials.length === 0"
+        >
+          <ion-icon name="cube-outline"></ion-icon>
+          <h3>Nenhum material encontrado</h3>
+          <p>
+            Revise os filtros ou cadastre o primeiro material.
+          </p>
+
+          <ion-button fill="outline" (click)="openNew()">
+            <ion-icon name="add-outline" slot="start"></ion-icon>
+            Novo material
+          </ion-button>
+        </div>
+
+        <div class="mobile-list">
+          <article
+            class="material-mobile-card"
+            *ngFor="
+              let material of filteredMaterials;
+              trackBy: trackByMaterial
+            "
+          >
+            <div class="mobile-card-header">
+              <div class="material-cell">
+                <div class="material-avatar">
+                  <ion-icon name="cube-outline"></ion-icon>
+                </div>
+
+                <div>
+                  <strong>{{ material.nome }}</strong>
+                  <span>{{ material.codigo }}</span>
+                </div>
+              </div>
+
+              <span
+                class="situation-badge"
+                [ngClass]="getSituationClass(material)"
+              >
+                {{ getSituationLabel(material) }}
+              </span>
+            </div>
+
+            <div class="mobile-card-grid">
+              <div>
+                <span>Categoria</span>
+                <strong>
+                  {{
+                    material.categoriaMaterial?.nome ||
+                      "Sem categoria"
+                  }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Unidade</span>
+                <strong>{{ material.unidade }}</strong>
+              </div>
+
+              <div>
+                <span>Saldo</span>
+                <strong>
+                  {{
+                    toNumber(material.saldoTotal)
+                      | number: "1.2-3" : "pt-BR"
+                  }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Disponível</span>
+                <strong>
+                  {{
+                    toNumber(material.saldoDisponivel)
+                      | number: "1.2-3" : "pt-BR"
+                  }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Reservado</span>
+                <strong>
+                  {{
+                    toNumber(material.saldoReservado)
+                      | number: "1.2-3" : "pt-BR"
+                  }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Valor</span>
+                <strong>
+                  {{
+                    toNumber(material.valorTotalEstoque)
+                      | currency: "BRL" : "symbol" : "1.2-2" : "pt-BR"
+                  }}
+                </strong>
+              </div>
+            </div>
+
+            <div class="mobile-card-actions">
+              <ion-button
+                size="small"
+                fill="outline"
+                (click)="edit(material)"
+              >
+                Editar
+              </ion-button>
+
+              <ion-button
+                size="small"
+                fill="clear"
+                color="danger"
+                (click)="removeMaterial(material)"
+              >
+                Remover
+              </ion-button>
+            </div>
+          </article>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+
+  <div
+    class="drawer-backdrop"
+    *ngIf="drawerOpen"
+    (click)="closeDrawer()"
+  ></div>
+
+  <aside class="material-drawer" [class.open]="drawerOpen">
+    <header class="drawer-header">
+      <div>
+        <span class="drawer-eyebrow">
+          {{ form.id ? "Edição" : "Novo cadastro" }}
+        </span>
+
+        <h2>
+          {{ form.id ? "Editar material" : "Cadastrar material" }}
+        </h2>
+      </div>
+
+      <button
+        type="button"
+        class="drawer-close"
+        (click)="closeDrawer()"
+      >
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+    </header>
+
+    <div class="drawer-content">
+      <section class="form-section">
+        <div class="form-section-title">
+          <ion-icon name="cube-outline"></ion-icon>
+
+          <div>
+            <h3>Identificação</h3>
+            <p>Informações principais do material</p>
+          </div>
+        </div>
+
+        <div class="drawer-form-grid">
+          <label>
+            <span>Código *</span>
+            <input
+              type="text"
+              [(ngModel)]="form.codigo"
+              placeholder="Ex.: MAT-00001"
+            />
+          </label>
+
+          <label>
+            <span>Unidade *</span>
+            <select [(ngModel)]="form.unidade">
+              <option *ngFor="let unit of units" [value]="unit">
+                {{ unit }}
+              </option>
+            </select>
+          </label>
+
+          <label class="full">
+            <span>Nome do material *</span>
+            <input
+              type="text"
+              [(ngModel)]="form.nome"
+              placeholder="Ex.: Cimento CP II 50 kg"
+            />
+          </label>
+
+          <label class="full">
+            <span>Categoria *</span>
+            <select [(ngModel)]="form.categoriaMaterialId">
+              <option value="" disabled>
+                Selecione uma categoria
+              </option>
+
+              <option
+                *ngFor="let category of categories"
+                [value]="category.id"
+              >
+                {{ category.nome }}
+              </option>
+            </select>
+
+            <small *ngIf="categories.length === 0">
+              Cadastre uma categoria antes de salvar o material.
+            </small>
+          </label>
+
+          <label>
+            <span>Marca</span>
+            <input
+              type="text"
+              [(ngModel)]="form.marca"
+              placeholder="Marca comercial"
+            />
+          </label>
+
+          <label>
+            <span>Fabricante</span>
+            <input
+              type="text"
+              [(ngModel)]="form.fabricante"
+              placeholder="Fabricante"
+            />
+          </label>
+
+          <label>
+            <span>Código de barras</span>
+            <input
+              type="text"
+              [(ngModel)]="form.codigoBarras"
+              placeholder="Código EAN ou interno"
+            />
+          </label>
+
+          <label>
+            <span>Referência do fornecedor</span>
+            <input
+              type="text"
+              [(ngModel)]="form.referenciaFornecedor"
+              placeholder="Código utilizado pelo fornecedor"
+            />
+          </label>
+
+          <label class="full">
+            <span>Descrição</span>
+            <textarea
+              rows="3"
+              [(ngModel)]="form.descricao"
+              placeholder="Descrição técnica ou especificação"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="form-section-title">
+          <ion-icon name="layers-outline"></ion-icon>
+
+          <div>
+            <h3>Controle de estoque</h3>
+            <p>Limites e parâmetros de reposição</p>
+          </div>
+        </div>
+
+        <div class="drawer-form-grid three-columns">
+          <label>
+            <span>Estoque mínimo</span>
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              [(ngModel)]="form.estoqueMinimo"
+            />
+            <small>Limite considerado crítico</small>
+          </label>
+
+          <label>
+            <span>Ponto de reposição</span>
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              [(ngModel)]="form.pontoReposicao"
+            />
+            <small>Quando uma nova compra deve começar</small>
+          </label>
+
+          <label>
+            <span>Estoque máximo</span>
+            <input
+              type="number"
+              min="0"
+              step="0.001"
+              [(ngModel)]="form.estoqueMaximo"
+            />
+            <small>Limite recomendado de armazenamento</small>
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="form-section-title">
+          <ion-icon name="cash-outline"></ion-icon>
+
+          <div>
+            <h3>Custos</h3>
+            <p>Valores usados para planejamento e avaliação</p>
+          </div>
+        </div>
+
+        <div class="drawer-form-grid">
+          <label>
+            <span>Custo padrão</span>
+            <input
+              type="number"
+              min="0"
+              step="0.0001"
+              [(ngModel)]="form.custoPadrao"
+              placeholder="0,00"
+            />
+          </label>
+
+          <label>
+            <span>Custo médio atual</span>
+            <input
+              type="text"
+              [value]="
+                toNumber(form.custoMedio)
+                  | currency: 'BRL' : 'symbol' : '1.2-4' : 'pt-BR'
+              "
+              readonly
+            />
+          </label>
+        </div>
+      </section>
+
+      <section class="form-section">
+        <div class="form-section-title">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+
+          <div>
+            <h3>Configurações</h3>
+            <p>Regras gerais do cadastro</p>
+          </div>
+        </div>
+
+        <div class="toggle-list">
+          <label class="toggle-row">
+            <div>
+              <strong>Material ativo</strong>
+              <span>
+                Permite utilizar este material nas operações
+              </span>
+            </div>
+
+            <input
+              type="checkbox"
+              [(ngModel)]="form.ativo"
+            />
+          </label>
+
+          <label class="toggle-row">
+            <div>
+              <strong>Permite fracionamento</strong>
+              <span>
+                Aceita quantidades decimais em entradas e saídas
+              </span>
+            </div>
+
+            <input
+              type="checkbox"
+              [(ngModel)]="form.permiteFracionado"
+            />
+          </label>
+        </div>
+
+        <label class="notes-field">
+          <span>Observações</span>
+          <textarea
+            rows="4"
+            [(ngModel)]="form.observacoes"
+            placeholder="Informações complementares"
+          ></textarea>
+        </label>
+      </section>
+    </div>
+
+    <footer class="drawer-footer">
+      <ion-button
+        fill="outline"
+        color="medium"
+        (click)="closeDrawer()"
+        [disabled]="saving"
+      >
+        Cancelar
+      </ion-button>
+
+      <ion-button
+        (click)="save()"
+        [disabled]="saving || !isFormValid()"
+      >
+        <ion-spinner
+          *ngIf="saving"
+          name="crescent"
+          slot="start"
+        ></ion-spinner>
+
+        <ion-icon
+          *ngIf="!saving"
+          name="save-outline"
+          slot="start"
+        ></ion-icon>
+
+        {{ form.id ? "Salvar alterações" : "Cadastrar material" }}
+      </ion-button>
+    </footer>
+  </aside>
+</ion-content>

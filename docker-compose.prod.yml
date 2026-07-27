@@ -52,6 +52,7 @@ services:
       ENCRYPTION_MASTER_KEY: ${ENCRYPTION_MASTER_KEY:?ENCRYPTION_MASTER_KEY is required}
       PORT: 3000
       NODE_ENV: production
+      STOCK_MODULE_ENABLED: "true"
     depends_on:
       postgres:
         condition: service_healthy

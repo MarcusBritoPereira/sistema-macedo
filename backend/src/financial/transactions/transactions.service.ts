@@ -172,8 +172,14 @@ export class FinancialTransactionsService {
           categoria: true,
           centroCusto: true,
           cliente: true,
+          contrato: true,
           fornecedor: true,
           contaBancaria: true,
+          recebimentos: {
+            orderBy: {
+              dataRecebimento: 'asc',
+            },
+          },
         },
         skip,
         take,
@@ -181,7 +187,31 @@ export class FinancialTransactionsService {
       }),
     ]);
 
-    return { total, data };
+    const enrichedData = data.map((transaction) => {
+      const valorOriginal = Number(transaction.valor);
+
+      const valorRecebido = transaction.recebimentos.reduce(
+        (sum, recebimento) => sum + Number(recebimento.valor),
+        0,
+      );
+
+      const saldoReceber = Math.max(
+        0,
+        Number((valorOriginal - valorRecebido).toFixed(2)),
+      );
+
+      return {
+        ...transaction,
+        valorOriginal,
+        valorRecebido: Number(valorRecebido.toFixed(2)),
+        saldoReceber,
+      };
+    });
+
+    return {
+      total,
+      data: enrichedData,
+    };
   }
 
   findOne(id: string) {

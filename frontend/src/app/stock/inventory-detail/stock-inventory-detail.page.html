@@ -1,47 +1,395 @@
 <ion-content class="ion-padding stock-page">
-  <section class="stock-hero">
-    <div>
-      <p class="eyebrow">Inventário</p>
-      <h1><ion-icon name="clipboard-outline"></ion-icon> {{ inventory?.localEstoque?.nome || 'Carregando...' }}</h1>
-      <p>Status <strong>{{ inventory?.status }}</strong> • Aberto em {{ inventory?.dataAbertura | date:'short' }}</p>
+
+  <section class="inventory-header">
+    <div class="header-main">
+      <a routerLink="/stock/inventories" class="back-link">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+        Inventários
+      </a>
+
+      <div class="title-row">
+        <div>
+          <p class="eyebrow">CONTAGEM DE ESTOQUE</p>
+
+          <h1>
+            {{ inventory?.localEstoque?.nome || 'Inventário' }}
+          </h1>
+
+          <p class="subtitle" *ngIf="inventory">
+            Aberto em
+            {{ inventory.dataAbertura | date:'dd/MM/yyyy HH:mm' }}
+            <span>•</span>
+            {{ inventory.criadoPor?.nome || 'Usuário não informado' }}
+          </p>
+        </div>
+
+        <span
+          class="status-pill"
+          [attr.data-status]="inventory?.status"
+          *ngIf="inventory"
+        >
+          {{ statusLabel(inventory.status) }}
+        </span>
+      </div>
     </div>
-    <div class="stock-actions">
-      <ion-button fill="outline" routerLink="/stock/inventories">Voltar</ion-button>
-      <ion-button fill="outline" (click)="load()"><ion-icon name="refresh-outline" slot="start"></ion-icon>Atualizar</ion-button>
+
+    <ion-button
+      fill="outline"
+      (click)="load()"
+      [disabled]="loading || saving"
+    >
+      <ion-icon
+        name="refresh-outline"
+        slot="start"
+      ></ion-icon>
+      Atualizar
+    </ion-button>
+  </section>
+
+  <div class="loading-area" *ngIf="loading">
+    <ion-spinner></ion-spinner>
+    <span>Carregando inventário...</span>
+  </div>
+
+  <ng-container *ngIf="!loading && inventory">
+
+    <section class="inventory-kpis">
+      <article>
+        <span>Total de itens</span>
+        <strong>{{ totalItems }}</strong>
+        <small>Materiais do inventário</small>
+      </article>
+
+      <article>
+        <span>Contados</span>
+        <strong>{{ countedItems }}</strong>
+        <small>{{ progress }}% concluído</small>
+      </article>
+
+      <article
+        [class.kpi-warning]="pendingItems > 0"
+      >
+        <span>Não contados</span>
+        <strong>{{ pendingItems }}</strong>
+        <small>Pendentes de conferência</small>
+      </article>
+
+      <article
+        [class.kpi-danger]="divergentItems > 0"
+      >
+        <span>Divergências</span>
+        <strong>{{ divergentItems }}</strong>
+        <small>Itens com diferença</small>
+      </article>
+
+      <article>
+        <span>Ajuste positivo</span>
+        <strong class="money positive">
+          {{ positiveImpact | currency:'BRL':'symbol':'1.2-2' }}
+        </strong>
+        <small>Possível entrada</small>
+      </article>
+
+      <article>
+        <span>Ajuste negativo</span>
+        <strong class="money negative">
+          {{ negativeImpact | currency:'BRL':'symbol':'1.2-2' }}
+        </strong>
+        <small>Possível saída</small>
+      </article>
+    </section>
+
+    <section class="progress-card">
+      <div class="progress-header">
+        <div>
+          <strong>Progresso da contagem</strong>
+          <span>
+            {{ countedItems }} de {{ totalItems }} itens conferidos
+          </span>
+        </div>
+
+        <strong>{{ progress }}%</strong>
+      </div>
+
+      <div class="progress-track">
+        <div
+          class="progress-value"
+          [style.width.%]="progress"
+        ></div>
+      </div>
+    </section>
+
+    <div
+      class="error-banner"
+      *ngIf="errorMessage"
+    >
+      {{ errorMessage }}
     </div>
-  </section>
 
-  <ion-spinner *ngIf="loading"></ion-spinner>
+    <section
+      class="inventory-info"
+      *ngIf="inventory.observacao"
+    >
+      <strong>Observação do inventário</strong>
+      <p>{{ inventory.observacao }}</p>
+    </section>
 
-  <section class="stock-card" *ngIf="!loading && inventory">
-    <p><strong>Observação:</strong> {{ inventory.observacao || '-' }}</p>
-    <p><strong>Criado por:</strong> {{ inventory.criadoPor?.nome || '-' }} • <strong>Aprovado por:</strong> {{ inventory.aprovadoPor?.nome || '-' }}</p>
-    <div class="stock-actions">
-      <ion-button color="primary" (click)="saveCount()" [disabled]="saving || !canCount()"><ion-icon name="save-outline" slot="start"></ion-icon>Salvar contagem</ion-button>
-      <ion-button color="success" (click)="approve()" [disabled]="saving || inventory.status !== 'EM_CONTAGEM'"><ion-icon name="checkmark-circle-outline" slot="start"></ion-icon>Aprovar</ion-button>
-      <ion-button color="warning" (click)="close()" [disabled]="saving || inventory.status !== 'APROVADO'"><ion-icon name="lock-closed-outline" slot="start"></ion-icon>Fechar e ajustar</ion-button>
-    </div>
-  </section>
+    <section
+      class="inventory-table-card"
+      *ngIf="items.length"
+    >
+      <div class="table-heading">
+        <div>
+          <h2>Contagem dos materiais</h2>
+          <p>
+            O saldo do sistema corresponde ao momento em que
+            o inventário foi aberto.
+          </p>
+        </div>
+      </div>
 
-  <section class="stock-table" *ngIf="!loading && items.length">
-    <table>
-      <thead>
-        <tr><th>Material</th><th>Sistema</th><th>Contado</th><th>Diferença</th><th>Valor diferença</th><th>Justificativa</th></tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of items">
-          <td><strong>{{ item.codigo }}</strong><br>{{ item.nome }}</td>
-          <td>{{ item.quantidadeSistema }}</td>
-          <td><ion-item><ion-input type="number" [(ngModel)]="item.quantidadeContada" [disabled]="!canCount()"></ion-input></ion-item></td>
-          <td>{{ item.diferenca }}</td>
-          <td>{{ item.valorDiferenca | currency:'BRL':'symbol':'1.2-2' }}</td>
-          <td><ion-item><ion-textarea [(ngModel)]="item.justificativa" [disabled]="!canCount()" placeholder="Obrigatório quando houver divergência"></ion-textarea></ion-item></td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
+      <div class="table-scroll">
+        <table class="inventory-table">
+          <thead>
+            <tr>
+              <th>Material</th>
+              <th class="number">Sistema</th>
+              <th class="number">Contado</th>
+              <th class="number">Diferença</th>
+              <th class="number">Custo médio</th>
+              <th class="number">Impacto</th>
+              <th>Justificativa</th>
+              <th>Situação</th>
+            </tr>
+          </thead>
 
-  <section class="stock-card" *ngIf="!loading && !items.length">
-    Nenhum saldo encontrado para este local no momento da abertura.
-  </section>
+          <tbody>
+            <tr
+              *ngFor="let item of items"
+              [class.row-divergent]="
+                isLocallyCounted(item) &&
+                difference(item) !== 0
+              "
+            >
+              <td class="material-cell">
+                <strong>{{ item.nome }}</strong>
+                <span>
+                  {{ item.codigo }}
+                  <ng-container *ngIf="item.unidade">
+                    • {{ item.unidade }}
+                  </ng-container>
+                </span>
+              </td>
+
+              <td class="number system-quantity">
+                {{ item.quantidadeSistema | number:'1.0-3' }}
+              </td>
+
+              <td class="count-cell">
+                <div class="count-input">
+                  <ion-input
+                    type="number"
+                    min="0"
+                    step="0.001"
+                    [(ngModel)]="item.quantidadeContada"
+                    (ngModelChange)="markDirty(item)"
+                    [disabled]="!canCount()"
+                  ></ion-input>
+                </div>
+
+                <button
+                  type="button"
+                  class="confirm-system"
+                  *ngIf="canCount() && !isLocallyCounted(item)"
+                  (click)="confirmSystemQuantity(item)"
+                >
+                  Confirmar saldo
+                </button>
+              </td>
+
+              <td
+                class="number difference"
+                [class.positive]="difference(item) > 0"
+                [class.negative]="difference(item) < 0"
+              >
+                <ng-container *ngIf="isLocallyCounted(item); else pendingDiff">
+                  <span *ngIf="difference(item) > 0">+</span>
+                  {{ difference(item) | number:'1.0-3' }}
+                </ng-container>
+
+                <ng-template #pendingDiff>
+                  <span class="muted">—</span>
+                </ng-template>
+              </td>
+
+              <td class="number">
+                {{ item.custoMedio | currency:'BRL':'symbol':'1.2-2' }}
+              </td>
+
+              <td
+                class="number impact"
+                [class.positive]="valueDifference(item) > 0"
+                [class.negative]="valueDifference(item) < 0"
+              >
+                <ng-container *ngIf="isLocallyCounted(item)">
+                  {{ valueDifference(item) | currency:'BRL':'symbol':'1.2-2' }}
+                </ng-container>
+
+                <span
+                  class="muted"
+                  *ngIf="!isLocallyCounted(item)"
+                >
+                  —
+                </span>
+              </td>
+
+              <td class="justification-cell">
+                <ion-textarea
+                  autoGrow="true"
+                  rows="1"
+                  [(ngModel)]="item.justificativa"
+                  (ngModelChange)="markDirty(item)"
+                  [disabled]="!canCount()"
+                  [class.required-field]="
+                    isLocallyCounted(item) &&
+                    difference(item) !== 0 &&
+                    !item.justificativa.trim()
+                  "
+                  [placeholder]="
+                    difference(item) !== 0
+                      ? 'Obrigatória para divergência'
+                      : 'Opcional'
+                  "
+                ></ion-textarea>
+              </td>
+
+              <td>
+                <span
+                  class="item-status pending"
+                  *ngIf="!isLocallyCounted(item)"
+                >
+                  Não contado
+                </span>
+
+                <span
+                  class="item-status dirty"
+                  *ngIf="item.dirty"
+                >
+                  Não salvo
+                </span>
+
+                <span
+                  class="item-status ok"
+                  *ngIf="
+                    item.contado &&
+                    !item.dirty &&
+                    difference(item) === 0
+                  "
+                >
+                  Conferido
+                </span>
+
+                <span
+                  class="item-status divergent"
+                  *ngIf="
+                    item.contado &&
+                    !item.dirty &&
+                    difference(item) !== 0
+                  "
+                >
+                  Divergência
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section
+      class="empty-card"
+      *ngIf="!items.length"
+    >
+      <ion-icon name="clipboard-outline"></ion-icon>
+      <strong>Nenhum material encontrado</strong>
+      <p>
+        Este local não possuía saldos registrados quando
+        o inventário foi aberto.
+      </p>
+    </section>
+
+    <section class="workflow-footer">
+      <div class="workflow-info">
+        <strong>Fluxo do inventário</strong>
+        <span>
+          Salvar contagem → Enviar para aprovação →
+          Aprovar → Fechar e ajustar
+        </span>
+      </div>
+
+      <div class="workflow-actions">
+        <ion-button
+          fill="outline"
+          color="primary"
+          (click)="saveCount()"
+          [disabled]="
+            saving ||
+            !canCount() ||
+            !dirtyItems.length
+          "
+        >
+          <ion-icon name="save-outline" slot="start"></ion-icon>
+          Salvar contagem
+          <span
+            class="button-count"
+            *ngIf="dirtyItems.length"
+          >
+            {{ dirtyItems.length }}
+          </span>
+        </ion-button>
+
+        <ion-button
+          color="primary"
+          (click)="submit()"
+          [disabled]="saving || !canSubmit()"
+          *ngIf="
+            inventory.status === 'ABERTO' ||
+            inventory.status === 'EM_CONTAGEM'
+          "
+        >
+          <ion-icon name="send-outline" slot="start"></ion-icon>
+          Enviar para aprovação
+        </ion-button>
+
+        <ion-button
+          color="success"
+          (click)="approve()"
+          [disabled]="saving"
+          *ngIf="
+            inventory.status === 'PENDENTE_APROVACAO'
+          "
+        >
+          <ion-icon
+            name="checkmark-circle-outline"
+            slot="start"
+          ></ion-icon>
+          Aprovar inventário
+        </ion-button>
+
+        <ion-button
+          color="warning"
+          (click)="close()"
+          [disabled]="saving"
+          *ngIf="inventory.status === 'APROVADO'"
+        >
+          <ion-icon
+            name="lock-closed-outline"
+            slot="start"
+          ></ion-icon>
+          Fechar e ajustar estoque
+        </ion-button>
+      </div>
+    </section>
+
+  </ng-container>
 </ion-content>

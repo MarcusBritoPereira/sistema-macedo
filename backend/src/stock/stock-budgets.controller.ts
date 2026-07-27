@@ -30,10 +30,34 @@ export class StockBudgetsController {
     return this.service.findOne(id);
   }
 
+  @Post(':id/submit')
+  @RequirePermissions('ESTOQUE_CONFIGURACOES')
+  submit(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    return this.service.submit(
+      id,
+      req.user.id,
+    );
+  }
+
   @Post(':id/approve')
   @RequirePermissions('ESTOQUE_CONFIGURACOES')
   approve(@Param('id') id: string, @Req() req: any) {
     return this.service.approve(id, req.user.id);
+  }
+
+  @Post(':id/cancel')
+  @RequirePermissions('ESTOQUE_CONFIGURACOES')
+  cancel(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    return this.service.cancel(
+      id,
+      req.user.id,
+    );
   }
 
   @Get(':id/actual-vs-budget')

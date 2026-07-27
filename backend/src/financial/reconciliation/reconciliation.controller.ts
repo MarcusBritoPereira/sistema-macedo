@@ -33,6 +33,35 @@ export class ReconciliationController {
     return this.service.findSuggestedMatches(statementId);
   }
 
+  @Get('receivables/open')
+  getOpenReceivables(
+    @Query('clienteId') clienteId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.service.getOpenReceivables({
+      clienteId,
+      search,
+    });
+  }
+
+  @Post('receivable-payment')
+  linkReceivablePayment(
+    @Body()
+    data: {
+      statementId: string;
+      lancamentoId: string;
+      confirmacaoManual?: boolean;
+    },
+    @Req() req: any,
+  ) {
+    return this.service.linkReceivablePayment(
+      data.statementId,
+      data.lancamentoId,
+      data.confirmacaoManual,
+      req.user?.id,
+    );
+  }
+
   @Post('link')
   linkManual(
     @Body()

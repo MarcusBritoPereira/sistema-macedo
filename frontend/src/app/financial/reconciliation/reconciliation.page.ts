@@ -624,7 +624,9 @@ export class ReconciliationPage implements OnInit, OnDestroy {
 
                 // Construct payload
                 const payload = {
-                    descricao: stmt.descricao,
+                    descricao:
+                        stmt.descricaoPix?.trim() ||
+                        stmt.descricao,
                     valor: Math.abs(Number(stmt.valor)),
                     tipo: stmt.tipo, // Backend converts CREDIT/DEBIT
                     dataVencimento: stmt.data,

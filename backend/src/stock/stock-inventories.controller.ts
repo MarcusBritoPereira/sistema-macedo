@@ -37,6 +37,18 @@ export class StockInventoriesController {
     return this.service.count(id, dto, req.user.id);
   }
 
+  @Post(':id/submit')
+  @RequirePermissions('ESTOQUE_INVENTARIO_CRIAR')
+  submit(
+    @Param('id') id: string,
+    @Req() req: any,
+  ) {
+    return this.service.submit(
+      id,
+      req.user.id,
+    );
+  }
+
   @Post(':id/approve')
   @RequirePermissions('ESTOQUE_INVENTARIO_APROVAR')
   approve(@Param('id') id: string, @Req() req: any) {

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateObraDto } from './dto/create-obra.dto';
 import { UpdateObraDto } from './dto/update-obra.dto';
@@ -174,7 +178,169 @@ export class ObrasService {
     });
   }
 
+  async lancarParcelaContasReceber(
+    parcelaId: string,
+    usuarioId: string,
+  ) {
+    return this.prisma.$transaction(async (tx) => {
+      const parcela = await tx.parcelaObra.findUnique({
+        where: { id: parcelaId },
+        include: {
+          obra: {
+            include: {
+              cliente: true,
+            },
+          },
+        },
+      });
+
+      if (!parcela) {
+        throw new NotFoundException('Parcela não encontrada.');
+      }
+
+      if (parcela.transacaoId) {
+        throw new BadRequestException(
+          'Esta parcela já foi lançada em contas a receber.',
+        );
+      }
+
+      const numeroParcela =
+        await tx.parcelaObra.count({
+          where: {
+            obraId: parcela.obraId,
+            dataVencimento: {
+              lte: parcela.dataVencimento,
+            },
+          },
+        });
+
+      const descricaoParcela =
+        parcela.descricao?.trim() ||
+        `Parcela ${numeroParcela}`;
+
+      const transacao =
+        await tx.lancamentoFinanceiro.create({
+          data: {
+            descricao:
+              `${descricaoParcela} - ${parcela.obra.nome}`,
+            valor: parcela.valor,
+            dataVencimento: parcela.dataVencimento,
+            dataCompetencia: parcela.dataVencimento,
+            tipo: 'RECEITA',
+            status:
+              parcela.status === 'RECEBIDO'
+                ? 'REALIZADO'
+                : 'PREVISTO',
+            obraId: parcela.obraId,
+            clienteId: parcela.obra.clienteId || null,
+            tipoLancamento: 'OBRA',
+            observacoes:
+              `Lançamento gerado a partir da parcela da obra ${parcela.obra.nome}.`,
+          },
+        });
+
+      await tx.parcelaObra.update({
+        where: { id: parcela.id },
+        data: {
+          transacaoId: transacao.id,
+        },
+      });
+
+      await tx.logAuditoria.create({
+        data: {
+          acao:
+            `Lançou parcela da obra "${parcela.obra.nome}" em contas a receber`,
+          tabela: 'parcelas_obra',
+          registroId: parcela.id,
+          valorNovo: JSON.stringify({
+            parcelaId: parcela.id,
+            transacaoId: transacao.id,
+            valor: parcela.valor,
+            dataVencimento: parcela.dataVencimento,
+          }),
+          motivo:
+            'Lançamento manual da parcela em contas a receber',
+          usuarioId,
+        },
+      });
+
+      return {
+        parcelaId: parcela.id,
+        transacaoId: transacao.id,
+        lancado: true,
+      };
+    });
+  }
+
+  async lancarTodasParcelasContasReceber(
+    obraId: string,
+    usuarioId: string,
+  ) {
+    const obra = await this.prisma.obra.findUnique({
+      where: { id: obraId },
+      select: {
+        id: true,
+        nome: true,
+      },
+    });
+
+    if (!obra) {
+      throw new NotFoundException('Obra não encontrada.');
+    }
+
+    const parcelas = await this.prisma.parcelaObra.findMany({
+      where: {
+        obraId,
+        transacaoId: null,
+      },
+      orderBy: {
+        dataVencimento: 'asc',
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (parcelas.length === 0) {
+      throw new BadRequestException(
+        'Todas as parcelas desta obra já estão lançadas em contas a receber.',
+      );
+    }
+
+    const resultados: any[] = [];
+
+    for (const parcela of parcelas) {
+      resultados.push(
+        await this.lancarParcelaContasReceber(
+          parcela.id,
+          usuarioId,
+        ),
+      );
+    }
+
+    return {
+      obraId,
+      lancadas: resultados.length,
+      resultados,
+    };
+  }
+
   async removeParcela(parcelaId: string) {
+    const parcela =
+      await this.prisma.parcelaObra.findUnique({
+        where: { id: parcelaId },
+      });
+
+    if (!parcela) {
+      throw new NotFoundException('Parcela não encontrada.');
+    }
+
+    if (parcela.transacaoId) {
+      throw new BadRequestException(
+        'Esta parcela já foi lançada em contas a receber e não pode ser excluída.',
+      );
+    }
+
     return this.prisma.parcelaObra.delete({
       where: { id: parcelaId },
     });

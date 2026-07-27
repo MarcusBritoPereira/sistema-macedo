@@ -68,10 +68,33 @@ export class ObrasService {
   }
 
   updateParcela(obraId: string, parcelaId: string, parcela: Partial<ParcelaObra>): Observable<ParcelaObra> {
-    return this.api.patch<ParcelaObra>(`financial/obras/${obraId}/parcelas/${parcelaId}`, parcela);
+    return this.api.patch<ParcelaObra>(
+      `financial/obras/parcelas/${parcelaId}`,
+      parcela
+    );
+  }
+
+  lancarParcelaContasReceber(
+    parcelaId: string
+  ): Observable<any> {
+    return this.api.post<any>(
+      `financial/obras/parcelas/${parcelaId}/lancar-contas-receber`,
+      {}
+    );
+  }
+
+  lancarTodasParcelasContasReceber(
+    obraId: string
+  ): Observable<any> {
+    return this.api.post<any>(
+      `financial/obras/${obraId}/parcelas/lancar-contas-receber`,
+      {}
+    );
   }
 
   deleteParcela(obraId: string, parcelaId: string): Observable<any> {
-    return this.api.delete(`financial/obras/${obraId}/parcelas/${parcelaId}`);
+    return this.api.delete(
+      `financial/obras/parcelas/${parcelaId}`
+    );
   }
 }

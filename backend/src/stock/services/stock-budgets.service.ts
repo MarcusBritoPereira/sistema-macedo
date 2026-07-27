@@ -75,7 +75,37 @@ export class StockBudgetsService {
       }),
       this.prisma.orcamentoMaterialObra.count({ where }),
     ]);
-    return { items, total, skip, take };
+    const budgetTotals = items.length
+      ? await this.prisma.itemOrcamentoMaterialObra.groupBy({
+          by: ['orcamentoId'],
+          where: {
+            orcamentoId: {
+              in: items.map(item => item.id),
+            },
+          },
+          _sum: {
+            custoTotalOrcado: true,
+          },
+        })
+      : [];
+
+    const totalByBudget = new Map(
+      budgetTotals.map(item => [
+        item.orcamentoId,
+        item._sum.custoTotalOrcado?.toString() || '0',
+      ]),
+    );
+
+    return {
+      items: items.map(item => ({
+        ...item,
+        valorTotalOrcado:
+          totalByBudget.get(item.id) || '0',
+      })),
+      total,
+      skip,
+      take,
+    };
   }
 
   async findOne(id: string) {
@@ -84,79 +114,413 @@ export class StockBudgetsService {
     return budget;
   }
 
+  async submit(id: string, userId: string) {
+    const before = await this.findOne(id);
+
+    if (
+      before.status !==
+      StatusOrcamentoMaterialObra.RASCUNHO
+    ) {
+      throw new BadRequestException(
+        'Somente orçamento em rascunho pode ser enviado para aprovação',
+      );
+    }
+
+    const updated =
+      await this.prisma.orcamentoMaterialObra.update({
+        where: { id },
+        data: {
+          status:
+            StatusOrcamentoMaterialObra.PENDENTE_APROVACAO,
+        },
+        include: this.includeRelations(),
+      });
+
+    await this.audit(
+      userId,
+      'ESTOQUE_ORCAMENTO_MATERIAL_ENVIADO_APROVACAO',
+      id,
+      before,
+      updated,
+    );
+
+    return updated;
+  }
+
   async approve(id: string, userId: string) {
     const before = await this.findOne(id);
-    if (![StatusOrcamentoMaterialObra.RASCUNHO, StatusOrcamentoMaterialObra.PENDENTE_APROVACAO].includes(before.status as any)) {
-      throw new BadRequestException('Somente orçamento em rascunho ou pendente pode ser aprovado');
+
+    if (
+      before.status !==
+      StatusOrcamentoMaterialObra.PENDENTE_APROVACAO
+    ) {
+      throw new BadRequestException(
+        'Orçamento deve estar pendente de aprovação',
+      );
     }
-    const updated = await this.prisma.orcamentoMaterialObra.update({
-      where: { id },
-      data: { status: StatusOrcamentoMaterialObra.APROVADO, aprovadoPorId: userId },
-      include: this.includeRelations(),
-    });
-    await this.audit(userId, 'ESTOQUE_ORCAMENTO_MATERIAL_APROVADO', id, before, updated);
+
+    const result = await this.prisma.$transaction(
+      async (tx) => {
+        const previousApproved =
+          await tx.orcamentoMaterialObra.findMany({
+            where: {
+              obraId: before.obraId,
+              status:
+                StatusOrcamentoMaterialObra.APROVADO,
+              NOT: {
+                id,
+              },
+            },
+            include: this.includeRelations(),
+          });
+
+        if (previousApproved.length) {
+          await tx.orcamentoMaterialObra.updateMany({
+            where: {
+              id: {
+                in: previousApproved.map(
+                  item => item.id,
+                ),
+              },
+            },
+            data: {
+              status:
+                StatusOrcamentoMaterialObra.SUBSTITUIDO,
+            },
+          });
+        }
+
+        const updated =
+          await tx.orcamentoMaterialObra.update({
+            where: { id },
+            data: {
+              status:
+                StatusOrcamentoMaterialObra.APROVADO,
+              aprovadoPorId: userId,
+            },
+            include: this.includeRelations(),
+          });
+
+        return {
+          previousApproved,
+          updated,
+        };
+      },
+    );
+
+    for (
+      const previous of result.previousApproved
+    ) {
+      await this.audit(
+        userId,
+        'ESTOQUE_ORCAMENTO_MATERIAL_SUBSTITUIDO',
+        previous.id,
+        previous,
+        {
+          ...previous,
+          status:
+            StatusOrcamentoMaterialObra.SUBSTITUIDO,
+        },
+      );
+    }
+
+    await this.audit(
+      userId,
+      'ESTOQUE_ORCAMENTO_MATERIAL_APROVADO',
+      id,
+      before,
+      result.updated,
+    );
+
+    return result.updated;
+  }
+
+  async cancel(id: string, userId: string) {
+    const before = await this.findOne(id);
+
+    if (
+      before.status !==
+        StatusOrcamentoMaterialObra.RASCUNHO &&
+      before.status !==
+        StatusOrcamentoMaterialObra.PENDENTE_APROVACAO
+    ) {
+      throw new BadRequestException(
+        'Somente orçamento em rascunho ou pendente pode ser cancelado',
+      );
+    }
+
+    const updated =
+      await this.prisma.orcamentoMaterialObra.update({
+        where: { id },
+        data: {
+          status:
+            StatusOrcamentoMaterialObra.CANCELADO,
+        },
+        include: this.includeRelations(),
+      });
+
+    await this.audit(
+      userId,
+      'ESTOQUE_ORCAMENTO_MATERIAL_CANCELADO',
+      id,
+      before,
+      updated,
+    );
+
     return updated;
   }
 
   async actualVsBudget(id: string) {
     const budget = await this.findOne(id);
-    const appropriations = await this.prisma.apropriacaoCustoEstoque.groupBy({
-      by: ['materialId'],
-      where: { obraId: budget.obraId },
-      _sum: { quantidade: true, custoTotal: true },
-    });
-    const actualByMaterial = new Map(appropriations.map((item) => [item.materialId, item]));
 
-    const items = budget.itens.map((item) => {
-      const actual = actualByMaterial.get(item.materialId);
-      const quantidadeOrcada = new Prisma.Decimal(item.quantidadeOrcada);
-      const custoTotalOrcado = new Prisma.Decimal(item.custoTotalOrcado);
-      const quantidadeConsumida = actual?._sum.quantidade ?? new Prisma.Decimal(0);
-      const custoReal = actual?._sum.custoTotal ?? new Prisma.Decimal(0);
-      const diferencaQuantidade = quantidadeConsumida.minus(quantidadeOrcada);
-      const desvioCusto = custoReal.minus(custoTotalOrcado);
-      const percentualQuantidade = quantidadeOrcada.gt(0) ? quantidadeConsumida.div(quantidadeOrcada).mul(100) : new Prisma.Decimal(0);
-      const percentualCusto = custoTotalOrcado.gt(0) ? custoReal.div(custoTotalOrcado).mul(100) : new Prisma.Decimal(0);
+    const appropriations =
+      await this.prisma.apropriacaoCustoEstoque.groupBy({
+        by: ['materialId'],
+        where: {
+          obraId: budget.obraId,
+        },
+        _sum: {
+          quantidade: true,
+          custoTotal: true,
+        },
+      });
+
+    const actualByMaterial = new Map(
+      appropriations.map(item => [
+        item.materialId,
+        item,
+      ]),
+    );
+
+    const budgetByMaterial = new Map<
+      string,
+      {
+        first: (typeof budget.itens)[number];
+        quantidade: Prisma.Decimal;
+        custo: Prisma.Decimal;
+        etapas: Set<string>;
+        centros: Set<string>;
+      }
+    >();
+
+    for (const item of budget.itens) {
+      const existing =
+        budgetByMaterial.get(item.materialId);
+
+      if (existing) {
+        existing.quantidade =
+          existing.quantidade.plus(
+            item.quantidadeOrcada,
+          );
+
+        existing.custo =
+          existing.custo.plus(
+            item.custoTotalOrcado,
+          );
+
+        if (item.etapaObra) {
+          existing.etapas.add(item.etapaObra);
+        }
+
+        if (item.centroCusto?.nome) {
+          existing.centros.add(
+            item.centroCusto.nome,
+          );
+        }
+
+        continue;
+      }
+
+      budgetByMaterial.set(
+        item.materialId,
+        {
+          first: item,
+          quantidade:
+            new Prisma.Decimal(
+              item.quantidadeOrcada,
+            ),
+          custo:
+            new Prisma.Decimal(
+              item.custoTotalOrcado,
+            ),
+          etapas: new Set(
+            item.etapaObra
+              ? [item.etapaObra]
+              : [],
+          ),
+          centros: new Set(
+            item.centroCusto?.nome
+              ? [item.centroCusto.nome]
+              : [],
+          ),
+        },
+      );
+    }
+
+    const items = Array.from(
+      budgetByMaterial.entries(),
+    ).map(([materialId, grouped]) => {
+      const actual =
+        actualByMaterial.get(materialId);
+
+      const quantidadeOrcada =
+        grouped.quantidade;
+
+      const custoTotalOrcado =
+        grouped.custo;
+
+      const quantidadeConsumida =
+        actual?._sum.quantidade ??
+        new Prisma.Decimal(0);
+
+      const custoReal =
+        actual?._sum.custoTotal ??
+        new Prisma.Decimal(0);
+
+      const diferencaQuantidade =
+        quantidadeConsumida.minus(
+          quantidadeOrcada,
+        );
+
+      const desvioCusto =
+        custoReal.minus(
+          custoTotalOrcado,
+        );
+
+      const percentualQuantidade =
+        quantidadeOrcada.gt(0)
+          ? quantidadeConsumida
+              .div(quantidadeOrcada)
+              .mul(100)
+          : new Prisma.Decimal(0);
+
+      const percentualCusto =
+        custoTotalOrcado.gt(0)
+          ? custoReal
+              .div(custoTotalOrcado)
+              .mul(100)
+          : new Prisma.Decimal(0);
+
+      const first = grouped.first;
+
       return {
-        materialId: item.materialId,
-        codigo: item.material.codigo,
-        material: item.material.nome,
-        categoria: item.categoriaMaterial?.nome || item.material.categoriaMaterial?.nome || null,
-        etapaObra: item.etapaObra,
-        centroCusto: item.centroCusto?.nome || null,
-        quantidadeOrcada: quantidadeOrcada.toString(),
-        quantidadeConsumida: quantidadeConsumida.toString(),
-        diferencaQuantidade: diferencaQuantidade.toString(),
-        percentualQuantidade: percentualQuantidade.toFixed(2),
-        custoOrcado: custoTotalOrcado.toString(),
-        custoReal: custoReal.toString(),
-        desvioCusto: desvioCusto.toString(),
-        percentualCusto: percentualCusto.toFixed(2),
-        situacao: desvioCusto.gt(0) || diferencaQuantidade.gt(0) ? 'ACIMA' : 'DENTRO',
+        materialId,
+        codigo: first.material.codigo,
+        material: first.material.nome,
+
+        categoria:
+          first.categoriaMaterial?.nome ||
+          first.material.categoriaMaterial?.nome ||
+          null,
+
+        etapaObra:
+          grouped.etapas.size
+            ? Array.from(grouped.etapas).join(', ')
+            : null,
+
+        centroCusto:
+          grouped.centros.size
+            ? Array.from(grouped.centros).join(', ')
+            : null,
+
+        quantidadeOrcada:
+          quantidadeOrcada.toString(),
+
+        quantidadeConsumida:
+          quantidadeConsumida.toString(),
+
+        diferencaQuantidade:
+          diferencaQuantidade.toString(),
+
+        percentualQuantidade:
+          percentualQuantidade.toFixed(2),
+
+        custoOrcado:
+          custoTotalOrcado.toString(),
+
+        custoReal:
+          custoReal.toString(),
+
+        desvioCusto:
+          desvioCusto.toString(),
+
+        percentualCusto:
+          percentualCusto.toFixed(2),
+
+        situacao:
+          desvioCusto.gt(0) ||
+          diferencaQuantidade.gt(0)
+            ? 'ACIMA'
+            : 'DENTRO',
       };
     });
 
-    const totals = items.reduce((acc, item) => ({
-      quantidadeOrcada: acc.quantidadeOrcada.plus(item.quantidadeOrcada),
-      quantidadeConsumida: acc.quantidadeConsumida.plus(item.quantidadeConsumida),
-      custoOrcado: acc.custoOrcado.plus(item.custoOrcado),
-      custoReal: acc.custoReal.plus(item.custoReal),
-    }), {
-      quantidadeOrcada: new Prisma.Decimal(0),
-      quantidadeConsumida: new Prisma.Decimal(0),
-      custoOrcado: new Prisma.Decimal(0),
-      custoReal: new Prisma.Decimal(0),
-    });
+    const totals = items.reduce(
+      (acc, item) => ({
+        quantidadeOrcada:
+          acc.quantidadeOrcada.plus(
+            item.quantidadeOrcada,
+          ),
+
+        quantidadeConsumida:
+          acc.quantidadeConsumida.plus(
+            item.quantidadeConsumida,
+          ),
+
+        custoOrcado:
+          acc.custoOrcado.plus(
+            item.custoOrcado,
+          ),
+
+        custoReal:
+          acc.custoReal.plus(
+            item.custoReal,
+          ),
+      }),
+      {
+        quantidadeOrcada:
+          new Prisma.Decimal(0),
+
+        quantidadeConsumida:
+          new Prisma.Decimal(0),
+
+        custoOrcado:
+          new Prisma.Decimal(0),
+
+        custoReal:
+          new Prisma.Decimal(0),
+      },
+    );
 
     return {
-      budget: { id: budget.id, obra: budget.obra, versao: budget.versao, status: budget.status, dataReferencia: budget.dataReferencia },
-      totals: {
-        quantidadeOrcada: totals.quantidadeOrcada.toString(),
-        quantidadeConsumida: totals.quantidadeConsumida.toString(),
-        custoOrcado: totals.custoOrcado.toString(),
-        custoReal: totals.custoReal.toString(),
-        desvioCusto: totals.custoReal.minus(totals.custoOrcado).toString(),
+      budget: {
+        id: budget.id,
+        obra: budget.obra,
+        versao: budget.versao,
+        status: budget.status,
+        dataReferencia:
+          budget.dataReferencia,
       },
+
+      totals: {
+        quantidadeOrcada:
+          totals.quantidadeOrcada.toString(),
+
+        quantidadeConsumida:
+          totals.quantidadeConsumida.toString(),
+
+        custoOrcado:
+          totals.custoOrcado.toString(),
+
+        custoReal:
+          totals.custoReal.toString(),
+
+        desvioCusto:
+          totals.custoReal
+            .minus(totals.custoOrcado)
+            .toString(),
+      },
+
       items,
     };
   }

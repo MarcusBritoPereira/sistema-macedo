@@ -93,11 +93,32 @@ export class StockInventoriesService {
         const material = await tx.material.findUnique({ where: { id: item.materialId } });
         if (!material || !material.ativo) throw new NotFoundException('Material ativo não encontrado');
         const counted = this.costing.assertNonNegative(item.quantidadeContada, 'quantidadeContada');
-        const balance = await tx.saldoEstoque.findUnique({
-          where: { materialId_localEstoqueId: { materialId: item.materialId, localEstoqueId: inventory.localEstoqueId } },
-        });
-        const systemQty = balance?.quantidade ?? new Prisma.Decimal(0);
-        const averageCost = balance?.custoMedio ?? material.custoMedio ?? new Prisma.Decimal(0);
+        const inventoryItem =
+          await tx.itemInventarioEstoque.findUnique({
+            where: {
+              inventarioId_materialId: {
+                inventarioId: id,
+                materialId: item.materialId,
+              },
+            },
+          });
+
+        if (!inventoryItem) {
+          throw new NotFoundException(
+            'Material não pertence a este inventário',
+          );
+        }
+
+        const systemQty =
+          new Prisma.Decimal(
+            inventoryItem.quantidadeSistema,
+          );
+
+        const averageCost =
+          new Prisma.Decimal(
+            inventoryItem.custoMedio,
+          );
+
         const diff = counted.minus(systemQty);
         const valueDiff = diff.mul(averageCost);
         await tx.itemInventarioEstoque.upsert({
@@ -107,14 +128,15 @@ export class StockInventoriesService {
             materialId: item.materialId,
             quantidadeSistema: systemQty,
             quantidadeContada: counted,
+            contado: true,
             diferenca: diff,
             custoMedio: averageCost,
             valorDiferenca: valueDiff,
             justificativa: item.justificativa?.trim() || null,
           },
           update: {
-            quantidadeSistema: systemQty,
             quantidadeContada: counted,
+            contado: true,
             diferenca: diff,
             custoMedio: averageCost,
             valorDiferenca: valueDiff,
@@ -132,10 +154,71 @@ export class StockInventoriesService {
     return updated;
   }
 
+  async submit(id: string, userId: string) {
+    const before = await this.findOne(id);
+
+    if (
+      before.status !==
+      StatusInventarioEstoque.EM_CONTAGEM
+    ) {
+      throw new BadRequestException(
+        'Inventário deve estar em contagem para envio à aprovação',
+      );
+    }
+
+    const notCounted = before.itens.filter(
+      (item: any) => !item.contado,
+    );
+
+    if (notCounted.length) {
+      throw new BadRequestException(
+        `Existem ${notCounted.length} item(ns) ainda não contados`,
+      );
+    }
+
+    const withoutJustification =
+      before.itens.filter(
+        (item: any) =>
+          !new Prisma.Decimal(item.diferenca).eq(0) &&
+          !item.justificativa?.trim(),
+      );
+
+    if (withoutJustification.length) {
+      throw new BadRequestException(
+        `Existem ${withoutJustification.length} divergência(s) sem justificativa`,
+      );
+    }
+
+    const updated =
+      await this.prisma.inventarioEstoque.update({
+        where: { id },
+        data: {
+          status:
+            StatusInventarioEstoque.PENDENTE_APROVACAO,
+        },
+        include: this.includeRelations(),
+      });
+
+    await this.audit(
+      userId,
+      'ESTOQUE_INVENTARIO_ENVIADO_APROVACAO',
+      id,
+      before,
+      updated,
+    );
+
+    return updated;
+  }
+
   async approve(id: string, userId: string) {
     const before = await this.findOne(id);
-    if (![StatusInventarioEstoque.EM_CONTAGEM, StatusInventarioEstoque.PENDENTE_APROVACAO].includes(before.status as any)) {
-      throw new BadRequestException('Inventário deve estar contado para aprovação');
+    if (
+      before.status !==
+      StatusInventarioEstoque.PENDENTE_APROVACAO
+    ) {
+      throw new BadRequestException(
+        'Inventário deve estar pendente de aprovação',
+      );
     }
     const updated = await this.prisma.inventarioEstoque.update({
       where: { id },

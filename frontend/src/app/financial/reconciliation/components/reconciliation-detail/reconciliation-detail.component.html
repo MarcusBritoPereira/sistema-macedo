@@ -144,20 +144,35 @@
         <div
           class="tab"
           [class.active]="activeTab === 'NEW'"
-          (click)="activeTab = 'NEW'"
+          (click)="selectTab('NEW')"
         >
           Novo {{ statement.tipo === "CREDIT" ? "Recebimento" : "Pagamento" }}
         </div>
+
+        <div
+          class="tab"
+          *ngIf="statement.tipo === 'CREDIT'"
+          [class.active]="activeTab === 'RECEIVABLE'"
+          (click)="selectTab('RECEIVABLE')"
+        >
+          Conta a receber
+        </div>
+
         <div
           class="tab"
           [class.active]="activeTab === 'TRANSFER'"
-          (click)="activeTab = 'TRANSFER'"
+          (click)="selectTab('TRANSFER')"
         >
           Transferência
         </div>
       </div>
+
       <div class="actions">
-        <div class="search-toggle" (click)="toggleMode()">
+        <div
+          class="search-toggle"
+          *ngIf="activeTab === 'NEW'"
+          (click)="toggleMode()"
+        >
           <ion-icon name="search-outline"></ion-icon>
           {{ mode === "FORM" ? "Buscar existente" : "Novo lançamento" }}
         </div>
@@ -199,7 +214,7 @@
                   (click)="openSelection('ENTITY')"
                 >
                   <label class="premium-label">{{
-                    statement.tipo === "CREDIT" ? "Cliente" : "Fornecedor"
+                    statement.tipo === "CREDIT" ? "Cliente" : "Fornecedor *"
                   }}</label>
                   <div class="premium-input-container">
                     <input
@@ -375,6 +390,174 @@
                       class="input-icon select-arrow"
                     ></ion-icon>
                   </div>
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+
+          <!-- RECEIVABLE PAYMENT FIELDS -->
+          <ng-container *ngIf="activeTab === 'RECEIVABLE'">
+            <div class="premium-form-grid">
+              <div class="form-column">
+                <h3 class="column-title">
+                  Selecionar conta a receber
+                </h3>
+
+                <div class="premium-field-wrapper">
+                  <label class="premium-label">Pesquisar</label>
+
+                  <div class="premium-input-container">
+                    <input
+                      type="text"
+                      [(ngModel)]="receivableSearch"
+                      (keyup.enter)="loadOpenReceivables()"
+                      class="premium-input"
+                      placeholder="Cliente, contrato ou descrição"
+                    />
+
+                    <ion-button
+                      fill="clear"
+                      size="small"
+                      (click)="loadOpenReceivables()"
+                    >
+                      <ion-icon
+                        name="search-outline"
+                        slot="icon-only"
+                      ></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+
+                <div class="premium-field-wrapper">
+                  <label class="premium-label">
+                    Parcela / lançamento *
+                  </label>
+
+                  <div class="premium-input-container">
+                    <select
+                      [(ngModel)]="selectedReceivableId"
+                      class="premium-select"
+                    >
+                      <option value="" disabled>
+                        Selecione a conta a receber
+                      </option>
+
+                      <option
+                        *ngFor="let item of openReceivables"
+                        [value]="item.id"
+                      >
+                        {{ getReceivableClientName(item) }}
+                        — {{ item.descricao }}
+                        — saldo
+                        {{ item.saldoReceber | currency: "BRL" }}
+                      </option>
+                    </select>
+
+                    <ion-icon
+                      name="chevron-down-outline"
+                      class="input-icon select-arrow"
+                    ></ion-icon>
+                  </div>
+                </div>
+
+                <div *ngIf="loadingReceivables">
+                  <ion-spinner name="crescent"></ion-spinner>
+                  Carregando contas a receber...
+                </div>
+
+                <div
+                  class="empty-state"
+                  *ngIf="
+                    !loadingReceivables &&
+                    openReceivables.length === 0
+                  "
+                >
+                  Nenhuma conta a receber em aberto foi encontrada.
+                </div>
+              </div>
+
+              <div
+                class="form-column"
+                *ngIf="getSelectedReceivable() as receivable"
+              >
+                <h3 class="column-title">
+                  Resumo do recebimento
+                </h3>
+
+                <div class="r-info">
+                  <div class="info-row">
+                    <label>Cliente</label>
+                    <span>
+                      {{ getReceivableClientName(receivable) }}
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Contrato</label>
+                    <span>
+                      {{ getReceivableContractName(receivable) }}
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Descrição</label>
+                    <span>{{ receivable.descricao }}</span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Vencimento</label>
+                    <span>
+                      {{ formatDate(receivable.dataVencimento) }}
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Valor original</label>
+                    <span>
+                      {{ receivable.valorOriginal | currency: "BRL" }}
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Já recebido</label>
+                    <span>
+                      {{ receivable.valorRecebido | currency: "BRL" }}
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Saldo atual</label>
+                    <strong>
+                      {{ receivable.saldoReceber | currency: "BRL" }}
+                    </strong>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Crédito do extrato</label>
+                    <strong>
+                      {{ statement.valor | currency: "BRL" }}
+                    </strong>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Saldo após pagamento</label>
+                    <strong>
+                      {{
+                        getReceivableBalanceAfterPayment(receivable)
+                          | currency: "BRL"
+                      }}
+                    </strong>
+                  </div>
+                </div>
+
+                <div
+                  class="validation-warning"
+                  *ngIf="!isReceivablePaymentValid()"
+                >
+                  <ion-icon name="warning-outline"></ion-icon>
+                  O valor do extrato não pode ser maior que o saldo
+                  da parcela.
                 </div>
               </div>
             </div>

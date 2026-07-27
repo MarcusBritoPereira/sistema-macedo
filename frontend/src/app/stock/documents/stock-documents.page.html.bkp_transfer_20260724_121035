@@ -1,0 +1,885 @@
+<ion-content class="documents-content">
+  <div class="documents-page">
+    <header class="page-header">
+      <div>
+        <h1>{{ labels[kind].title }}</h1>
+        <p>{{ labels[kind].subtitle }}</p>
+      </div>
+
+      <ion-button
+        class="new-button"
+        (click)="openNew()"
+      >
+        <ion-icon
+          name="add-outline"
+          slot="start"
+        ></ion-icon>
+
+        Nova {{ labels[kind].singular }}
+      </ion-button>
+    </header>
+
+    <div
+      class="loading-state"
+      *ngIf="loading"
+    >
+      <ion-spinner name="crescent"></ion-spinner>
+      <p>Carregando documentos...</p>
+    </div>
+
+    <ng-container *ngIf="!loading">
+      <section class="kpi-grid five">
+        <article class="kpi-card">
+          <div class="kpi-icon blue">
+            <ion-icon
+              [name]="labels[kind].icon"
+            ></ion-icon>
+          </div>
+
+          <div>
+            <span>Total</span>
+            <strong>{{ totalDocuments }}</strong>
+            <small>Documentos registrados</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon gray">
+            <ion-icon
+              name="document-text-outline"
+            ></ion-icon>
+          </div>
+
+          <div>
+            <span>Rascunhos</span>
+            <strong>{{ draftDocuments }}</strong>
+            <small>Ainda não enviados</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon orange">
+            <ion-icon
+              name="send-outline"
+            ></ion-icon>
+          </div>
+
+          <div>
+            <span>Aguardando aprovação</span>
+            <strong>{{ pendingDocuments }}</strong>
+            <small>Pendentes de análise</small>
+          </div>
+        </article>
+
+        <article class="kpi-card">
+          <div class="kpi-icon green">
+            <ion-icon
+              name="checkmark-circle-outline"
+            ></ion-icon>
+          </div>
+
+          <div>
+            <span>Efetivados</span>
+            <strong>{{ postedDocuments }}</strong>
+            <small>Já movimentaram estoque</small>
+          </div>
+        </article>
+
+        <article
+          class="kpi-card"
+          *ngIf="kind === 'entries'"
+        >
+          <div class="kpi-icon purple">
+            <ion-icon
+              name="archive-outline"
+            ></ion-icon>
+          </div>
+
+          <div>
+            <span>Valor efetivado</span>
+            <strong>
+              {{
+                postedValue
+                  | currency:
+                      "BRL":
+                      "symbol":
+                      "1.2-2":
+                      "pt-BR"
+              }}
+            </strong>
+            <small>Entradas já incorporadas</small>
+          </div>
+        </article>
+      </section>
+
+      <section class="documents-panel">
+        <div class="filters">
+          <div class="search-field">
+            <ion-icon
+              name="document-text-outline"
+            ></ion-icon>
+
+            <input
+              type="text"
+              [(ngModel)]="search"
+              (input)="applyFilters()"
+              placeholder="Buscar número, fornecedor, obra ou local"
+            />
+          </div>
+
+          <select
+            [(ngModel)]="statusFilter"
+            (change)="applyFilters()"
+          >
+            <option value="">
+              Todos os status
+            </option>
+            <option value="RASCUNHO">
+              Rascunho
+            </option>
+            <option value="PENDENTE_APROVACAO">
+              Aguardando aprovação
+            </option>
+            <option value="APROVADO">
+              Aprovado
+            </option>
+            <option value="EFETIVADO">
+              Efetivado
+            </option>
+            <option value="CANCELADO">
+              Cancelado
+            </option>
+            <option value="ESTORNADO">
+              Estornado
+            </option>
+          </select>
+
+          <button
+            class="filter-action"
+            type="button"
+            (click)="
+              search = '';
+              statusFilter = '';
+              applyFilters()
+            "
+          >
+            Limpar filtros
+          </button>
+
+          <button
+            class="filter-action"
+            type="button"
+            (click)="load()"
+          >
+            Atualizar
+          </button>
+        </div>
+
+        <div class="result-summary">
+          <div>
+            <strong>
+              {{ filteredDocuments.length }}
+            </strong>
+            documento(s) encontrado(s)
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="documents-table">
+            <thead>
+              <tr>
+                <th>Documento</th>
+                <th>Status</th>
+
+                <th *ngIf="kind === 'entries'">
+                  Fornecedor
+                </th>
+
+                <th *ngIf="kind !== 'entries'">
+                  Obra
+                </th>
+
+                <th *ngIf="kind !== 'entries'">
+                  Origem
+                </th>
+
+                <th *ngIf="kind !== 'issues'">
+                  Destino
+                </th>
+
+                <th>Data</th>
+                <th class="number">Valor</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr
+                *ngFor="
+                  let item of filteredDocuments
+                "
+              >
+                <td>
+                  <div class="document-cell">
+                    <div class="document-icon">
+                      <ion-icon
+                        [name]="labels[kind].icon"
+                      ></ion-icon>
+                    </div>
+
+                    <div>
+                      <strong>
+                        {{ item.numero }}
+                      </strong>
+
+                      <span>
+                        {{ item.tipo }}
+                      </span>
+                    </div>
+                  </div>
+                </td>
+
+                <td>
+                  <span
+                    class="status-badge"
+                    [ngClass]="
+                      getStatusClass(item.status)
+                    "
+                  >
+                    {{
+                      getStatusLabel(item.status)
+                    }}
+                  </span>
+                </td>
+
+                <td *ngIf="kind === 'entries'">
+                  {{ supplierName(item) }}
+                </td>
+
+                <td *ngIf="kind !== 'entries'">
+                  {{ item.obra?.nome || "—" }}
+                </td>
+
+                <td *ngIf="kind !== 'entries'">
+                  {{
+                    item.localOrigem?.nome ||
+                      "—"
+                  }}
+                </td>
+
+                <td *ngIf="kind !== 'issues'">
+                  {{
+                    item.localDestino?.nome ||
+                      "—"
+                  }}
+                </td>
+
+                <td>
+                  {{
+                    item.dataDocumento
+                      | date: "dd/MM/yyyy"
+                  }}
+                </td>
+
+                <td class="number value">
+                  {{
+                    item.valorTotal || 0
+                      | currency:
+                          "BRL":
+                          "symbol":
+                          "1.2-2":
+                          "pt-BR"
+                  }}
+                </td>
+
+                <td>
+                  <div class="row-actions">
+                    <button
+                      class="icon-action"
+                      type="button"
+                      title="Ver detalhes"
+                      (click)="openDetail(item)"
+                    >
+                      <ion-icon
+                        name="eye-outline"
+                      ></ion-icon>
+                    </button>
+
+                    <button
+                      class="icon-action"
+                      type="button"
+                      *ngIf="canSubmit(item)"
+                      title="Enviar para aprovação"
+                      (click)="submit(item)"
+                    >
+                      <ion-icon
+                        name="send-outline"
+                      ></ion-icon>
+                    </button>
+
+                    <button
+                      class="icon-action approve"
+                      type="button"
+                      *ngIf="canApprove(item)"
+                      title="Aprovar"
+                      (click)="approve(item)"
+                    >
+                      <ion-icon
+                        name="checkmark-circle-outline"
+                      ></ion-icon>
+                    </button>
+
+                    <button
+                      class="icon-action post"
+                      type="button"
+                      *ngIf="canPost(item)"
+                      title="Efetivar"
+                      (click)="post(item)"
+                    >
+                      <ion-icon
+                        name="play-circle-outline"
+                      ></ion-icon>
+                    </button>
+
+                    <button
+                      class="icon-action danger"
+                      type="button"
+                      *ngIf="canCancel(item)"
+                      [title]="
+                        item.status === 'EFETIVADO'
+                          ? 'Estornar'
+                          : 'Cancelar'
+                      "
+                      (click)="cancel(item)"
+                    >
+                      <ion-icon
+                        name="close-circle-outline"
+                      ></ion-icon>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div
+          class="empty-state"
+          *ngIf="
+            filteredDocuments.length === 0
+          "
+        >
+          <ion-icon
+            [name]="labels[kind].icon"
+          ></ion-icon>
+
+          <h3>Nenhum documento encontrado</h3>
+
+          <p>
+            Cadastre um novo documento ou revise os filtros.
+          </p>
+        </div>
+      </section>
+    </ng-container>
+  </div>
+
+  <div
+    class="drawer-backdrop"
+    [class.open]="drawerOpen"
+    (click)="closeDrawer()"
+  ></div>
+
+  <aside
+    class="document-drawer"
+    [class.open]="drawerOpen"
+  >
+    <div class="drawer-header">
+      <div>
+        <span class="drawer-eyebrow">
+          Estoque
+        </span>
+
+        <h2>
+          Nova {{ labels[kind].singular }}
+        </h2>
+
+        <p>
+          O documento será salvo inicialmente como rascunho.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="drawer-close"
+        (click)="closeDrawer()"
+      >
+        <ion-icon
+          name="close-outline"
+        ></ion-icon>
+      </button>
+    </div>
+
+    <div class="drawer-body">
+      <section class="drawer-section">
+        <div class="section-title">
+          <span>Dados do documento</span>
+        </div>
+
+        <div class="drawer-grid">
+          <label>
+            <span>Número</span>
+            <input
+              type="text"
+              [(ngModel)]="form.numero"
+              placeholder="Gerado automaticamente"
+            />
+          </label>
+
+          <label>
+            <span>Data *</span>
+            <input
+              type="date"
+              [(ngModel)]="
+                form.dataDocumento
+              "
+            />
+          </label>
+
+          <label
+            class="full"
+            *ngIf="kind === 'entries'"
+          >
+            <span>Fornecedor</span>
+
+            <select
+              [(ngModel)]="
+                form.fornecedorId
+              "
+            >
+              <option value="">
+                Selecione
+              </option>
+
+              <option
+                *ngFor="
+                  let supplier of suppliers
+                "
+                [value]="supplier.id"
+              >
+                {{
+                  supplier.nomeFantasia ||
+                    supplier.razaoSocial
+                }}
+              </option>
+            </select>
+          </label>
+
+          <label class="full">
+            <span>Obra</span>
+
+            <select [(ngModel)]="form.obraId">
+              <option value="">
+                Sem vínculo com obra
+              </option>
+
+              <option
+                *ngFor="let obra of obras"
+                [value]="obra.id"
+              >
+                {{ obra.nome }}
+              </option>
+            </select>
+          </label>
+
+          <label
+            class="full"
+            *ngIf="kind !== 'entries'"
+          >
+            <span>Local de origem *</span>
+
+            <select
+              [(ngModel)]="
+                form.localOrigemId
+              "
+              (change)="onOriginChange()"
+            >
+              <option value="">
+                Selecione
+              </option>
+
+              <option
+                *ngFor="
+                  let location of locations
+                "
+                [value]="location.id"
+              >
+                {{ location.codigo }} -
+                {{ location.nome }}
+              </option>
+            </select>
+          </label>
+
+          <label
+            class="full"
+            *ngIf="kind !== 'issues'"
+          >
+            <span>Local de destino *</span>
+
+            <select
+              [(ngModel)]="
+                form.localDestinoId
+              "
+            >
+              <option value="">
+                Selecione
+              </option>
+
+              <option
+                *ngFor="
+                  let location of locations
+                "
+                [value]="location.id"
+              >
+                {{ location.codigo }} -
+                {{ location.nome }}
+              </option>
+            </select>
+          </label>
+
+          <label class="full">
+            <span>Documento fiscal</span>
+
+            <input
+              type="text"
+              [(ngModel)]="
+                form.documentoFiscal
+              "
+              placeholder="NF-e, nota, recibo..."
+            />
+          </label>
+
+          <label class="full">
+            <span>Observação</span>
+
+            <textarea
+              rows="3"
+              [(ngModel)]="
+                form.observacao
+              "
+              placeholder="Informações adicionais"
+            ></textarea>
+          </label>
+        </div>
+      </section>
+
+      <section class="drawer-section">
+        <div class="section-title between">
+          <span>Materiais</span>
+
+          <button
+            type="button"
+            class="small-action"
+            (click)="addItem()"
+          >
+            <ion-icon
+              name="add-outline"
+            ></ion-icon>
+            Adicionar
+          </button>
+        </div>
+
+        <div
+          class="drawer-item"
+          *ngFor="
+            let item of form.items;
+            let i = index
+          "
+        >
+          <div class="item-number">
+            Item {{ i + 1 }}
+          </div>
+
+          <label class="full">
+            <span>Material *</span>
+
+            <select
+              [(ngModel)]="
+                item.materialId
+              "
+            >
+              <option value="">
+                Selecione o material
+              </option>
+
+              <option
+                *ngFor="
+                  let material of materials
+                "
+                [value]="material.id"
+              >
+                {{ material.codigo }} -
+                {{ material.nome }}
+              </option>
+            </select>
+          </label>
+
+          <div
+            class="issue-stock-box"
+            *ngIf="
+              kind === 'issues' &&
+              form.localOrigemId &&
+              item.materialId
+            "
+          >
+            <div
+              class="issue-stock-loading"
+              *ngIf="issueBalancesLoading"
+            >
+              Consultando saldo...
+            </div>
+
+            <ng-container
+              *ngIf="!issueBalancesLoading"
+            >
+              <div>
+                <span>Físico</span>
+                <strong>
+                  {{
+                    issuePhysical(item)
+                      | number:
+                          "1.2-3":
+                          "pt-BR"
+                  }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Reservado</span>
+                <strong>
+                  {{
+                    issueReserved(item)
+                      | number:
+                          "1.2-3":
+                          "pt-BR"
+                  }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Disponível</span>
+                <strong>
+                  {{
+                    issueAvailable(item)
+                      | number:
+                          "1.2-3":
+                          "pt-BR"
+                  }}
+                </strong>
+              </div>
+
+              <div
+                [class.stock-negative]="
+                  issueProjected(item) < 0
+                "
+              >
+                <span>Após a saída</span>
+                <strong>
+                  {{
+                    issueProjected(item)
+                      | number:
+                          "1.2-3":
+                          "pt-BR"
+                  }}
+                </strong>
+              </div>
+            </ng-container>
+          </div>
+
+          <div
+            class="issue-stock-warning"
+            *ngIf="
+              issueHasInsufficientStock(
+                item
+              )
+            "
+          >
+            <ion-icon
+              name="close-circle-outline"
+            ></ion-icon>
+
+            <div>
+              <strong>
+                Saldo disponível insuficiente
+              </strong>
+
+              <span>
+                Existem
+                {{
+                  issueAvailable(item)
+                    | number:
+                        "1.2-3":
+                        "pt-BR"
+                }}
+                disponíveis neste local.
+              </span>
+            </div>
+          </div>
+
+          <div class="item-grid">
+            <label>
+              <span>Quantidade *</span>
+              <input
+                type="number"
+                min="0.001"
+                step="0.001"
+                [(ngModel)]="
+                  item.quantidade
+                "
+              />
+            </label>
+
+            <label
+              *ngIf="kind === 'entries'"
+            >
+              <span>Custo unitário</span>
+              <input
+                type="number"
+                min="0"
+                step="0.0001"
+                [(ngModel)]="
+                  item.custoUnitario
+                "
+              />
+            </label>
+
+            <label
+              *ngIf="kind === 'entries'"
+            >
+              <span>Lote</span>
+              <input
+                type="text"
+                [(ngModel)]="item.lote"
+                placeholder="Opcional"
+              />
+            </label>
+
+            <label
+              *ngIf="kind === 'entries'"
+            >
+              <span>Validade</span>
+              <input
+                type="date"
+                [(ngModel)]="
+                  item.dataValidade
+                "
+              />
+            </label>
+          </div>
+
+          <label class="full">
+            <span>Observação do item</span>
+
+            <input
+              type="text"
+              [(ngModel)]="
+                item.observacao
+              "
+              placeholder="Opcional"
+            />
+          </label>
+
+          <div
+            class="item-footer"
+            *ngIf="kind === 'entries'"
+          >
+            <div>
+              <span>Total do item</span>
+              <strong>
+                {{
+                  itemTotal(item)
+                    | currency:
+                        "BRL":
+                        "symbol":
+                        "1.2-2":
+                        "pt-BR"
+                }}
+              </strong>
+            </div>
+
+            <div class="item-actions">
+              <button
+                type="button"
+                title="Duplicar"
+                (click)="duplicateItem(i)"
+              >
+                <ion-icon
+                  name="copy-outline"
+                ></ion-icon>
+              </button>
+
+              <button
+                type="button"
+                class="danger"
+                title="Excluir"
+                [disabled]="
+                  form.items.length === 1
+                "
+                (click)="removeItem(i)"
+              >
+                <ion-icon
+                  name="trash-outline"
+                ></ion-icon>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="entry-total"
+        *ngIf="kind === 'entries'"
+      >
+        <span>Valor total da entrada</span>
+
+        <strong>
+          {{
+            formTotal
+              | currency:
+                  "BRL":
+                  "symbol":
+                  "1.2-2":
+                  "pt-BR"
+          }}
+        </strong>
+      </section>
+    </div>
+
+    <div class="drawer-footer">
+      <ion-button
+        fill="outline"
+        (click)="closeDrawer()"
+        [disabled]="saving"
+      >
+        Cancelar
+      </ion-button>
+
+      <ion-button
+        (click)="save()"
+        [disabled]="
+          saving || !isValid()
+        "
+      >
+        <ion-icon
+          name="save-outline"
+          slot="start"
+        ></ion-icon>
+
+        {{
+          saving
+            ? "Salvando..."
+            : "Salvar rascunho"
+        }}
+      </ion-button>
+    </div>
+  </aside>
+</ion-content>

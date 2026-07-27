@@ -1,8 +1,39 @@
 
+export interface OpenReceivable {
+    id: string;
+    descricao: string;
+    valor: number;
+    valorOriginal: number;
+    valorRecebido: number;
+    saldoReceber: number;
+    dataVencimento: string;
+    dataPagamento?: string | null;
+    status: 'PREVISTO' | 'PARCIAL' | 'REALIZADO' | 'CONCILIADO' | 'CANCELADO';
+    clienteId?: string | null;
+    contratoId?: string | null;
+    cliente?: {
+        id: string;
+        razaoSocial: string;
+        nomeFantasia?: string | null;
+    } | null;
+    contrato?: {
+        id: string;
+        descricao?: string | null;
+    } | null;
+    categoria?: {
+        id: string;
+        nome: string;
+    } | null;
+}
+
+
 export interface BankStatement {
     id: string;
     data: string;
     descricao: string;
+    descricaoPix?: string | null;
+    endToEndId?: string | null;
+    idTransacaoBanco?: string | null;
     valor: number;
     tipo: 'CREDIT' | 'DEBIT';
     hash: string;

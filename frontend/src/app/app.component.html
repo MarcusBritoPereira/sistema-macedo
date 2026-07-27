@@ -51,7 +51,7 @@
             </ion-menu-toggle>
 
             <!-- Level 1: Financeiro (Accordion) -->
-            <ion-accordion-group>
+            <ion-accordion-group *ngIf="!auth.isStockProfile()">
               <ion-accordion value="financeiro_group" class="menu-accordion">
                 <ion-item slot="header" lines="none">
                   <ion-icon
@@ -270,7 +270,7 @@
             </ion-accordion-group>
 
             <!-- Level 1: Configurações (Accordion) -->
-            <ion-accordion-group>
+            <ion-accordion-group *ngIf="!auth.isStockProfile()">
               <ion-accordion value="config_group" class="menu-accordion">
                 <ion-item slot="header" lines="none">
                   <ion-icon

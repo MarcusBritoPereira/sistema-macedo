@@ -1,40 +1,449 @@
-import { Component, OnInit } from '@angular/core';
 import { CommonModule, CurrencyPipe, DecimalPipe } from '@angular/common';
+import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { IonButton, IonContent, IonIcon, IonInput, IonItem, IonLabel, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonToggle } from '@ionic/angular/standalone';
+import {
+  IonButton,
+  IonContent,
+  IonIcon,
+  IonSpinner,
+  ToastController,
+} from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { addOutline, cubeOutline, refreshOutline, saveOutline } from 'ionicons/icons';
-import { StockCategory, StockMaterial, StockService } from '../../services/stock/stock.service';
+import {
+  addOutline,
+  alertCircleOutline,
+  cashOutline,
+  checkmarkCircleOutline,
+  closeOutline,
+  createOutline,
+  cubeOutline,
+  layersOutline,
+  powerOutline,
+  refreshOutline,
+  saveOutline,
+  searchOutline,
+  trashOutline,
+} from 'ionicons/icons';
+import {
+  StockCategory,
+  StockMaterial,
+  StockService,
+} from '../../services/stock/stock.service';
 
-@Component({ selector: 'app-stock-materials', standalone: true, imports: [CommonModule, FormsModule, CurrencyPipe, DecimalPipe, IonButton, IonContent, IonIcon, IonInput, IonItem, IonLabel, IonSearchbar, IonSelect, IonSelectOption, IonSpinner, IonTextarea, IonToggle], templateUrl: './stock-materials.page.html', styleUrls: ['./stock-materials.page.scss'] })
+type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
+
+type StockFilter =
+  | 'ALL'
+  | 'NORMAL'
+  | 'REPOSICAO'
+  | 'BAIXO'
+  | 'ZERADO'
+  | 'NEGATIVO';
+
+@Component({
+  selector: 'app-stock-materials',
+  standalone: true,
+  imports: [
+    CommonModule,
+    FormsModule,
+    CurrencyPipe,
+    DecimalPipe,
+    IonButton,
+    IonContent,
+    IonIcon,
+    IonSpinner,
+  ],
+  templateUrl: './stock-materials.page.html',
+  styleUrls: ['./stock-materials.page.scss'],
+})
 export class StockMaterialsPage implements OnInit {
   loading = true;
   saving = false;
-  search = '';
-  materials: StockMaterial[] = [];
-  categories: StockCategory[] = [];
-  form: StockMaterial = this.emptyForm();
-  units = ['UN', 'KG', 'G', 'T', 'M', 'M2', 'M3', 'L', 'ML', 'CX', 'PCT', 'SC', 'RL', 'BD', 'GL'];
+  drawerOpen = false;
 
-  constructor(private stock: StockService) { addIcons({ addOutline, cubeOutline, refreshOutline, saveOutline }); }
-  ngOnInit(): void { this.load(); }
+  search = '';
+  categoryFilter = '';
+  statusFilter: StatusFilter = 'ALL';
+  stockFilter: StockFilter = 'ALL';
+
+  materials: StockMaterial[] = [];
+  filteredMaterials: StockMaterial[] = [];
+  categories: StockCategory[] = [];
+
+  form: StockMaterial = this.emptyForm();
+
+  readonly units = [
+    'UN',
+    'KG',
+    'G',
+    'T',
+    'M',
+    'M2',
+    'M3',
+    'L',
+    'ML',
+    'CX',
+    'PCT',
+    'SC',
+    'RL',
+    'BD',
+    'GL',
+  ];
+
+  constructor(
+    private readonly stock: StockService,
+    private readonly toastController: ToastController,
+  ) {
+    addIcons({
+      addOutline,
+      alertCircleOutline,
+      cashOutline,
+      checkmarkCircleOutline,
+      closeOutline,
+      createOutline,
+      cubeOutline,
+      layersOutline,
+      powerOutline,
+      refreshOutline,
+      saveOutline,
+      searchOutline,
+      trashOutline,
+    });
+  }
+
+  ngOnInit(): void {
+    this.load();
+  }
 
   load(): void {
     this.loading = true;
-    this.stock.getCategories({ take: 200, ativo: true }).subscribe({ next: r => this.categories = r.items || [] });
-    this.stock.getMaterials({ take: 100, search: this.search }).subscribe({ next: r => { this.materials = r.items || []; this.loading = false; }, error: () => this.loading = false });
+
+    this.stock
+      .getCategories({
+        take: 500,
+        ativo: true,
+      })
+      .subscribe({
+        next: (response) => {
+          this.categories = response.items || [];
+        },
+        error: () => {
+          this.categories = [];
+        },
+      });
+
+    this.stock
+      .getMaterials({
+        take: 500,
+      })
+      .subscribe({
+        next: (response) => {
+          this.materials = response.items || [];
+          this.applyFilters();
+          this.loading = false;
+        },
+        error: async () => {
+          this.materials = [];
+          this.filteredMaterials = [];
+          this.loading = false;
+
+          await this.showToast(
+            'Não foi possível carregar os materiais.',
+            'danger',
+          );
+        },
+      });
+  }
+
+  applyFilters(): void {
+    const term = this.normalize(this.search);
+
+    this.filteredMaterials = this.materials.filter((item) => {
+      const matchesSearch =
+        !term ||
+        [
+          item.codigo,
+          item.nome,
+          item.marca,
+          item.fabricante,
+          item.codigoBarras,
+          item.categoriaMaterial?.nome,
+        ].some((value) => this.normalize(value).includes(term));
+
+      const matchesCategory =
+        !this.categoryFilter ||
+        item.categoriaMaterialId === this.categoryFilter ||
+        item.categoriaMaterial?.id === this.categoryFilter;
+
+      const matchesStatus =
+        this.statusFilter === 'ALL' ||
+        (this.statusFilter === 'ACTIVE' && item.ativo !== false) ||
+        (this.statusFilter === 'INACTIVE' && item.ativo === false);
+
+      const matchesStock =
+        this.stockFilter === 'ALL' ||
+        item.situacaoEstoque === this.stockFilter;
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesStatus &&
+        matchesStock
+      );
+    });
+  }
+
+  clearFilters(): void {
+    this.search = '';
+    this.categoryFilter = '';
+    this.statusFilter = 'ALL';
+    this.stockFilter = 'ALL';
+    this.applyFilters();
+  }
+
+  openNew(): void {
+    this.form = this.emptyForm();
+    this.form.codigo = this.generateNextCode();
+    this.drawerOpen = true;
+  }
+
+  edit(material: StockMaterial): void {
+    this.form = {
+      ...material,
+      categoriaMaterialId:
+        material.categoriaMaterialId ||
+        material.categoriaMaterial?.id ||
+        '',
+    };
+
+    this.drawerOpen = true;
+  }
+
+  closeDrawer(): void {
+    if (this.saving) {
+      return;
+    }
+
+    this.drawerOpen = false;
+    this.form = this.emptyForm();
   }
 
   save(): void {
+    if (!this.isFormValid()) {
+      this.showToast(
+        'Preencha código, nome, categoria e unidade.',
+        'warning',
+      );
+      return;
+    }
+
     this.saving = true;
-    const request = this.form.id ? this.stock.updateMaterial(this.form.id, this.form) : this.stock.createMaterial(this.form);
-    request.subscribe({ next: () => { this.form = this.emptyForm(); this.saving = false; this.load(); }, error: () => this.saving = false });
+
+    const payload: StockMaterial = {
+      ...this.form,
+      codigo: this.form.codigo.trim(),
+      nome: this.form.nome.trim(),
+      categoriaMaterialId: this.form.categoriaMaterialId,
+      estoqueMinimo: String(this.form.estoqueMinimo || '0'),
+      estoqueMaximo:
+        this.form.estoqueMaximo === '' ||
+        this.form.estoqueMaximo === null ||
+        this.form.estoqueMaximo === undefined
+          ? null
+          : String(this.form.estoqueMaximo),
+      pontoReposicao: String(this.form.pontoReposicao || '0'),
+      custoPadrao:
+        this.form.custoPadrao === '' ||
+        this.form.custoPadrao === null ||
+        this.form.custoPadrao === undefined
+          ? null
+          : String(this.form.custoPadrao),
+    };
+
+    const request = payload.id
+      ? this.stock.updateMaterial(payload.id, payload)
+      : this.stock.createMaterial(payload);
+
+    request.subscribe({
+      next: async () => {
+        this.saving = false;
+        this.drawerOpen = false;
+        this.form = this.emptyForm();
+
+        await this.showToast(
+          payload.id
+            ? 'Material atualizado com sucesso.'
+            : 'Material cadastrado com sucesso.',
+          'success',
+        );
+
+        this.load();
+      },
+      error: async (error) => {
+        this.saving = false;
+
+        const message =
+          error?.error?.message ||
+          'Não foi possível salvar o material.';
+
+        await this.showToast(message, 'danger');
+      },
+    });
   }
 
-  edit(material: StockMaterial): void { this.form = { ...material, categoriaMaterialId: material.categoriaMaterialId || material.categoriaMaterial?.id || '' }; }
-  reset(): void { this.form = this.emptyForm(); }
+  removeMaterial(material: StockMaterial): void {
+    if (!material.id) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Deseja remover o material "${material.nome}"?\n\n` +
+        'Quando houver movimentações, o material será apenas inativado.',
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    this.stock.deleteMaterial(material.id).subscribe({
+      next: async () => {
+        await this.showToast(
+          'Material removido ou inativado com sucesso.',
+          'success',
+        );
+
+        this.load();
+      },
+      error: async (error) => {
+        await this.showToast(
+          error?.error?.message ||
+            'Não foi possível remover o material.',
+          'danger',
+        );
+      },
+    });
+  }
+
+  get totalMaterials(): number {
+    return this.materials.length;
+  }
+
+  get activeMaterials(): number {
+    return this.materials.filter((item) => item.ativo !== false).length;
+  }
+
+  get lowStockMaterials(): number {
+    return this.materials.filter((item) =>
+      ['BAIXO', 'ZERADO', 'NEGATIVO'].includes(
+        item.situacaoEstoque || '',
+      ),
+    ).length;
+  }
+
+  get reorderMaterials(): number {
+    return this.materials.filter(
+      (item) => item.situacaoEstoque === 'REPOSICAO',
+    ).length;
+  }
+
+  get totalStockValue(): number {
+    return this.materials.reduce(
+      (total, item) =>
+        total + this.toNumber(item.valorTotalEstoque),
+      0,
+    );
+  }
+
+  getSituationLabel(material: StockMaterial): string {
+    const labels: Record<string, string> = {
+      NORMAL: 'Normal',
+      REPOSICAO: 'Repor estoque',
+      BAIXO: 'Estoque baixo',
+      ZERADO: 'Sem estoque',
+      NEGATIVO: 'Saldo negativo',
+      INATIVO: 'Inativo',
+    };
+
+    return labels[material.situacaoEstoque || 'NORMAL'] || 'Normal';
+  }
+
+  getSituationClass(material: StockMaterial): string {
+    return `situation-${(
+      material.situacaoEstoque || 'NORMAL'
+    ).toLowerCase()}`;
+  }
+
+  isFormValid(): boolean {
+    return Boolean(
+      this.form.codigo?.trim() &&
+        this.form.nome?.trim() &&
+        this.form.categoriaMaterialId &&
+        this.form.unidade,
+    );
+  }
+
+  trackByMaterial(
+    _index: number,
+    material: StockMaterial,
+  ): string {
+    return material.id || material.codigo;
+  }
+
+  toNumber(value: string | number | null | undefined): number {
+    const parsed = Number(value || 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  private generateNextCode(): string {
+    const highest = this.materials.reduce((max, material) => {
+      const match = String(material.codigo || '').match(/(\d+)$/);
+      const number = match ? Number(match[1]) : 0;
+      return Math.max(max, number);
+    }, 0);
+
+    return `MAT-${String(highest + 1).padStart(5, '0')}`;
+  }
+
+  private normalize(value: unknown): string {
+    return String(value || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  }
 
   private emptyForm(): StockMaterial {
-    return { codigo: '', nome: '', categoriaMaterialId: '', unidade: 'UN', estoqueMinimo: '0', pontoReposicao: '0', permiteFracionado: false, ativo: true };
+    return {
+      codigo: '',
+      nome: '',
+      descricao: '',
+      categoriaMaterialId: '',
+      unidade: 'UN',
+      codigoBarras: '',
+      referenciaFornecedor: '',
+      marca: '',
+      fabricante: '',
+      estoqueMinimo: '0',
+      estoqueMaximo: null,
+      pontoReposicao: '0',
+      custoPadrao: null,
+      permiteFracionado: false,
+      ativo: true,
+      observacoes: '',
+    };
+  }
+
+  private async showToast(
+    message: string,
+    color: string,
+  ): Promise<void> {
+    const toast = await this.toastController.create({
+      message,
+      color,
+      duration: 2500,
+      position: 'bottom',
+    });
+
+    await toast.present();
   }
 }

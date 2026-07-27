@@ -1,4 +1,5 @@
 import { IsBoolean, IsEmail, IsOptional, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CreateSupplierDto {
   @IsString()
@@ -14,6 +15,7 @@ export class CreateSupplierDto {
 
   @IsEmail()
   @IsOptional()
+  @Transform(({ value }) => (value === '' ? null : value))
   email?: string;
 
   @IsString()
@@ -27,4 +29,8 @@ export class CreateSupplierDto {
   @IsBoolean()
   @IsOptional()
   ativo?: boolean;
+
+  @IsString()
+  @IsOptional()
+  observacoes?: string;
 }

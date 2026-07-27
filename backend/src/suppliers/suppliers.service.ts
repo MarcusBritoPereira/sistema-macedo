@@ -22,6 +22,7 @@ export class SuppliersService {
           telefone: dto.telefone || null,
           categoriaDefaultId: dto.categoriaDefaultId || null,
           ativo: dto.ativo ?? true,
+          observacoes: dto.observacoes || null,
         },
       });
     } catch (error: any) {

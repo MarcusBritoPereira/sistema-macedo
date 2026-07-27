@@ -36,7 +36,8 @@ export class SupplierDetailPage implements OnInit {
             razaoSocial: [''],
             cnpj: [''],
             email: ['', [Validators.email]],
-            telefone: ['']
+            telefone: [''],
+            observacoes: ['']
         });
     }
 

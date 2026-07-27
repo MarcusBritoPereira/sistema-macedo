@@ -694,6 +694,7 @@ model Fornecedor {
   cnpj         String? @unique
   email        String?
   telefone     String?
+  observacoes  String?
 
   // Categoria padrão para agilizar lançamentos
   categoriaDefaultId String?

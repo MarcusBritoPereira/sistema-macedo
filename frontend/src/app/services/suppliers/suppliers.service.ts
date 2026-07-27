@@ -11,6 +11,7 @@ export interface Supplier {
     telefone?: string;
     categoriaDefaultId?: string;
     ativo?: boolean;
+    observacoes?: string;
 }
 
 @Injectable({

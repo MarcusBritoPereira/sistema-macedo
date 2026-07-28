@@ -13,9 +13,7 @@ export class CreateSupplierDto {
   @IsOptional()
   cnpj?: string;
 
-  @IsEmail()
   @IsOptional()
-  @Transform(({ value }) => (value === '' ? null : value))
   email?: string;
 
   @IsString()

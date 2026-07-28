@@ -1,0 +1,89 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Ajustar Saldo</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancel()">
+        <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="material-info">
+    <div class="material-icon">
+      <ion-icon name="cube-outline"></ion-icon>
+    </div>
+    <div class="material-details">
+      <h2>{{ material?.nome }}</h2>
+      <p>Cód: {{ material?.codigo }} | Unid: {{ material?.unidade }}</p>
+    </div>
+  </div>
+
+  <ion-segment [value]="operationType" (ionChange)="onOperationChange($event)" class="ion-margin-bottom">
+    <ion-segment-button value="entrada">
+      <ion-label>Entrada (+)</ion-label>
+    </ion-segment-button>
+    <ion-segment-button value="saida">
+      <ion-label>Saída (-)</ion-label>
+    </ion-segment-button>
+  </ion-segment>
+
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <ion-list>
+      <ion-item>
+        <ion-select
+          label="Local de Estoque"
+          labelPlacement="stacked"
+          formControlName="localEstoqueId"
+          placeholder="Selecione um local"
+          interface="popover"
+        >
+          <ion-select-option *ngFor="let loc of locations" [value]="loc.id">
+            {{ loc.nome }}
+          </ion-select-option>
+        </ion-select>
+      </ion-item>
+      
+      <div class="error-msg" *ngIf="form.get('localEstoqueId')?.touched && form.get('localEstoqueId')?.invalid">
+        Local de estoque é obrigatório.
+      </div>
+
+      <ion-item>
+        <ion-input
+          label="Quantidade"
+          labelPlacement="stacked"
+          type="number"
+          inputmode="decimal"
+          formControlName="quantidade"
+          placeholder="0,00"
+        ></ion-input>
+      </ion-item>
+      <div class="error-msg" *ngIf="form.get('quantidade')?.touched && form.get('quantidade')?.invalid">
+        Quantidade é obrigatória e deve ser maior que zero.
+      </div>
+
+      <ion-item>
+        <ion-input
+          label="Custo Unitário (R$)"
+          labelPlacement="stacked"
+          type="number"
+          inputmode="decimal"
+          formControlName="custoUnitario"
+          placeholder="0,00 (Opcional)"
+        ></ion-input>
+      </ion-item>
+    </ion-list>
+  </form>
+</ion-content>
+
+<ion-footer class="ion-no-border">
+  <ion-toolbar>
+    <ion-buttons slot="end">
+      <ion-button (click)="cancel()" color="medium">Cancelar</ion-button>
+      <ion-button (click)="save()" color="primary" fill="solid" class="ion-margin-end">
+        Confirmar
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-footer>

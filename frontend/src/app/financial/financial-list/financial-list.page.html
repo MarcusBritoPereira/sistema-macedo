@@ -133,7 +133,7 @@
         <div class="col-desc">
           <span class="desc-main">{{ item.descricao }}</span>
         </div>
-        <div class="col-entity">{{ item.clienteId ? 'Cliente' : (item.fornecedor || '-') }}</div>
+        <div class="col-entity">{{ item.cliente?.razaoSocial || item.cliente?.nomeFantasia || item.fornecedor?.nomeFantasia || item.fornecedor?.razaoSocial || '-' }}</div>
         <div class="col-category">{{ item.categoria?.nome || 'Sem categoria' }}</div>
         <div class="col-paymethod">{{ item.formaPagamento || 'À vista' }}</div>
         <div class="col-value" [class.text-danger]="item.tipo === 'DESPESA'">
@@ -168,11 +168,9 @@
                   <ion-button fill="clear" size="small" class="actions-btn" (click)="openItemActions($event, item)">
                       <ion-icon name="ellipsis-vertical"></ion-icon>
                   </ion-button>
-              </div>
               
-              <div class="card-subtitle">{{ item.clienteId ? 'Cliente' : (item.fornecedor || '-') }}</div>
+              <div class="card-subtitle">{{ item.cliente?.razaoSocial || item.cliente?.nomeFantasia || item.fornecedor?.nomeFantasia || item.fornecedor?.razaoSocial || '-' }}</div>
               
-              <div class="card-details">
                   <div class="detail-row">
                       <span class="detail-label">Competência:</span>
                       <span class="detail-value">{{ item.dataVencimento | date:'shortDate' }}</span>

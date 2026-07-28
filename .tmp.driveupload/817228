@@ -1,0 +1,272 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.StockDocumentsService = void 0;
+const common_1 = require("@nestjs/common");
+const client_1 = require("@prisma/client");
+const prisma_service_1 = require("../../prisma/prisma.service");
+const stock_movement_service_1 = require("./stock-movement.service");
+const stock_financial_integration_service_1 = require("./stock-financial-integration.service");
+const stock_common_1 = require("./stock-common");
+let StockDocumentsService = class StockDocumentsService {
+    prisma;
+    movementService;
+    financialIntegration;
+    constructor(prisma, movementService, financialIntegration) {
+        this.prisma = prisma;
+        this.movementService = movementService;
+        this.financialIntegration = financialIntegration;
+    }
+    async create(tipo, dto, userId) {
+        this.validateDocumentShape(tipo, dto);
+        const numero = dto.numero?.trim() || (await this.nextDocumentNumber(tipo));
+        const items = await Promise.all(dto.items.map(async (item) => {
+            const material = await this.prisma.material.findUnique({ where: { id: item.materialId } });
+            if (!material || !material.ativo)
+                throw new common_1.BadRequestException('Material ativo não encontrado no documento');
+            const quantidade = new client_1.Prisma.Decimal(item.quantidade);
+            if (quantidade.lte(0))
+                throw new common_1.BadRequestException('Quantidade do item deve ser maior que zero');
+            const custoUnitario = item.custoUnitario ? new client_1.Prisma.Decimal(item.custoUnitario) : new client_1.Prisma.Decimal(0);
+            if (custoUnitario.lt(0))
+                throw new common_1.BadRequestException('Custo unitário não pode ser negativo');
+            return {
+                materialId: item.materialId,
+                quantidade,
+                custoUnitario,
+                custoTotal: quantidade.mul(custoUnitario),
+                lote: item.lote?.trim() || null,
+                dataValidade: item.dataValidade ? new Date(item.dataValidade) : null,
+                observacao: item.observacao?.trim() || null,
+            };
+        }));
+        const valorTotal = items.reduce((acc, item) => acc.plus(item.custoTotal), new client_1.Prisma.Decimal(0));
+        const document = await this.prisma.documentoEstoque.create({
+            data: {
+                numero,
+                tipo,
+                status: client_1.StatusDocumentoEstoque.RASCUNHO,
+                fornecedorId: dto.fornecedorId,
+                obraId: dto.obraId,
+                localOrigemId: dto.localOrigemId,
+                localDestinoId: dto.localDestinoId,
+                dataDocumento: dto.dataDocumento ? new Date(dto.dataDocumento) : new Date(),
+                documentoFiscal: dto.documentoFiscal?.trim() || null,
+                valorTotal,
+                observacao: dto.observacao?.trim() || null,
+                transacaoFinanceiraId: dto.transacaoFinanceiraId,
+                criadoPorId: userId,
+                itens: { create: items },
+            },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_DOCUMENTO_CRIADO', document.id, null, document);
+        return document;
+    }
+    async findAll(tipo, query) {
+        const { skip, take } = (0, stock_common_1.normalizePagination)(query.skip, query.take);
+        const where = {
+            tipo,
+            ...(query.search
+                ? {
+                    OR: [
+                        { numero: { contains: query.search, mode: 'insensitive' } },
+                        { documentoFiscal: { contains: query.search, mode: 'insensitive' } },
+                        { observacao: { contains: query.search, mode: 'insensitive' } },
+                    ],
+                }
+                : {}),
+        };
+        const [items, total] = await this.prisma.$transaction([
+            this.prisma.documentoEstoque.findMany({
+                where,
+                skip,
+                take,
+                include: this.includeRelations(),
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.documentoEstoque.count({ where }),
+        ]);
+        return { items, total, skip, take };
+    }
+    async findOne(id) {
+        const document = await this.prisma.documentoEstoque.findUnique({
+            where: { id },
+            include: this.includeRelations(),
+        });
+        if (!document)
+            throw new common_1.NotFoundException('Documento de estoque não encontrado');
+        return document;
+    }
+    async submit(id, userId) {
+        const document = await this.ensureMutable(id);
+        const updated = await this.prisma.documentoEstoque.update({
+            where: { id },
+            data: { status: client_1.StatusDocumentoEstoque.PENDENTE_APROVACAO },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_DOCUMENTO_ENVIADO_APROVACAO', id, document, updated);
+        return updated;
+    }
+    async approve(id, userId) {
+        const document = await this.findOne(id);
+        if (document.status !== client_1.StatusDocumentoEstoque.RASCUNHO && document.status !== client_1.StatusDocumentoEstoque.PENDENTE_APROVACAO) {
+            throw new common_1.BadRequestException('Documento não pode ser aprovado no status atual');
+        }
+        const updated = await this.prisma.documentoEstoque.update({
+            where: { id },
+            data: { status: client_1.StatusDocumentoEstoque.APROVADO, aprovadoPorId: userId },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_DOCUMENTO_APROVADO', id, document, updated);
+        return updated;
+    }
+    async post(id, userId) {
+        const document = await this.findOne(id);
+        if (document.status !== client_1.StatusDocumentoEstoque.RASCUNHO && document.status !== client_1.StatusDocumentoEstoque.APROVADO) {
+            throw new common_1.BadRequestException('Documento não pode ser efetivado no status atual');
+        }
+        if (!document.itens.length)
+            throw new common_1.BadRequestException('Documento sem itens não pode ser efetivado');
+        const transacaoFinanceiraId = document.tipo === client_1.TipoDocumentoEstoque.ENTRADA
+            ? await this.financialIntegration.ensurePurchaseTransaction(document.id, userId)
+            : document.transacaoFinanceiraId;
+        const movements = [];
+        for (const item of document.itens) {
+            const tipoMovimento = this.mapMovementType(document.tipo);
+            const movement = await this.movementService.execute({
+                tipo: tipoMovimento,
+                materialId: item.materialId,
+                localOrigemId: document.localOrigemId || undefined,
+                localDestinoId: document.localDestinoId || undefined,
+                obraId: document.obraId || undefined,
+                fornecedorId: document.fornecedorId || undefined,
+                quantidade: item.quantidade.toString(),
+                unidade: item.material.unidade,
+                custoUnitario: item.custoUnitario.toString(),
+                documentoTipo: document.tipo,
+                documentoNumero: document.numero,
+                notaFiscalNumero: document.documentoFiscal || undefined,
+                observacao: item.observacao || document.observacao || undefined,
+                dataMovimento: document.dataDocumento.toISOString(),
+            }, userId);
+            await this.prisma.movimentoEstoque.update({
+                where: { id: movement.id },
+                data: { documentoEstoqueId: document.id, transacaoFinanceiraId },
+            });
+            movements.push(movement);
+        }
+        const updated = await this.prisma.documentoEstoque.update({
+            where: { id },
+            data: { status: client_1.StatusDocumentoEstoque.EFETIVADO, efetivadoPorId: userId },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_DOCUMENTO_EFETIVADO', id, document, updated);
+        return { document: updated, movements };
+    }
+    async cancel(id, userId, motivo) {
+        if (!motivo?.trim())
+            throw new common_1.BadRequestException('Motivo do cancelamento é obrigatório');
+        const document = await this.findOne(id);
+        if (document.status === client_1.StatusDocumentoEstoque.EFETIVADO) {
+            const reversed = [];
+            for (const movement of document.movimentos) {
+                reversed.push(await this.movementService.reverse(movement.id, userId, motivo));
+            }
+            const updated = await this.prisma.documentoEstoque.update({
+                where: { id },
+                data: { status: client_1.StatusDocumentoEstoque.ESTORNADO },
+                include: this.includeRelations(),
+            });
+            await this.financialIntegration.reversePurchaseLink(document.id, userId);
+            await this.audit(userId, 'ESTOQUE_DOCUMENTO_ESTORNADO', id, document, updated);
+            return { document: updated, reversed };
+        }
+        if (document.status === client_1.StatusDocumentoEstoque.CANCELADO || document.status === client_1.StatusDocumentoEstoque.ESTORNADO) {
+            throw new common_1.BadRequestException('Documento já cancelado ou estornado');
+        }
+        const updated = await this.prisma.documentoEstoque.update({
+            where: { id },
+            data: { status: client_1.StatusDocumentoEstoque.CANCELADO },
+            include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_DOCUMENTO_CANCELADO', id, document, updated);
+        return { document: updated, reversed: [] };
+    }
+    validateDocumentShape(tipo, dto) {
+        if (tipo === client_1.TipoDocumentoEstoque.ENTRADA && !dto.localDestinoId)
+            throw new common_1.BadRequestException('Entrada exige local de destino');
+        if (tipo === client_1.TipoDocumentoEstoque.SAIDA && !dto.localOrigemId)
+            throw new common_1.BadRequestException('Saída exige local de origem');
+        if (tipo === client_1.TipoDocumentoEstoque.TRANSFERENCIA) {
+            if (!dto.localOrigemId || !dto.localDestinoId)
+                throw new common_1.BadRequestException('Transferência exige origem e destino');
+            if (dto.localOrigemId === dto.localDestinoId)
+                throw new common_1.BadRequestException('Origem e destino devem ser diferentes');
+        }
+    }
+    mapMovementType(tipo) {
+        if (tipo === client_1.TipoDocumentoEstoque.ENTRADA)
+            return client_1.TipoMovimentoEstoque.ENTRADA_COMPRA;
+        if (tipo === client_1.TipoDocumentoEstoque.SAIDA)
+            return client_1.TipoMovimentoEstoque.SAIDA_CONSUMO;
+        if (tipo === client_1.TipoDocumentoEstoque.TRANSFERENCIA)
+            return client_1.TipoMovimentoEstoque.TRANSFERENCIA;
+        throw new common_1.BadRequestException('Tipo de documento ainda não suportado para efetivação');
+    }
+    async ensureMutable(id) {
+        const document = await this.findOne(id);
+        if (document.status !== client_1.StatusDocumentoEstoque.RASCUNHO) {
+            throw new common_1.BadRequestException('Documento não pode ser alterado no status atual');
+        }
+        return document;
+    }
+    async nextDocumentNumber(tipo) {
+        const count = await this.prisma.documentoEstoque.count({ where: { tipo } });
+        const prefix = tipo === client_1.TipoDocumentoEstoque.ENTRADA ? 'ENT' : tipo === client_1.TipoDocumentoEstoque.SAIDA ? 'SAI' : 'TRA';
+        return `${prefix}-${String(count + 1).padStart(8, '0')}`;
+    }
+    includeRelations() {
+        return {
+            fornecedor: true,
+            obra: true,
+            localOrigem: true,
+            localDestino: true,
+            transacaoFinanceira: true,
+            criadoPor: { select: { id: true, nome: true, email: true } },
+            aprovadoPor: { select: { id: true, nome: true, email: true } },
+            efetivadoPor: { select: { id: true, nome: true, email: true } },
+            itens: { include: { material: true }, orderBy: { material: { nome: 'asc' } } },
+            movimentos: true,
+        };
+    }
+    audit(userId, acao, registroId, oldValue, newValue) {
+        return this.prisma.logAuditoria.create({
+            data: {
+                acao,
+                tabela: 'documentos_estoque',
+                registroId,
+                valorAntigo: (0, stock_common_1.stringifyAudit)(oldValue),
+                valorNovo: (0, stock_common_1.stringifyAudit)(newValue),
+                motivo: 'Fluxo de documento de estoque',
+                usuarioId: userId,
+            },
+        });
+    }
+};
+exports.StockDocumentsService = StockDocumentsService;
+exports.StockDocumentsService = StockDocumentsService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        stock_movement_service_1.StockMovementService,
+        stock_financial_integration_service_1.StockFinancialIntegrationService])
+], StockDocumentsService);
+//# sourceMappingURL=stock-documents.service.js.map

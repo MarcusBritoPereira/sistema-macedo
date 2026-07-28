@@ -1,0 +1,8 @@
+export declare class CreateStockCategoryDto {
+    nome: string;
+    descricao?: string;
+    parentId?: string;
+    categoriaFinanceiraId?: string;
+    centroCustoPadraoId?: string;
+    ativo?: boolean;
+}

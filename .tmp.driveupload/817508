@@ -1,0 +1,255 @@
+import { StockCategoriesService } from './services/stock-categories.service';
+import { CreateStockCategoryDto } from './dto/create-stock-category.dto';
+import { UpdateStockCategoryDto } from './dto/update-stock-category.dto';
+import { PaginationQueryDto } from './dto/pagination-query.dto';
+export declare class StockCategoriesController {
+    private readonly service;
+    constructor(service: StockCategoriesService);
+    create(dto: CreateStockCategoryDto, req: any): Promise<{
+        categoriaFinanceira: {
+            nome: string;
+            id: string;
+        } | null;
+        _count: {
+            children: number;
+            materiais: number;
+        };
+        parent: {
+            nome: string;
+            ativo: boolean;
+            id: string;
+        } | null;
+        children: {
+            nome: string;
+            ativo: boolean;
+            id: string;
+        }[];
+        centroCustoPadrao: {
+            nome: string;
+            id: string;
+        } | null;
+    } & {
+        nome: string;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        descricao: string | null;
+        parentId: string | null;
+        categoriaFinanceiraId: string | null;
+        centroCustoPadraoId: string | null;
+    }>;
+    findTree(): import(".prisma/client").Prisma.PrismaPromise<({
+        categoriaFinanceira: {
+            nome: string;
+            id: string;
+            descricao: string | null;
+            tipo: import(".prisma/client").$Enums.TipoCategoria;
+            parentId: string | null;
+            classificacao: import(".prisma/client").$Enums.ClassificacaoDRE | null;
+        } | null;
+        children: ({
+            children: {
+                nome: string;
+                ativo: boolean;
+                id: string;
+                createdAt: Date;
+                updatedAt: Date;
+                descricao: string | null;
+                parentId: string | null;
+                categoriaFinanceiraId: string | null;
+                centroCustoPadraoId: string | null;
+            }[];
+        } & {
+            nome: string;
+            ativo: boolean;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            descricao: string | null;
+            parentId: string | null;
+            categoriaFinanceiraId: string | null;
+            centroCustoPadraoId: string | null;
+        })[];
+        centroCustoPadrao: {
+            categoriaFinanceira: import(".prisma/client").$Enums.CategoriaFinanceiraCentro | null;
+            nome: string;
+            ativo: boolean;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            descricao: string | null;
+            tipo: import(".prisma/client").$Enums.TipoCentroCusto | null;
+            obraId: string | null;
+            orcamentoPrevisto: import("@prisma/client/runtime/library").Decimal | null;
+            codigo: string | null;
+            parentId: string | null;
+            etapaId: string | null;
+            aceitaLancamento: boolean;
+            limiteMaximo: import("@prisma/client/runtime/library").Decimal | null;
+            aprovacaoNecessaria: boolean;
+            responsavelId: string | null;
+            planoContaId: string | null;
+            categoriaCompra: string | null;
+            contaContabil: string | null;
+            unidadeMedida: string | null;
+            metaFisica: import("@prisma/client/runtime/library").Decimal | null;
+            tags: string | null;
+            cor: string | null;
+        } | null;
+    } & {
+        nome: string;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        descricao: string | null;
+        parentId: string | null;
+        categoriaFinanceiraId: string | null;
+        centroCustoPadraoId: string | null;
+    })[]>;
+    findAll(query: PaginationQueryDto & {
+        ativo?: string;
+        parentId?: string;
+    }): Promise<{
+        items: ({
+            categoriaFinanceira: {
+                nome: string;
+                id: string;
+            } | null;
+            _count: {
+                children: number;
+                materiais: number;
+            };
+            parent: {
+                nome: string;
+                ativo: boolean;
+                id: string;
+            } | null;
+            children: {
+                nome: string;
+                ativo: boolean;
+                id: string;
+            }[];
+            centroCustoPadrao: {
+                nome: string;
+                id: string;
+            } | null;
+        } & {
+            nome: string;
+            ativo: boolean;
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            descricao: string | null;
+            parentId: string | null;
+            categoriaFinanceiraId: string | null;
+            centroCustoPadraoId: string | null;
+        })[];
+        total: number;
+        skip: number;
+        take: number;
+    }>;
+    findOne(id: string): Promise<{
+        categoriaFinanceira: {
+            nome: string;
+            id: string;
+        } | null;
+        _count: {
+            children: number;
+            materiais: number;
+        };
+        parent: {
+            nome: string;
+            ativo: boolean;
+            id: string;
+        } | null;
+        children: {
+            nome: string;
+            ativo: boolean;
+            id: string;
+        }[];
+        centroCustoPadrao: {
+            nome: string;
+            id: string;
+        } | null;
+    } & {
+        nome: string;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        descricao: string | null;
+        parentId: string | null;
+        categoriaFinanceiraId: string | null;
+        centroCustoPadraoId: string | null;
+    }>;
+    update(id: string, dto: UpdateStockCategoryDto, req: any): Promise<{
+        categoriaFinanceira: {
+            nome: string;
+            id: string;
+        } | null;
+        _count: {
+            children: number;
+            materiais: number;
+        };
+        parent: {
+            nome: string;
+            ativo: boolean;
+            id: string;
+        } | null;
+        children: {
+            nome: string;
+            ativo: boolean;
+            id: string;
+        }[];
+        centroCustoPadrao: {
+            nome: string;
+            id: string;
+        } | null;
+    } & {
+        nome: string;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        descricao: string | null;
+        parentId: string | null;
+        categoriaFinanceiraId: string | null;
+        centroCustoPadraoId: string | null;
+    }>;
+    remove(id: string, req: any): Promise<{
+        categoriaFinanceira: {
+            nome: string;
+            id: string;
+        } | null;
+        _count: {
+            children: number;
+            materiais: number;
+        };
+        parent: {
+            nome: string;
+            ativo: boolean;
+            id: string;
+        } | null;
+        children: {
+            nome: string;
+            ativo: boolean;
+            id: string;
+        }[];
+        centroCustoPadrao: {
+            nome: string;
+            id: string;
+        } | null;
+    } & {
+        nome: string;
+        ativo: boolean;
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        descricao: string | null;
+        parentId: string | null;
+        categoriaFinanceiraId: string | null;
+        centroCustoPadraoId: string | null;
+    }>;
+}

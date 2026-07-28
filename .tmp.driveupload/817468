@@ -1,0 +1,26 @@
+import { StockBalancesService } from './services/stock-balances.service';
+import { StockBalanceQueryDto } from './dto/stock-balance-query.dto';
+export declare class StockBalancesController {
+    private readonly service;
+    constructor(service: StockBalancesService);
+    summary(): Promise<{
+        valorTotalEstoque: import("@prisma/client/runtime/library").Decimal;
+        quantidadeFisica: import("@prisma/client/runtime/library").Decimal;
+        quantidadeReservada: import("@prisma/client/runtime/library").Decimal;
+        quantidadeDisponivel: import("@prisma/client/runtime/library").Decimal;
+        materiaisCadastrados: number;
+        materiaisAbaixoMinimo: number;
+    }>;
+    lowStock(query: StockBalanceQueryDto): Promise<{
+        items: any[];
+        total: number;
+        skip: number;
+        take: number;
+    }>;
+    findAll(query: StockBalanceQueryDto): Promise<{
+        items: any[];
+        total: number;
+        skip: number;
+        take: number;
+    }>;
+}

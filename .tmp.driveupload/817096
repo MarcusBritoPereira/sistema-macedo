@@ -1,0 +1,14 @@
+import { StatusObra, TipoObra } from '@prisma/client';
+export declare class CreateObraDto {
+    nome: string;
+    descricao?: string;
+    dataInicio?: string;
+    dataPrevisaoFim?: string;
+    dataConclusao?: string;
+    status?: StatusObra;
+    orcamentoPrevisto?: number;
+    endereco?: string;
+    clienteId?: string;
+    tipoObra?: TipoObra;
+    ativo?: boolean;
+}

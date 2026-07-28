@@ -137,10 +137,29 @@ export class SuppliersService {
 
   async update(id: string, dto: UpdateSupplierDto) {
     await this.findOne(id); // Check existence
-    return this.prisma.fornecedor.update({
-      where: { id },
-      data: dto,
-    });
+    
+    const dataToUpdate: any = { ...dto };
+    if (dataToUpdate.cnpj !== undefined) {
+      dataToUpdate.cnpj = dataToUpdate.cnpj?.replace(/\D/g, '').trim() || null;
+    }
+    
+    try {
+      return await this.prisma.fornecedor.update({
+        where: { id },
+        data: dataToUpdate,
+      });
+    } catch (error: any) {
+      if (
+        error?.code === 'P2002' &&
+        Array.isArray(error?.meta?.target) &&
+        error.meta.target.includes('cnpj')
+      ) {
+        throw new ConflictException(
+          'Já existe um fornecedor cadastrado com este CPF/CNPJ.',
+        );
+      }
+      throw error;
+    }
   }
 
   async remove(id: string) {

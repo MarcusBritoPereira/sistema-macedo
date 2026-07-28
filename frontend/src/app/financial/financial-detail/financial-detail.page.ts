@@ -304,6 +304,11 @@ export class FinancialDetailPage implements OnInit {
       this.financialForm.patchValue({
         fornecedorId: data.id
       });
+    } else {
+      // Revert select if canceled
+      if (this.financialForm.get('fornecedorId')?.value === 'NEW_SUPPLIER') {
+        this.financialForm.patchValue({ fornecedorId: '' });
+      }
     }
   }
 
@@ -322,6 +327,23 @@ export class FinancialDetailPage implements OnInit {
       this.financialForm.patchValue({
         clienteId: data.id
       });
+    } else {
+      // Revert select if canceled
+      if (this.financialForm.get('clienteId')?.value === 'NEW_CLIENT') {
+        this.financialForm.patchValue({ clienteId: '' });
+      }
+    }
+  }
+
+  onClientChange(event: any) {
+    if (event.target.value === 'NEW_CLIENT') {
+      this.quickCreateClient();
+    }
+  }
+
+  onSupplierChange(event: any) {
+    if (event.target.value === 'NEW_SUPPLIER') {
+      this.quickCreateSupplier();
     }
   }
 

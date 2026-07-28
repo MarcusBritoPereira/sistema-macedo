@@ -1,0 +1,107 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreateRateiosBatchDto = exports.CreateRateioDto = void 0;
+const class_validator_1 = require("class-validator");
+class CreateRateioDto {
+    valor;
+    recorrente;
+    observacao;
+    categoria;
+    subcategoria;
+    categoriaFinanceiraId;
+    obraId;
+    centroCustoId;
+    tipoDestino;
+    tipoCusto;
+    categoriaCusto;
+    descricaoItem;
+    quantidade;
+    valorUnitario;
+}
+exports.CreateRateioDto = CreateRateioDto;
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], CreateRateioDto.prototype, "valor", void 0);
+__decorate([
+    (0, class_validator_1.IsBoolean)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Boolean)
+], CreateRateioDto.prototype, "recorrente", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "observacao", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "categoria", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "subcategoria", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "categoriaFinanceiraId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "obraId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "centroCustoId", void 0);
+__decorate([
+    (0, class_validator_1.IsIn)(['OBRA', 'CENTRO_CUSTO']),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "tipoDestino", void 0);
+__decorate([
+    (0, class_validator_1.IsIn)(['MATERIAL', 'MAO_DE_OBRA', 'SERVICO', 'EQUIPAMENTO', 'OUTROS']),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "tipoCusto", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "categoriaCusto", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateRateioDto.prototype, "descricaoItem", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateRateioDto.prototype, "quantidade", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Number)
+], CreateRateioDto.prototype, "valorUnitario", void 0);
+class CreateRateiosBatchDto {
+    rateios;
+}
+exports.CreateRateiosBatchDto = CreateRateiosBatchDto;
+//# sourceMappingURL=create-rateio.dto.js.map

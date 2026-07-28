@@ -1,0 +1,19 @@
+export declare class CreateRateioDto {
+    valor: number;
+    recorrente?: boolean;
+    observacao?: string;
+    categoria: string;
+    subcategoria?: string;
+    categoriaFinanceiraId?: string;
+    obraId?: string;
+    centroCustoId?: string;
+    tipoDestino?: 'OBRA' | 'CENTRO_CUSTO';
+    tipoCusto?: 'MATERIAL' | 'MAO_DE_OBRA' | 'SERVICO' | 'EQUIPAMENTO' | 'OUTROS';
+    categoriaCusto?: string;
+    descricaoItem?: string;
+    quantidade?: number;
+    valorUnitario?: number;
+}
+export declare class CreateRateiosBatchDto {
+    rateios: CreateRateioDto[];
+}

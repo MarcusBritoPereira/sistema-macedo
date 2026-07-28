@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const client_1 = require("@prisma/client");
+const prisma = new client_1.PrismaClient();
+async function main() {
+    const categories = await prisma.categoriaFinanceira.findMany();
+    console.log('--- CATEGORIES ---');
+    categories.forEach(c => {
+        console.log(`${c.id} | ${c.nome} | ${c.tipo}`);
+    });
+}
+main()
+    .catch((e) => {
+    console.error(e);
+    process.exit(1);
+})
+    .finally(async () => {
+    await prisma.$disconnect();
+});
+//# sourceMappingURL=list_categories.js.map

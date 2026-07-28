@@ -1,0 +1,8 @@
+import { Prisma } from '@prisma/client';
+export declare function normalizePagination(skip?: string, take?: string): {
+    skip: number;
+    take: number;
+};
+export declare function toOptionalDecimal(value?: string | null): Prisma.Decimal | undefined;
+export declare function cleanString(value?: string | null): string | null | undefined;
+export declare function stringifyAudit(value: unknown): string | undefined;

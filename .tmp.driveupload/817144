@@ -1,0 +1,20 @@
+import { TipoMovimentoEstoque, UnidadeMedidaMaterial } from '@prisma/client';
+export declare class ExecuteStockMovementDto {
+    tipo: TipoMovimentoEstoque;
+    materialId: string;
+    localOrigemId?: string;
+    localDestinoId?: string;
+    obraId?: string;
+    fornecedorId?: string;
+    quantidade: string;
+    unidade: UnidadeMedidaMaterial;
+    custoUnitario?: string;
+    documentoTipo?: string;
+    documentoNumero?: string;
+    notaFiscalNumero?: string;
+    notaFiscalChave?: string;
+    observacao?: string;
+    justificativaSaldoNegativo?: string;
+    permitirSaldoNegativo?: boolean;
+    dataMovimento?: string;
+}

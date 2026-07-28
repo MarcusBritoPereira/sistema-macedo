@@ -46,6 +46,12 @@
             <ion-input [(ngModel)]="form.descricao" name="descricao" type="text"></ion-input>
         </ion-item>
 
+        <!-- OBSERVACOES (Supplier/Client Only) -->
+        <ion-item class="input-item" *ngIf="entityType === 'SUPPLIER' || entityType === 'CLIENT'">
+            <ion-label position="stacked">Observações (Opcional)</ion-label>
+            <ion-input [(ngModel)]="form.observacoes" name="observacoes" type="text" placeholder="Alguma observação importante?"></ion-input>
+        </ion-item>
+
         <div class="ion-padding-top ion-margin-top">
             <ion-button expand="block" type="submit" [disabled]="!form.nome || isLoading">
                 <ion-spinner *ngIf="isLoading" name="crescent"></ion-spinner>

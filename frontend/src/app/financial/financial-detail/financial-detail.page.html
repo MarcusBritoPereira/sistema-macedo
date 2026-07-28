@@ -30,19 +30,17 @@
             <label>{{ type === 'receivables' ? 'Cliente' : 'Fornecedor' }}</label>
             <div style="display: flex; gap: 8px; width: 100%;">
               <!-- Cliente Select -->
-              <select *ngIf="type === 'receivables'" formControlName="clienteId" class="clean-input" style="flex: 1;">
+              <select *ngIf="type === 'receivables'" formControlName="clienteId" (change)="onClientChange($event)" class="clean-input" style="flex: 1;">
                 <option value="" disabled selected>Selecione</option>
+                <option value="NEW_CLIENT" style="font-weight: bold; color: var(--ion-color-primary);">+ Novo Cliente</option>
                 <option *ngFor="let client of clients" [value]="client.id">{{ client.razaoSocial }}</option>
               </select>
               <!-- Fornecedor Select -->
-              <select *ngIf="type === 'payables'" formControlName="fornecedorId" class="clean-input" style="flex: 1;">
+              <select *ngIf="type === 'payables'" formControlName="fornecedorId" (change)="onSupplierChange($event)" class="clean-input" style="flex: 1;">
                 <option value="" disabled selected>Selecione</option>
+                <option value="NEW_SUPPLIER" style="font-weight: bold; color: var(--ion-color-primary);">+ Novo Fornecedor</option>
                 <option *ngFor="let supplier of suppliers" [value]="supplier.id">{{ supplier.nomeFantasia }}</option>
               </select>
-              <!-- Quick Add Button -->
-              <ion-button fill="outline" size="small" (click)="type === 'receivables' ? quickCreateClient() : quickCreateSupplier()" style="margin: 0; --padding-start: 8px; --padding-end: 8px; --border-radius: 6px; height: 38px;">
-                <ion-icon slot="icon-only" name="add-outline" style="font-size: 20px; color: #16a34a;"></ion-icon>
-              </ion-button>
             </div>
           </div>
 

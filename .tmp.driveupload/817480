@@ -1,0 +1,16 @@
+export declare class CreateStockBudgetItemDto {
+    materialId: string;
+    categoriaMaterialId?: string;
+    quantidadeOrcada: string;
+    custoUnitarioOrcado: string;
+    etapaObra?: string;
+    centroCustoId?: string;
+    observacao?: string;
+}
+export declare class CreateStockBudgetDto {
+    obraId: string;
+    versao?: number;
+    dataReferencia: string;
+    observacao?: string;
+    items: CreateStockBudgetItemDto[];
+}

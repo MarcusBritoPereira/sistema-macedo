@@ -30,7 +30,8 @@ export class QuickCreateModalComponent implements OnInit {
         descricao: '', // Optional
         tipo: 'DESPESA', // Only for Category
         classificacao: '', // New field
-        cpfCnpj: '' // Optional for Supplier/Client
+        cpfCnpj: '', // Optional for Supplier/Client
+        observacoes: ''
     };
 
     constructor(
@@ -132,7 +133,8 @@ export class QuickCreateModalComponent implements OnInit {
             nomeFantasia: this.form.nome.trim(),
             razaoSocial: this.form.nome.trim(),
             cnpj: digits || undefined,
-            ativo: true
+            ativo: true,
+            observacoes: this.form.observacoes
         };
         this.suppliersService.create(payload).subscribe({
             next: (res) => this.modalCtrl.dismiss(res),

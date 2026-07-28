@@ -1,0 +1,18 @@
+export declare enum DRERegime {
+    CAIXA = "caixa",
+    COMPETENCIA = "competencia"
+}
+export declare enum DREGranularidade {
+    MENSAL = "mensal",
+    TRIMESTRAL = "trimestral",
+    ANUAL = "anual"
+}
+export declare class GerarDreDto {
+    regime: DRERegime;
+    dataInicio: string;
+    dataFim: string;
+    granularidade: DREGranularidade;
+    incluirRateios?: boolean;
+    centroCustoId?: string;
+    contaBancariaId?: string;
+}

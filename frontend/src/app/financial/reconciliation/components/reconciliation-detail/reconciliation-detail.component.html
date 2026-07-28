@@ -160,6 +160,15 @@
 
         <div
           class="tab"
+          *ngIf="statement.tipo === 'DEBIT'"
+          [class.active]="activeTab === 'PAYABLE'"
+          (click)="selectTab('PAYABLE')"
+        >
+          Conta a pagar
+        </div>
+
+        <div
+          class="tab"
           [class.active]="activeTab === 'TRANSFER'"
           (click)="selectTab('TRANSFER')"
         >
@@ -554,6 +563,166 @@
                 <div
                   class="validation-warning"
                   *ngIf="!isReceivablePaymentValid()"
+                >
+                  <ion-icon name="warning-outline"></ion-icon>
+                  O valor do extrato não pode ser maior que o saldo
+                  da parcela.
+                </div>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- PAYABLE PAYMENT FIELDS -->
+          <ng-container *ngIf="activeTab === 'PAYABLE'">
+            <div class="premium-form-grid">
+              <div class="form-column">
+                <h3 class="column-title">
+                  Selecionar conta a pagar
+                </h3>
+
+                <div class="premium-field-wrapper">
+                  <label class="premium-label">Pesquisar</label>
+
+                  <div class="premium-input-container">
+                    <input
+                      type="text"
+                      [(ngModel)]="payableSearch"
+                      (keyup.enter)="loadOpenPayables()"
+                      class="premium-input"
+                      placeholder="Fornecedor ou descrição"
+                    />
+
+                    <ion-button
+                      fill="clear"
+                      size="small"
+                      (click)="loadOpenPayables()"
+                    >
+                      <ion-icon
+                        name="search-outline"
+                        slot="icon-only"
+                      ></ion-icon>
+                    </ion-button>
+                  </div>
+                </div>
+
+                <div class="premium-field-wrapper">
+                  <label class="premium-label">
+                    Parcela / lançamento *
+                  </label>
+
+                  <div class="premium-input-container">
+                    <select
+                      [(ngModel)]="selectedPayableId"
+                      class="premium-select"
+                    >
+                      <option value="" disabled>
+                        Selecione a conta a pagar
+                      </option>
+
+                      <option
+                        *ngFor="let item of openPayables"
+                        [value]="item.id"
+                      >
+                        {{ getPayableSupplierName(item) }}
+                        — {{ item.descricao }}
+                        — saldo
+                        {{ item.saldoReceber | currency: "BRL" }}
+                      </option>
+                    </select>
+
+                    <ion-icon
+                      name="chevron-down-outline"
+                      class="input-icon select-arrow"
+                    ></ion-icon>
+                  </div>
+                </div>
+
+                <div *ngIf="loadingPayables">
+                  <ion-spinner name="crescent"></ion-spinner>
+                  Carregando contas a pagar...
+                </div>
+
+                <div
+                  class="empty-state"
+                  *ngIf="
+                    !loadingPayables &&
+                    openPayables.length === 0
+                  "
+                >
+                  Nenhuma conta a pagar em aberto foi encontrada.
+                </div>
+              </div>
+
+              <div
+                class="form-column"
+                *ngIf="getSelectedPayable() as payable"
+              >
+                <h3 class="column-title">
+                  Resumo do pagamento
+                </h3>
+
+                <div class="r-info">
+                  <div class="info-row">
+                    <label>Fornecedor</label>
+                    <span>
+                      {{ getPayableSupplierName(payable) }}
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Descrição</label>
+                    <span>{{ payable.descricao }}</span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Vencimento</label>
+                    <span>
+                      {{ formatDate(payable.dataVencimento) }}
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Valor original</label>
+                    <span>
+                      {{ payable.valorOriginal | currency: "BRL" }}
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Já pago</label>
+                    <span>
+                      {{ payable.valorRecebido | currency: "BRL" }}
+                    </span>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Saldo atual</label>
+                    <strong>
+                      {{ payable.saldoReceber | currency: "BRL" }}
+                    </strong>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Débito do extrato</label>
+                    <strong>
+                      {{ statement.valor | currency: "BRL" }}
+                    </strong>
+                  </div>
+
+                  <div class="info-row">
+                    <label>Saldo após pagamento</label>
+                    <strong>
+                      {{
+                        getReceivableBalanceAfterPayment(payable)
+                          | currency: "BRL"
+                      }}
+                    </strong>
+                  </div>
+                </div>
+
+                <div
+                  class="validation-warning"
+                  *ngIf="!isPayablePaymentValid()"
                 >
                   <ion-icon name="warning-outline"></ion-icon>
                   O valor do extrato não pode ser maior que o saldo

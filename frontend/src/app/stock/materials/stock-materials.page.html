@@ -256,6 +256,16 @@
 
                     <button
                       type="button"
+                      class="icon-action"
+                      title="Ajustar saldo"
+                      style="color: var(--ion-color-primary);"
+                      (click)="adjustBalance(material)"
+                    >
+                      <ion-icon name="cash-outline"></ion-icon>
+                    </button>
+
+                    <button
+                      type="button"
                       class="icon-action remove"
                       title="Remover ou inativar"
                       (click)="removeMaterial(material)"
@@ -383,6 +393,15 @@
                 (click)="edit(material)"
               >
                 Editar
+              </ion-button>
+
+              <ion-button
+                size="small"
+                fill="outline"
+                color="primary"
+                (click)="adjustBalance(material)"
+              >
+                Ajustar Saldo
               </ion-button>
 
               <ion-button

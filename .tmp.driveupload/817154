@@ -1,5 +1,0 @@
-import { CreateStockMaterialDto } from './create-stock-material.dto';
-declare const UpdateStockMaterialDto_base: import("@nestjs/mapped-types").MappedType<Partial<CreateStockMaterialDto>>;
-export declare class UpdateStockMaterialDto extends UpdateStockMaterialDto_base {
-}
-export {};

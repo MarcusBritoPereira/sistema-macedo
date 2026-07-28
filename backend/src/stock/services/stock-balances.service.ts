@@ -1,12 +1,17 @@
-import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma, TipoMovimentoEstoque } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { StockBalanceQueryDto } from '../dto/stock-balance-query.dto';
 import { normalizePagination } from './stock-common';
+import { StockMovementService } from './stock-movement.service';
+import { AdjustStockBalanceDto } from '../dto/adjust-stock-balance.dto';
 
 @Injectable()
 export class StockBalancesService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly movementService: StockMovementService,
+  ) {}
 
   async findAll(query: StockBalanceQueryDto) {
     const { skip, take } = normalizePagination(query.skip, query.take);
@@ -116,5 +121,44 @@ export class StockBalancesService {
       quantidadeDisponivel: disponivel,
       situacao,
     };
+  }
+
+  async adjust(dto: AdjustStockBalanceDto, userId: string) {
+    const material = await this.prisma.material.findUnique({
+      where: { id: dto.materialId },
+    });
+    if (!material) throw new NotFoundException('Material não encontrado');
+
+    const amount = Number(dto.quantidade);
+    if (amount === 0) {
+      return this.prisma.saldoEstoque.findUnique({
+        where: {
+          materialId_localEstoqueId: {
+            materialId: dto.materialId,
+            localEstoqueId: dto.localEstoqueId,
+          },
+        },
+      });
+    }
+
+    const isEntry = amount > 0;
+    const absAmount = Math.abs(amount);
+
+    return this.movementService.execute(
+      {
+        tipo: isEntry
+          ? TipoMovimentoEstoque.ENTRADA_AJUSTE
+          : TipoMovimentoEstoque.SAIDA_AJUSTE,
+        materialId: dto.materialId,
+        [isEntry ? 'localDestinoId' : 'localOrigemId']: dto.localEstoqueId,
+        quantidade: String(absAmount),
+        unidade: material.unidade,
+        custoUnitario: dto.custoUnitario != null ? String(dto.custoUnitario) : undefined,
+        observacao: dto.observacao || 'Ajuste manual de saldo',
+        permitirSaldoNegativo: dto.permitirSaldoNegativo,
+        justificativaSaldoNegativo: dto.justificativaSaldoNegativo,
+      },
+      userId,
+    );
   }
 }

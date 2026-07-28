@@ -341,6 +341,16 @@ export class StockService {
     return this.api.get<StockListResponse<StockCategory>>('stock/categories', params);
   }
 
+  adjustBalance(payload: {
+    materialId: string;
+    localEstoqueId: string;
+    quantidade: number;
+    custoUnitario?: number;
+    observacao?: string;
+  }): Observable<any> {
+    return this.api.post<any>('stock/balances/adjust', payload);
+  }
+
   getCategoryTree(): Observable<StockCategory[]> {
     return this.api.get<StockCategory[]>('stock/categories/tree');
   }

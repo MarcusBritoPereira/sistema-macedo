@@ -1,6 +1,0 @@
-export declare class CreateBudgetDto {
-    mes: number;
-    ano: number;
-    receitaMeta: number;
-    despesaMeta: number;
-}

@@ -26,6 +26,28 @@ export interface OpenReceivable {
     } | null;
 }
 
+export interface OpenPayable {
+    id: string;
+    descricao: string;
+    valor: number;
+    valorOriginal: number;
+    valorRecebido: number;
+    saldoReceber: number;
+    dataVencimento: string;
+    dataPagamento?: string | null;
+    status: 'PREVISTO' | 'PARCIAL' | 'REALIZADO' | 'CONCILIADO' | 'CANCELADO';
+    fornecedorId?: string | null;
+    fornecedor?: {
+        id: string;
+        razaoSocial: string;
+        nomeFantasia?: string | null;
+    } | null;
+    categoria?: {
+        id: string;
+        nome: string;
+    } | null;
+}
+
 
 export interface BankStatement {
     id: string;

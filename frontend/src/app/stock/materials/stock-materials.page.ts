@@ -7,6 +7,7 @@ import {
   IonIcon,
   IonSpinner,
   ToastController,
+  AlertController,
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import {
@@ -95,6 +96,7 @@ export class StockMaterialsPage implements OnInit {
   constructor(
     private readonly stock: StockService,
     private readonly toastController: ToastController,
+    private readonly alertController: AlertController,
   ) {
     addIcons({
       addOutline,
@@ -347,6 +349,72 @@ export class StockMaterialsPage implements OnInit {
         );
       },
     });
+  }
+
+  async adjustBalance(material: StockMaterial): Promise<void> {
+    const alert = await this.alertController.create({
+      header: 'Ajustar Saldo',
+      subHeader: material.nome,
+      message: 'Informe a quantidade (positiva para adicionar, negativa para remover) e o local de estoque.',
+      inputs: [
+        {
+          name: 'quantidade',
+          type: 'number',
+          placeholder: 'Quantidade (ex: 10 ou -5)',
+        },
+        {
+          name: 'custoUnitario',
+          type: 'number',
+          placeholder: 'Custo unitário (opcional)',
+        },
+      ],
+      buttons: [
+        {
+          text: 'Cancelar',
+          role: 'cancel',
+        },
+        {
+          text: 'Confirmar',
+          handler: (data) => {
+            if (!data.quantidade || !this.locations.length) {
+              this.showToast('Quantidade e local de estoque são obrigatórios.', 'warning');
+              return false;
+            }
+
+            // Para simplificar, pegamos o primeiro local se houver apenas um
+            // ou podemos criar um select no HTML para isso
+            // O Alert Controller do Ionic não suporta Select facilmente nos inputs padrão.
+            // Então vamos forçar o usuário a ter um localEstoque selecionado previamente, 
+            // ou pegamos o primeiro. Idealmente, teríamos uma UI de ajuste, mas para resolver rápido:
+            const localId = this.locations[0]?.id;
+
+            if (!localId) {
+              this.showToast('Nenhum local de estoque cadastrado.', 'danger');
+              return false;
+            }
+
+            this.stock.adjustBalance({
+              materialId: material.id!,
+              localEstoqueId: localId,
+              quantidade: Number(data.quantidade),
+              custoUnitario: data.custoUnitario ? Number(data.custoUnitario) : undefined,
+              observacao: 'Ajuste rápido',
+            }).subscribe({
+              next: () => {
+                this.showToast('Saldo ajustado com sucesso.', 'success');
+                this.load();
+              },
+              error: (err) => {
+                this.showToast(err?.error?.message || 'Erro ao ajustar saldo.', 'danger');
+              }
+            });
+            return true;
+          },
+        },
+      ],
+    });
+
+    await alert.present();
   }
 
   get totalMaterials(): number {

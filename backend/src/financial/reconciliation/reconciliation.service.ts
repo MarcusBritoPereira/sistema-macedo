@@ -532,6 +532,94 @@ export class ReconciliationService {
       .filter((lancamento) => lancamento.saldoReceber > 0.009);
   }
 
+  async getOpenPayables(filters?: {
+    fornecedorId?: string;
+    search?: string;
+  }) {
+    const where: any = {
+      tipo: 'DESPESA',
+      status: {
+        in: ['PREVISTO', 'PARCIAL'],
+      },
+    };
+
+    if (filters?.fornecedorId) {
+      where.fornecedorId = filters.fornecedorId;
+    }
+
+    if (filters?.search) {
+      where.OR = [
+        {
+          descricao: {
+            contains: filters.search,
+            mode: 'insensitive',
+          },
+        },
+        {
+          fornecedor: {
+            razaoSocial: {
+              contains: filters.search,
+              mode: 'insensitive',
+            },
+          },
+        },
+        {
+          fornecedor: {
+            nomeFantasia: {
+              contains: filters.search,
+              mode: 'insensitive',
+            },
+          },
+        },
+      ];
+    }
+
+    const lancamentos = await this.prisma.lancamentoFinanceiro.findMany({
+      where,
+      include: {
+        fornecedor: true,
+        categoria: true,
+        recebimentos: {
+          orderBy: {
+            dataRecebimento: 'asc',
+          },
+        },
+      },
+      orderBy: [
+        {
+          dataVencimento: 'asc',
+        },
+        {
+          createdAt: 'asc',
+        },
+      ],
+      take: 500,
+    });
+
+    return lancamentos
+      .map((lancamento) => {
+        const valorOriginal = Number(lancamento.valor);
+
+        const valorRecebido = lancamento.recebimentos.reduce(
+          (total, recebimento) => total + Number(recebimento.valor),
+          0,
+        );
+
+        const saldoReceber = Math.max(
+          0,
+          Number((valorOriginal - valorRecebido).toFixed(2)),
+        );
+
+        return {
+          ...lancamento,
+          valorOriginal,
+          valorRecebido: Number(valorRecebido.toFixed(2)),
+          saldoReceber,
+        };
+      })
+      .filter((lancamento) => lancamento.saldoReceber > 0.009);
+  }
+
   private async recalculateReceivableStatus(
     tx: any,
     lancamentoId: string,
@@ -733,6 +821,159 @@ export class ReconciliationService {
               valorOriginal,
               valorRecebido: valorJaRecebido,
               saldoReceber: saldoAtual,
+            }),
+            valorNovo: JSON.stringify(resultado),
+          },
+        });
+      }
+
+      return {
+        success: true,
+        conciliacaoId: conciliacao.id,
+        lancamentoId,
+        valorPagamento,
+        ...resultado,
+      };
+    });
+  }
+
+  async linkPayablePayment(
+    statementId: string,
+    lancamentoId: string,
+    confirmacaoManual?: boolean,
+    userId?: string,
+  ) {
+    if (!confirmacaoManual) {
+      throw new BadRequestException(
+        'Confirmação manual obrigatória para conciliar',
+      );
+    }
+
+    return this.prisma.$transaction(async (tx) => {
+      const statement = await tx.extratoBancario.findUnique({
+        where: {
+          id: statementId,
+        },
+      });
+
+      if (!statement) {
+        throw new NotFoundException('Extrato não encontrado');
+      }
+
+      if (statement.conciliado) {
+        throw new BadRequestException('Extrato já conciliado');
+      }
+
+      if (statement.tipo !== 'DEBIT') {
+        throw new BadRequestException(
+          'Somente débitos bancários podem ser vinculados a contas a pagar',
+        );
+      }
+
+      const lancamento = await tx.lancamentoFinanceiro.findUnique({
+        where: {
+          id: lancamentoId,
+        },
+        include: {
+          fornecedor: true,
+          recebimentos: true,
+        },
+      });
+
+      if (!lancamento) {
+        throw new NotFoundException('Conta a pagar não encontrada');
+      }
+
+      if (lancamento.tipo !== 'DESPESA') {
+        throw new BadRequestException(
+          'O lançamento selecionado não é uma conta a pagar',
+        );
+      }
+
+      if (lancamento.status === 'CANCELADO') {
+        throw new BadRequestException(
+          'Não é possível pagar uma parcela cancelada',
+        );
+      }
+
+      const valorOriginal = Number(lancamento.valor);
+
+      const valorJaPago = lancamento.recebimentos.reduce(
+        (total, recebimento) => total + Number(recebimento.valor),
+        0,
+      );
+
+      const saldoAtual = Number(
+        Math.max(0, valorOriginal - valorJaPago).toFixed(2),
+      );
+
+      if (saldoAtual <= 0.009) {
+        throw new BadRequestException(
+          'Esta conta a pagar já está integralmente paga',
+        );
+      }
+
+      const valorPagamento = Math.abs(Number(statement.valor));
+
+      if (!Number.isFinite(valorPagamento) || valorPagamento <= 0) {
+        throw new BadRequestException(
+          'O valor do débito bancário é inválido',
+        );
+      }
+
+      if (valorPagamento > saldoAtual + 0.009) {
+        throw new BadRequestException(
+          `O débito de R$ ${valorPagamento.toFixed(
+            2,
+          )} é maior que o saldo da parcela de R$ ${saldoAtual.toFixed(2)}.`,
+        );
+      }
+
+      const conciliacao = await tx.conciliacaoBancaria.create({
+        data: {
+          extratoBancarioId: statementId,
+          lancamentoFinanceiroId: lancamentoId,
+          type: 'MANUAL_LINK',
+        },
+      });
+
+      await tx.recebimentoLancamento.create({
+        data: {
+          lancamentoFinanceiroId: lancamentoId,
+          extratoBancarioId: statementId,
+          conciliacaoBancariaId: conciliacao.id,
+          valor: valorPagamento,
+          dataRecebimento: statement.data,
+          observacao: `Pagamento vinculado ao extrato: ${statement.descricao}`,
+        },
+      });
+
+      await tx.extratoBancario.update({
+        where: {
+          id: statementId,
+        },
+        data: {
+          conciliado: true,
+        },
+      });
+
+      const resultado = await this.recalculateReceivableStatus(
+        tx,
+        lancamentoId,
+      );
+
+      if (userId) {
+        await tx.logAuditoria.create({
+          data: {
+            acao: 'PAGAMENTO_CONTA_PAGAR',
+            tabela: 'recebimentos_lancamentos',
+            registroId: conciliacao.id,
+            motivo: `Pagamento da conta a pagar pelo extrato ${statementId}`,
+            usuarioId: userId,
+            valorAntigo: JSON.stringify({
+              valorOriginal,
+              valorPago: valorJaPago,
+              saldoPagar: saldoAtual,
             }),
             valorNovo: JSON.stringify(resultado),
           },

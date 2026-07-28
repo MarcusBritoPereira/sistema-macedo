@@ -1,8 +1,0 @@
-import { TipoCategoria, ClassificacaoDRE } from '@prisma/client';
-export declare class CreateCategoryDto {
-    nome: string;
-    tipo: TipoCategoria;
-    descricao?: string;
-    classificacao?: ClassificacaoDRE;
-    parentId?: string;
-}

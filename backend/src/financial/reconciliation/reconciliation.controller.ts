@@ -62,6 +62,35 @@ export class ReconciliationController {
     );
   }
 
+  @Get('payables/open')
+  getOpenPayables(
+    @Query('fornecedorId') fornecedorId?: string,
+    @Query('search') search?: string,
+  ) {
+    return this.service.getOpenPayables({
+      fornecedorId,
+      search,
+    });
+  }
+
+  @Post('payable-payment')
+  linkPayablePayment(
+    @Body()
+    data: {
+      statementId: string;
+      lancamentoId: string;
+      confirmacaoManual?: boolean;
+    },
+    @Req() req: any,
+  ) {
+    return this.service.linkPayablePayment(
+      data.statementId,
+      data.lancamentoId,
+      data.confirmacaoManual,
+      req.user?.id,
+    );
+  }
+
   @Post('link')
   linkManual(
     @Body()

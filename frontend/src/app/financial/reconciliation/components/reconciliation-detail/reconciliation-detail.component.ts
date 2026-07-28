@@ -51,6 +51,7 @@ import {
   BankStatement,
   SuggestedMatch,
   OpenReceivable,
+  OpenPayable,
 } from '../../../../services/financial/reconciliation';
 import { ReconciliationService } from '../../../../services/financial/reconciliation.service';
 import {
@@ -139,13 +140,18 @@ export class ReconciliationDetailComponent
   private draftRestored = false;
 
   // UI State
-  activeTab: 'NEW' | 'RECEIVABLE' | 'TRANSFER' = 'NEW';
+  activeTab: 'NEW' | 'RECEIVABLE' | 'PAYABLE' | 'TRANSFER' = 'NEW';
   mode: 'FORM' | 'SEARCH' = 'FORM';
 
   openReceivables: OpenReceivable[] = [];
   selectedReceivableId = '';
   receivableSearch = '';
   loadingReceivables = false;
+
+  openPayables: OpenPayable[] = [];
+  selectedPayableId = '';
+  payableSearch = '';
+  loadingPayables = false;
 
   // Form for new transaction
   form: any = {
@@ -270,6 +276,8 @@ export class ReconciliationDetailComponent
 
       if (this.statement.tipo === 'CREDIT') {
         this.loadOpenReceivables();
+      } else if (this.statement.tipo === 'DEBIT') {
+        this.loadOpenPayables();
       }
 
       this.restoreDraft();
@@ -292,12 +300,15 @@ export class ReconciliationDetailComponent
   }
 
 
-  selectTab(tab: 'NEW' | 'RECEIVABLE' | 'TRANSFER') {
+  selectTab(tab: 'NEW' | 'RECEIVABLE' | 'PAYABLE' | 'TRANSFER') {
     this.activeTab = tab;
 
     if (tab === 'RECEIVABLE') {
       this.mode = 'FORM';
       this.loadOpenReceivables();
+    } else if (tab === 'PAYABLE') {
+      this.mode = 'FORM';
+      this.loadOpenPayables();
     }
   }
 
@@ -341,9 +352,55 @@ export class ReconciliationDetailComponent
       });
   }
 
+  loadOpenPayables() {
+    if (!this.statement || this.statement.tipo !== 'DEBIT') {
+      this.openPayables = [];
+      return;
+    }
+
+    this.loadingPayables = true;
+
+    this.reconciliationService
+      .getOpenPayables({
+        search: this.payableSearch || undefined,
+      })
+      .subscribe({
+        next: (items) => {
+          this.openPayables = items || [];
+
+          if (
+            this.selectedPayableId &&
+            !this.openPayables.some(
+              (item) => item.id === this.selectedPayableId,
+            )
+          ) {
+            this.selectedPayableId = '';
+          }
+
+          this.loadingPayables = false;
+        },
+        error: (err) => {
+          console.error('Erro ao carregar contas a pagar:', err);
+          this.openPayables = [];
+          this.loadingPayables = false;
+
+          this.presentToast(
+            'Não foi possível carregar as contas a pagar.',
+            'danger',
+          );
+        },
+      });
+  }
+
   getSelectedReceivable(): OpenReceivable | undefined {
     return this.openReceivables.find(
       (item) => item.id === this.selectedReceivableId,
+    );
+  }
+
+  getSelectedPayable(): OpenPayable | undefined {
+    return this.openPayables.find(
+      (item) => item.id === this.selectedPayableId,
     );
   }
 
@@ -355,11 +412,19 @@ export class ReconciliationDetailComponent
     );
   }
 
+  getPayableSupplierName(item: OpenPayable): string {
+    return (
+      item.fornecedor?.nomeFantasia ||
+      item.fornecedor?.razaoSocial ||
+      'Fornecedor não informado'
+    );
+  }
+
   getReceivableContractName(item: OpenReceivable): string {
     return item.contrato?.descricao || 'Sem descrição de contrato';
   }
 
-  getReceivableBalanceAfterPayment(item: OpenReceivable): number {
+  getReceivableBalanceAfterPayment(item: OpenReceivable | OpenPayable): number {
     const payment = Math.abs(Number(this.statement?.valor || 0));
 
     return Math.max(
@@ -372,6 +437,25 @@ export class ReconciliationDetailComponent
     const item = this.getSelectedReceivable();
 
     if (!item || this.statement.tipo !== 'CREDIT') {
+      return false;
+    }
+
+    const payment = Math.abs(Number(this.statement.valor || 0));
+    const balance = Number(item.saldoReceber || 0);
+
+    return (
+      Number.isFinite(payment) &&
+      payment > 0 &&
+      Number.isFinite(balance) &&
+      balance > 0 &&
+      payment <= balance + 0.009
+    );
+  }
+
+  isPayablePaymentValid(): boolean {
+    const item = this.getSelectedPayable();
+
+    if (!item || this.statement.tipo !== 'DEBIT') {
       return false;
     }
 
@@ -610,6 +694,10 @@ export class ReconciliationDetailComponent
       return this.isReceivablePaymentValid();
     }
 
+    if (this.activeTab === 'PAYABLE') {
+      return this.isPayablePaymentValid();
+    }
+
     if (this.activeTab === 'TRANSFER') {
       return !!this.form.contaDestinoId && !!this.form.dataCompetencia;
     }
@@ -814,7 +902,7 @@ export class ReconciliationDetailComponent
 
             this.presentToast(
               remaining > 0.009
-                ? `Pagamento parcial registrado. Saldo restante: ${remaining.toLocaleString(
+                ? `Recebimento parcial registrado. Saldo restante: ${remaining.toLocaleString(
                     'pt-BR',
                     {
                       style: 'currency',
@@ -833,7 +921,62 @@ export class ReconciliationDetailComponent
 
             const errorMsg =
               err.error?.message ||
-              'Erro ao vincular o pagamento à conta a receber.';
+              'Erro ao vincular o recebimento à conta a receber.';
+
+            this.presentToast(errorMsg, 'danger');
+          },
+        });
+
+      return;
+    }
+
+    if (this.activeTab === 'PAYABLE') {
+      const payable = this.getSelectedPayable();
+
+      if (!payable) {
+        this.loadingAction = false;
+        this.presentToast(
+          'Selecione uma conta a pagar.',
+          'warning',
+        );
+        return;
+      }
+
+      this.reconciliationService
+        .linkPayablePayment(
+          this.statement.id,
+          payable.id,
+          true,
+        )
+        .subscribe({
+          next: (result: any) => {
+            this.loadingAction = false;
+            this.clearDraft();
+
+            const remaining = Number(result?.saldoReceber || 0);
+
+            this.presentToast(
+              remaining > 0.009
+                ? `Pagamento parcial registrado. Saldo restante: ${remaining.toLocaleString(
+                    'pt-BR',
+                    {
+                      style: 'currency',
+                      currency: 'BRL',
+                    },
+                  )}`
+                : 'Conta a pagar integralmente quitada.',
+              'success',
+            );
+
+            this.complete.emit();
+          },
+          error: (err: any) => {
+            console.error(err);
+            this.loadingAction = false;
+
+            const errorMsg =
+              err.error?.message ||
+              'Erro ao vincular o pagamento à conta a pagar.';
 
             this.presentToast(errorMsg, 'danger');
           },

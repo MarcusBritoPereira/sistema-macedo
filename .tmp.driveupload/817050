@@ -1,6 +1,0 @@
-export declare class DashboardFilterDto {
-    obraId?: string;
-    centroCustoId?: string;
-    startDate?: string;
-    endDate?: string;
-}

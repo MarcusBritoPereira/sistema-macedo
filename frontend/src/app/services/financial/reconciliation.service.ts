@@ -6,7 +6,8 @@ import {
     BankStatement,
     SuggestedMatch,
     PaginatedStatementsResponse,
-    OpenReceivable
+    OpenReceivable,
+    OpenPayable
 } from './reconciliation';
 
 @Injectable({
@@ -63,6 +64,42 @@ export class ReconciliationService {
     ): Observable<any> {
         return this.api.post(
             'financial/reconciliation/receivable-payment',
+            {
+                statementId,
+                lancamentoId,
+                confirmacaoManual
+            }
+        );
+    }
+
+    getOpenPayables(filters?: {
+        fornecedorId?: string;
+        search?: string;
+    }): Observable<OpenPayable[]> {
+        const parts: string[] = [];
+
+        if (filters?.fornecedorId) {
+            parts.push(`fornecedorId=${encodeURIComponent(filters.fornecedorId)}`);
+        }
+
+        if (filters?.search) {
+            parts.push(`search=${encodeURIComponent(filters.search)}`);
+        }
+
+        const query = parts.length ? `?${parts.join('&')}` : '';
+
+        return this.api.get<OpenPayable[]>(
+            `financial/reconciliation/payables/open${query}`
+        );
+    }
+
+    linkPayablePayment(
+        statementId: string,
+        lancamentoId: string,
+        confirmacaoManual: boolean = false
+    ): Observable<any> {
+        return this.api.post(
+            'financial/reconciliation/payable-payment',
             {
                 statementId,
                 lancamentoId,

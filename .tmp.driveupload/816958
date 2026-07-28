@@ -1,4 +1,0 @@
-import { CreateTransactionDto } from './create-transaction.dto';
-export declare class CreateManyTransactionsDto {
-    items: CreateTransactionDto[];
-}

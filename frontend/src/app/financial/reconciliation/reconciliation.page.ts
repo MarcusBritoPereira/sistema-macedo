@@ -752,30 +752,31 @@ export class ReconciliationPage implements OnInit, OnDestroy {
                     name: 'valor',
                     type: 'number',
                     placeholder: 'Valor (R$)'
-                },
-                {
-                    name: 'tipo',
-                    type: 'radio',
-                    label: 'Entrada / Receita',
-                    value: 'CREDIT',
-                    checked: true
-                },
-                {
-                    name: 'tipo',
-                    type: 'radio',
-                    label: 'Saída / Despesa',
-                    value: 'DEBIT'
                 }
             ],
             buttons: [
                 { text: 'Cancelar', role: 'cancel' },
                 {
-                    text: 'Adicionar',
+                    text: 'Despesa (-)',
+                    role: 'destructive',
                     handler: (data) => {
                         if (!data.descricao || !data.valor) {
                             this.showToast('Preencha a descrição e o valor.', 'danger');
                             return false;
                         }
+                        data.tipo = 'DEBIT';
+                        this.createManualStatement(data);
+                        return true;
+                    }
+                },
+                {
+                    text: 'Receita (+)',
+                    handler: (data) => {
+                        if (!data.descricao || !data.valor) {
+                            this.showToast('Preencha a descrição e o valor.', 'danger');
+                            return false;
+                        }
+                        data.tipo = 'CREDIT';
                         this.createManualStatement(data);
                         return true;
                     }

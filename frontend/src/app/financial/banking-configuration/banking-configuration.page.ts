@@ -217,7 +217,13 @@ export class BankingConfigurationPage implements OnInit {
         }
     }
 
-    async addCaixinhaTransaction(event: Event, acc: BankAccount, type: 'RECEITA' | 'DESPESA') {
+    isManualAccount(acc: BankAccount): boolean {
+        const banco = (acc.banco || '').toLowerCase();
+        const nome = (acc.nome || '').toLowerCase();
+        return banco.includes('caixinha') || nome.includes('caixinha') || banco.includes('sicredi') || nome.includes('sicredi');
+    }
+
+    async addManualTransaction(event: Event, acc: BankAccount, type: 'RECEITA' | 'DESPESA') {
         event.stopPropagation();
         const modal = await this.modalCtrl.create({
             component: TransactionModalComponent,
@@ -234,10 +240,10 @@ export class BankingConfigurationPage implements OnInit {
         if (role === 'save') {
             this.financialService.createTransaction(data).subscribe({
                 next: () => {
-                    this.showToast('Lançamento inserido no caixa com sucesso!', 'success');
+                    this.showToast('Lançamento inserido manualmente com sucesso!', 'success');
                     this.loadBankAccounts(); // Refresh accounts just in case
                 },
-                error: () => this.showToast('Erro ao lançar no caixa.', 'danger')
+                error: () => this.showToast('Erro ao lançar manualmente.', 'danger')
             });
         }
     }

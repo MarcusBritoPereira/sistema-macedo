@@ -2,6 +2,8 @@
  * App Global CSS
  */
 
+@use "./app/stock/stock-shared";
+
 @import "@ionic/angular/css/core.css";
 @import "@ionic/angular/css/normalize.css";
 @import "@ionic/angular/css/structure.css";
@@ -738,4 +740,30 @@ app-dashboard {
   .loading-overlay {
     backdrop-filter: blur(6px);
   }
+}
+
+
+/* Accessibility and interaction baseline shared by Finance and Stock. */
+ion-button::part(native) {
+  min-height: 44px;
+}
+
+ion-button[shape="round"]::part(native),
+ion-fab-button::part(native) {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+button,
+a,
+ion-button,
+ion-item[button],
+[role="button"] {
+  touch-action: manipulation;
+}
+
+ion-button[disabled],
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }

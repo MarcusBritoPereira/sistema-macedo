@@ -127,4 +127,14 @@ export class ReconciliationService {
     zeroPending(contaBancariaId: string, year: number, month: number): Observable<any> {
         return this.api.post('financial/reconciliation/zero-pending', { contaBancariaId, year, month });
     }
+
+    createManualStatement(contaBancariaId: string, data: string, descricao: string, valor: number, tipo: 'CREDIT' | 'DEBIT'): Observable<any> {
+        return this.api.post('financial/reconciliation/manual-statement', {
+            contaBancariaId,
+            data,
+            descricao,
+            valor,
+            tipo
+        });
+    }
 }

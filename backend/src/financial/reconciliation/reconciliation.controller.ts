@@ -151,4 +151,24 @@ export class ReconciliationController {
       req.user?.id,
     );
   }
+
+  @Post('manual-statement')
+  createManualStatement(
+    @Body()
+    data: {
+      contaBancariaId: string;
+      data: string;
+      descricao: string;
+      valor: number;
+      tipo: 'CREDIT' | 'DEBIT';
+    },
+  ) {
+    return this.service.createManualStatement(
+      data.contaBancariaId,
+      data.data,
+      data.descricao,
+      data.valor,
+      data.tipo,
+    );
+  }
 }

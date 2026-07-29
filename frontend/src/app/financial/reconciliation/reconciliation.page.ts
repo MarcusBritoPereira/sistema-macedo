@@ -728,6 +728,87 @@ export class ReconciliationPage implements OnInit, OnDestroy {
         });
     }
 
+    async openManualStatementPrompt() {
+        if (!this.selectedAccountId) {
+            this.showToast('Selecione uma conta bancária primeiro.', 'warning');
+            return;
+        }
+
+        const alert = await this.alertCtrl.create({
+            header: 'Lançamento Manual',
+            subHeader: 'Insira um extrato manualmente',
+            inputs: [
+                {
+                    name: 'data',
+                    type: 'date',
+                    value: format(new Date(), 'yyyy-MM-dd')
+                },
+                {
+                    name: 'descricao',
+                    type: 'text',
+                    placeholder: 'Descrição (Ex: Ajuste de Saldo)'
+                },
+                {
+                    name: 'valor',
+                    type: 'number',
+                    placeholder: 'Valor (R$)'
+                },
+                {
+                    name: 'tipo',
+                    type: 'radio',
+                    label: 'Entrada / Receita',
+                    value: 'CREDIT',
+                    checked: true
+                },
+                {
+                    name: 'tipo',
+                    type: 'radio',
+                    label: 'Saída / Despesa',
+                    value: 'DEBIT'
+                }
+            ],
+            buttons: [
+                { text: 'Cancelar', role: 'cancel' },
+                {
+                    text: 'Adicionar',
+                    handler: (data) => {
+                        if (!data.descricao || !data.valor) {
+                            this.showToast('Preencha a descrição e o valor.', 'danger');
+                            return false;
+                        }
+                        this.createManualStatement(data);
+                        return true;
+                    }
+                }
+            ]
+        });
+        await alert.present();
+    }
+
+    async createManualStatement(data: any) {
+        const loader = await this.loadingCtrl.create({ message: 'Salvando...' });
+        await loader.present();
+
+        this.reconciliationService.createManualStatement(
+            this.selectedAccountId,
+            data.data,
+            data.descricao,
+            Number(data.valor),
+            data.tipo
+        ).subscribe({
+            next: () => {
+                loader.dismiss();
+                this.showToast('Lançamento manual adicionado com sucesso!');
+                this.loadStatements();
+            },
+            error: (err) => {
+                loader.dismiss();
+                const msg = err.error?.message || 'Erro ao adicionar lançamento manual.';
+                this.showToast(msg, 'danger');
+            }
+        });
+    }
+
     cleanDescription(desc: string): string {
         if (!desc) return '';
         let cleaned = desc;

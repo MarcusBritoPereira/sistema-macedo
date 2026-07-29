@@ -173,6 +173,10 @@
                 </div>
             </div>
             <div class="ops-right">
+                <ion-button fill="clear" size="small" color="primary" (click)="openManualStatementPrompt()" *ngIf="viewMode === 'PENDING'">
+                    <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+                    Lançamento Manual
+                </ion-button>
                 <ion-button fill="clear" size="small" color="warning" (click)="zeroPendingMonth()" *ngIf="summary.totalCount > 0 && viewMode === 'PENDING'">
                     <ion-icon slot="start" name="checkmark-circle-outline"></ion-icon>
                     Zerar Pendentes
@@ -274,6 +278,9 @@
                     <input type="file" #ofxInput hidden (change)="onOfxFileSelected($event)" accept=".ofx,.OFX">
                     <input type="file" #csvInput hidden (change)="onCsvFileSelected($event)" accept=".csv,.CSV">
 
+                    <ion-button fill="clear" class="btn-link" (click)="openManualStatementPrompt()">
+                        Adicionar lançamento manual (ajuste)
+                    </ion-button>
                     <ion-button fill="clear" class="btn-link" (click)="triggerOfxUpload()">
                         Importar lançamentos via OFX
                     </ion-button>

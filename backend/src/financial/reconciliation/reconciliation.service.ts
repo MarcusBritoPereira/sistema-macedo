@@ -1592,4 +1592,51 @@ export class ReconciliationService {
 
     return result;
   }
+
+  async createManualStatement(
+    contaBancariaId: string,
+    dataStr: string,
+    descricao: string,
+    valor: number,
+    tipo: 'CREDIT' | 'DEBIT',
+  ) {
+    const data = new Date(dataStr);
+    
+    // We need an importacao for the ExtratoBancario. 
+    // We will find or create a manual one for this account.
+    let importacao = await this.prisma.importacaoBancaria.findFirst({
+      where: {
+        contaBancariaId,
+        fileType: 'MANUAL',
+      },
+    });
+
+    if (!importacao) {
+      importacao = await this.prisma.importacaoBancaria.create({
+        data: {
+          contaBancariaId,
+          filename: 'Lançamentos Manuais',
+          fileType: 'MANUAL',
+          status: 'COMPLETED',
+        },
+      });
+    }
+
+    const { v4: uuidv4 } = require('uuid');
+
+    const extrato = await this.prisma.extratoBancario.create({
+      data: {
+        importacaoId: importacao.id,
+        data,
+        descricao,
+        valor,
+        tipo,
+        sourceType: 'MANUAL',
+        hash: `manual-${uuidv4()}`,
+        conciliado: false,
+      },
+    });
+
+    return extrato;
+  }
 }

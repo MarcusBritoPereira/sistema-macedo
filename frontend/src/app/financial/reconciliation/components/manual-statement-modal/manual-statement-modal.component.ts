@@ -48,6 +48,8 @@ export class ManualStatementModalComponent implements OnInit {
   }
 
   isValid() {
-    return this.descricao && this.descricao.length > 0 && this.valor && this.valor.length > 0;
+    const isValorValid = this.valor !== null && this.valor !== undefined && this.valor !== '' && Number(this.valor) > 0;
+    const isDescricaoValid = this.descricao && this.descricao.trim().length > 0;
+    return isDescricaoValid && isValorValid;
   }
 }

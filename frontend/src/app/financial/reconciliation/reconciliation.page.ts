@@ -1,3 +1,5 @@
+import { ManualStatementModalComponent } from './components/manual-statement-modal/manual-statement-modal.component';
+
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -734,56 +736,18 @@ export class ReconciliationPage implements OnInit, OnDestroy {
             return;
         }
 
-        const alert = await this.alertCtrl.create({
-            header: 'Lançamento Manual',
-            subHeader: 'Insira um extrato manualmente',
-            inputs: [
-                {
-                    name: 'data',
-                    type: 'date',
-                    value: format(new Date(), 'yyyy-MM-dd')
-                },
-                {
-                    name: 'descricao',
-                    type: 'text',
-                    placeholder: 'Descrição (Ex: Ajuste de Saldo)'
-                },
-                {
-                    name: 'valor',
-                    type: 'number',
-                    placeholder: 'Valor (R$)'
-                }
-            ],
-            buttons: [
-                { text: 'Cancelar', role: 'cancel' },
-                {
-                    text: 'Despesa (-)',
-                    role: 'destructive',
-                    handler: (data) => {
-                        if (!data.descricao || !data.valor) {
-                            this.showToast('Preencha a descrição e o valor.', 'danger');
-                            return false;
-                        }
-                        data.tipo = 'DEBIT';
-                        this.createManualStatement(data);
-                        return true;
-                    }
-                },
-                {
-                    text: 'Receita (+)',
-                    handler: (data) => {
-                        if (!data.descricao || !data.valor) {
-                            this.showToast('Preencha a descrição e o valor.', 'danger');
-                            return false;
-                        }
-                        data.tipo = 'CREDIT';
-                        this.createManualStatement(data);
-                        return true;
-                    }
-                }
-            ]
+        const modal = await this.modalCtrl.create({
+            component: ManualStatementModalComponent,
+            cssClass: 'modal-medium'
         });
-        await alert.present();
+
+        await modal.present();
+
+        const { data, role } = await modal.onDidDismiss();
+
+        if (role === 'confirm' && data) {
+            this.createManualStatement(data);
+        }
     }
 
     async createManualStatement(data: any) {

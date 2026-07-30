@@ -1,0 +1,47 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+      <ion-title>Lançamento Manual</ion-title>
+      <ion-buttons slot="end">
+          <ion-button (click)="cancel()">
+              <ion-icon name="close-outline"></ion-icon>
+          </ion-button>
+      </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div class="form-container">
+      <p class="description-text">Insira um extrato manualmente para conciliação.</p>
+
+      <ion-item fill="outline" class="input-item">
+          <ion-label position="stacked">Data *</ion-label>
+          <ion-input type="date" [(ngModel)]="data"></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" class="input-item">
+          <ion-label position="stacked">Descrição *</ion-label>
+          <ion-input type="text" [(ngModel)]="descricao" placeholder="Ex: Ajuste de Saldo"></ion-input>
+      </ion-item>
+
+      <div class="row-duo">
+          <ion-item fill="outline" class="input-item">
+              <ion-label position="stacked">Valor (R$) *</ion-label>
+              <ion-input type="number" [(ngModel)]="valor" placeholder="0.00"></ion-input>
+          </ion-item>
+
+          <ion-item fill="outline" class="input-item">
+              <ion-label position="stacked">Tipo *</ion-label>
+              <ion-select [(ngModel)]="tipo" interface="popover">
+                  <ion-select-option value="CREDIT">Receita (+)</ion-select-option>
+                  <ion-select-option value="DEBIT">Despesa (-)</ion-select-option>
+              </ion-select>
+          </ion-item>
+      </div>
+
+      <div class="actions">
+          <ion-button expand="block" (click)="save()" [disabled]="!isValid()" color="primary">
+              Adicionar
+          </ion-button>
+      </div>
+  </div>
+</ion-content>

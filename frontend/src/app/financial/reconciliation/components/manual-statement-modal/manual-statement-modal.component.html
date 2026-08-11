@@ -36,7 +36,7 @@
 
       <ion-item fill="outline" class="input-item">
           <ion-label position="stacked">Valor (R$) *</ion-label>
-          <ion-input type="number" [(ngModel)]="valor" placeholder="0.00"></ion-input>
+          <ion-input type="text" [value]="valor" (ionInput)="formatCurrency($event)" placeholder="0,00"></ion-input>
       </ion-item>
       <div class="actions">
           <ion-button expand="block" (click)="save()" [disabled]="!isValid()" color="primary">

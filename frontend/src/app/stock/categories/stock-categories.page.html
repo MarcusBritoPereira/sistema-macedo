@@ -142,15 +142,18 @@
 
             <tbody>
               <tr
-                *ngFor="
-                  let category of filteredCategories;
-                  trackBy: trackByCategory
-                "
+                *ngFor="let category of filteredCategories; trackBy: trackByCategory"
+                [hidden]="!isCategoryVisible(category)"
               >
                 <td>
-                  <div class="category-cell">
-                    <div class="category-icon">
-                      <ion-icon name="folder-open-outline"></ion-icon>
+                  <div class="category-cell" [style.padding-left]="(category.parentId || category.parent) ? '2rem' : '0'">
+                    <div class="category-icon" 
+                         [style.cursor]="getChildrenCount(category) > 0 ? 'pointer' : 'default'"
+                         (click)="getChildrenCount(category) > 0 ? toggleExpand(category.id) : null">
+                      <ion-icon *ngIf="getChildrenCount(category) > 0" 
+                                [name]="expandedCategories[category.id!] ? 'chevron-down-outline' : 'chevron-forward-outline'">
+                      </ion-icon>
+                      <ion-icon *ngIf="getChildrenCount(category) === 0" name="folder-open-outline"></ion-icon>
                     </div>
 
                     <div>

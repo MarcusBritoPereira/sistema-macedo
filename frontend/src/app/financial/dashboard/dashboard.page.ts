@@ -281,4 +281,14 @@ export class DashboardPage implements OnInit {
     this.currentMonth = newMonth;
     this.loadDashboard();
   }
+
+  onChartClick(event: any): void {
+    if (event.active && event.active.length > 0) {
+      const index = event.active[0].index;
+      if (index !== undefined && index >= 0 && index <= 11) {
+        this.currentMonth = index;
+        this.loadDashboard();
+      }
+    }
+  }
 }

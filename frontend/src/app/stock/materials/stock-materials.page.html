@@ -8,7 +8,7 @@
         </p>
       </div>
 
-      <ion-button class="new-button" (click)="openNew()">
+      <ion-button class="new-button" (click)="openNew()" *ngIf="!isWorker">
         <ion-icon name="add-outline" slot="start"></ion-icon>
         Novo material
       </ion-button>
@@ -76,6 +76,13 @@
       </section>
 
       <section class="materials-panel">
+        <div class="tabs-container" style="display: flex; gap: 10px; margin-bottom: 20px; overflow-x: auto; padding-bottom: 5px;">
+          <ion-button size="small" [fill]="tabFilter === 'ALL' ? 'solid' : 'outline'" (click)="setTab('ALL')" [color]="tabFilter === 'ALL' ? 'primary' : 'medium'">Todos</ion-button>
+          <ion-button size="small" [fill]="tabFilter === 'CONSUMO' ? 'solid' : 'outline'" (click)="setTab('CONSUMO')" [color]="tabFilter === 'CONSUMO' ? 'primary' : 'medium'">Material de Consumo</ion-button>
+          <ion-button size="small" [fill]="tabFilter === 'FERRAMENTA' ? 'solid' : 'outline'" (click)="setTab('FERRAMENTA')" [color]="tabFilter === 'FERRAMENTA' ? 'primary' : 'medium'">Ferramentas</ion-button>
+          <ion-button size="small" [fill]="tabFilter === 'EQUIPAMENTO' ? 'solid' : 'outline'" (click)="setTab('EQUIPAMENTO')" [color]="tabFilter === 'EQUIPAMENTO' ? 'primary' : 'medium'">Equipamentos</ion-button>
+        </div>
+
         <div class="filters">
           <div class="search-field">
             <ion-icon name="search-outline"></ion-icon>
@@ -245,39 +252,45 @@
 
                 <td>
                   <div class="row-actions">
-                    <button
-                      type="button"
-                      class="icon-action edit"
-                      title="Editar material"
-                      (click)="edit(material)"
-                    >
-                      <ion-icon name="create-outline"></ion-icon>
-                    </button>
+                    <ng-container *ngIf="!isWorker">
+                      <button
+                        type="button"
+                        class="icon-action edit"
+                        title="Editar material"
+                        (click)="edit(material)"
+                      >
+                        <ion-icon name="create-outline"></ion-icon>
+                      </button>
 
-                    <button
-                      type="button"
-                      class="icon-action"
-                      title="Ajustar saldo"
-                      style="color: var(--ion-color-primary);"
-                      (click)="adjustBalance(material)"
-                    >
-                      <ion-icon name="cash-outline"></ion-icon>
-                    </button>
+                      <button
+                        type="button"
+                        class="icon-action"
+                        title="Ajustar saldo"
+                        style="color: var(--ion-color-primary);"
+                        (click)="adjustBalance(material)"
+                      >
+                        <ion-icon name="cash-outline"></ion-icon>
+                      </button>
 
-                    <button
-                      type="button"
-                      class="icon-action remove"
-                      title="Remover ou inativar"
-                      (click)="removeMaterial(material)"
-                    >
-                      <ion-icon
-                        [name]="
-                          material.ativo === false
-                            ? 'power-outline'
-                            : 'trash-outline'
-                        "
-                      ></ion-icon>
-                    </button>
+                      <button
+                        type="button"
+                        class="icon-action remove"
+                        title="Remover ou inativar"
+                        (click)="removeMaterial(material)"
+                      >
+                        <ion-icon
+                          [name]="
+                            material.ativo === false
+                              ? 'power-outline'
+                              : 'trash-outline'
+                          "
+                        ></ion-icon>
+                      </button>
+                    </ng-container>
+                    
+                    <ion-button *ngIf="isWorker" size="small" color="success" (click)="requestViaWhatsApp(material)">
+                      <ion-icon name="logo-whatsapp" slot="start"></ion-icon> Solicitar
+                    </ion-button>
                   </div>
                 </td>
               </tr>
@@ -387,30 +400,36 @@
             </div>
 
             <div class="mobile-card-actions">
-              <ion-button
-                size="small"
-                fill="outline"
-                (click)="edit(material)"
-              >
-                Editar
-              </ion-button>
+              <ng-container *ngIf="!isWorker">
+                <ion-button
+                  size="small"
+                  fill="outline"
+                  (click)="edit(material)"
+                >
+                  Editar
+                </ion-button>
 
-              <ion-button
-                size="small"
-                fill="outline"
-                color="primary"
-                (click)="adjustBalance(material)"
-              >
-                Ajustar Saldo
-              </ion-button>
+                <ion-button
+                  size="small"
+                  fill="outline"
+                  color="primary"
+                  (click)="adjustBalance(material)"
+                >
+                  Ajustar Saldo
+                </ion-button>
 
-              <ion-button
-                size="small"
-                fill="clear"
-                color="danger"
-                (click)="removeMaterial(material)"
-              >
-                Remover
+                <ion-button
+                  size="small"
+                  fill="clear"
+                  color="danger"
+                  (click)="removeMaterial(material)"
+                >
+                  Remover
+                </ion-button>
+              </ng-container>
+
+              <ion-button *ngIf="isWorker" size="small" color="success" fill="solid" (click)="requestViaWhatsApp(material)" style="width: 100%;">
+                <ion-icon name="logo-whatsapp" slot="start"></ion-icon> Solicitar
               </ion-button>
             </div>
           </article>

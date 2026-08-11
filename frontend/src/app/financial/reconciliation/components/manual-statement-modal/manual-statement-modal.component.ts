@@ -28,15 +28,43 @@ export class ManualStatementModalComponent implements OnInit {
     this.modalCtrl.dismiss();
   }
 
+  formatCurrency(event: any) {
+    let input = event.detail.value;
+    if (!input) {
+      this.valor = '';
+      return;
+    }
+    
+    // Remove all non-numeric characters
+    let value = input.replace(/\D/g, '');
+    
+    if (value === '') {
+      this.valor = '';
+      return;
+    }
+
+    // Convert to number and divide by 100 to get decimal
+    let numberValue = parseInt(value, 10) / 100;
+    
+    // Format back to string
+    this.valor = numberValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  getNumericValue(): number {
+    if (!this.valor) return 0;
+    // Remove dots (thousands) and replace comma with dot (decimal)
+    const normalized = this.valor.replace(/\./g, '').replace(',', '.');
+    return parseFloat(normalized) || 0;
+  }
+
   save() {
     if (!this.descricao || !this.valor) {
       return;
     }
     
-    // Converte valor com virgula para numero se necessário
-    const numValor = Number(this.valor.replace(',', '.'));
+    const numValor = this.getNumericValue();
     if (isNaN(numValor) || numValor <= 0) {
-      return; // Validation error handled silently, or could show toast
+      return;
     }
 
     this.modalCtrl.dismiss({
@@ -48,7 +76,8 @@ export class ManualStatementModalComponent implements OnInit {
   }
 
   isValid() {
-    const isValorValid = this.valor !== null && this.valor !== undefined && this.valor !== '' && Number(this.valor) > 0;
+    const numValor = this.getNumericValue();
+    const isValorValid = numValor > 0;
     const isDescricaoValid = this.descricao && this.descricao.trim().length > 0;
     return isDescricaoValid && isValorValid;
   }

@@ -22,6 +22,8 @@ import {
   saveOutline,
   searchOutline,
   trashOutline,
+  chevronDownOutline,
+  chevronForwardOutline,
 } from 'ionicons/icons';
 import {
   StockCategory,
@@ -57,6 +59,7 @@ export class StockCategoriesPage implements OnInit {
   categories: StockCategory[] = [];
   filteredCategories: StockCategory[] = [];
   form: StockCategory = this.emptyForm();
+  expandedCategories: Record<string, boolean> = {};
 
   constructor(
     private readonly stock: StockService,
@@ -75,6 +78,8 @@ export class StockCategoriesPage implements OnInit {
       saveOutline,
       searchOutline,
       trashOutline,
+      chevronDownOutline,
+      chevronForwardOutline,
     });
   }
 
@@ -136,6 +141,45 @@ export class StockCategoriesPage implements OnInit {
 
       return matchesSearch && matchesStatus && matchesLevel;
     });
+
+    // Sort to ensure children follow their parents
+    const roots = this.filteredCategories.filter(c => !c.parentId);
+    const children = this.filteredCategories.filter(c => Boolean(c.parentId));
+    
+    const sorted: StockCategory[] = [];
+    for (const root of roots) {
+      sorted.push(root);
+      // Initialize as expanded if not set
+      if (this.expandedCategories[root.id!] === undefined) {
+        this.expandedCategories[root.id!] = true;
+      }
+      
+      const rootChildren = children.filter(c => c.parentId === root.id || c.parent?.id === root.id);
+      sorted.push(...rootChildren);
+    }
+    
+    // Add any orphaned children (whose parents didn't match the filter)
+    const orphaned = children.filter(c => !sorted.find(s => s.id === c.id));
+    sorted.push(...orphaned);
+    
+    this.filteredCategories = sorted;
+  }
+
+  toggleExpand(categoryId: string | undefined): void {
+    if (!categoryId) return;
+    this.expandedCategories[categoryId] = !this.expandedCategories[categoryId];
+  }
+
+  isCategoryVisible(category: StockCategory): boolean {
+    if (!category.parentId && !category.parent?.id) return true; // Roots are always visible
+    
+    const parentId = category.parentId || category.parent?.id;
+    if (parentId && this.expandedCategories[parentId] === false) {
+      // If we are searching, we might want to ignore the collapse state and show everything
+      if (this.search) return true; 
+      return false;
+    }
+    return true;
   }
 
   clearFilters(): void {

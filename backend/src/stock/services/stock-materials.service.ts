@@ -17,7 +17,7 @@ export class StockMaterialsService {
 
   async create(dto: CreateStockMaterialDto, userId: string) {
     const data = await this.sanitize(dto, userId);
-    await this.ensureUnique(dto.codigo, dto.codigoBarras);
+    await this.ensureUnique(dto.codigo, dto.codigoBarras, undefined, data.nome as string);
     await this.ensureActiveCategory(data.categoriaMaterialId as string);
 
     const material = await this.prisma.material.create({
@@ -172,8 +172,8 @@ export class StockMaterialsService {
   async update(id: string, dto: UpdateStockMaterialDto, userId: string) {
     const current = await this.findOne(id);
     const data = await this.sanitize(dto);
-    if (data.codigo || data.codigoBarras !== undefined) {
-      await this.ensureUnique(data.codigo as string | undefined, data.codigoBarras as string | null | undefined, id);
+    if (data.codigo || data.codigoBarras !== undefined || data.nome !== undefined) {
+      await this.ensureUnique(data.codigo as string | undefined, data.codigoBarras as string | null | undefined, id, data.nome as string | undefined);
     }
     if (data.categoriaMaterialId) await this.ensureActiveCategory(data.categoriaMaterialId as string);
 
@@ -188,15 +188,22 @@ export class StockMaterialsService {
 
   async remove(id: string, userId: string) {
     const current = await this.findOne(id);
-    const movementCount = await this.prisma.movimentoEstoque.count({ where: { materialId: id } });
-    if (movementCount > 0) {
-      const updated = await this.prisma.material.update({
-        where: { id },
-        data: { ativo: false },
-        include: this.includeRelations(),
-      });
-      await this.audit(userId, 'ESTOQUE_MATERIAL_INATIVADO', id, current, updated);
-      return updated;
+    const movements = await this.prisma.movimentoEstoque.findMany({ where: { materialId: id } });
+    
+    if (movements.length > 0) {
+      if (movements.length === 1 && movements[0].tipo === 'ENTRADA_AJUSTE' && movements[0].observacao === 'Estoque inicial') {
+        // Can be hard-deleted, so we delete the movement and balance first
+        await this.prisma.movimentoEstoque.delete({ where: { id: movements[0].id } });
+        await this.prisma.saldoEstoque.deleteMany({ where: { materialId: id } });
+      } else {
+        const updated = await this.prisma.material.update({
+          where: { id },
+          data: { ativo: false },
+          include: this.includeRelations(),
+        });
+        await this.audit(userId, 'ESTOQUE_MATERIAL_INATIVADO', id, current, updated);
+        return updated;
+      }
     }
 
     const deleted = await this.prisma.material.delete({ where: { id } });
@@ -278,16 +285,24 @@ export class StockMaterialsService {
     return decimal;
   }
 
-  private async ensureUnique(codigo?: string, codigoBarras?: string | null, currentId?: string) {
+  private async ensureUnique(codigo?: string, codigoBarras?: string | null, currentId?: string, nome?: string) {
     const or: Prisma.MaterialWhereInput[] = [];
     if (codigo) or.push({ codigo });
     if (codigoBarras) or.push({ codigoBarras });
+    if (nome) or.push({ nome: { equals: nome, mode: 'insensitive' } });
+    
     if (!or.length) return;
     const existing = await this.prisma.material.findFirst({
       where: { OR: or, ...(currentId ? { id: { not: currentId } } : {}) },
-      select: { id: true, codigo: true, codigoBarras: true },
+      select: { id: true, codigo: true, codigoBarras: true, nome: true },
     });
-    if (existing) throw new ConflictException('Código ou código de barras já cadastrado para outro material');
+    
+    if (existing) {
+      if (nome && existing.nome.toLowerCase() === nome.toLowerCase()) {
+        throw new ConflictException('Já existe um material cadastrado com este nome exato');
+      }
+      throw new ConflictException('Código ou código de barras já cadastrado para outro material');
+    }
   }
 
   private async ensureActiveCategory(id: string) {

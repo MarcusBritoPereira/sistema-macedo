@@ -25,6 +25,7 @@ import {
   saveOutline,
   searchOutline,
   trashOutline,
+  logoWhatsapp,
 } from 'ionicons/icons';
 import {
   StockCategory,
@@ -32,6 +33,7 @@ import {
   StockMaterial,
   StockService,
 } from '../../services/stock/stock.service';
+import { AuthService } from '../../services/auth/auth.service';
 import { StockBalanceAdjustmentModalComponent } from './components/stock-balance-adjustment-modal/stock-balance-adjustment-modal.component';
 
 type StatusFilter = 'ALL' | 'ACTIVE' | 'INACTIVE';
@@ -69,6 +71,8 @@ export class StockMaterialsPage implements OnInit {
   categoryFilter = '';
   statusFilter: StatusFilter = 'ALL';
   stockFilter: StockFilter = 'ALL';
+  tabFilter: 'ALL' | 'CONSUMO' | 'FERRAMENTA' | 'EQUIPAMENTO' = 'ALL';
+  isWorker = false;
 
   materials: StockMaterial[] = [];
   filteredMaterials: StockMaterial[] = [];
@@ -100,6 +104,7 @@ export class StockMaterialsPage implements OnInit {
     private readonly toastController: ToastController,
     private readonly alertController: AlertController,
     private readonly modalController: ModalController,
+    private readonly auth: AuthService,
   ) {
     addIcons({
       addOutline,
@@ -115,10 +120,12 @@ export class StockMaterialsPage implements OnInit {
       saveOutline,
       searchOutline,
       trashOutline,
+      logoWhatsapp,
     });
   }
 
   ngOnInit(): void {
+    this.isWorker = this.auth.isWorkerProfile();
     this.load();
   }
 
@@ -202,13 +209,66 @@ export class StockMaterialsPage implements OnInit {
         this.stockFilter === 'ALL' ||
         item.situacaoEstoque === this.stockFilter;
 
+      const catName = this.normalize(item.categoriaMaterial?.nome || '');
+      const isTool = catName.includes('ferramenta');
+      const isEquipment = catName.includes('equipamento');
+      
+      let matchesTab = true;
+      if (this.tabFilter === 'FERRAMENTA' && !isTool) matchesTab = false;
+      if (this.tabFilter === 'EQUIPAMENTO' && !isEquipment) matchesTab = false;
+      if (this.tabFilter === 'CONSUMO' && (isTool || isEquipment)) matchesTab = false;
+
       return (
         matchesSearch &&
         matchesCategory &&
         matchesStatus &&
-        matchesStock
+        matchesStock &&
+        matchesTab
       );
     });
+  }
+
+  setTab(tab: any): void {
+    this.tabFilter = tab;
+    this.applyFilters();
+  }
+
+  async requestViaWhatsApp(material: StockMaterial): Promise<void> {
+    const alert = await this.alertController.create({
+      header: 'Solicitar via WhatsApp',
+      inputs: [
+        { name: 'obra', type: 'text', placeholder: 'Nome da Obra (Ex: Obra Ana Paula)' },
+        { name: 'quantidade', type: 'number', placeholder: 'Quantidade (Ex: 1)' },
+        { name: 'mensagem', type: 'textarea', placeholder: 'Mensagem personalizada (opcional)' }
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { 
+          text: 'Enviar Solicitação', 
+          handler: (data) => {
+            if (!data.obra || !data.quantidade) {
+              this.showToast('Preencha a obra e quantidade.', 'warning');
+              return false;
+            }
+            // Generate message
+            let text = `Oi!\n\nEstou precisando de ${data.quantidade} ${material.unidade} de ${material.nome}`;
+            if (material.codigo) text += ` (${material.codigo})`;
+            text += ` na obra *${data.obra}*.`;
+            if (data.mensagem) {
+              text += `\n\n${data.mensagem}`;
+            }
+            text += `\n\nConsegue entregar para mim? Desde já, obrigado!`;
+            
+            // Note: replace '5511999999999' with actual storekeeper number or a config
+            // For now, it will just open whatsapp to select a contact or a dummy number
+            const phone = '5511999999999'; // Default or configurable
+            window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+            return true;
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 
   clearFilters(): void {

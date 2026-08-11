@@ -106,6 +106,10 @@ export class AuthService {
     return user?.perfil?.nome === 'ESTOQUE';
   }
 
+  isWorkerProfile(user: any = this.userSubject.value): boolean {
+    return user?.perfil?.nome === 'OBRA' || user?.perfil?.nome === 'WORKER';
+  }
+
   getDefaultRoute(user: any = this.userSubject.value): string {
     return this.isStockProfile(user)
       ? '/stock/dashboard'

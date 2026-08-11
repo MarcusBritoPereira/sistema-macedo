@@ -135,7 +135,9 @@
             baseChart
             [data]="payableForecastChart"
             [options]="chartOptions"
-            type="bar">
+            (chartClick)="onChartClick($event)"
+            type="bar"
+            style="cursor: pointer;">
           </canvas>
         </div>
       </div>

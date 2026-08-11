@@ -9,7 +9,6 @@ const prisma = new PrismaClient();
 async function main() {
     console.log('🌱 Starting V2 SEED...');
 
-    // 1. Profiles
     const adminProfile = await prisma.perfil.upsert({
         where: { nome: 'ADMIN' },
         update: {},
@@ -20,6 +19,12 @@ async function main() {
         where: { nome: 'FINANCEIRO' },
         update: {},
         create: { nome: 'FINANCEIRO', descricao: 'Gestão Financeira', permissoes: { financial: true } },
+    });
+
+    const almoxarifadoProfile = await prisma.perfil.upsert({
+        where: { nome: 'ALMOXARIFADO' },
+        update: {},
+        create: { nome: 'ALMOXARIFADO', descricao: 'Gestão de Estoque e Almoxarifado', permissoes: { stock: true } },
     });
 
     // 3. User Seed - Skipped Sales Profile
@@ -45,6 +50,12 @@ async function main() {
         where: { email: 'financeiro@erp.com' },
         update: {},
         create: { email: 'financeiro@erp.com', nome: 'Ana Financeira', senha: password, perfilId: finProfile.id },
+    });
+
+    await prisma.usuario.upsert({
+        where: { email: 'engenheiroandrelima96@gmail.com' },
+        update: {},
+        create: { email: 'engenheiroandrelima96@gmail.com', nome: 'André Lima (Almoxarifado)', senha: password, perfilId: almoxarifadoProfile.id },
     });
 
 

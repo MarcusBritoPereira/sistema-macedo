@@ -17,6 +17,7 @@ export interface StockCategory {
   categoriaFinanceiraId?: string | null;
   centroCustoPadraoId?: string | null;
   ativo?: boolean;
+  level?: number;
 
   parent?: {
     id: string;
@@ -53,6 +54,7 @@ export interface StockMaterial {
   descricao?: string | null;
   categoriaMaterialId: string;
   categoriaMaterial?: StockCategory;
+  tipoItem?: 'CONSUMO' | 'FERRAMENTA' | 'EQUIPAMENTO';
   unidade: string;
   codigoBarras?: string | null;
   referenciaFornecedor?: string | null;

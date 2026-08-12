@@ -479,36 +479,36 @@
         <div class="type-selector" style="display: flex; gap: 12px; margin-bottom: 24px;">
           <div 
             class="type-card" 
-            [class.active]="(form as any).tipoItem === 'CONSUMO'"
-            (click)="(form as any).tipoItem = 'CONSUMO'"
+            [class.active]="form.tipoItem === 'CONSUMO'"
+            (click)="form.tipoItem = 'CONSUMO'"
             style="flex: 1; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; text-align: center; transition: all 0.2s;"
-            [style.border-color]="(form as any).tipoItem === 'CONSUMO' ? '#0057ff' : '#e2e8f0'"
-            [style.background]="(form as any).tipoItem === 'CONSUMO' ? '#eff6ff' : '#ffffff'">
-            <ion-icon name="layers-outline" style="font-size: 24px; margin-bottom: 8px;" [style.color]="(form as any).tipoItem === 'CONSUMO' ? '#0057ff' : '#64748b'"></ion-icon>
+            [style.border-color]="form.tipoItem === 'CONSUMO' ? '#0057ff' : '#e2e8f0'"
+            [style.background]="form.tipoItem === 'CONSUMO' ? '#eff6ff' : '#ffffff'">
+            <ion-icon name="layers-outline" style="font-size: 24px; margin-bottom: 8px;" [style.color]="form.tipoItem === 'CONSUMO' ? '#0057ff' : '#64748b'"></ion-icon>
             <strong style="font-size: 14px; color: #1e293b; display: block;">Consumo</strong>
             <span style="font-size: 12px; color: #64748b; line-height: 1.2;">Materiais e insumos</span>
           </div>
 
           <div 
             class="type-card" 
-            [class.active]="(form as any).tipoItem === 'FERRAMENTA'"
-            (click)="(form as any).tipoItem = 'FERRAMENTA'"
+            [class.active]="form.tipoItem === 'FERRAMENTA'"
+            (click)="form.tipoItem = 'FERRAMENTA'"
             style="flex: 1; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; text-align: center; transition: all 0.2s;"
-            [style.border-color]="(form as any).tipoItem === 'FERRAMENTA' ? '#0057ff' : '#e2e8f0'"
-            [style.background]="(form as any).tipoItem === 'FERRAMENTA' ? '#eff6ff' : '#ffffff'">
-            <ion-icon name="hammer-outline" style="font-size: 24px; margin-bottom: 8px;" [style.color]="(form as any).tipoItem === 'FERRAMENTA' ? '#0057ff' : '#64748b'"></ion-icon>
+            [style.border-color]="form.tipoItem === 'FERRAMENTA' ? '#0057ff' : '#e2e8f0'"
+            [style.background]="form.tipoItem === 'FERRAMENTA' ? '#eff6ff' : '#ffffff'">
+            <ion-icon name="hammer-outline" style="font-size: 24px; margin-bottom: 8px;" [style.color]="form.tipoItem === 'FERRAMENTA' ? '#0057ff' : '#64748b'"></ion-icon>
             <strong style="font-size: 14px; color: #1e293b; display: block;">Ferramenta</strong>
             <span style="font-size: 12px; color: #64748b; line-height: 1.2;">Uso da equipe</span>
           </div>
 
           <div 
             class="type-card" 
-            [class.active]="(form as any).tipoItem === 'EQUIPAMENTO'"
-            (click)="(form as any).tipoItem = 'EQUIPAMENTO'"
+            [class.active]="form.tipoItem === 'EQUIPAMENTO'"
+            (click)="form.tipoItem = 'EQUIPAMENTO'"
             style="flex: 1; padding: 16px; border: 2px solid #e2e8f0; border-radius: 12px; cursor: pointer; display: flex; flex-direction: column; align-items: center; text-align: center; transition: all 0.2s;"
-            [style.border-color]="(form as any).tipoItem === 'EQUIPAMENTO' ? '#0057ff' : '#e2e8f0'"
-            [style.background]="(form as any).tipoItem === 'EQUIPAMENTO' ? '#eff6ff' : '#ffffff'">
-            <ion-icon name="construct-outline" style="font-size: 24px; margin-bottom: 8px;" [style.color]="(form as any).tipoItem === 'EQUIPAMENTO' ? '#0057ff' : '#64748b'"></ion-icon>
+            [style.border-color]="form.tipoItem === 'EQUIPAMENTO' ? '#0057ff' : '#e2e8f0'"
+            [style.background]="form.tipoItem === 'EQUIPAMENTO' ? '#eff6ff' : '#ffffff'">
+            <ion-icon name="construct-outline" style="font-size: 24px; margin-bottom: 8px;" [style.color]="form.tipoItem === 'EQUIPAMENTO' ? '#0057ff' : '#64748b'"></ion-icon>
             <strong style="font-size: 14px; color: #1e293b; display: block;">Equipamento</strong>
             <span style="font-size: 12px; color: #64748b; line-height: 1.2;">Máquinas grandes</span>
           </div>
@@ -519,7 +519,7 @@
 
           <div>
             <h3>Identificação</h3>
-            <p>Informações principais do {{ (form as any).tipoItem === 'CONSUMO' ? 'material' : 'item' }}</p>
+            <p>Informações principais do {{ form.tipoItem === 'CONSUMO' ? 'material' : 'item' }}</p>
           </div>
         </div>
 
@@ -618,7 +618,7 @@
         </div>
       </section>
 
-      <section class="form-section" *ngIf="(form as any).tipoItem === 'CONSUMO'">
+      <section class="form-section" *ngIf="form.tipoItem === 'CONSUMO'">
         <div class="form-section-title">
           <ion-icon name="layers-outline"></ion-icon>
 
@@ -664,7 +664,7 @@
         </div>
       </section>
 
-      <section class="form-section" *ngIf="(form as any).tipoItem === 'CONSUMO'">
+      <section class="form-section" *ngIf="form.tipoItem === 'CONSUMO'">
         <div class="form-section-title">
           <ion-icon name="cash-outline"></ion-icon>
 

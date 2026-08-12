@@ -155,7 +155,7 @@ export class StockCategoriesPage implements OnInit {
     const flatten = (parentId: string, depth: number) => {
       const children = categoryMap.get(parentId) || [];
       for (const child of children) {
-        (child as any).level = depth;
+        child.level = depth;
         sorted.push(child);
         if (this.expandedCategories[child.id!] === undefined) {
           this.expandedCategories[child.id!] = false; // Collapse by default except root
@@ -169,7 +169,7 @@ export class StockCategoriesPage implements OnInit {
     // Add any orphaned children that weren't reached
     const orphaned = this.filteredCategories.filter(c => !sorted.find(s => s.id === c.id));
     for (const orphan of orphaned) {
-      (orphan as any).level = 0;
+      orphan.level = 0;
       sorted.push(orphan);
     }
     

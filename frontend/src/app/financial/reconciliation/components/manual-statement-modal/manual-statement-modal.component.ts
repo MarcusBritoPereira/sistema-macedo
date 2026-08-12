@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { IonicModule } from '@ionic/angular';
 
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { ModalController } from '@ionic/angular';
 import { format } from 'date-fns';
 
@@ -15,6 +15,8 @@ import { format } from 'date-fns';
 })
 export class ManualStatementModalComponent implements OnInit {
 
+  @Input() statement?: any;
+
   data: string = format(new Date(), 'yyyy-MM-dd');
   descricao: string = '';
   valor: string = '';
@@ -22,7 +24,14 @@ export class ManualStatementModalComponent implements OnInit {
 
   constructor(private modalCtrl: ModalController) { }
 
-  ngOnInit() {}
+  ngOnInit() {
+    if (this.statement) {
+      this.data = format(new Date(this.statement.data), 'yyyy-MM-dd');
+      this.descricao = this.statement.descricao;
+      this.tipo = this.statement.tipo;
+      this.valor = this.statement.valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+  }
 
   cancel() {
     this.modalCtrl.dismiss();

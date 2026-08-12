@@ -1,7 +1,10 @@
 import { IsBoolean, IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
-import { UnidadeMedidaMaterial } from '@prisma/client';
+import { UnidadeMedidaMaterial, TipoMaterial } from '@prisma/client';
 
 export class CreateStockMaterialDto {
+  @IsEnum(TipoMaterial)
+  @IsOptional()
+  tipoItem?: TipoMaterial;
   @IsString()
   codigo: string;
 

@@ -225,6 +225,14 @@
                             </ion-chip>
                         </div>
                         <div class="row-actions">
+                            <ion-button *ngIf="s.sourceType === 'MANUAL' && !s.conciliado" fill="clear" color="primary" size="small" class="action-btn"
+                                (click)="editManualStatement(s); $event.stopPropagation()" title="Editar Lançamento Manual">
+                                <ion-icon name="create-outline"></ion-icon>
+                            </ion-button>
+                            <ion-button *ngIf="s.sourceType === 'MANUAL' && !s.conciliado" fill="clear" color="danger" size="small" class="action-btn"
+                                (click)="deleteManualStatement(s); $event.stopPropagation()" title="Excluir Lançamento Manual">
+                                <ion-icon name="trash-outline"></ion-icon>
+                            </ion-button>
                             <ion-button fill="clear" size="small" class="action-btn"
                                 (click)="selectSimilar(s); $event.stopPropagation()" title="Selecionar similares">
                                 <ion-icon name="layers-outline"></ion-icon>

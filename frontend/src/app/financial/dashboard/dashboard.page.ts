@@ -282,13 +282,29 @@ export class DashboardPage implements OnInit {
     this.loadDashboard();
   }
 
-  onChartClick(event: any): void {
+  async onChartClick(event: any): Promise<void> {
     if (event.active && event.active.length > 0) {
       const index = event.active[0].index;
       if (index !== undefined && index >= 0 && index <= 11) {
         this.currentMonth = index;
         this.loadDashboard();
       }
+    }
+  }
+
+  async onSupplierChartClick(event: any): Promise<void> {
+    if (event.active && event.active.length > 0) {
+      const index = event.active[0].index;
+      const supplierName = this.data.supplierExpenses[index].name;
+      alert(`Fornecedor selecionado: ${supplierName}\n\nPara ver os lançamentos detalhados, acesse a aba 'Contas a Pagar' e pesquise por este fornecedor.`);
+    }
+  }
+
+  async onCostTypeChartClick(event: any): Promise<void> {
+    if (event.active && event.active.length > 0) {
+      const index = event.active[0].index;
+      const costTypeName = this.data.costTypeExpenses[index].name;
+      alert(`Centro de Custo selecionado: ${costTypeName}\n\nPara ver os lançamentos detalhados, acesse a aba 'Contas a Pagar' e pesquise por este centro de custo.`);
     }
   }
 }

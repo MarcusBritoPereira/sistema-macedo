@@ -171,4 +171,23 @@ export class ReconciliationController {
       data.tipo,
     );
   }
+
+  @Post('manual-statement/:id')
+  updateManualStatement(
+    @Param('id') id: string,
+    @Body()
+    data: {
+      data?: string;
+      descricao?: string;
+      valor?: number;
+      tipo?: 'CREDIT' | 'DEBIT';
+    },
+  ) {
+    return this.service.updateManualStatement(id, data);
+  }
+
+  @Delete('manual-statement/:id')
+  deleteManualStatement(@Param('id') id: string) {
+    return this.service.deleteManualStatement(id);
+  }
 }

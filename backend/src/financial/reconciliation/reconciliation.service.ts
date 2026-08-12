@@ -1639,4 +1639,55 @@ export class ReconciliationService {
 
     return extrato;
   }
+
+  async updateManualStatement(
+    id: string,
+    data: {
+      data?: string;
+      descricao?: string;
+      valor?: number;
+      tipo?: 'CREDIT' | 'DEBIT';
+    },
+  ) {
+    const extrato = await this.prisma.extratoBancario.findUnique({
+      where: { id },
+    });
+
+    if (!extrato) throw new NotFoundException('Lançamento não encontrado');
+    if (extrato.sourceType !== 'MANUAL') {
+      throw new BadRequestException('Apenas lançamentos manuais podem ser editados');
+    }
+    if (extrato.conciliado) {
+      throw new BadRequestException('Não é possível editar um lançamento já conciliado');
+    }
+
+    const updateData: any = {};
+    if (data.data) updateData.data = new Date(data.data);
+    if (data.descricao !== undefined) updateData.descricao = data.descricao;
+    if (data.valor !== undefined) updateData.valor = data.valor;
+    if (data.tipo !== undefined) updateData.tipo = data.tipo;
+
+    return this.prisma.extratoBancario.update({
+      where: { id },
+      data: updateData,
+    });
+  }
+
+  async deleteManualStatement(id: string) {
+    const extrato = await this.prisma.extratoBancario.findUnique({
+      where: { id },
+    });
+
+    if (!extrato) throw new NotFoundException('Lançamento não encontrado');
+    if (extrato.sourceType !== 'MANUAL') {
+      throw new BadRequestException('Apenas lançamentos manuais podem ser excluídos');
+    }
+    if (extrato.conciliado) {
+      throw new BadRequestException('Não é possível excluir um lançamento já conciliado');
+    }
+
+    return this.prisma.extratoBancario.delete({
+      where: { id },
+    });
+  }
 }

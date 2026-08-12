@@ -44,14 +44,10 @@
         <div class="filter-row">
             <div class="period-selector">
                 <div class="label-text">Período</div>
-                <div class="selector-box">
-                    <ion-button fill="clear" size="small" (click)="changePeriod(-1)">
-                        <ion-icon name="chevron-back" slot="icon-only"></ion-icon>
-                    </ion-button>
-                    <span class="current-period">{{ periodLabel }}</span>
-                    <ion-button fill="clear" size="small" (click)="changePeriod(1)">
-                        <ion-icon name="chevron-forward" slot="icon-only"></ion-icon>
-                    </ion-button>
+                <div class="selector-box" style="display: flex; gap: 8px; align-items: center; border: none; padding: 0;">
+                    <input type="date" [(ngModel)]="dataInicio" (change)="updateView()" class="form-control" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; outline: none; height: 32px;" />
+                    <span style="color: #64748b;">até</span>
+                    <input type="date" [(ngModel)]="dataFim" (change)="updateView()" class="form-control" style="border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; outline: none; height: 32px;" />
                 </div>
             </div>
 

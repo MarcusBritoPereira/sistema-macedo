@@ -774,6 +774,86 @@ export class ReconciliationPage implements OnInit, OnDestroy {
         });
     }
 
+    async editManualStatement(s: any) {
+        if (s.conciliado) {
+            this.showToast('Lançamento já conciliado não pode ser alterado.', 'warning');
+            return;
+        }
+        
+        const modal = await this.modalCtrl.create({
+            component: ManualStatementModalComponent,
+            componentProps: { statement: s },
+            cssClass: 'modal-medium'
+        });
+
+        await modal.present();
+
+        const { data, role } = await modal.onDidDismiss();
+
+        if (role === 'confirm' && data) {
+            const loader = await this.loadingCtrl.create({ message: 'Salvando...' });
+            await loader.present();
+    
+            this.reconciliationService.updateManualStatement(s.id, {
+                data: data.data,
+                descricao: data.descricao,
+                valor: Number(data.valor),
+                tipo: data.tipo
+            }).subscribe({
+                next: () => {
+                    loader.dismiss();
+                    this.showToast('Lançamento manual atualizado com sucesso!');
+                    this.loadStatements();
+                },
+                error: (err) => {
+                    loader.dismiss();
+                    const msg = err.error?.message || 'Erro ao atualizar lançamento manual.';
+                    this.showToast(msg, 'danger');
+                }
+            });
+        }
+    }
+
+    async deleteManualStatement(s: any) {
+        if (s.conciliado) {
+            this.showToast('Lançamento já conciliado não pode ser excluído.', 'warning');
+            return;
+        }
+
+        const alert = await this.alertCtrl.create({
+            header: 'Confirmação',
+            message: 'Deseja realmente excluir este lançamento manual?',
+            buttons: [
+                {
+                    text: 'Cancelar',
+                    role: 'cancel'
+                },
+                {
+                    text: 'Excluir',
+                    role: 'confirm',
+                    handler: async () => {
+                        const loader = await this.loadingCtrl.create({ message: 'Excluindo...' });
+                        await loader.present();
+                
+                        this.reconciliationService.deleteManualStatement(s.id).subscribe({
+                            next: () => {
+                                loader.dismiss();
+                                this.showToast('Lançamento manual excluído com sucesso!');
+                                this.loadStatements();
+                            },
+                            error: (err) => {
+                                loader.dismiss();
+                                const msg = err.error?.message || 'Erro ao excluir lançamento manual.';
+                                this.showToast(msg, 'danger');
+                            }
+                        });
+                    }
+                }
+            ]
+        });
+        await alert.present();
+    }
+
     cleanDescription(desc: string): string {
         if (!desc) return '';
         let cleaned = desc;

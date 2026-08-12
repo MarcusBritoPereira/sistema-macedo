@@ -146,7 +146,7 @@
                 [hidden]="!isCategoryVisible(category)"
               >
                 <td>
-                  <div class="category-cell" [style.padding-left]="(category.parentId || category.parent) ? '2rem' : '0'">
+                  <div class="category-cell" [style.padding-left.rem]="(category as any).level ? (category as any).level * 2 : 0">
                     <div class="category-icon" 
                          [style.cursor]="getChildrenCount(category) > 0 ? 'pointer' : 'default'"
                          (click)="getChildrenCount(category) > 0 ? toggleExpand(category.id) : null">

@@ -157,6 +157,7 @@
             baseChart
             [data]="supplierExpensesChart"
             [options]="chartOptions"
+            (chartClick)="onSupplierChartClick($event)"
             type="bar">
           </canvas>
         </div>
@@ -173,6 +174,7 @@
             baseChart
             [data]="costTypeExpensesChart"
             [options]="horizontalChartOptions"
+            (chartClick)="onCostTypeChartClick($event)"
             type="bar">
           </canvas>
         </div>

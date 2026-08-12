@@ -210,8 +210,8 @@ export class StockMaterialsPage implements OnInit {
         item.situacaoEstoque === this.stockFilter;
 
       const catName = this.normalize(item.categoriaMaterial?.nome || '');
-      const isTool = catName.includes('ferramenta');
-      const isEquipment = catName.includes('equipamento');
+      const isTool = (item as any).tipoItem === 'FERRAMENTA' || catName.includes('ferramenta');
+      const isEquipment = (item as any).tipoItem === 'EQUIPAMENTO' || catName.includes('equipamento');
       
       let matchesTab = true;
       if (this.tabFilter === 'FERRAMENTA' && !isTool) matchesTab = false;
@@ -539,6 +539,7 @@ export class StockMaterialsPage implements OnInit {
     return {
       codigo: '',
       nome: '',
+      tipoItem: 'CONSUMO' as any,
       descricao: '',
       categoriaMaterialId: '',
       unidade: 'UN',

@@ -142,25 +142,36 @@ export class StockCategoriesPage implements OnInit {
       return matchesSearch && matchesStatus && matchesLevel;
     });
 
-    // Sort to ensure children follow their parents
-    const roots = this.filteredCategories.filter(c => !c.parentId);
-    const children = this.filteredCategories.filter(c => Boolean(c.parentId));
-    
+    // Build a map for quick lookup
+    const categoryMap = new Map<string, StockCategory[]>();
+    this.filteredCategories.forEach(c => {
+      const parentId = c.parentId || 'root';
+      if (!categoryMap.has(parentId)) categoryMap.set(parentId, []);
+      categoryMap.get(parentId)!.push(c);
+    });
+
     const sorted: StockCategory[] = [];
-    for (const root of roots) {
-      sorted.push(root);
-      // Initialize as expanded if not set
-      if (this.expandedCategories[root.id!] === undefined) {
-        this.expandedCategories[root.id!] = true;
-      }
-      
-      const rootChildren = children.filter(c => c.parentId === root.id || c.parent?.id === root.id);
-      sorted.push(...rootChildren);
-    }
     
-    // Add any orphaned children (whose parents didn't match the filter)
-    const orphaned = children.filter(c => !sorted.find(s => s.id === c.id));
-    sorted.push(...orphaned);
+    const flatten = (parentId: string, depth: number) => {
+      const children = categoryMap.get(parentId) || [];
+      for (const child of children) {
+        (child as any).level = depth;
+        sorted.push(child);
+        if (this.expandedCategories[child.id!] === undefined) {
+          this.expandedCategories[child.id!] = false; // Collapse by default except root
+        }
+        flatten(child.id!, depth + 1);
+      }
+    };
+
+    flatten('root', 0);
+    
+    // Add any orphaned children that weren't reached
+    const orphaned = this.filteredCategories.filter(c => !sorted.find(s => s.id === c.id));
+    for (const orphan of orphaned) {
+      (orphan as any).level = 0;
+      sorted.push(orphan);
+    }
     
     this.filteredCategories = sorted;
   }
@@ -173,12 +184,19 @@ export class StockCategoriesPage implements OnInit {
   isCategoryVisible(category: StockCategory): boolean {
     if (!category.parentId && !category.parent?.id) return true; // Roots are always visible
     
-    const parentId = category.parentId || category.parent?.id;
-    if (parentId && this.expandedCategories[parentId] === false) {
-      // If we are searching, we might want to ignore the collapse state and show everything
-      if (this.search) return true; 
-      return false;
+    // If we are searching, show everything matching
+    if (this.search) return true; 
+
+    // Walk up the tree to see if any parent is collapsed
+    let currentParentId = category.parentId || category.parent?.id;
+    while (currentParentId) {
+      if (this.expandedCategories[currentParentId] === false) {
+        return false;
+      }
+      const parent = this.categories.find(c => c.id === currentParentId);
+      currentParentId = parent?.parentId || parent?.parent?.id;
     }
+
     return true;
   }
 

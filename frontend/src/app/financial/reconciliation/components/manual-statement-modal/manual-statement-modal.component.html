@@ -40,7 +40,7 @@
       </ion-item>
       <div class="actions">
           <ion-button expand="block" (click)="save()" [disabled]="!isValid()" color="primary">
-              Adicionar
+              {{ statement ? 'Salvar Alterações' : 'Adicionar' }}
           </ion-button>
       </div>
   </div>

@@ -263,6 +263,7 @@ export class StockMaterialsService {
     }
     if (dto.descricao !== undefined) data.descricao = cleanString(dto.descricao);
     if (dto.categoriaMaterialId !== undefined) data.categoriaMaterialId = dto.categoriaMaterialId;
+    if ((dto as any).tipoItem !== undefined) (data as any).tipoItem = (dto as any).tipoItem;
     if (dto.unidade !== undefined) data.unidade = dto.unidade;
     if (dto.codigoBarras !== undefined) data.codigoBarras = cleanString(dto.codigoBarras);
     if (dto.referenciaFornecedor !== undefined) data.referenciaFornecedor = cleanString(dto.referenciaFornecedor);

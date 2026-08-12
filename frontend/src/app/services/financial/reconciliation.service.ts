@@ -137,4 +137,12 @@ export class ReconciliationService {
             tipo
         });
     }
+
+    updateManualStatement(id: string, data: any): Observable<any> {
+        return this.api.post(`financial/reconciliation/manual-statement/${id}`, data);
+    }
+
+    deleteManualStatement(id: string): Observable<any> {
+        return this.api.delete(`financial/reconciliation/manual-statement/${id}`);
+    }
 }

@@ -973,11 +973,18 @@ model CategoriaMaterial {
   @@map("categorias_material")
 }
 
+enum TipoMaterial {
+  CONSUMO
+  FERRAMENTA
+  EQUIPAMENTO
+}
+
 model Material {
   id                  String @id @default(uuid())
   codigo              String @unique
   nome                String
   descricao           String?
+  tipoItem            TipoMaterial @default(CONSUMO) @map("tipo_item")
   categoriaMaterialId String @map("categoria_material_id")
   categoriaMaterial   CategoriaMaterial @relation(fields: [categoriaMaterialId], references: [id], onDelete: Restrict)
   unidade             UnidadeMedidaMaterial

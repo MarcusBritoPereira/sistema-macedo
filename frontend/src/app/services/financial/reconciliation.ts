@@ -58,6 +58,7 @@ export interface BankStatement {
     idTransacaoBanco?: string | null;
     valor: number;
     tipo: 'CREDIT' | 'DEBIT';
+    sourceType?: string;
     hash: string;
     conciliado: boolean;
     importacaoId?: string;

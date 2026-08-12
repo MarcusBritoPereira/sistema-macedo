@@ -6,7 +6,7 @@ import { IonContent, IonHeader, IonTitle, IonToolbar, IonButtons, IonMenuButton,
 import { FinancialService, Transaction } from '../../../services/financial/financial';
 import { addIcons } from 'ionicons';
 import { checkmarkCircleOutline, alertCircleOutline, timeOutline, calendarOutline, add, arrowDown, chevronBack, chevronForward, search, chevronDown, helpCircleOutline, trash, close } from 'ionicons/icons';
-import { format, parseISO, isSameDay, isBefore, isSameMonth, startOfDay } from 'date-fns';
+import { format, parseISO, isSameDay, isBefore, isSameMonth, startOfDay, startOfMonth, endOfMonth, isWithinInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { PopoverController } from '@ionic/angular/standalone';
 import { ActionsPopoverComponent } from '../../receivables/receivables-list/actions-popover.component';
@@ -21,6 +21,8 @@ import { ActionsPopoverComponent } from '../../receivables/receivables-list/acti
 })
 export class PayablesListPage implements OnInit {
     currentPeriod: Date = new Date();
+    dataInicio: string = format(startOfMonth(new Date()), 'yyyy-MM-dd');
+    dataFim: string = format(endOfMonth(new Date()), 'yyyy-MM-dd');
     allPayables: Transaction[] = [];
     displayedItems: Transaction[] = [];
     searchTerm: string = '';
@@ -74,10 +76,16 @@ export class PayablesListPage implements OnInit {
     updateView() {
         this.selectedIds.clear();
 
-        // 1. Filter items for the selected month (for the list view)
+        // 1. Filter items for the selected interval (for the list view)
         this.displayedItems = this.allPayables.filter(item => {
             const dueDate = parseISO(item.dataVencimento);
-            const matchesPeriod = isSameMonth(dueDate, this.currentPeriod);
+            const isLate = isBefore(dueDate, startOfDay(new Date())) && item.status !== 'REALIZADO' && item.status !== 'CONCILIADO';
+            
+            const start = parseISO(this.dataInicio);
+            const end = parseISO(this.dataFim);
+            end.setHours(23, 59, 59, 999);
+            
+            const matchesPeriod = isWithinInterval(dueDate, { start, end }) || isLate;
 
             if (!matchesPeriod) return false;
 

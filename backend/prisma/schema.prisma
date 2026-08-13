@@ -39,6 +39,7 @@ model Usuario {
   documentosEstoqueEfetivados DocumentoEstoque[] @relation("DocumentoEstoqueEfetivadoPor")
   inventariosCriados      InventarioEstoque[] @relation("InventarioEstoqueCriadoPor")
   inventariosAprovados    InventarioEstoque[] @relation("InventarioEstoqueAprovadoPor")
+  conciliacoes            ConciliacaoBancaria[]
   reservasSolicitadas     ReservaEstoque[] @relation("ReservaEstoqueSolicitadoPor")
   reservasAprovadas       ReservaEstoque[] @relation("ReservaEstoqueAprovadoPor")
   solicitacoesMateriais   SolicitacaoMaterial[] @relation("SolicitacaoMaterialSolicitante")

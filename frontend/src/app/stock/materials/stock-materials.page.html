@@ -735,7 +735,7 @@
           </label>
 
           <label>
-            <span>Local de estoque <span *ngIf="form.estoqueInicial && form.estoqueInicial > 0" style="color: red;">*</span></span>
+            <span>Local de estoque <span *ngIf="form.estoqueInicial && toNumber(form.estoqueInicial) > 0" style="color: red;">*</span></span>
             <select [(ngModel)]="form.localEstoqueInicialId">
               <option value="">Selecione...</option>
               <option

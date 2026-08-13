@@ -3,7 +3,13 @@
   <div class="reconciled-view" *ngIf="statement.conciliado">
     <div class="r-header">
       <ion-icon name="checkmark-circle-outline" color="success"></ion-icon>
-      <h3>Lançamento Conciliado</h3>
+      <div>
+        <h3>Lançamento Conciliado</h3>
+        <p class="conciliado-meta" *ngIf="statement.conciliacoes?.[0]">
+          Conciliado {{ statement.conciliacoes[0].usuario?.nome ? 'por ' + statement.conciliacoes[0].usuario.nome : 'pelo sistema' }}
+          em {{ formatDateTime(statement.conciliacoes[0].dataConciliacao) }}
+        </p>
+      </div>
     </div>
 
     <div

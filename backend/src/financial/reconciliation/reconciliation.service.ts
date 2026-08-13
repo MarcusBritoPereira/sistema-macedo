@@ -224,6 +224,7 @@ export class ReconciliationService {
           include: {
             conciliacoes: {
               include: {
+                usuario: true,
                 lancamentoFinanceiro: {
                   include: lancamentoDetailInclude,
                 },
@@ -304,6 +305,7 @@ export class ReconciliationService {
               include: {
                 conciliacoes: {
                   include: {
+                    usuario: true,
                     lancamentoFinanceiro: {
                       include: lancamentoDetailInclude,
                     },
@@ -781,6 +783,7 @@ export class ReconciliationService {
           extratoBancarioId: statementId,
           lancamentoFinanceiroId: lancamentoId,
           type: 'MANUAL_LINK',
+          usuarioId: userId,
         },
       });
 
@@ -934,6 +937,7 @@ export class ReconciliationService {
           extratoBancarioId: statementId,
           lancamentoFinanceiroId: lancamentoId,
           type: 'MANUAL_LINK',
+          usuarioId: userId,
         },
       });
 
@@ -1019,6 +1023,7 @@ export class ReconciliationService {
           extratoBancarioId: statementId,
           lancamentoFinanceiroId: lancamentoId,
           type: 'MANUAL_LINK',
+          usuarioId: userId,
         },
       });
 
@@ -1306,6 +1311,7 @@ export class ReconciliationService {
             extratoBancarioId: statementId,
             lancamentoFinanceiroId: lancamentoOrigem.id,
             type: 'MANUAL_CREATE',
+            usuarioId: userId,
           },
         });
 
@@ -1369,6 +1375,7 @@ export class ReconciliationService {
             extratoBancarioId: statementId,
             lancamentoFinanceiroId: lancamento.id,
             type: 'MANUAL_CREATE',
+            usuarioId: userId,
           },
         });
 

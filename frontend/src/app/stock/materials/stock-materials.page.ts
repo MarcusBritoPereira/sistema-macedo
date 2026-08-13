@@ -372,9 +372,21 @@ export class StockMaterialsPage implements OnInit {
       error: async (error) => {
         this.saving = false;
 
-        const message =
-          error?.error?.message ||
-          'Não foi possível salvar o material.';
+        let message = 'Não foi possível salvar o material.';
+        
+        if (error?.error?.message) {
+          if (Array.isArray(error.error.message)) {
+            message = error.error.message.join(', ');
+          } else {
+            message = error.error.message;
+          }
+        }
+        
+        if (message.includes('Unique constraint failed on the fields: (`codigo`)')) {
+          message = 'Já existe um material com este código.';
+        } else if (message.includes('Unique constraint failed')) {
+          message = 'Já existe um registro com estes dados únicos no sistema.';
+        }
 
         await this.showToast(message, 'danger');
       },

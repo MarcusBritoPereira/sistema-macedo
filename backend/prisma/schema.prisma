@@ -399,6 +399,9 @@ model ConciliacaoBancaria {
   extratoBancarioId String          @unique
   extratoBancario   ExtratoBancario @relation(fields: [extratoBancarioId], references: [id])
 
+  usuarioId String?
+  usuario   User?  @relation(fields: [usuarioId], references: [id])
+
   recebimento RecebimentoLancamento?
 
   @@index([lancamentoFinanceiroId], map: "idx_conciliacao_lancamento")

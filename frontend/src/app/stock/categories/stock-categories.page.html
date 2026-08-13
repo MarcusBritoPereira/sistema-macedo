@@ -310,6 +310,8 @@
               type="text"
               [(ngModel)]="form.nome"
               placeholder="Ex.: Materiais elétricos"
+              style="text-transform: uppercase;"
+              (input)="form.nome = $event.target.value.toUpperCase()"
             />
           </label>
 

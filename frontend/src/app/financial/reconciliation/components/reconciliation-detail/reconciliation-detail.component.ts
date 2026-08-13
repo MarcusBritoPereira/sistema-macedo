@@ -489,6 +489,15 @@ export class ReconciliationDetailComponent
     }
   }
 
+  formatDateTime(dateStr: string | Date | undefined) {
+    if (!dateStr) return '-';
+    try {
+      return new Date(dateStr).toLocaleString('pt-BR');
+    } catch (e) {
+      return '-';
+    }
+  }
+
   loadAuxData() {
     this.loadingAux = true;
     const targetType = this.statement.tipo === 'CREDIT' ? 'RECEITA' : 'DESPESA';

@@ -26,17 +26,11 @@
 
         <!-- Fornecedor / Data / Valor -->
         <div class="input-row">
-          <div class="input-group flex-2">
-            <label>{{ type === 'receivables' ? 'Cliente' : 'Fornecedor' }}</label>
+          <div class="input-group flex-2" *ngIf="type === 'payables'">
+            <label>Fornecedor</label>
             <div style="display: flex; gap: 8px; width: 100%;">
-              <!-- Cliente Select -->
-              <select *ngIf="type === 'receivables'" formControlName="clienteId" (change)="onClientChange($event)" class="clean-input" style="flex: 1;">
-                <option value="" disabled selected>Selecione</option>
-                <option value="NEW_CLIENT" style="font-weight: bold; color: var(--ion-color-primary);">+ Novo Cliente</option>
-                <option *ngFor="let client of clients" [value]="client.id">{{ client.razaoSocial }}</option>
-              </select>
               <!-- Fornecedor Select -->
-              <select *ngIf="type === 'payables'" formControlName="fornecedorId" (change)="onSupplierChange($event)" class="clean-input" style="flex: 1;">
+              <select formControlName="fornecedorId" (change)="onSupplierChange($event)" class="clean-input" style="flex: 1;">
                 <option value="" disabled selected>Selecione</option>
                 <option value="NEW_SUPPLIER" style="font-weight: bold; color: var(--ion-color-primary);">+ Novo Fornecedor</option>
                 <option *ngFor="let supplier of suppliers" [value]="supplier.id">{{ supplier.nomeFantasia }}</option>
@@ -117,7 +111,7 @@
 
         <div class="input-row" *ngIf="type === 'receivables'">
           <div class="input-group flex-1">
-            <label>Obra vinculada (Opcional)</label>
+            <label>Obra vinculada *</label>
             <select formControlName="obraId" class="clean-input">
               <option value="" disabled selected>Nenhuma</option>
               <option *ngFor="let obra of obras" [value]="obra.id">{{ obra.nome }}</option>
@@ -148,8 +142,8 @@
             </select>
           </div>
 
-          <div class="input-group flex-1" *ngIf="type === 'payables'">
-            <label>Centro de custo</label>
+          <div class="input-group flex-1">
+            <label>Centro de custo *</label>
             <select formControlName="centroCustoId" class="clean-input">
               <option value="" disabled selected>Selecione</option>
               <option *ngFor="let cc of costCenters" [value]="cc.id">{{ cc.nome }}</option>

@@ -106,6 +106,7 @@ export class TransactionModalComponent implements OnInit {
             this.formData.valor > 0 &&
             this.formData.dataVencimento &&
             this.formData.categoriaId &&
+            this.formData.centroCustoId &&
             this.formData.contaBancariaId;
     }
 

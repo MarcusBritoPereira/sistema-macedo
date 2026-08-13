@@ -22,26 +22,54 @@ export class UserDetailPage implements OnInit {
   toastMessage = '';
   isToastOpen = false;
 
-  permissionsKeys = [
-    { key: 'visao_geral', label: 'Visão Geral' },
-    { key: 'outras_contas', label: 'Outras Contas' },
-    { key: 'conciliacao', label: 'Conciliação Bancária' },
-    { key: 'competencia', label: 'Visão de competência' },
-    { key: 'pagar', label: 'Contas a Pagar' },
-    { key: 'receber', label: 'Contas a Receber' },
-    { key: 'extrato', label: 'Extrato de movimentação' },
-    { key: 'fluxo_caixa', label: 'Fluxo de Caixa' },
-    { key: 'relatorios', label: 'Relatórios' },
-    { key: 'dre', label: 'DRE Gerencial' },
-    { key: 'categorias', label: 'Categorias' },
-    { key: 'clientes', label: 'Clientes' },
-    { key: 'fornecedores', label: 'Fornecedores' },
-    { key: 'centros_custo', label: 'Centros de Custo' },
-    { key: 'obras', label: 'Gestão de Obras' },
-    { key: 'usuarios', label: 'Usuários (Sistema)' },
-    { key: 'integracao', label: 'Integração Bancária' },
-    { key: 'historico', label: 'Histórico' }
+  permissionGroups = [
+    {
+      title: 'Financeiro',
+      permissions: [
+        { key: 'visao_geral', label: 'Visão Geral (Dashboard)' },
+        { key: 'outras_contas', label: 'Outras Contas' },
+        { key: 'conciliacao', label: 'Conciliação Bancária' },
+        { key: 'competencia', label: 'Visão de Competência' },
+        { key: 'pagar', label: 'Contas a Pagar' },
+        { key: 'receber', label: 'Contas a Receber' },
+        { key: 'extrato', label: 'Extrato de Movimentação' },
+        { key: 'fluxo_caixa', label: 'Fluxo de Caixa' },
+        { key: 'dre', label: 'DRE Gerencial' },
+        { key: 'relatorios', label: 'Relatórios Financeiros' }
+      ]
+    },
+    {
+      title: 'Administrativo / Configurações',
+      permissions: [
+        { key: 'categorias', label: 'Categorias' },
+        { key: 'clientes', label: 'Clientes' },
+        { key: 'fornecedores', label: 'Fornecedores' },
+        { key: 'centros_custo', label: 'Centros de Custo' },
+        { key: 'obras', label: 'Gestão de Obras' },
+        { key: 'usuarios', label: 'Usuários (Sistema)' },
+        { key: 'integracao', label: 'Integração Bancária' },
+        { key: 'historico', label: 'Histórico' }
+      ]
+    },
+    {
+      title: 'Estoque / Almoxarifado',
+      permissions: [
+        { key: 'ESTOQUE_VISUALIZAR', label: 'Visão Geral e Consultas' },
+        { key: 'ESTOQUE_CONFIGURACOES', label: 'Configurações de Estoque' },
+        { key: 'ESTOQUE_LOCAL_GERENCIAR', label: 'Gerenciar Locais' },
+        { key: 'ESTOQUE_ENTRADA_CRIAR', label: 'Criar Entradas' },
+        { key: 'ESTOQUE_SAIDA_CRIAR', label: 'Criar Saídas' },
+        { key: 'ESTOQUE_TRANSFERIR', label: 'Transferências' },
+        { key: 'ESTOQUE_SOLICITAR', label: 'Solicitações' },
+        { key: 'ESTOQUE_INVENTARIO_CRIAR', label: 'Inventários' },
+        { key: 'ESTOQUE_RELATORIOS', label: 'Relatórios de Estoque' }
+      ]
+    }
   ];
+
+  get permissionsKeys() {
+    return this.permissionGroups.reduce((acc, group) => acc.concat(group.permissions), [] as any[]);
+  }
 
   constructor(
     private fb: FormBuilder,

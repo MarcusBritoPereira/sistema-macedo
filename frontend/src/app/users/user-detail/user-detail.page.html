@@ -61,17 +61,20 @@
         <p>Selecione as áreas que este usuário pode acessar (ignoradas se for Administrador).</p>
       </div>
 
-      <ion-card class="form-card">
-        <ion-grid formGroupName="permissoes">
-          <ion-row>
-            <ion-col size="12" size-md="6" *ngFor="let perm of permissionsKeys">
-              <ion-item lines="none" class="permission-item">
-                <ion-checkbox [formControlName]="perm.key" labelPlacement="end" justify="start">{{ perm.label }}</ion-checkbox>
-              </ion-item>
-            </ion-col>
-          </ion-row>
-        </ion-grid>
-      </ion-card>
+      <div *ngFor="let group of permissionGroups" class="permissions-group" style="margin-bottom: 24px;">
+        <h3 style="font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 12px;">{{ group.title }}</h3>
+        <ion-card class="form-card" style="margin-top: 0;">
+          <ion-grid formGroupName="permissoes">
+            <ion-row>
+              <ion-col size="12" size-md="6" *ngFor="let perm of group.permissions">
+                <ion-item lines="none" class="permission-item">
+                  <ion-checkbox [formControlName]="perm.key" labelPlacement="end" justify="start">{{ perm.label }}</ion-checkbox>
+                </ion-item>
+              </ion-col>
+            </ion-row>
+          </ion-grid>
+        </ion-card>
+      </div>
 
       <div class="form-actions">
         <p class="helper-text">Os campos com dados sensíveis impactam permissões de acesso.</p>

@@ -74,7 +74,7 @@ export class FinancialDetailPage implements OnInit {
       categoriaCusto: [''],
       categoriaId: ['', [Validators.required]], // Strictly required from startup!
       subcategoriaId: [''],
-      centroCustoId: [''],
+      centroCustoId: ['', [Validators.required]],
       codigoReferencia: [''],
 
       // Payment Condition
@@ -509,12 +509,16 @@ export class FinancialDetailPage implements OnInit {
           role: 'destructive',
           handler: () => {
             if (this.itemId) {
+              if (this.itemData && this.itemData.status === 'CONCILIADO') {
+                this.showToast('Não é possível excluir um lançamento já conciliado. Desconcilie primeiro.');
+                return;
+              }
               this.financialService.deleteTransaction(this.itemId).subscribe({
                 next: () => {
                   this.showToast('Registro excluído com sucesso!');
                   this.router.navigate(['/financial']);
                 },
-                error: () => this.showToast('Erro ao excluir registro.')
+                error: (err) => this.showToast(err.error?.message || 'Erro ao excluir registro.')
               });
             }
           }

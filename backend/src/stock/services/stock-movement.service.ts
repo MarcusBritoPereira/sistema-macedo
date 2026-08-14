@@ -647,6 +647,19 @@ export class StockMovementService {
   }
 
   private async nextMovementNumber(tx: Tx) {
+    const lastMovement = await tx.movimentoEstoque.findFirst({
+      orderBy: { numero: 'desc' },
+      select: { numero: true },
+    });
+
+    if (lastMovement && lastMovement.numero) {
+      const parts = lastMovement.numero.split('-');
+      if (parts.length === 2 && !isNaN(Number(parts[1]))) {
+        const nextNum = Number(parts[1]) + 1;
+        return `EST-${String(nextNum).padStart(8, '0')}`;
+      }
+    }
+
     const count = await tx.movimentoEstoque.count();
     return `EST-${String(count + 1).padStart(8, '0')}`;
   }

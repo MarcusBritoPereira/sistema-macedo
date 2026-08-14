@@ -31,7 +31,6 @@ export class StockMaterialsService {
       dto.codigo,
       dto.codigoBarras,
       undefined,
-      data.nome as string,
     );
     await this.ensureActiveCategory(data.categoriaMaterialId as string);
 
@@ -211,7 +210,6 @@ export class StockMaterialsService {
         data.codigo as string | undefined,
         data.codigoBarras as string | null | undefined,
         id,
-        data.nome as string | undefined,
       );
     }
     if (data.categoriaMaterialId)
@@ -380,25 +378,18 @@ export class StockMaterialsService {
     codigo?: string,
     codigoBarras?: string | null,
     currentId?: string,
-    nome?: string,
   ) {
     const or: Prisma.MaterialWhereInput[] = [];
     if (codigo) or.push({ codigo });
     if (codigoBarras) or.push({ codigoBarras });
-    if (nome) or.push({ nome: { equals: nome, mode: 'insensitive' } });
 
     if (!or.length) return;
     const existing = await this.prisma.material.findFirst({
       where: { OR: or, ...(currentId ? { id: { not: currentId } } : {}) },
-      select: { id: true, codigo: true, codigoBarras: true, nome: true },
+      select: { id: true, codigo: true, codigoBarras: true },
     });
 
     if (existing) {
-      if (nome && existing.nome.toLowerCase() === nome.toLowerCase()) {
-        throw new ConflictException(
-          'Já existe um material cadastrado com este nome exato',
-        );
-      }
       throw new ConflictException(
         'Código ou código de barras já cadastrado para outro material',
       );

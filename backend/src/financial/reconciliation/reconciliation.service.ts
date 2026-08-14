@@ -437,10 +437,7 @@ export class ReconciliationService {
     });
   }
 
-  async getOpenReceivables(filters?: {
-    clienteId?: string;
-    search?: string;
-  }) {
+  async getOpenReceivables(filters?: { clienteId?: string; search?: string }) {
     const where: any = {
       tipo: 'RECEITA',
       status: {
@@ -534,10 +531,7 @@ export class ReconciliationService {
       .filter((lancamento) => lancamento.saldoReceber > 0.009);
   }
 
-  async getOpenPayables(filters?: {
-    fornecedorId?: string;
-    search?: string;
-  }) {
+  async getOpenPayables(filters?: { fornecedorId?: string; search?: string }) {
     const where: any = {
       tipo: 'DESPESA',
       status: {
@@ -622,10 +616,7 @@ export class ReconciliationService {
       .filter((lancamento) => lancamento.saldoReceber > 0.009);
   }
 
-  private async recalculateReceivableStatus(
-    tx: any,
-    lancamentoId: string,
-  ) {
+  private async recalculateReceivableStatus(tx: any, lancamentoId: string) {
     const lancamento = await tx.lancamentoFinanceiro.findUnique({
       where: {
         id: lancamentoId,
@@ -646,8 +637,7 @@ export class ReconciliationService {
     const valorOriginal = Number(lancamento.valor);
 
     const valorRecebido = lancamento.recebimentos.reduce(
-      (total: number, recebimento: any) =>
-        total + Number(recebimento.valor),
+      (total: number, recebimento: any) => total + Number(recebimento.valor),
       0,
     );
 
@@ -660,8 +650,7 @@ export class ReconciliationService {
 
     if (valorRecebido >= valorOriginal - 0.009) {
       status = 'CONCILIADO';
-      dataPagamento =
-        lancamento.recebimentos[0]?.dataRecebimento || new Date();
+      dataPagamento = lancamento.recebimentos[0]?.dataRecebimento || new Date();
     } else if (valorRecebido > 0.009) {
       status = 'PARCIAL';
     }
@@ -765,9 +754,7 @@ export class ReconciliationService {
       const valorPagamento = Math.abs(Number(statement.valor));
 
       if (!Number.isFinite(valorPagamento) || valorPagamento <= 0) {
-        throw new BadRequestException(
-          'O valor do crédito bancário é inválido',
-        );
+        throw new BadRequestException('O valor do crédito bancário é inválido');
       }
 
       if (valorPagamento > saldoAtual + 0.009) {
@@ -919,9 +906,7 @@ export class ReconciliationService {
       const valorPagamento = Math.abs(Number(statement.valor));
 
       if (!Number.isFinite(valorPagamento) || valorPagamento <= 0) {
-        throw new BadRequestException(
-          'O valor do débito bancário é inválido',
-        );
+        throw new BadRequestException('O valor do débito bancário é inválido');
       }
 
       if (valorPagamento > saldoAtual + 0.009) {
@@ -1083,7 +1068,7 @@ export class ReconciliationService {
 
       const categoriaId = sanitize(data.categoriaId);
       const centroCustoId = sanitize(data.centroCustoId);
-      let fornecedorId = sanitize(data.fornecedorId);
+      const fornecedorId = sanitize(data.fornecedorId);
       let clienteId = sanitize(data.clienteId);
       const dataCompetencia = sanitize(data.dataCompetencia);
       const obraId = sanitize(data.obraId);
@@ -1147,10 +1132,7 @@ export class ReconciliationService {
               camposAusentes.push('centro de custo');
             }
 
-            if (
-              rateio.tipoCusto === 'MATERIAL' &&
-              !rateio.categoriaCusto
-            ) {
+            if (rateio.tipoCusto === 'MATERIAL' && !rateio.categoriaCusto) {
               camposAusentes.push('material/insumo');
             }
 
@@ -1233,21 +1215,13 @@ export class ReconciliationService {
         }
       }
 
-      if (
-        !isTransfer &&
-        statement.tipo !== 'CREDIT' &&
-        !fornecedorId
-      ) {
+      if (!isTransfer && statement.tipo !== 'CREDIT' && !fornecedorId) {
         throw new BadRequestException(
           'Fornecedor é obrigatório para conciliar um pagamento.',
         );
       }
 
-      if (
-        !isTransfer &&
-        statement.tipo === 'CREDIT' &&
-        !clienteId
-      ) {
+      if (!isTransfer && statement.tipo === 'CREDIT' && !clienteId) {
         const suggestion = await this.suggestEntityForStatement({
           tipo: statement.tipo,
           descricao: data.descricao || statement.descricao,
@@ -1608,8 +1582,8 @@ export class ReconciliationService {
     tipo: 'CREDIT' | 'DEBIT',
   ) {
     const data = new Date(dataStr);
-    
-    // We need an importacao for the ExtratoBancario. 
+
+    // We need an importacao for the ExtratoBancario.
     // We will find or create a manual one for this account.
     let importacao = await this.prisma.importacaoBancaria.findFirst({
       where: {
@@ -1662,10 +1636,14 @@ export class ReconciliationService {
 
     if (!extrato) throw new NotFoundException('Lançamento não encontrado');
     if (extrato.sourceType !== 'MANUAL') {
-      throw new BadRequestException('Apenas lançamentos manuais podem ser editados');
+      throw new BadRequestException(
+        'Apenas lançamentos manuais podem ser editados',
+      );
     }
     if (extrato.conciliado) {
-      throw new BadRequestException('Não é possível editar um lançamento já conciliado');
+      throw new BadRequestException(
+        'Não é possível editar um lançamento já conciliado',
+      );
     }
 
     const updateData: any = {};
@@ -1687,10 +1665,14 @@ export class ReconciliationService {
 
     if (!extrato) throw new NotFoundException('Lançamento não encontrado');
     if (extrato.sourceType !== 'MANUAL') {
-      throw new BadRequestException('Apenas lançamentos manuais podem ser excluídos');
+      throw new BadRequestException(
+        'Apenas lançamentos manuais podem ser excluídos',
+      );
     }
     if (extrato.conciliado) {
-      throw new BadRequestException('Não é possível excluir um lançamento já conciliado');
+      throw new BadRequestException(
+        'Não é possível excluir um lançamento já conciliado',
+      );
     }
 
     return this.prisma.extratoBancario.delete({

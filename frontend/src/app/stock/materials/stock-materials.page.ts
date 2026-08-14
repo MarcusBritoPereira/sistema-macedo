@@ -317,7 +317,7 @@ export class StockMaterialsPage implements OnInit {
 
     this.saving = true;
 
-    const payload: StockMaterial = {
+    const payload: Partial<StockMaterial> = {
       ...this.form,
       codigo: this.form.codigo.trim(),
       nome: this.form.nome.trim(),
@@ -340,19 +340,27 @@ export class StockMaterialsPage implements OnInit {
 
     if (!payload.id) {
       if (this.form.estoqueInicial && Number(this.form.estoqueInicial) > 0) {
+        if (!this.form.localEstoqueInicialId) {
+          this.showToast('Você informou um estoque inicial. Por favor, selecione o Local de Estoque.', 'warning');
+          this.saving = false;
+          return;
+        }
+        
         payload.estoqueInicial = String(this.form.estoqueInicial);
         if (this.form.custoUnitarioInicial) {
           payload.custoUnitarioInicial = String(this.form.custoUnitarioInicial);
         }
-        if (this.form.localEstoqueInicialId) {
-          payload.localEstoqueInicialId = this.form.localEstoqueInicialId;
-        }
+        payload.localEstoqueInicialId = this.form.localEstoqueInicialId;
+      } else {
+        delete payload.estoqueInicial;
+        delete payload.custoUnitarioInicial;
+        delete payload.localEstoqueInicialId;
       }
     }
 
     const request = payload.id
-      ? this.stock.updateMaterial(payload.id, payload)
-      : this.stock.createMaterial(payload);
+      ? this.stock.updateMaterial(payload.id, payload as StockMaterial)
+      : this.stock.createMaterial(payload as StockMaterial);
 
     request.subscribe({
       next: async () => {

@@ -40,7 +40,9 @@ export class FinancialBudgetService {
   }
 
   getTemplate(res: Response) {
-    const csv = Papa.unparse([{ mes: '1', ano: '2026', receitaMeta: '1000.00', despesaMeta: '500.00' }]);
+    const csv = Papa.unparse([
+      { mes: '1', ano: '2026', receitaMeta: '1000.00', despesaMeta: '500.00' },
+    ]);
     res.header('Content-Type', 'text/csv');
     res.attachment('orcamentos_modelo.csv');
     return res.send(csv);
@@ -48,11 +50,15 @@ export class FinancialBudgetService {
 
   async importCsv(file: Express.Multer.File) {
     const csvData = file.buffer.toString('utf-8');
-    const { data } = Papa.parse(csvData, { header: true, skipEmptyLines: true });
+    const { data } = Papa.parse(csvData, {
+      header: true,
+      skipEmptyLines: true,
+    });
     let count = 0;
-    
+
     for (const row of data as any[]) {
-      if (!row.mes || !row.ano || !row.receitaMeta || !row.despesaMeta) continue;
+      if (!row.mes || !row.ano || !row.receitaMeta || !row.despesaMeta)
+        continue;
 
       const mes = parseInt(row.mes);
       const ano = parseInt(row.ano);

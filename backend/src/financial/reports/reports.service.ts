@@ -33,13 +33,13 @@ export class ReportsService {
 
   private async obterIdsHierarquia(centroCustoId: string): Promise<string[]> {
     const ccs = await this.prisma.centroCusto.findMany({
-      select: { id: true, parentId: true }
+      select: { id: true, parentId: true },
     });
 
     const filhos: string[] = [centroCustoId];
     const processar = (id: string) => {
-      const directChildren = ccs.filter(c => c.parentId === id);
-      directChildren.forEach(child => {
+      const directChildren = ccs.filter((c) => c.parentId === id);
+      directChildren.forEach((child) => {
         filhos.push(child.id);
         processar(child.id);
       });
@@ -49,12 +49,12 @@ export class ReportsService {
     return filhos;
   }
 
-
   private readonly reports: ReportDefinition[] = [
     {
       id: 'budget',
       title: 'Orçado x Realizado (Gestão de Obras)',
-      description: 'Acompanhamento detalhado de desvios e variações de despesas das obras contra o orçamento previsto.',
+      description:
+        'Acompanhamento detalhado de desvios e variações de despesas das obras contra o orçamento previsto.',
       cadence: 'Mensal',
       category: 'Gestão de Obras',
       tags: ['Obras', 'Controle'],
@@ -69,7 +69,8 @@ export class ReportsService {
     {
       id: 'cost-centers',
       title: 'Desempenho por Centro de Custo (Obras)',
-      description: 'Consolidação gerencial de custos e investimentos integrados por obra e WBS.',
+      description:
+        'Consolidação gerencial de custos e investimentos integrados por obra e WBS.',
       cadence: 'Mensal',
       category: 'Gestão de Obras',
       tags: ['Obras', 'Gerencial'],
@@ -84,7 +85,8 @@ export class ReportsService {
     {
       id: 'obras-abc',
       title: 'Curva ABC e Custos por Obra',
-      description: 'Análise de curva ABC de insumos e custos detalhados (mão de obra, materiais) por Obra.',
+      description:
+        'Análise de curva ABC de insumos e custos detalhados (mão de obra, materiais) por Obra.',
       cadence: 'Mensal',
       category: 'Gestão de Obras',
       tags: ['Obras', 'ABC', 'Custos'],
@@ -556,9 +558,9 @@ export class ReportsService {
     const budgetedCenters = await this.prisma.centroCusto.findMany({
       where: {
         orcamentoPrevisto: { not: null },
-        ativo: true
+        ativo: true,
       },
-      orderBy: { codigo: 'asc' }
+      orderBy: { codigo: 'asc' },
     });
 
     const details: any[] = [];
@@ -574,23 +576,26 @@ export class ReportsService {
 
     for (const c of budgetedCenters) {
       const budget = Number(c.orcamentoPrevisto || 0);
-      
+
       // Get all recursive child IDs for rollup
       const ccIds = await this.obterIdsHierarquia(c.id);
-      
+
       // Query transactions under these cost centers
       const transactions = await this.prisma.lancamentoFinanceiro.findMany({
         where: {
           dataVencimento: { gte: startDate, lte: endDate },
           status: { in: ['REALIZADO', 'CONCILIADO'] },
           tipo: 'DESPESA',
-          centroCustoId: { in: ccIds }
+          centroCustoId: { in: ccIds },
         },
-        select: { valor: true }
+        select: { valor: true },
       });
 
-      const realValue = transactions.reduce((sum, t) => sum + Math.abs(Number(t.valor)), 0);
-      
+      const realValue = transactions.reduce(
+        (sum, t) => sum + Math.abs(Number(t.valor)),
+        0,
+      );
+
       totalBudget += budget;
       totalReal += realValue;
 
@@ -641,7 +646,10 @@ export class ReportsService {
 
     const totalVariance = totalReal - totalBudget;
     details.push({
-      label: totalVariance > 0 ? 'Diferença Consolidada (Estouro Total)' : 'Diferença Consolidada (Economia Total)',
+      label:
+        totalVariance > 0
+          ? 'Diferença Consolidada (Estouro Total)'
+          : 'Diferença Consolidada (Economia Total)',
       value: Math.abs(totalVariance),
       level: 0,
       type: 'total',
@@ -811,7 +819,7 @@ export class ReportsService {
     let totalGeral = 0;
 
     for (const obra of obras) {
-      const transObra = transactions.filter(t => t.obraId === obra.id);
+      const transObra = transactions.filter((t) => t.obraId === obra.id);
       if (transObra.length === 0) continue;
 
       let maoDeObra = 0;
@@ -829,21 +837,27 @@ export class ReportsService {
       totalGeral += totalObra;
 
       details.push({ label: `Obra: ${obra.nome}`, value: totalObra, level: 1 });
-      if (maoDeObra > 0) details.push({ label: 'Mão de Obra', value: maoDeObra, level: 2 });
-      if (material > 0) details.push({ label: 'Material', value: material, level: 2 });
-      if (outros > 0) details.push({ label: 'Outros Custos', value: outros, level: 2 });
+      if (maoDeObra > 0)
+        details.push({ label: 'Mão de Obra', value: maoDeObra, level: 2 });
+      if (material > 0)
+        details.push({ label: 'Material', value: material, level: 2 });
+      if (outros > 0)
+        details.push({ label: 'Outros Custos', value: outros, level: 2 });
     }
 
     // Curva ABC
     const insumosAgregados: Record<string, number> = {};
     for (const t of transactions) {
       if (t.tipoCusto === 'MATERIAL' && t.categoriaCusto) {
-        insumosAgregados[t.categoriaCusto] = (insumosAgregados[t.categoriaCusto] || 0) + Math.abs(Number(t.valor));
+        insumosAgregados[t.categoriaCusto] =
+          (insumosAgregados[t.categoriaCusto] || 0) + Math.abs(Number(t.valor));
       }
     }
 
-    const insumosSorted = Object.entries(insumosAgregados).sort((a, b) => b[1] - a[1]);
-    
+    const insumosSorted = Object.entries(insumosAgregados).sort(
+      (a, b) => b[1] - a[1],
+    );
+
     details.push({
       label: 'Curva ABC - Materiais Mais Representativos',
       value: 0,
@@ -876,18 +890,18 @@ export class ReportsService {
     }
 
     const where: any = {
-      status: { in: ['REALIZADO', 'CONCILIADO'] }
+      status: { in: ['REALIZADO', 'CONCILIADO'] },
     };
-    
+
     if (filters.obraId && filters.obraId !== 'all') {
       where.obraId = filters.obraId;
     }
-    
+
     if (filters.centroCustoId && filters.centroCustoId !== 'all') {
       const ccIds = await this.obterIdsHierarquia(filters.centroCustoId);
       where.centroCustoId = { in: ccIds };
     }
-    
+
     if (startDate || endDate) {
       where.dataVencimento = {};
       if (startDate) where.dataVencimento.gte = startDate;
@@ -899,25 +913,30 @@ export class ReportsService {
       include: {
         obra: true,
         categoria: true,
-      }
+      },
     });
 
     // Base KPIs
     let valorTotalObra = 0;
-    
+
     if (filters.obraId && filters.obraId !== 'all') {
-      const obra = await this.prisma.obra.findUnique({ where: { id: filters.obraId } });
+      const obra = await this.prisma.obra.findUnique({
+        where: { id: filters.obraId },
+      });
       valorTotalObra = Number(obra?.orcamentoPrevisto || 0);
     } else {
       // Sum of all active budgets if no specific obra is selected
       const obras = await this.prisma.obra.findMany({ where: { ativo: true } });
-      valorTotalObra = obras.reduce((sum, o) => sum + Number(o.orcamentoPrevisto || 0), 0);
+      valorTotalObra = obras.reduce(
+        (sum, o) => sum + Number(o.orcamentoPrevisto || 0),
+        0,
+      );
     }
 
     let valorGastoObra = 0;
     let materialCost = 0;
     let laborCost = 0;
-    
+
     // Chart Groupings
     const materialItems: Record<string, number> = {};
     const laborItems: Record<string, number> = {};
@@ -940,18 +959,24 @@ export class ReportsService {
       }
 
       // Stages (using category name or classification for grouping if available)
-      const stageName = t.tipoLancamento === 'OBRA' ? 'Estrutura' : 'Instalações'; // Fallback if no real stage
+      const stageName =
+        t.tipoLancamento === 'OBRA' ? 'Estrutura' : 'Instalações'; // Fallback if no real stage
       stageItems[stageName] = (stageItems[stageName] || 0) + val;
 
       // Months
       if (t.dataVencimento) {
         const date = new Date(t.dataVencimento);
-        const monthStr = date.toLocaleString('pt-BR', { month: 'short', year: 'numeric' }).toUpperCase();
+        const monthStr = date
+          .toLocaleString('pt-BR', { month: 'short', year: 'numeric' })
+          .toUpperCase();
         monthItems[monthStr] = (monthItems[monthStr] || 0) + val;
       }
     }
 
-    const porcentagemGasta = valorTotalObra > 0 ? Math.round((valorGastoObra / valorTotalObra) * 100) : 0;
+    const porcentagemGasta =
+      valorTotalObra > 0
+        ? Math.round((valorGastoObra / valorTotalObra) * 100)
+        : 0;
     const porcentagemReceber = Math.max(0, 100 - porcentagemGasta);
     const saldoObra = valorTotalObra - valorGastoObra;
 
@@ -959,13 +984,17 @@ export class ReportsService {
     const custoMedioMensal = valorGastoObra / monthsCount;
 
     // Sort items for charts
-    const sortedMaterial = Object.entries(materialItems).sort((a, b) => b[1] - a[1]);
+    const sortedMaterial = Object.entries(materialItems).sort(
+      (a, b) => b[1] - a[1],
+    );
     const sortedLabor = Object.entries(laborItems).sort((a, b) => b[1] - a[1]);
 
     const maxMaterial = sortedMaterial[0]?.[0] || 'N/A';
     const maxLabor = sortedLabor[0]?.[0] || 'N/A';
-    const maxStage = Object.entries(stageItems).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
-    const maxMonth = Object.entries(monthItems).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    const maxStage =
+      Object.entries(stageItems).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
+    const maxMonth =
+      Object.entries(monthItems).sort((a, b) => b[1] - a[1])[0]?.[0] || 'N/A';
 
     return {
       kpis: {
@@ -974,36 +1003,36 @@ export class ReportsService {
         porcentagemGasta,
         porcentagemReceber,
         saldoObra,
-        custoMedioMensal
+        custoMedioMensal,
       },
       charts: {
         material: {
-          labels: sortedMaterial.map(x => x[0]),
-          data: sortedMaterial.map(x => x[1]),
+          labels: sortedMaterial.map((x) => x[0]),
+          data: sortedMaterial.map((x) => x[1]),
         },
         labor: {
-          labels: sortedLabor.map(x => x[0]),
-          data: sortedLabor.map(x => x[1]),
+          labels: sortedLabor.map((x) => x[0]),
+          data: sortedLabor.map((x) => x[1]),
         },
         classification: {
           material: materialCost,
-          labor: laborCost
+          labor: laborCost,
         },
         stage: {
           labels: Object.keys(stageItems),
-          data: Object.values(stageItems)
+          data: Object.values(stageItems),
         },
         monthly: {
           labels: Object.keys(monthItems),
-          data: Object.values(monthItems)
-        }
+          data: Object.values(monthItems),
+        },
       },
       summary: {
         maxMaterial,
         maxLabor,
         maxStage,
-        maxMonth
-      }
+        maxMonth,
+      },
     };
   }
 }

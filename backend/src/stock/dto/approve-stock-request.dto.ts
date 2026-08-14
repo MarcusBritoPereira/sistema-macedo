@@ -1,5 +1,12 @@
 import { Type } from 'class-transformer';
-import { ArrayMinSize, IsArray, IsOptional, IsString, IsUUID, ValidateNested } from 'class-validator';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsOptional,
+  IsString,
+  IsUUID,
+  ValidateNested,
+} from 'class-validator';
 
 export class ApproveStockRequestItemDto {
   @IsUUID()

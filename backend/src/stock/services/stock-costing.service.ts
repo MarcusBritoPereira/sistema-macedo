@@ -59,7 +59,10 @@ export class StockCostingService {
       .div(totalQuantity);
   }
 
-  calculateTotal(quantity: Prisma.Decimal.Value, unitCost: Prisma.Decimal.Value) {
+  calculateTotal(
+    quantity: Prisma.Decimal.Value,
+    unitCost: Prisma.Decimal.Value,
+  ) {
     const safeQuantity = this.assertPositive(quantity, 'quantidade');
     const safeUnitCost = this.assertNonNegative(unitCost, 'custo unitário');
     return safeQuantity.mul(safeUnitCost);

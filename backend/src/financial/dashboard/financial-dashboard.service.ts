@@ -517,7 +517,10 @@ export class FinancialDashboardService {
       .reduce((s, t) => s + Number(t.valor), 0);
 
     // 4. Daily Flow — aggregate in memory by date key (no more N+1)
-    const dailyFlowMap: Record<string, { recebimentos: number; pagamentos: number }> = {};
+    const dailyFlowMap: Record<
+      string,
+      { recebimentos: number; pagamentos: number }
+    > = {};
 
     for (let i = 13; i >= 0; i--) {
       const d = new Date(now);
@@ -710,7 +713,6 @@ export class FinancialDashboardService {
     };
   }
 
-
   async getCashFlowDashboard(month?: number, year?: number) {
     const now = new Date();
     const m = month || now.getMonth() + 1;
@@ -720,13 +722,20 @@ export class FinancialDashboardService {
     const endOfMonth = new Date(y, m, 0, 23, 59, 59, 999);
 
     // 1. Current Balance (Saldo Atual) - Realized only
-    const accountsWithBalance = await this.getAccountsWithRealTimeBalance(endOfMonth);
-    const currentBalance = accountsWithBalance.reduce((acc, curr) => acc + curr.saldo, 0);
+    const accountsWithBalance =
+      await this.getAccountsWithRealTimeBalance(endOfMonth);
+    const currentBalance = accountsWithBalance.reduce(
+      (acc, curr) => acc + curr.saldo,
+      0,
+    );
 
     const endOfPrevMonth = new Date(y, m - 1, 0, 23, 59, 59, 999);
-    const accountsWithBalanceStart = await this.getAccountsWithRealTimeBalance(endOfPrevMonth);
-    const saldoInicialMes = accountsWithBalanceStart.reduce((acc, curr) => acc + curr.saldo, 0);
-
+    const accountsWithBalanceStart =
+      await this.getAccountsWithRealTimeBalance(endOfPrevMonth);
+    const saldoInicialMes = accountsWithBalanceStart.reduce(
+      (acc, curr) => acc + curr.saldo,
+      0,
+    );
 
     // 2. Receivables (A Receber) for the selected month only.
     // The previous implementation included every overdue item up to the month end,
@@ -1058,9 +1067,11 @@ export class FinancialDashboardService {
         // calculated balance capped by lteDate so changing months changes KPIs.
         if (!lteDate) {
           try {
-            const integration = await this.prisma.integracaoBancaria.findUnique({
-              where: { contaBancariaId: acc.id },
-            });
+            const integration = await this.prisma.integracaoBancaria.findUnique(
+              {
+                where: { contaBancariaId: acc.id },
+              },
+            );
 
             if (integration && integration.status === 'CONNECTED') {
               // Timeout de 5s para evitar travamento se a API bancária estiver lenta
@@ -1228,17 +1239,19 @@ export class FinancialDashboardService {
     }
 
     // 5. Supplier Expenses (Top 8, Realized)
-    const rawSupplierExpenses = await this.prisma.lancamentoFinanceiro.findMany({
-      where: {
-        tipo: 'DESPESA',
-        status: { in: ['REALIZADO', 'CONCILIADO'] },
+    const rawSupplierExpenses = await this.prisma.lancamentoFinanceiro.findMany(
+      {
+        where: {
+          tipo: 'DESPESA',
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+        },
+        select: {
+          valor: true,
+          fornecedor: { select: { nomeFantasia: true } },
+          fornecedorNome: true,
+        },
       },
-      select: {
-        valor: true,
-        fornecedor: { select: { nomeFantasia: true } },
-        fornecedorNome: true,
-      },
-    });
+    );
 
     const supplierMap: Record<string, number> = {};
     for (const exp of rawSupplierExpenses) {
@@ -1253,13 +1266,15 @@ export class FinancialDashboardService {
       .slice(0, 8);
 
     // 6. Cost Type Expenses (Top 7 Categories, Realized)
-    const rawCategoryExpenses = await this.prisma.lancamentoFinanceiro.findMany({
-      where: {
-        tipo: 'DESPESA',
-        status: { in: ['REALIZADO', 'CONCILIADO'] },
+    const rawCategoryExpenses = await this.prisma.lancamentoFinanceiro.findMany(
+      {
+        where: {
+          tipo: 'DESPESA',
+          status: { in: ['REALIZADO', 'CONCILIADO'] },
+        },
+        select: { valor: true, categoria: { select: { nome: true } } },
       },
-      select: { valor: true, categoria: { select: { nome: true } } },
-    });
+    );
 
     const categoryMap: Record<string, number> = {};
     for (const exp of rawCategoryExpenses) {
@@ -1276,14 +1291,16 @@ export class FinancialDashboardService {
     const alerts: { color: string; text: string }[] = [];
 
     // Check overdue payables
-    const overduePayablesSum = await this.prisma.lancamentoFinanceiro.aggregate({
-      _sum: { valor: true },
-      where: {
-        tipo: 'DESPESA',
-        status: 'PREVISTO',
-        dataVencimento: { lt: now },
+    const overduePayablesSum = await this.prisma.lancamentoFinanceiro.aggregate(
+      {
+        _sum: { valor: true },
+        where: {
+          tipo: 'DESPESA',
+          status: 'PREVISTO',
+          dataVencimento: { lt: now },
+        },
       },
-    });
+    );
     const overduePaySum = Number(overduePayablesSum._sum.valor || 0);
     if (overduePaySum > 0) {
       alerts.push({
@@ -1293,14 +1310,15 @@ export class FinancialDashboardService {
     }
 
     // Check overdue receivables
-    const overdueReceivablesSum = await this.prisma.lancamentoFinanceiro.aggregate({
-      _sum: { valor: true },
-      where: {
-        tipo: 'RECEITA',
-        status: 'PREVISTO',
-        dataVencimento: { lt: now },
-      },
-    });
+    const overdueReceivablesSum =
+      await this.prisma.lancamentoFinanceiro.aggregate({
+        _sum: { valor: true },
+        where: {
+          tipo: 'RECEITA',
+          status: 'PREVISTO',
+          dataVencimento: { lt: now },
+        },
+      });
     const overdueRecSum = Number(overdueReceivablesSum._sum.valor || 0);
     if (overdueRecSum > 0) {
       alerts.push({

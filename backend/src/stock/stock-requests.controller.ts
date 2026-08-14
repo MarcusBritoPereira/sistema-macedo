@@ -1,6 +1,19 @@
-import { Body, Controller, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { StatusReservaEstoque, StatusSolicitacaoMaterial } from '@prisma/client';
+import {
+  StatusReservaEstoque,
+  StatusSolicitacaoMaterial,
+} from '@prisma/client';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
 import { ApproveStockRequestDto } from './dto/approve-stock-request.dto';
@@ -23,7 +36,13 @@ export class StockRequestsController {
 
   @Get()
   @RequirePermissions('ESTOQUE_VISUALIZAR')
-  findAll(@Query() query: PaginationQueryDto & { status?: StatusSolicitacaoMaterial; obraId?: string }) {
+  findAll(
+    @Query()
+    query: PaginationQueryDto & {
+      status?: StatusSolicitacaoMaterial;
+      obraId?: string;
+    },
+  ) {
     return this.service.findAll(query);
   }
 
@@ -47,19 +66,31 @@ export class StockRequestsController {
 
   @Post(':id/approve')
   @RequirePermissions('ESTOQUE_SOLICITACAO_APROVAR')
-  approve(@Param('id') id: string, @Body() dto: ApproveStockRequestDto, @Req() req: any) {
+  approve(
+    @Param('id') id: string,
+    @Body() dto: ApproveStockRequestDto,
+    @Req() req: any,
+  ) {
     return this.service.approve(id, dto, req.user.id);
   }
 
   @Post(':id/reject')
   @RequirePermissions('ESTOQUE_SOLICITACAO_APROVAR')
-  reject(@Param('id') id: string, @Body() dto: RejectStockRequestDto, @Req() req: any) {
+  reject(
+    @Param('id') id: string,
+    @Body() dto: RejectStockRequestDto,
+    @Req() req: any,
+  ) {
     return this.service.reject(id, dto.motivo, req.user.id);
   }
 
   @Post(':id/fulfill')
   @RequirePermissions('ESTOQUE_TRANSFERIR')
-  fulfill(@Param('id') id: string, @Body() dto: FulfillStockRequestDto, @Req() req: any) {
+  fulfill(
+    @Param('id') id: string,
+    @Body() dto: FulfillStockRequestDto,
+    @Req() req: any,
+  ) {
     return this.service.fulfill(id, dto, req.user.id);
   }
 
@@ -77,7 +108,14 @@ export class StockReservationsController {
 
   @Get()
   @RequirePermissions('ESTOQUE_VISUALIZAR')
-  findAll(@Query() query: PaginationQueryDto & { status?: StatusReservaEstoque; obraId?: string; materialId?: string }) {
+  findAll(
+    @Query()
+    query: PaginationQueryDto & {
+      status?: StatusReservaEstoque;
+      obraId?: string;
+      materialId?: string;
+    },
+  ) {
     return this.service.reservations(query);
   }
 }

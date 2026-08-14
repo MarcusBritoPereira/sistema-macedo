@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
@@ -20,7 +31,13 @@ export class StockMaterialsController {
 
   @Get()
   @RequirePermissions('ESTOQUE_VISUALIZAR')
-  findAll(@Query() query: PaginationQueryDto & { categoriaMaterialId?: string; ativo?: string }) {
+  findAll(
+    @Query()
+    query: PaginationQueryDto & {
+      categoriaMaterialId?: string;
+      ativo?: string;
+    },
+  ) {
     return this.service.findAll(query);
   }
 
@@ -44,7 +61,11 @@ export class StockMaterialsController {
 
   @Patch(':id')
   @RequirePermissions('ESTOQUE_MATERIAL_EDITAR')
-  update(@Param('id') id: string, @Body() dto: UpdateStockMaterialDto, @Req() req: any) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateStockMaterialDto,
+    @Req() req: any,
+  ) {
     return this.service.update(id, dto, req.user.id);
   }
 

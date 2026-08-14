@@ -1,4 +1,11 @@
-import { IsString, IsOptional, IsEnum, IsNumber, IsDateString, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsEnum,
+  IsNumber,
+  IsDateString,
+  IsBoolean,
+} from 'class-validator';
 import { StatusObra, TipoObra } from '@prisma/client';
 import { Transform } from 'class-transformer';
 
@@ -8,22 +15,30 @@ export class CreateObraDto {
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (value === '' || value === 'null' ? undefined : value))
+  @Transform(({ value }) =>
+    value === '' || value === 'null' ? undefined : value,
+  )
   descricao?: string;
 
   @IsOptional()
   @IsDateString()
-  @Transform(({ value }) => (value === '' || value === 'null' ? undefined : value))
+  @Transform(({ value }) =>
+    value === '' || value === 'null' ? undefined : value,
+  )
   dataInicio?: string;
 
   @IsOptional()
   @IsDateString()
-  @Transform(({ value }) => (value === '' || value === 'null' ? undefined : value))
+  @Transform(({ value }) =>
+    value === '' || value === 'null' ? undefined : value,
+  )
   dataPrevisaoFim?: string;
 
   @IsOptional()
   @IsDateString()
-  @Transform(({ value }) => (value === '' || value === 'null' ? undefined : value))
+  @Transform(({ value }) =>
+    value === '' || value === 'null' ? undefined : value,
+  )
   dataConclusao?: string;
 
   @IsOptional()
@@ -32,17 +47,27 @@ export class CreateObraDto {
 
   @IsOptional()
   @IsNumber()
-  @Transform(({ value }) => (value === '' || value === 'null' ? undefined : (value ? Number(value) : value)))
+  @Transform(({ value }) =>
+    value === '' || value === 'null'
+      ? undefined
+      : value
+        ? Number(value)
+        : value,
+  )
   orcamentoPrevisto?: number;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (value === '' || value === 'null' ? undefined : value))
+  @Transform(({ value }) =>
+    value === '' || value === 'null' ? undefined : value,
+  )
   endereco?: string;
 
   @IsOptional()
   @IsString()
-  @Transform(({ value }) => (value === '' || value === 'null' ? undefined : value))
+  @Transform(({ value }) =>
+    value === '' || value === 'null' ? undefined : value,
+  )
   clienteId?: string;
 
   @IsOptional()

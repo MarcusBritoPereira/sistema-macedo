@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { TipoDocumentoEstoque } from '@prisma/client';
 import { PermissionsGuard } from '../auth/permissions.guard';
@@ -16,7 +25,11 @@ export class StockEntriesController {
   @Post()
   @RequirePermissions('ESTOQUE_ENTRADA_CRIAR')
   create(@Body() dto: CreateStockDocumentDto, @Req() req: any) {
-    return this.documents.create(TipoDocumentoEstoque.ENTRADA, dto, req.user.id);
+    return this.documents.create(
+      TipoDocumentoEstoque.ENTRADA,
+      dto,
+      req.user.id,
+    );
   }
 
   @Get()
@@ -51,7 +64,11 @@ export class StockEntriesController {
 
   @Post(':id/cancel')
   @RequirePermissions('ESTOQUE_ENTRADA_APROVAR')
-  cancel(@Param('id') id: string, @Body() dto: CancelStockDocumentDto, @Req() req: any) {
+  cancel(
+    @Param('id') id: string,
+    @Body() dto: CancelStockDocumentDto,
+    @Req() req: any,
+  ) {
     return this.documents.cancel(id, req.user.id, dto.motivo);
   }
 }

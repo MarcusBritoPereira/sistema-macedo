@@ -22,13 +22,13 @@ export class DreService {
 
   private async obterIdsHierarquia(centroCustoId: string): Promise<string[]> {
     const ccs = await this.prisma.centroCusto.findMany({
-      select: { id: true, parentId: true }
+      select: { id: true, parentId: true },
     });
 
     const filhos: string[] = [centroCustoId];
     const processar = (id: string) => {
-      const directChildren = ccs.filter(c => c.parentId === id);
-      directChildren.forEach(child => {
+      const directChildren = ccs.filter((c) => c.parentId === id);
+      directChildren.forEach((child) => {
         filhos.push(child.id);
         processar(child.id);
       });
@@ -66,7 +66,9 @@ export class DreService {
     const dateField =
       regime === DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
 
-    const costCenterIds = centroCustoId ? await this.obterIdsHierarquia(centroCustoId) : undefined;
+    const costCenterIds = centroCustoId
+      ? await this.obterIdsHierarquia(centroCustoId)
+      : undefined;
 
     const rateiosRaw = await this.prisma.rateioLancamento.findMany({
       where: {
@@ -175,7 +177,9 @@ export class DreService {
     const dateField =
       dto.regime === DRERegime.CAIXA ? 'dataPagamento' : 'dataCompetencia';
 
-    const costCenterIds = dto.centroCustoId ? await this.obterIdsHierarquia(dto.centroCustoId) : undefined;
+    const costCenterIds = dto.centroCustoId
+      ? await this.obterIdsHierarquia(dto.centroCustoId)
+      : undefined;
 
     const where: any = {
       categoria: dto.categoria,
@@ -417,7 +421,8 @@ export class DreService {
       const despesasFin = data.DESPESA_FINANCEIRA.periodos[p];
       const recFin = data.RECEITA_FINANCEIRA.periodos[p];
       const despesasFinLiquidas = despesasFin - recFin;
-      result.totais.despesasFinanceirasLiquidas.periodos[p] = despesasFinLiquidas;
+      result.totais.despesasFinanceirasLiquidas.periodos[p] =
+        despesasFinLiquidas;
 
       // 9. Resultado líquido (Resultado operacional - Despesas financeiras líquidas)
       const resLiq = resultadoOperacional - despesasFinLiquidas;
@@ -440,9 +445,12 @@ export class DreService {
         recLiquida > 0 ? (resFinal / recLiquida) * 100 : 0;
 
       // Legacy fields
-      result.totais.lair.periodos[p] = resultadoOperacional - despesasFin + recFin;
+      result.totais.lair.periodos[p] =
+        resultadoOperacional - despesasFin + recFin;
       result.margens.lair.periodos[p] =
-        recLiquida > 0 ? (result.totais.lair.periodos[p] / recLiquida) * 100 : 0;
+        recLiquida > 0
+          ? (result.totais.lair.periodos[p] / recLiquida) * 100
+          : 0;
     }
 
     for (const key of Object.keys(result.totais)) {

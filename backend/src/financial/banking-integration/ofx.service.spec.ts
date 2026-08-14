@@ -63,7 +63,7 @@ CHARSET:1252
     expect(txs[0]).toEqual({
       id: 'tx-001',
       date: new Date(Date.UTC(2026, 4, 19, 12, 0, 0)),
-      amount: -150.00,
+      amount: -150.0,
       type: 'DEBIT',
       descricao: 'BANCO INTER S.A.',
       rawMemo: 'Tarifa Mensal de Servicos',
@@ -73,7 +73,7 @@ CHARSET:1252
     expect(txs[1]).toEqual({
       id: 'tx-002',
       date: new Date(Date.UTC(2026, 4, 18, 12, 0, 0)),
-      amount: 500.00,
+      amount: 500.0,
       type: 'CREDIT',
       descricao: 'MARIA',
       rawMemo: '',
@@ -101,7 +101,7 @@ CHARSET:1252
     expect(txs.length).toBe(2);
 
     expect(txs[0].id).toBe('tx-003');
-    expect(txs[0].amount).toBe(-100.50);
+    expect(txs[0].amount).toBe(-100.5);
     expect(txs[0].descricao).toBe('FORNECEDOR ABC');
 
     expect(txs[1].id).toBe('tx-004');
@@ -123,7 +123,7 @@ CHARSET:1252
     const txs = service.parseOfx(ofxContent);
     expect(txs.length).toBe(1);
     expect(txs[0].id).toBe('tx-005');
-    expect(txs[0].amount).toBe(100.00);
+    expect(txs[0].amount).toBe(100.0);
     expect(txs[0].type).toBe('CREDIT');
   });
 
@@ -141,6 +141,6 @@ CHARSET:1252
     expect(txs.length).toBe(1);
     expect(txs[0].id).toBeDefined();
     expect(txs[0].id.startsWith('gen-')).toBe(true);
-    expect(txs[0].amount).toBe(-30.00);
+    expect(txs[0].amount).toBe(-30.0);
   });
 });

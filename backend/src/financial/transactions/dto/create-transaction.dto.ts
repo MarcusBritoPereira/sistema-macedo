@@ -85,5 +85,4 @@ export class CreateTransactionDto {
   @IsUUID()
   @IsOptional()
   obraId?: string;
-
 }

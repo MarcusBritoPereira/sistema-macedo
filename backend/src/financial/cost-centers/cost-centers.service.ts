@@ -25,11 +25,15 @@ export class CostCentersService {
       'descricao',
       'codigo',
       'contaContabil',
-      'unidadeMedida'
+      'unidadeMedida',
     ];
-    
-    nullableStrings.forEach(field => {
-      if (data[field] === '' || data[field] === 'null' || data[field] === undefined) {
+
+    nullableStrings.forEach((field) => {
+      if (
+        data[field] === '' ||
+        data[field] === 'null' ||
+        data[field] === undefined
+      ) {
         data[field] = null;
       }
     });
@@ -45,7 +49,13 @@ export class CostCentersService {
   }
 
   getTemplate(res: Response) {
-    const csv = Papa.unparse([{ nome: 'Administrativo', codigo: 'ADM-01', descricao: 'Despesas Administrativas' }]);
+    const csv = Papa.unparse([
+      {
+        nome: 'Administrativo',
+        codigo: 'ADM-01',
+        descricao: 'Despesas Administrativas',
+      },
+    ]);
     res.header('Content-Type', 'text/csv');
     res.attachment('centros_custo_modelo.csv');
     return res.send(csv);
@@ -53,13 +63,16 @@ export class CostCentersService {
 
   async importCsv(file: Express.Multer.File) {
     const csvData = file.buffer.toString('utf-8');
-    const { data } = Papa.parse(csvData, { header: true, skipEmptyLines: true });
-    
+    const { data } = Papa.parse(csvData, {
+      header: true,
+      skipEmptyLines: true,
+    });
+
     const validData: any[] = [];
-    
+
     for (const row of data as any[]) {
       if (!row.nome) continue;
-      
+
       validData.push({
         nome: row.nome.trim(),
         codigo: row.codigo?.trim() || null,
@@ -74,7 +87,7 @@ export class CostCentersService {
       });
       return { success: true, imported: result.count };
     }
-    
+
     return { success: true, imported: 0 };
   }
 
@@ -86,10 +99,7 @@ export class CostCentersService {
         responsavel: true,
         planoConta: true,
       },
-      orderBy: [
-        { codigo: 'asc' },
-        { nome: 'asc' }
-      ]
+      orderBy: [{ codigo: 'asc' }, { nome: 'asc' }],
     });
   }
 
@@ -119,4 +129,3 @@ export class CostCentersService {
     });
   }
 }
-

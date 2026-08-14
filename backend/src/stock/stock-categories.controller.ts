@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { PermissionsGuard } from '../auth/permissions.guard';
 import { RequirePermissions } from '../auth/permissions.decorator';
@@ -44,7 +55,11 @@ export class StockCategoriesController {
 
   @Patch(':id')
   @RequirePermissions('ESTOQUE_CONFIGURACOES')
-  update(@Param('id') id: string, @Body() dto: UpdateStockCategoryDto, @Req() req: any) {
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateStockCategoryDto,
+    @Req() req: any,
+  ) {
     return this.service.update(id, dto, req.user.id);
   }
 

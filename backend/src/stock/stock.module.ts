@@ -21,7 +21,10 @@ import { StockEntriesController } from './stock-entries.controller';
 import { StockIssuesController } from './stock-issues.controller';
 import { StockTransfersController } from './stock-transfers.controller';
 import { StockFinancialController } from './stock-financial.controller';
-import { StockRequestsController, StockReservationsController } from './stock-requests.controller';
+import {
+  StockRequestsController,
+  StockReservationsController,
+} from './stock-requests.controller';
 import { StockInventoriesController } from './stock-inventories.controller';
 import { StockBudgetsController } from './stock-budgets.controller';
 import { StockReportsController } from './stock-reports.controller';

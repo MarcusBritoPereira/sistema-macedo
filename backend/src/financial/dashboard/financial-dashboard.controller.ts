@@ -38,7 +38,10 @@ export class FinancialDashboardController {
   }
 
   @Get('summary')
-  getSummaryDashboard(@Query('year') year?: string, @Query('month') month?: string) {
+  getSummaryDashboard(
+    @Query('year') year?: string,
+    @Query('month') month?: string,
+  ) {
     const y = year ? parseInt(year) : new Date().getFullYear();
     const m = month !== undefined ? parseInt(month) : new Date().getMonth();
     return this.dashboardService.getSummaryDashboard(y, m);

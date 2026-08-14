@@ -1,4 +1,10 @@
-import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateCostCenterDto {
   @IsString()
@@ -85,4 +91,3 @@ export class CreateCostCenterDto {
   @IsOptional()
   cor?: string;
 }
-

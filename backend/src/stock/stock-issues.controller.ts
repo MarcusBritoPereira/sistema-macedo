@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { TipoDocumentoEstoque } from '@prisma/client';
 import { PermissionsGuard } from '../auth/permissions.guard';
@@ -51,7 +60,11 @@ export class StockIssuesController {
 
   @Post(':id/cancel')
   @RequirePermissions('ESTOQUE_SAIDA_APROVAR')
-  cancel(@Param('id') id: string, @Body() dto: CancelStockDocumentDto, @Req() req: any) {
+  cancel(
+    @Param('id') id: string,
+    @Body() dto: CancelStockDocumentDto,
+    @Req() req: any,
+  ) {
     return this.documents.cancel(id, req.user.id, dto.motivo);
   }
 }

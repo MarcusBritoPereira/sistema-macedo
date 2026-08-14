@@ -19,14 +19,32 @@ export class StockBalancesService {
       ...(query.materialId ? { materialId: query.materialId } : {}),
       ...(query.localEstoqueId ? { localEstoqueId: query.localEstoqueId } : {}),
       ...(query.obraId ? { localEstoque: { obraId: query.obraId } } : {}),
-      ...(query.categoriaMaterialId ? { material: { categoriaMaterialId: query.categoriaMaterialId } } : {}),
+      ...(query.categoriaMaterialId
+        ? { material: { categoriaMaterialId: query.categoriaMaterialId } }
+        : {}),
       ...(query.search
         ? {
             OR: [
-              { material: { nome: { contains: query.search, mode: 'insensitive' } } },
-              { material: { codigo: { contains: query.search, mode: 'insensitive' } } },
-              { localEstoque: { nome: { contains: query.search, mode: 'insensitive' } } },
-              { localEstoque: { codigo: { contains: query.search, mode: 'insensitive' } } },
+              {
+                material: {
+                  nome: { contains: query.search, mode: 'insensitive' },
+                },
+              },
+              {
+                material: {
+                  codigo: { contains: query.search, mode: 'insensitive' },
+                },
+              },
+              {
+                localEstoque: {
+                  nome: { contains: query.search, mode: 'insensitive' },
+                },
+              },
+              {
+                localEstoque: {
+                  codigo: { contains: query.search, mode: 'insensitive' },
+                },
+              },
             ],
           }
         : {}),
@@ -41,36 +59,45 @@ export class StockBalancesService {
           material: { include: { categoriaMaterial: true } },
           localEstoque: { include: { obra: true } },
         },
-        orderBy: [{ material: { nome: 'asc' } }, { localEstoque: { nome: 'asc' } }],
+        orderBy: [
+          { material: { nome: 'asc' } },
+          { localEstoque: { nome: 'asc' } },
+        ],
       }),
       this.prisma.saldoEstoque.count({ where }),
     ]);
 
     const mapped = items.map((item) => this.mapBalance(item));
-    const filtered = query.situacao ? mapped.filter((item) => item.situacao === query.situacao) : mapped;
-    return { items: filtered, total: query.situacao ? filtered.length : total, skip, take };
+    const filtered = query.situacao
+      ? mapped.filter((item) => item.situacao === query.situacao)
+      : mapped;
+    return {
+      items: filtered,
+      total: query.situacao ? filtered.length : total,
+      skip,
+      take,
+    };
   }
 
   async summary() {
     const aggregate = await this.prisma.saldoEstoque.aggregate({
       _sum: { valorTotal: true, quantidade: true, quantidadeReservada: true },
     });
-    const materiaisCadastrados = await this.prisma.material.count({ where: { ativo: true } });
+    const materiaisCadastrados = await this.prisma.material.count({
+      where: { ativo: true },
+    });
     const lowStock = await this.lowStock({ take: '1000' });
 
-    const quantidadeFisica =
-      aggregate._sum.quantidade || new Prisma.Decimal(0);
+    const quantidadeFisica = aggregate._sum.quantidade || new Prisma.Decimal(0);
 
     const quantidadeReservada =
       aggregate._sum.quantidadeReservada || new Prisma.Decimal(0);
 
     return {
-      valorTotalEstoque:
-        aggregate._sum.valorTotal || new Prisma.Decimal(0),
+      valorTotalEstoque: aggregate._sum.valorTotal || new Prisma.Decimal(0),
       quantidadeFisica,
       quantidadeReservada,
-      quantidadeDisponivel:
-        quantidadeFisica.minus(quantidadeReservada),
+      quantidadeDisponivel: quantidadeFisica.minus(quantidadeReservada),
       materiaisCadastrados,
       materiaisAbaixoMinimo: lowStock.total,
     };
@@ -88,8 +115,15 @@ export class StockBalancesService {
     });
     const mapped = items
       .map((item) => this.mapBalance(item))
-      .filter((item) => ['REPOSICAO', 'BAIXO', 'ZERADO', 'NEGATIVO'].includes(item.situacao));
-    return { items: mapped.slice(skip, skip + take), total: mapped.length, skip, take };
+      .filter((item) =>
+        ['REPOSICAO', 'BAIXO', 'ZERADO', 'NEGATIVO'].includes(item.situacao),
+      );
+    return {
+      items: mapped.slice(skip, skip + take),
+      total: mapped.length,
+      skip,
+      take,
+    };
   }
 
   private mapBalance(item: any) {
@@ -99,12 +133,8 @@ export class StockBalancesService {
     const minimo = new Prisma.Decimal(item.material.estoqueMinimo || 0);
     const reposicao = new Prisma.Decimal(item.material.pontoReposicao || 0);
 
-    let situacao:
-      | 'NORMAL'
-      | 'REPOSICAO'
-      | 'BAIXO'
-      | 'ZERADO'
-      | 'NEGATIVO' = 'NORMAL';
+    let situacao: 'NORMAL' | 'REPOSICAO' | 'BAIXO' | 'ZERADO' | 'NEGATIVO' =
+      'NORMAL';
 
     if (disponivel.lt(0)) {
       situacao = 'NEGATIVO';
@@ -153,7 +183,8 @@ export class StockBalancesService {
         [isEntry ? 'localDestinoId' : 'localOrigemId']: dto.localEstoqueId,
         quantidade: String(absAmount),
         unidade: material.unidade,
-        custoUnitario: dto.custoUnitario != null ? String(dto.custoUnitario) : undefined,
+        custoUnitario:
+          dto.custoUnitario != null ? String(dto.custoUnitario) : undefined,
         observacao: dto.observacao || 'Ajuste manual de saldo',
         permitirSaldoNegativo: dto.permitirSaldoNegativo,
         justificativaSaldoNegativo: dto.justificativaSaldoNegativo,

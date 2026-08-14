@@ -85,7 +85,7 @@ export class UsersService {
       'email',
       'ativo',
       'precisaTrocarSenha',
-      'permissoes'
+      'permissoes',
     ] as const) {
       if (data[field] !== undefined) updateData[field] = data[field];
     }

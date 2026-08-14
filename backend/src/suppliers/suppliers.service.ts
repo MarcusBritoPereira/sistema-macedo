@@ -1,4 +1,8 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateSupplierDto } from './dto/create-supplier.dto';
 import { UpdateSupplierDto } from './dto/update-supplier.dto';
@@ -41,13 +45,15 @@ export class SuppliersService {
   }
 
   getTemplate(res: Response) {
-    const csv = Papa.unparse([{
-      'Fornecedor': 'Exemplo Fornecedor',
-      'Razão Social': 'Fornecedor Exemplo LTDA',
-      'CNPJ': '00.000.000/0000-00',
-      'Email': 'contato@exemplo.com',
-      'Telefone': '11999999999'
-    }]);
+    const csv = Papa.unparse([
+      {
+        Fornecedor: 'Exemplo Fornecedor',
+        'Razão Social': 'Fornecedor Exemplo LTDA',
+        CNPJ: '00.000.000/0000-00',
+        Email: 'contato@exemplo.com',
+        Telefone: '11999999999',
+      },
+    ]);
     res.header('Content-Type', 'text/csv');
     res.attachment('fornecedores_modelo.csv');
     return res.send(csv);
@@ -55,10 +61,13 @@ export class SuppliersService {
 
   async importCsv(file: Express.Multer.File) {
     const csvData = file.buffer.toString('utf-8');
-    const { data } = Papa.parse(csvData, { header: true, skipEmptyLines: true });
-    
+    const { data } = Papa.parse(csvData, {
+      header: true,
+      skipEmptyLines: true,
+    });
+
     const validData: any[] = [];
-    
+
     const normalizeKey = (key: string): string => {
       return key
         .toLowerCase()
@@ -75,7 +84,7 @@ export class SuppliersService {
       email: 'email',
       telefone: 'telefone',
     };
-    
+
     for (const rawRow of data as any[]) {
       const row: any = {};
       for (const rawKey of Object.keys(rawRow)) {
@@ -90,7 +99,7 @@ export class SuppliersService {
 
       let nomeFantasia = row.nomeFantasia?.toString().trim();
       let razaoSocial = row.razaoSocial?.toString().trim();
-      
+
       if (!nomeFantasia && razaoSocial) {
         nomeFantasia = razaoSocial;
       }
@@ -99,7 +108,7 @@ export class SuppliersService {
       }
 
       if (!nomeFantasia) continue;
-      
+
       validData.push({
         nomeFantasia: nomeFantasia,
         razaoSocial: razaoSocial || null,
@@ -117,7 +126,7 @@ export class SuppliersService {
       });
       return { success: true, imported: result.count };
     }
-    
+
     return { success: true, imported: 0 };
   }
 
@@ -137,12 +146,12 @@ export class SuppliersService {
 
   async update(id: string, dto: UpdateSupplierDto) {
     await this.findOne(id); // Check existence
-    
+
     const dataToUpdate: any = { ...dto };
     if (dataToUpdate.cnpj !== undefined) {
       dataToUpdate.cnpj = dataToUpdate.cnpj?.replace(/\D/g, '').trim() || null;
     }
-    
+
     try {
       return await this.prisma.fornecedor.update({
         where: { id },

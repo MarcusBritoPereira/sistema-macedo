@@ -56,17 +56,27 @@ export class BankingIntegrationService {
       });
 
       for (const integration of integrations) {
-        console.log(`[Cron] Sincronizando conta: ${integration.contaBancariaId}`);
+        console.log(
+          `[Cron] Sincronizando conta: ${integration.contaBancariaId}`,
+        );
         try {
           await this.syncStatements(integration.contaBancariaId);
-          console.log(`[Cron] Sucesso ao sincronizar conta: ${integration.contaBancariaId}`);
+          console.log(
+            `[Cron] Sucesso ao sincronizar conta: ${integration.contaBancariaId}`,
+          );
         } catch (error) {
-          console.error(`[Cron] Erro ao sincronizar conta: ${integration.contaBancariaId}`, error.message || error);
+          console.error(
+            `[Cron] Erro ao sincronizar conta: ${integration.contaBancariaId}`,
+            error.message || error,
+          );
         }
       }
       console.log('[Cron] Rotina de sincronização bancária finalizada.');
     } catch (error) {
-      console.error('[Cron] Falha ao executar rotina de sincronização bancária:', error);
+      console.error(
+        '[Cron] Falha ao executar rotina de sincronização bancária:',
+        error,
+      );
     }
   }
 
@@ -297,13 +307,15 @@ export class BankingIntegrationService {
             if (axios.isAxiosError(err) && err.response?.status === 429) {
               retries++;
               if (retries >= maxRetries) {
-                throw new Error('Muitas requisições (429). Aguarde alguns minutos antes de tentar sincronizar novamente.');
+                throw new Error(
+                  'Muitas requisições (429). Aguarde alguns minutos antes de tentar sincronizar novamente.',
+                );
               }
               const waitTime = retries * 5000;
-              log(`[Sync] Rate limited (429). Retrying in ${waitTime / 1000}s...`);
-              await new Promise((resolve) =>
-                setTimeout(resolve, waitTime),
+              log(
+                `[Sync] Rate limited (429). Retrying in ${waitTime / 1000}s...`,
               );
+              await new Promise((resolve) => setTimeout(resolve, waitTime));
             } else {
               throw err;
             }

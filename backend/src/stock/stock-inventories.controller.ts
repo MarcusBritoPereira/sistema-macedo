@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { StatusInventarioEstoque } from '@prisma/client';
 import { RequirePermissions } from '../auth/permissions.decorator';
@@ -21,7 +30,13 @@ export class StockInventoriesController {
 
   @Get()
   @RequirePermissions('ESTOQUE_VISUALIZAR')
-  findAll(@Query() query: PaginationQueryDto & { status?: StatusInventarioEstoque; localEstoqueId?: string }) {
+  findAll(
+    @Query()
+    query: PaginationQueryDto & {
+      status?: StatusInventarioEstoque;
+      localEstoqueId?: string;
+    },
+  ) {
     return this.service.findAll(query);
   }
 
@@ -33,20 +48,18 @@ export class StockInventoriesController {
 
   @Post(':id/count')
   @RequirePermissions('ESTOQUE_INVENTARIO_CRIAR')
-  count(@Param('id') id: string, @Body() dto: CountStockInventoryDto, @Req() req: any) {
+  count(
+    @Param('id') id: string,
+    @Body() dto: CountStockInventoryDto,
+    @Req() req: any,
+  ) {
     return this.service.count(id, dto, req.user.id);
   }
 
   @Post(':id/submit')
   @RequirePermissions('ESTOQUE_INVENTARIO_CRIAR')
-  submit(
-    @Param('id') id: string,
-    @Req() req: any,
-  ) {
-    return this.service.submit(
-      id,
-      req.user.id,
-    );
+  submit(@Param('id') id: string, @Req() req: any) {
+    return this.service.submit(id, req.user.id);
   }
 
   @Post(':id/approve')

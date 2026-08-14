@@ -50,15 +50,23 @@ export class StockReportsService {
       ...(query.materialId ? { materialId: query.materialId } : {}),
       ...(query.localEstoqueId ? { localEstoqueId: query.localEstoqueId } : {}),
       ...(query.obraId ? { localEstoque: { obraId: query.obraId } } : {}),
-      ...(query.categoriaMaterialId ? { material: { categoriaMaterialId: query.categoriaMaterialId } } : {}),
+      ...(query.categoriaMaterialId
+        ? { material: { categoriaMaterialId: query.categoriaMaterialId } }
+        : {}),
     };
     const [rows, total] = await this.prisma.$transaction([
       this.prisma.saldoEstoque.findMany({
         where,
         skip,
         take,
-        include: { material: { include: { categoriaMaterial: true } }, localEstoque: { include: { obra: true } } },
-        orderBy: [{ material: { nome: 'asc' } }, { localEstoque: { nome: 'asc' } }],
+        include: {
+          material: { include: { categoriaMaterial: true } },
+          localEstoque: { include: { obra: true } },
+        },
+        orderBy: [
+          { material: { nome: 'asc' } },
+          { localEstoque: { nome: 'asc' } },
+        ],
       }),
       this.prisma.saldoEstoque.count({ where }),
     ]);
@@ -70,7 +78,9 @@ export class StockReportsService {
       obra: row.localEstoque.obra?.nome || null,
       quantidade: row.quantidade.toString(),
       reservada: row.quantidadeReservada.toString(),
-      disponivel: new Prisma.Decimal(row.quantidade).minus(row.quantidadeReservada).toString(),
+      disponivel: new Prisma.Decimal(row.quantidade)
+        .minus(row.quantidadeReservada)
+        .toString(),
       custoMedio: row.custoMedio.toString(),
       valorTotal: row.valorTotal.toString(),
     }));
@@ -82,15 +92,19 @@ export class StockReportsService {
     const where: Prisma.MovimentoEstoqueWhereInput = {
       ...(query.materialId ? { materialId: query.materialId } : {}),
       ...(query.obraId ? { obraId: query.obraId } : {}),
-      ...(query.localEstoqueId ? { OR: [{ localOrigemId: query.localEstoqueId }, { localDestinoId: query.localEstoqueId }] } : {}),
+      ...(query.localEstoqueId
+        ? {
+            OR: [
+              { localOrigemId: query.localEstoqueId },
+              { localDestinoId: query.localEstoqueId },
+            ],
+          }
+        : {}),
       ...(query.tipo ? { tipo: query.tipo } : {}),
       ...(query.status ? { status: query.status as any } : {}),
       ...(this.dateRange(query.dataInicio, query.dataFim)
         ? {
-            dataMovimento: this.dateRange(
-              query.dataInicio,
-              query.dataFim,
-            ),
+            dataMovimento: this.dateRange(query.dataInicio, query.dataFim),
           }
         : {}),
     };
@@ -99,7 +113,14 @@ export class StockReportsService {
         where,
         skip,
         take,
-        include: { material: true, obra: true, localOrigem: true, localDestino: true, fornecedor: true, registradoPor: true },
+        include: {
+          material: true,
+          obra: true,
+          localOrigem: true,
+          localDestino: true,
+          fornecedor: true,
+          registradoPor: true,
+        },
         orderBy: { dataMovimento: 'desc' },
       }),
       this.prisma.movimentoEstoque.count({ where }),
@@ -120,7 +141,12 @@ export class StockReportsService {
       custoTotal: row.custoTotal?.toString() || null,
       usuario: row.registradoPor?.nome || null,
     }));
-    return this.respond(items, { total, skip, take }, query, 'movimentacoes_estoque');
+    return this.respond(
+      items,
+      { total, skip, take },
+      query,
+      'movimentacoes_estoque',
+    );
   }
 
   async consumptionByProject(query: ReportQuery) {
@@ -129,10 +155,7 @@ export class StockReportsService {
       ...(query.materialId ? { materialId: query.materialId } : {}),
       ...(this.dateRange(query.dataInicio, query.dataFim)
         ? {
-            dataCompetencia: this.dateRange(
-              query.dataInicio,
-              query.dataFim,
-            ),
+            dataCompetencia: this.dateRange(query.dataInicio, query.dataFim),
           }
         : {}),
     };
@@ -143,9 +166,22 @@ export class StockReportsService {
       orderBy: { _sum: { custoTotal: 'desc' } },
     });
     const [obras, materiais, centros] = await Promise.all([
-      this.prisma.obra.findMany({ where: { id: { in: grouped.map((g) => g.obraId) } }, select: { id: true, nome: true } }),
-      this.prisma.material.findMany({ where: { id: { in: grouped.map((g) => g.materialId) } }, select: { id: true, codigo: true, nome: true } }),
-      this.prisma.centroCusto.findMany({ where: { id: { in: grouped.map((g) => g.centroCustoId).filter(Boolean) as string[] } }, select: { id: true, nome: true } }),
+      this.prisma.obra.findMany({
+        where: { id: { in: grouped.map((g) => g.obraId) } },
+        select: { id: true, nome: true },
+      }),
+      this.prisma.material.findMany({
+        where: { id: { in: grouped.map((g) => g.materialId) } },
+        select: { id: true, codigo: true, nome: true },
+      }),
+      this.prisma.centroCusto.findMany({
+        where: {
+          id: {
+            in: grouped.map((g) => g.centroCustoId).filter(Boolean) as string[],
+          },
+        },
+        select: { id: true, nome: true },
+      }),
     ]);
     const obraById = new Map(obras.map((o) => [o.id, o.nome]));
     const materialById = new Map(materiais.map((m) => [m.id, m]));
@@ -156,21 +192,27 @@ export class StockReportsService {
         obra: obraById.get(row.obraId) || row.obraId,
         materialCodigo: material?.codigo || row.materialId,
         material: material?.nome || row.materialId,
-        centroCusto: row.centroCustoId ? centroById.get(row.centroCustoId) || row.centroCustoId : null,
+        centroCusto: row.centroCustoId
+          ? centroById.get(row.centroCustoId) || row.centroCustoId
+          : null,
         quantidadeConsumida: row._sum.quantidade?.toString() || '0',
         custoTotal: row._sum.custoTotal?.toString() || '0',
       };
     });
-    return this.respond(items, { total: items.length, skip: 0, take: items.length }, query, 'consumo_por_obra');
+    return this.respond(
+      items,
+      { total: items.length, skip: 0, take: items.length },
+      query,
+      'consumo_por_obra',
+    );
   }
 
   async losses(query: ReportQuery) {
-    const report =
-      await this.movements({
-        ...query,
-        tipo: TipoMovimentoEstoque.SAIDA_PERDA,
-        formato: 'json',
-      }) as any;
+    const report = (await this.movements({
+      ...query,
+      tipo: TipoMovimentoEstoque.SAIDA_PERDA,
+      formato: 'json',
+    })) as any;
 
     const items = report.items || [];
 
@@ -192,8 +234,7 @@ export class StockReportsService {
       formato: 'json' as const,
     };
 
-    const report =
-      await this.consumptionByProject(baseQuery) as any;
+    const report = (await this.consumptionByProject(baseQuery)) as any;
 
     const groupedByMaterial = new Map<
       string,
@@ -211,15 +252,11 @@ export class StockReportsService {
       const existing = groupedByMaterial.get(key);
 
       if (existing) {
-        existing.quantidadeConsumida =
-          existing.quantidadeConsumida.plus(
-            item.quantidadeConsumida || 0,
-          );
+        existing.quantidadeConsumida = existing.quantidadeConsumida.plus(
+          item.quantidadeConsumida || 0,
+        );
 
-        existing.custoTotal =
-          existing.custoTotal.plus(
-            item.custoTotal || 0,
-          );
+        existing.custoTotal = existing.custoTotal.plus(item.custoTotal || 0);
 
         continue;
       }
@@ -227,82 +264,52 @@ export class StockReportsService {
       groupedByMaterial.set(key, {
         materialCodigo: item.materialCodigo,
         material: item.material,
-        quantidadeConsumida:
-          new Prisma.Decimal(
-            item.quantidadeConsumida || 0,
-          ),
-        custoTotal:
-          new Prisma.Decimal(
-            item.custoTotal || 0,
-          ),
+        quantidadeConsumida: new Prisma.Decimal(item.quantidadeConsumida || 0),
+        custoTotal: new Prisma.Decimal(item.custoTotal || 0),
       });
     }
 
-    const sorted = Array.from(
-      groupedByMaterial.values(),
-    ).sort(
-      (a, b) =>
-        b.custoTotal.comparedTo(a.custoTotal),
+    const sorted = Array.from(groupedByMaterial.values()).sort((a, b) =>
+      b.custoTotal.comparedTo(a.custoTotal),
     );
 
     const totalValue = sorted.reduce(
-      (sum, item) =>
-        sum.plus(item.custoTotal),
+      (sum, item) => sum.plus(item.custoTotal),
       new Prisma.Decimal(0),
     );
 
-    let accumulated =
-      new Prisma.Decimal(0);
+    let accumulated = new Prisma.Decimal(0);
 
-    const items = sorted.map(
-      (item, index) => {
-        accumulated =
-          accumulated.plus(item.custoTotal);
+    const items = sorted.map((item, index) => {
+      accumulated = accumulated.plus(item.custoTotal);
 
-        const percentual =
-          totalValue.gt(0)
-            ? item.custoTotal
-                .div(totalValue)
-                .mul(100)
-            : new Prisma.Decimal(0);
+      const percentual = totalValue.gt(0)
+        ? item.custoTotal.div(totalValue).mul(100)
+        : new Prisma.Decimal(0);
 
-        const percentualAcumulado =
-          totalValue.gt(0)
-            ? accumulated
-                .div(totalValue)
-                .mul(100)
-            : new Prisma.Decimal(0);
+      const percentualAcumulado = totalValue.gt(0)
+        ? accumulated.div(totalValue).mul(100)
+        : new Prisma.Decimal(0);
 
-        let classe = 'C';
+      let classe = 'C';
 
-        if (
-          percentualAcumulado.lte(80)
-        ) {
-          classe = 'A';
-        } else if (
-          percentualAcumulado.lte(95)
-        ) {
-          classe = 'B';
-        }
+      if (percentualAcumulado.lte(80)) {
+        classe = 'A';
+      } else if (percentualAcumulado.lte(95)) {
+        classe = 'B';
+      }
 
-        return {
-          posicao: index + 1,
-          materialCodigo:
-            item.materialCodigo,
-          material:
-            item.material,
-          quantidadeConsumida:
-            item.quantidadeConsumida.toString(),
-          custoTotal:
-            item.custoTotal.toString(),
-          percentual:
-            percentual.toFixed(2),
-          percentualAcumulado:
-            percentualAcumulado.toFixed(2),
-          classe,
-        };
-      },
-    );
+      return {
+        posicao: index + 1,
+        materialCodigo: item.materialCodigo,
+        material: item.material,
+        quantidadeConsumida: item.quantidadeConsumida.toString(),
+        custoTotal: item.custoTotal.toString(),
+        percentual: percentual.toFixed(2),
+        percentualAcumulado: percentualAcumulado.toFixed(2),
+        classe,
+      };
+    });
 
     return this.respond(
       items,
@@ -318,16 +325,38 @@ export class StockReportsService {
 
   async purchaseSuggestion(query: ReportQuery) {
     const balances = await this.prisma.saldoEstoque.findMany({
-      where: { material: { ativo: true }, ...(query.categoriaMaterialId ? { material: { ativo: true, categoriaMaterialId: query.categoriaMaterialId } } : {}) },
-      include: { material: { include: { categoriaMaterial: true } }, localEstoque: true },
+      where: {
+        material: { ativo: true },
+        ...(query.categoriaMaterialId
+          ? {
+              material: {
+                ativo: true,
+                categoriaMaterialId: query.categoriaMaterialId,
+              },
+            }
+          : {}),
+      },
+      include: {
+        material: { include: { categoriaMaterial: true } },
+        localEstoque: true,
+      },
       orderBy: [{ material: { nome: 'asc' } }],
     });
     const items = balances
       .map((row) => {
-        const available = new Prisma.Decimal(row.quantidade).minus(row.quantidadeReservada);
-        const reorder = new Prisma.Decimal(row.material.pontoReposicao || row.material.estoqueMinimo || 0);
-        const target = new Prisma.Decimal(row.material.estoqueMaximo || row.material.estoqueMinimo || reorder);
-        const suggested = Prisma.Decimal.max(target.minus(available), new Prisma.Decimal(0));
+        const available = new Prisma.Decimal(row.quantidade).minus(
+          row.quantidadeReservada,
+        );
+        const reorder = new Prisma.Decimal(
+          row.material.pontoReposicao || row.material.estoqueMinimo || 0,
+        );
+        const target = new Prisma.Decimal(
+          row.material.estoqueMaximo || row.material.estoqueMinimo || reorder,
+        );
+        const suggested = Prisma.Decimal.max(
+          target.minus(available),
+          new Prisma.Decimal(0),
+        );
         return {
           materialCodigo: row.material.codigo,
           material: row.material.nome,
@@ -342,12 +371,26 @@ export class StockReportsService {
         };
       })
       .filter((item) => new Prisma.Decimal(item.quantidadeSugerida).gt(0));
-    return this.respond(items, { total: items.length, skip: 0, take: items.length }, query, 'sugestao_compra_estoque');
+    return this.respond(
+      items,
+      { total: items.length, skip: 0, take: items.length },
+      query,
+      'sugestao_compra_estoque',
+    );
   }
 
-  private respond(items: Record<string, unknown>[], meta: Record<string, unknown>, query: ReportQuery, filename: string) {
+  private respond(
+    items: Record<string, unknown>[],
+    meta: Record<string, unknown>,
+    query: ReportQuery,
+    filename: string,
+  ) {
     if (query.formato === 'csv') {
-      return { filename: `${filename}.csv`, mimeType: 'text/csv', content: this.toCsv(items) };
+      return {
+        filename: `${filename}.csv`,
+        mimeType: 'text/csv',
+        content: this.toCsv(items),
+      };
     }
     return { items, ...meta };
   }
@@ -355,7 +398,13 @@ export class StockReportsService {
   private toCsv(items: Record<string, unknown>[]) {
     if (!items.length) return '';
     const headers = Object.keys(items[0]);
-    const escape = (value: unknown) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-    return [headers.join(';'), ...items.map((item) => headers.map((header) => escape(item[header])).join(';'))].join('\n');
+    const escape = (value: unknown) =>
+      `"${String(value ?? '').replace(/"/g, '""')}"`;
+    return [
+      headers.join(';'),
+      ...items.map((item) =>
+        headers.map((header) => escape(item[header])).join(';'),
+      ),
+    ].join('\n');
   }
 }

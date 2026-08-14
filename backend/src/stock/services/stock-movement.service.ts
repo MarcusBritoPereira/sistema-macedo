@@ -42,10 +42,7 @@ export class StockMovementService {
     dto: ExecuteStockMovementDto,
     userId: string,
     options?: {
-      reservedAllowance?:
-        | string
-        | number
-        | Prisma.Decimal;
+      reservedAllowance?: string | number | Prisma.Decimal;
     },
   ) {
     if (process.env.STOCK_MODULE_ENABLED !== 'true') {
@@ -73,10 +70,9 @@ export class StockMovementService {
           'quantidade',
         );
 
-        const reservedAllowance =
-          new Prisma.Decimal(
-            options?.reservedAllowance ?? 0,
-          );
+        const reservedAllowance = new Prisma.Decimal(
+          options?.reservedAllowance ?? 0,
+        );
 
         if (reservedAllowance.lt(0)) {
           throw new BadRequestException(
@@ -90,8 +86,14 @@ export class StockMovementService {
           );
         }
 
-        if (dto.localOrigemId && dto.localDestinoId && dto.localOrigemId === dto.localDestinoId) {
-          throw new BadRequestException('Local de origem deve ser diferente do destino');
+        if (
+          dto.localOrigemId &&
+          dto.localDestinoId &&
+          dto.localOrigemId === dto.localDestinoId
+        ) {
+          throw new BadRequestException(
+            'Local de origem deve ser diferente do destino',
+          );
         }
 
         const numero = await this.nextMovementNumber(tx);
@@ -103,7 +105,14 @@ export class StockMovementService {
           if (!dto.localDestinoId) {
             throw new BadRequestException('Entrada exige local de destino');
           }
-          return this.applyEntry(tx, dto, userId, numero, dataMovimento, quantidade);
+          return this.applyEntry(
+            tx,
+            dto,
+            userId,
+            numero,
+            dataMovimento,
+            quantidade,
+          );
         }
 
         if (ISSUE_TYPES.has(dto.tipo)) {
@@ -123,7 +132,9 @@ export class StockMovementService {
 
         if (dto.tipo === TipoMovimentoEstoque.TRANSFERENCIA) {
           if (!dto.localOrigemId || !dto.localDestinoId) {
-            throw new BadRequestException('Transferência exige origem e destino');
+            throw new BadRequestException(
+              'Transferência exige origem e destino',
+            );
           }
           return this.applyTransfer(
             tx,
@@ -136,13 +147,13 @@ export class StockMovementService {
           );
         }
 
-        throw new BadRequestException('Tipo de movimento ainda não suportado pelo serviço central');
+        throw new BadRequestException(
+          'Tipo de movimento ainda não suportado pelo serviço central',
+        );
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
     );
   }
-
-
 
   async reverse(movementId: string, userId: string, motivo: string) {
     if (process.env.STOCK_MODULE_ENABLED !== 'true') {
@@ -158,15 +169,22 @@ export class StockMovementService {
           where: { id: movementId },
           include: { material: true },
         });
-        if (!original) throw new NotFoundException('Movimento de estoque não encontrado');
+        if (!original)
+          throw new NotFoundException('Movimento de estoque não encontrado');
         if (original.status !== StatusMovimentoEstoque.EFETIVADO) {
-          throw new BadRequestException('Somente movimentos efetivados podem ser estornados');
+          throw new BadRequestException(
+            'Somente movimentos efetivados podem ser estornados',
+          );
         }
         const alreadyReversed = await tx.movimentoEstoque.findFirst({
-          where: { movimentoRelacionadoId: original.id, tipo: TipoMovimentoEstoque.ESTORNO },
+          where: {
+            movimentoRelacionadoId: original.id,
+            tipo: TipoMovimentoEstoque.ESTORNO,
+          },
           select: { id: true },
         });
-        if (alreadyReversed) throw new BadRequestException('Movimento já possui estorno');
+        if (alreadyReversed)
+          throw new BadRequestException('Movimento já possui estorno');
 
         const numero = await this.nextMovementNumber(tx);
         const quantidade = new Prisma.Decimal(original.quantidade);
@@ -178,7 +196,11 @@ export class StockMovementService {
         let saldoPosteriorDestino: Prisma.Decimal | undefined;
 
         if (original.localDestinoId && !original.localOrigemId) {
-          const saldo = await this.getOrCreateLockedBalance(tx, original.materialId, original.localDestinoId);
+          const saldo = await this.getOrCreateLockedBalance(
+            tx,
+            original.materialId,
+            original.localDestinoId,
+          );
           saldoAnteriorDestino = saldo.quantidade;
           saldoPosteriorDestino = saldo.quantidade.minus(quantidade);
           await tx.saldoEstoque.update({
@@ -189,7 +211,11 @@ export class StockMovementService {
             },
           });
         } else if (original.localOrigemId && !original.localDestinoId) {
-          const saldo = await this.getOrCreateLockedBalance(tx, original.materialId, original.localOrigemId);
+          const saldo = await this.getOrCreateLockedBalance(
+            tx,
+            original.materialId,
+            original.localOrigemId,
+          );
           saldoAnteriorOrigem = saldo.quantidade;
           saldoPosteriorOrigem = saldo.quantidade.plus(quantidade);
           const novoCustoMedio = this.costing.calculateMovingAverageCost({
@@ -207,8 +233,16 @@ export class StockMovementService {
             },
           });
         } else if (original.localOrigemId && original.localDestinoId) {
-          const origem = await this.getOrCreateLockedBalance(tx, original.materialId, original.localOrigemId);
-          const destino = await this.getOrCreateLockedBalance(tx, original.materialId, original.localDestinoId);
+          const origem = await this.getOrCreateLockedBalance(
+            tx,
+            original.materialId,
+            original.localOrigemId,
+          );
+          const destino = await this.getOrCreateLockedBalance(
+            tx,
+            original.materialId,
+            original.localDestinoId,
+          );
           saldoAnteriorOrigem = origem.quantidade;
           saldoAnteriorDestino = destino.quantidade;
           saldoPosteriorOrigem = origem.quantidade.plus(quantidade);
@@ -228,7 +262,9 @@ export class StockMovementService {
             },
           });
         } else {
-          throw new BadRequestException('Movimento original sem local para estorno');
+          throw new BadRequestException(
+            'Movimento original sem local para estorno',
+          );
         }
 
         const reversal = await tx.movimentoEstoque.create({
@@ -271,8 +307,17 @@ export class StockMovementService {
           },
         });
 
-        await tx.apropriacaoCustoEstoque.deleteMany({ where: { movimentoEstoqueId: original.id } });
-        await this.createAudit(tx, userId, 'ESTOQUE_MOVIMENTO_ESTORNADO', reversal.id, original, reversal);
+        await tx.apropriacaoCustoEstoque.deleteMany({
+          where: { movimentoEstoqueId: original.id },
+        });
+        await this.createAudit(
+          tx,
+          userId,
+          'ESTOQUE_MOVIMENTO_ESTORNADO',
+          reversal.id,
+          original,
+          reversal,
+        );
         return reversal;
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
@@ -346,7 +391,14 @@ export class StockMovementService {
       },
     });
 
-    await this.createAudit(tx, userId, 'ESTOQUE_ENTRADA_EFETIVADA', movimento.id, null, movimento);
+    await this.createAudit(
+      tx,
+      userId,
+      'ESTOQUE_ENTRADA_EFETIVADA',
+      movimento.id,
+      null,
+      movimento,
+    );
     return movimento;
   }
 
@@ -366,11 +418,7 @@ export class StockMovementService {
       origem.id,
     );
 
-    if (
-      reservedAllowance.gt(
-        saldoOrigem.quantidadeReservada,
-      )
-    ) {
+    if (reservedAllowance.gt(saldoOrigem.quantidadeReservada)) {
       throw new BadRequestException(
         'Reserva utilizada excede a quantidade reservada',
       );
@@ -382,7 +430,8 @@ export class StockMovementService {
     const saldoPosterior = saldoOrigem.quantidade.minus(quantidade);
 
     if (disponivel.lt(quantidade)) {
-      const canNegative = origem.permiteSaldoNegativo && dto.permitirSaldoNegativo;
+      const canNegative =
+        origem.permiteSaldoNegativo && dto.permitirSaldoNegativo;
       if (!canNegative || !dto.justificativaSaldoNegativo) {
         throw new BadRequestException('Saldo disponível insuficiente');
       }
@@ -392,7 +441,11 @@ export class StockMovementService {
         'ESTOQUE_TENTATIVA_SALDO_NEGATIVO',
         saldoOrigem.id,
         saldoOrigem,
-        { quantidade, disponivel, justificativa: dto.justificativaSaldoNegativo },
+        {
+          quantidade,
+          disponivel,
+          justificativa: dto.justificativaSaldoNegativo,
+        },
       );
     }
 
@@ -437,10 +490,26 @@ export class StockMovementService {
         dto.tipo === TipoMovimentoEstoque.SAIDA_PERDA) &&
       dto.obraId
     ) {
-      await this.createCostAppropriation(tx, movimento.id, dto.materialId, dto.obraId, quantidade, custoUnitario, custoTotal, dataMovimento);
+      await this.createCostAppropriation(
+        tx,
+        movimento.id,
+        dto.materialId,
+        dto.obraId,
+        quantidade,
+        custoUnitario,
+        custoTotal,
+        dataMovimento,
+      );
     }
 
-    await this.createAudit(tx, userId, 'ESTOQUE_SAIDA_EFETIVADA', movimento.id, saldoOrigem, movimento);
+    await this.createAudit(
+      tx,
+      userId,
+      'ESTOQUE_SAIDA_EFETIVADA',
+      movimento.id,
+      saldoOrigem,
+      movimento,
+    );
     return movimento;
   }
 
@@ -455,14 +524,18 @@ export class StockMovementService {
   ) {
     const origem = await this.getActiveLocation(tx, dto.localOrigemId!);
     const destino = await this.getActiveLocation(tx, dto.localDestinoId!);
-    const saldoOrigem = await this.getOrCreateLockedBalance(tx, dto.materialId, origem.id);
-    const saldoDestino = await this.getOrCreateLockedBalance(tx, dto.materialId, destino.id);
+    const saldoOrigem = await this.getOrCreateLockedBalance(
+      tx,
+      dto.materialId,
+      origem.id,
+    );
+    const saldoDestino = await this.getOrCreateLockedBalance(
+      tx,
+      dto.materialId,
+      destino.id,
+    );
 
-    if (
-      reservedAllowance.gt(
-        saldoOrigem.quantidadeReservada,
-      )
-    ) {
+    if (reservedAllowance.gt(saldoOrigem.quantidadeReservada)) {
       throw new BadRequestException(
         'Reserva utilizada excede a quantidade reservada',
       );
@@ -473,7 +546,9 @@ export class StockMovementService {
       .plus(reservedAllowance);
 
     if (disponivel.lt(quantidade)) {
-      throw new BadRequestException('Saldo disponível insuficiente para transferência');
+      throw new BadRequestException(
+        'Saldo disponível insuficiente para transferência',
+      );
     }
 
     const custoUnitario = saldoOrigem.custoMedio;
@@ -528,7 +603,14 @@ export class StockMovementService {
       },
     });
 
-    await this.createAudit(tx, userId, 'ESTOQUE_TRANSFERENCIA_EFETIVADA', movimento.id, { origem: saldoOrigem, destino: saldoDestino }, movimento);
+    await this.createAudit(
+      tx,
+      userId,
+      'ESTOQUE_TRANSFERENCIA_EFETIVADA',
+      movimento.id,
+      { origem: saldoOrigem, destino: saldoDestino },
+      movimento,
+    );
     return movimento;
   }
 
@@ -540,7 +622,11 @@ export class StockMovementService {
     return location;
   }
 
-  private async getOrCreateLockedBalance(tx: Tx, materialId: string, localEstoqueId: string) {
+  private async getOrCreateLockedBalance(
+    tx: Tx,
+    materialId: string,
+    localEstoqueId: string,
+  ) {
     await tx.saldoEstoque.upsert({
       where: { materialId_localEstoqueId: { materialId, localEstoqueId } },
       update: {},

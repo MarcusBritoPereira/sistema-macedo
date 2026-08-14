@@ -7,7 +7,9 @@ import { StockFinancialIntegrationService } from './services/stock-financial-int
 @Controller('stock/financial')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
 export class StockFinancialController {
-  constructor(private readonly financialIntegration: StockFinancialIntegrationService) {}
+  constructor(
+    private readonly financialIntegration: StockFinancialIntegrationService,
+  ) {}
 
   @Get('appropriations')
   @RequirePermissions('ESTOQUE_RELATORIOS')

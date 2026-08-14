@@ -93,22 +93,13 @@ export class ObrasController {
     @Param('parcelaId') parcelaId: string,
     @Req() req: any,
   ) {
-    return this.obrasService.lancarParcelaContasReceber(
-      parcelaId,
-      req.user.id,
-    );
+    return this.obrasService.lancarParcelaContasReceber(parcelaId, req.user.id);
   }
 
   @Post(':id/parcelas/lancar-contas-receber')
   @RequirePermissions('financeiro.obras.write')
-  lancarTodasParcelasContasReceber(
-    @Param('id') id: string,
-    @Req() req: any,
-  ) {
-    return this.obrasService.lancarTodasParcelasContasReceber(
-      id,
-      req.user.id,
-    );
+  lancarTodasParcelasContasReceber(@Param('id') id: string, @Req() req: any) {
+    return this.obrasService.lancarTodasParcelasContasReceber(id, req.user.id);
   }
 
   @Delete('parcelas/:parcelaId')

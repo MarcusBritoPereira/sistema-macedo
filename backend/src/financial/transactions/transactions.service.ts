@@ -32,7 +32,9 @@ export class FinancialTransactionsService {
     const requiresObra =
       data.tipoLancamento === 'OBRA' || data.tipoLancamento === 'POS_OBRA';
     if (requiresObra && !data.obraId) {
-      throw new BadRequestException("Obra vinculada é obrigatória para lançamentos de Obra e Pós-obra.");
+      throw new BadRequestException(
+        'Obra vinculada é obrigatória para lançamentos de Obra e Pós-obra.',
+      );
     }
   }
 
@@ -228,7 +230,7 @@ export class FinancialTransactionsService {
     });
 
     this.validateBusinessRules({
-      tipo: data.tipo ?? existing?.tipoLancamento ? 'DESPESA' : 'RECEITA', // Fallback, we'll just ignore for update
+      tipo: (data.tipo ?? existing?.tipoLancamento) ? 'DESPESA' : 'RECEITA', // Fallback, we'll just ignore for update
       tipoLancamento: data.tipoLancamento ?? existing?.tipoLancamento,
       obraId: data.obraId ?? existing?.obraId,
     });
@@ -306,9 +308,10 @@ export class FinancialTransactionsService {
       categoria: data.categoriaId
         ? { connect: { id: data.categoriaId } }
         : undefined,
-      centroCusto: (data.tipo !== 'RECEITA' && data.centroCustoId)
-        ? { connect: { id: data.centroCustoId } }
-        : undefined,
+      centroCusto:
+        data.tipo !== 'RECEITA' && data.centroCustoId
+          ? { connect: { id: data.centroCustoId } }
+          : undefined,
       contrato: data.contratoId
         ? { connect: { id: data.contratoId } }
         : undefined,
@@ -374,9 +377,12 @@ export class FinancialTransactionsService {
       categoria: data.categoriaId
         ? { connect: { id: data.categoriaId } }
         : undefined,
-      centroCusto: (data.tipo !== 'RECEITA' && data.centroCustoId)
-        ? { connect: { id: data.centroCustoId } }
-        : data.tipo === 'RECEITA' ? { disconnect: true } : undefined,
+      centroCusto:
+        data.tipo !== 'RECEITA' && data.centroCustoId
+          ? { connect: { id: data.centroCustoId } }
+          : data.tipo === 'RECEITA'
+            ? { disconnect: true }
+            : undefined,
       contrato: data.contratoId
         ? { connect: { id: data.contratoId } }
         : undefined,

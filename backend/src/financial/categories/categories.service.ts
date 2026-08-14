@@ -118,7 +118,7 @@ export class CategoriesService {
       const existing = await this.prisma.categoriaFinanceira.findFirst({
         where: {
           nome: { equals: row.nome.trim(), mode: 'insensitive' },
-          tipo: tipo as any,
+          tipo: tipo,
           parentId: null,
         },
       });
@@ -127,7 +127,7 @@ export class CategoriesService {
         await this.prisma.categoriaFinanceira.create({
           data: {
             nome: row.nome.trim(),
-            tipo: tipo as any,
+            tipo: tipo,
             descricao: row.descricao || null,
             classificacao: row.classificacao || null,
           },

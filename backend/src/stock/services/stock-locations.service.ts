@@ -1,10 +1,19 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma, StatusObra } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStockLocationDto } from '../dto/create-stock-location.dto';
 import { UpdateStockLocationDto } from '../dto/update-stock-location.dto';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
-import { cleanString, normalizePagination, stringifyAudit } from './stock-common';
+import {
+  cleanString,
+  normalizePagination,
+  stringifyAudit,
+} from './stock-common';
 
 @Injectable()
 export class StockLocationsService {
@@ -15,12 +24,27 @@ export class StockLocationsService {
     await this.ensureUniqueCode(data.codigo as string);
     if (data.obraId) await this.ensureActiveProject(data.obraId as string);
 
-    const location = await this.prisma.localEstoque.create({ data: data as any, include: this.includeRelations() });
-    await this.audit(userId, 'ESTOQUE_LOCAL_CRIADO', location.id, null, location);
+    const location = await this.prisma.localEstoque.create({
+      data: data as any,
+      include: this.includeRelations(),
+    });
+    await this.audit(
+      userId,
+      'ESTOQUE_LOCAL_CRIADO',
+      location.id,
+      null,
+      location,
+    );
     return location;
   }
 
-  async findAll(query: PaginationQueryDto & { tipo?: string; obraId?: string; ativo?: string }) {
+  async findAll(
+    query: PaginationQueryDto & {
+      tipo?: string;
+      obraId?: string;
+      ativo?: string;
+    },
+  ) {
     const { skip, take } = normalizePagination(query.skip, query.take);
     const where: Prisma.LocalEstoqueWhereInput = {
       ...(query.tipo ? { tipo: query.tipo as any } : {}),
@@ -101,8 +125,12 @@ export class StockLocationsService {
   }
 
   async findOne(id: string) {
-    const location = await this.prisma.localEstoque.findUnique({ where: { id }, include: this.includeRelations() });
-    if (!location) throw new NotFoundException('Local de estoque não encontrado');
+    const location = await this.prisma.localEstoque.findUnique({
+      where: { id },
+      include: this.includeRelations(),
+    });
+    if (!location)
+      throw new NotFoundException('Local de estoque não encontrado');
     return location;
   }
 
@@ -112,7 +140,11 @@ export class StockLocationsService {
     if (data.codigo) await this.ensureUniqueCode(data.codigo as string, id);
     if (data.obraId) await this.ensureActiveProject(data.obraId as string);
 
-    const updated = await this.prisma.localEstoque.update({ where: { id }, data, include: this.includeRelations() });
+    const updated = await this.prisma.localEstoque.update({
+      where: { id },
+      data,
+      include: this.includeRelations(),
+    });
     await this.audit(userId, 'ESTOQUE_LOCAL_ATUALIZADO', id, current, updated);
     return updated;
   }
@@ -144,7 +176,9 @@ export class StockLocationsService {
   }
 
   private async sanitize(dto: CreateStockLocationDto | UpdateStockLocationDto) {
-    const data: Prisma.LocalEstoqueUncheckedCreateInput | Prisma.LocalEstoqueUncheckedUpdateInput = {};
+    const data:
+      | Prisma.LocalEstoqueUncheckedCreateInput
+      | Prisma.LocalEstoqueUncheckedUpdateInput = {};
     if (dto.nome !== undefined) {
       const nome = dto.nome.trim();
       if (!nome) throw new BadRequestException('Nome do local é obrigatório');
@@ -152,14 +186,17 @@ export class StockLocationsService {
     }
     if (dto.codigo !== undefined) {
       const codigo = dto.codigo.trim();
-      if (!codigo) throw new BadRequestException('Código do local é obrigatório');
+      if (!codigo)
+        throw new BadRequestException('Código do local é obrigatório');
       data.codigo = codigo;
     }
     if (dto.tipo !== undefined) data.tipo = dto.tipo;
     if (dto.obraId !== undefined) data.obraId = dto.obraId || null;
-    if (dto.responsavelId !== undefined) data.responsavelId = dto.responsavelId || null;
+    if (dto.responsavelId !== undefined)
+      data.responsavelId = dto.responsavelId || null;
     if (dto.endereco !== undefined) data.endereco = cleanString(dto.endereco);
-    if (dto.permiteSaldoNegativo !== undefined) data.permiteSaldoNegativo = dto.permiteSaldoNegativo;
+    if (dto.permiteSaldoNegativo !== undefined)
+      data.permiteSaldoNegativo = dto.permiteSaldoNegativo;
     if (dto.ativo !== undefined) data.ativo = dto.ativo;
     return data;
   }
@@ -169,17 +206,31 @@ export class StockLocationsService {
       where: { codigo, ...(currentId ? { id: { not: currentId } } : {}) },
       select: { id: true },
     });
-    if (existing) throw new ConflictException('Código de local de estoque já cadastrado');
+    if (existing)
+      throw new ConflictException('Código de local de estoque já cadastrado');
   }
 
   private async ensureActiveProject(obraId: string) {
     const obra = await this.prisma.obra.findUnique({ where: { id: obraId } });
-    if (!obra || !obra.ativo || obra.status === StatusObra.CANCELADA || obra.status === StatusObra.CONCLUIDA) {
-      throw new BadRequestException('Obra ativa não encontrada para vincular ao local de estoque');
+    if (
+      !obra ||
+      !obra.ativo ||
+      obra.status === StatusObra.CANCELADA ||
+      obra.status === StatusObra.CONCLUIDA
+    ) {
+      throw new BadRequestException(
+        'Obra ativa não encontrada para vincular ao local de estoque',
+      );
     }
   }
 
-  private audit(userId: string, acao: string, registroId: string, oldValue: unknown, newValue: unknown) {
+  private audit(
+    userId: string,
+    acao: string,
+    registroId: string,
+    oldValue: unknown,
+    newValue: unknown,
+  ) {
     return this.prisma.logAuditoria.create({
       data: {
         acao,

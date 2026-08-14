@@ -31,11 +31,15 @@ export class StockFinancialIntegrationService {
       },
     });
 
-    if (!document) throw new BadRequestException('Documento de estoque não encontrado');
-    if (document.tipo !== TipoDocumentoEstoque.ENTRADA) return document.transacaoFinanceiraId;
+    if (!document)
+      throw new BadRequestException('Documento de estoque não encontrado');
+    if (document.tipo !== TipoDocumentoEstoque.ENTRADA)
+      return document.transacaoFinanceiraId;
     if (document.transacaoFinanceiraId) return document.transacaoFinanceiraId;
     if (!document.fornecedorId) {
-      throw new BadRequestException('Entrada de compra exige fornecedor para integração financeira');
+      throw new BadRequestException(
+        'Entrada de compra exige fornecedor para integração financeira',
+      );
     }
 
     const duplicate = await this.findDuplicatePurchase({
@@ -49,13 +53,21 @@ export class StockFinancialIntegrationService {
         where: { id: document.id },
         data: { transacaoFinanceiraId: duplicate.id },
       });
-      await this.audit(userId, 'ESTOQUE_COMPRA_VINCULADA_FINANCEIRO_EXISTENTE', document.id, document, duplicate);
+      await this.audit(
+        userId,
+        'ESTOQUE_COMPRA_VINCULADA_FINANCEIRO_EXISTENTE',
+        document.id,
+        document,
+        duplicate,
+      );
       return duplicate.id;
     }
 
     const firstItem = document.itens[0];
-    const categoriaId = firstItem?.material.categoriaMaterial.categoriaFinanceiraId || null;
-    const centroCustoId = firstItem?.material.categoriaMaterial.centroCustoPadraoId || null;
+    const categoriaId =
+      firstItem?.material.categoriaMaterial.categoriaFinanceiraId || null;
+    const centroCustoId =
+      firstItem?.material.categoriaMaterial.centroCustoPadraoId || null;
     const descricao = this.buildPurchaseDescription(document);
 
     const transaction = await this.prisma.lancamentoFinanceiro.create({
@@ -83,7 +95,13 @@ export class StockFinancialIntegrationService {
       where: { id: document.id },
       data: { transacaoFinanceiraId: transaction.id },
     });
-    await this.audit(userId, 'ESTOQUE_COMPRA_GEROU_FINANCEIRO', document.id, document, transaction);
+    await this.audit(
+      userId,
+      'ESTOQUE_COMPRA_GEROU_FINANCEIRO',
+      document.id,
+      document,
+      transaction,
+    );
     return transaction.id;
   }
 
@@ -98,10 +116,17 @@ export class StockFinancialIntegrationService {
       where: { id: document.transacaoFinanceiraId },
       data: {
         status: StatusLancamento.CANCELADO,
-        observacoes: `${document.transacaoFinanceira?.observacoes || ''}\nCancelado pelo estorno do documento de estoque ${document.numero}`.trim(),
+        observacoes:
+          `${document.transacaoFinanceira?.observacoes || ''}\nCancelado pelo estorno do documento de estoque ${document.numero}`.trim(),
       },
     });
-    await this.audit(userId, 'ESTOQUE_COMPRA_CANCELOU_FINANCEIRO', document.id, document, transaction);
+    await this.audit(
+      userId,
+      'ESTOQUE_COMPRA_CANCELOU_FINANCEIRO',
+      document.id,
+      document,
+      transaction,
+    );
     return transaction;
   }
 
@@ -121,7 +146,12 @@ export class StockFinancialIntegrationService {
       ...(params.materialId ? { materialId: params.materialId } : {}),
       ...(params.centroCustoId ? { centroCustoId: params.centroCustoId } : {}),
       ...(params.startDate && params.endDate
-        ? { dataCompetencia: { gte: new Date(params.startDate), lte: new Date(params.endDate) } }
+        ? {
+            dataCompetencia: {
+              gte: new Date(params.startDate),
+              lte: new Date(params.endDate),
+            },
+          }
         : {}),
     };
 
@@ -140,7 +170,10 @@ export class StockFinancialIntegrationService {
         orderBy: { dataCompetencia: 'desc' },
       }),
       this.prisma.apropriacaoCustoEstoque.count({ where }),
-      this.prisma.apropriacaoCustoEstoque.aggregate({ where, _sum: { custoTotal: true, quantidade: true } }),
+      this.prisma.apropriacaoCustoEstoque.aggregate({
+        where,
+        _sum: { custoTotal: true, quantidade: true },
+      }),
     ]);
 
     return {
@@ -164,7 +197,10 @@ export class StockFinancialIntegrationService {
         tipo: TipoLancamento.DESPESA,
         fornecedorId: params.fornecedorId,
         valor: params.valorTotal,
-        observacoes: { contains: `NF: ${params.documentoFiscal}`, mode: 'insensitive' },
+        observacoes: {
+          contains: `NF: ${params.documentoFiscal}`,
+          mode: 'insensitive',
+        },
         status: { not: StatusLancamento.CANCELADO },
       },
       orderBy: { createdAt: 'desc' },
@@ -172,8 +208,13 @@ export class StockFinancialIntegrationService {
   }
 
   private buildPurchaseDescription(document: any) {
-    const supplier = document.fornecedor?.nomeFantasia || document.fornecedor?.razaoSocial || 'Fornecedor';
-    const fiscal = document.documentoFiscal ? ` NF ${document.documentoFiscal}` : '';
+    const supplier =
+      document.fornecedor?.nomeFantasia ||
+      document.fornecedor?.razaoSocial ||
+      'Fornecedor';
+    const fiscal = document.documentoFiscal
+      ? ` NF ${document.documentoFiscal}`
+      : '';
     return `Compra de materiais - ${supplier}${fiscal}`;
   }
 
@@ -184,7 +225,13 @@ export class StockFinancialIntegrationService {
     return parts.join(' | ');
   }
 
-  private audit(userId: string, acao: string, registroId: string, oldValue: unknown, newValue: unknown) {
+  private audit(
+    userId: string,
+    acao: string,
+    registroId: string,
+    oldValue: unknown,
+    newValue: unknown,
+  ) {
     return this.prisma.logAuditoria.create({
       data: {
         acao,

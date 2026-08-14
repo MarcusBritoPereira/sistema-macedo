@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Param, Post, Query, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { StatusOrcamentoMaterialObra } from '@prisma/client';
 import { RequirePermissions } from '../auth/permissions.decorator';
@@ -20,7 +29,13 @@ export class StockBudgetsController {
 
   @Get()
   @RequirePermissions('ESTOQUE_RELATORIOS')
-  findAll(@Query() query: PaginationQueryDto & { status?: StatusOrcamentoMaterialObra; obraId?: string }) {
+  findAll(
+    @Query()
+    query: PaginationQueryDto & {
+      status?: StatusOrcamentoMaterialObra;
+      obraId?: string;
+    },
+  ) {
     return this.service.findAll(query);
   }
 
@@ -32,14 +47,8 @@ export class StockBudgetsController {
 
   @Post(':id/submit')
   @RequirePermissions('ESTOQUE_CONFIGURACOES')
-  submit(
-    @Param('id') id: string,
-    @Req() req: any,
-  ) {
-    return this.service.submit(
-      id,
-      req.user.id,
-    );
+  submit(@Param('id') id: string, @Req() req: any) {
+    return this.service.submit(id, req.user.id);
   }
 
   @Post(':id/approve')
@@ -50,14 +59,8 @@ export class StockBudgetsController {
 
   @Post(':id/cancel')
   @RequirePermissions('ESTOQUE_CONFIGURACOES')
-  cancel(
-    @Param('id') id: string,
-    @Req() req: any,
-  ) {
-    return this.service.cancel(
-      id,
-      req.user.id,
-    );
+  cancel(@Param('id') id: string, @Req() req: any) {
+    return this.service.cancel(id, req.user.id);
   }
 
   @Get(':id/actual-vs-budget')

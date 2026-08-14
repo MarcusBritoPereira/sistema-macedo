@@ -1,5 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma, StatusInventarioEstoque, TipoMovimentoEstoque } from '@prisma/client';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import {
+  Prisma,
+  StatusInventarioEstoque,
+  TipoMovimentoEstoque,
+} from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CountStockInventoryDto } from '../dto/count-stock-inventory.dto';
 import { CreateStockInventoryDto } from '../dto/create-stock-inventory.dto';
@@ -17,8 +25,11 @@ export class StockInventoriesService {
   ) {}
 
   async create(dto: CreateStockInventoryDto, userId: string) {
-    const location = await this.prisma.localEstoque.findUnique({ where: { id: dto.localEstoqueId } });
-    if (!location || !location.ativo) throw new NotFoundException('Local de estoque ativo não encontrado');
+    const location = await this.prisma.localEstoque.findUnique({
+      where: { id: dto.localEstoqueId },
+    });
+    if (!location || !location.ativo)
+      throw new NotFoundException('Local de estoque ativo não encontrado');
 
     const balances = await this.prisma.saldoEstoque.findMany({
       where: { localEstoqueId: dto.localEstoqueId },
@@ -44,11 +55,22 @@ export class StockInventoriesService {
       },
       include: this.includeRelations(),
     });
-    await this.audit(userId, 'ESTOQUE_INVENTARIO_ABERTO', inventory.id, null, inventory);
+    await this.audit(
+      userId,
+      'ESTOQUE_INVENTARIO_ABERTO',
+      inventory.id,
+      null,
+      inventory,
+    );
     return inventory;
   }
 
-  async findAll(query: PaginationQueryDto & { status?: StatusInventarioEstoque; localEstoqueId?: string }) {
+  async findAll(
+    query: PaginationQueryDto & {
+      status?: StatusInventarioEstoque;
+      localEstoqueId?: string;
+    },
+  ) {
     const { skip, take } = normalizePagination(query.skip, query.take);
     const where: Prisma.InventarioEstoqueWhereInput = {
       ...(query.status ? { status: query.status } : {}),
@@ -57,8 +79,16 @@ export class StockInventoriesService {
         ? {
             OR: [
               { observacao: { contains: query.search, mode: 'insensitive' } },
-              { localEstoque: { nome: { contains: query.search, mode: 'insensitive' } } },
-              { localEstoque: { codigo: { contains: query.search, mode: 'insensitive' } } },
+              {
+                localEstoque: {
+                  nome: { contains: query.search, mode: 'insensitive' },
+                },
+              },
+              {
+                localEstoque: {
+                  codigo: { contains: query.search, mode: 'insensitive' },
+                },
+              },
             ],
           }
         : {}),
@@ -68,7 +98,12 @@ export class StockInventoriesService {
         where,
         skip,
         take,
-        include: { localEstoque: true, criadoPor: true, aprovadoPor: true, _count: { select: { itens: true } } },
+        include: {
+          localEstoque: true,
+          criadoPor: true,
+          aprovadoPor: true,
+          _count: { select: { itens: true } },
+        },
         orderBy: { createdAt: 'desc' },
       }),
       this.prisma.inventarioEstoque.count({ where }),
@@ -77,31 +112,44 @@ export class StockInventoriesService {
   }
 
   async findOne(id: string) {
-    const inventory = await this.prisma.inventarioEstoque.findUnique({ where: { id }, include: this.includeRelations() });
+    const inventory = await this.prisma.inventarioEstoque.findUnique({
+      where: { id },
+      include: this.includeRelations(),
+    });
     if (!inventory) throw new NotFoundException('Inventário não encontrado');
     return inventory;
   }
 
   async count(id: string, dto: CountStockInventoryDto, userId: string) {
     const inventory = await this.findOne(id);
-    if (![StatusInventarioEstoque.ABERTO, StatusInventarioEstoque.EM_CONTAGEM].includes(inventory.status as any)) {
+    if (
+      ![
+        StatusInventarioEstoque.ABERTO,
+        StatusInventarioEstoque.EM_CONTAGEM,
+      ].includes(inventory.status as any)
+    ) {
       throw new BadRequestException('Inventário não está aberto para contagem');
     }
 
     const updated = await this.prisma.$transaction(async (tx) => {
       for (const item of dto.items) {
-        const material = await tx.material.findUnique({ where: { id: item.materialId } });
-        if (!material || !material.ativo) throw new NotFoundException('Material ativo não encontrado');
-        const counted = this.costing.assertNonNegative(item.quantidadeContada, 'quantidadeContada');
-        const inventoryItem =
-          await tx.itemInventarioEstoque.findUnique({
-            where: {
-              inventarioId_materialId: {
-                inventarioId: id,
-                materialId: item.materialId,
-              },
+        const material = await tx.material.findUnique({
+          where: { id: item.materialId },
+        });
+        if (!material || !material.ativo)
+          throw new NotFoundException('Material ativo não encontrado');
+        const counted = this.costing.assertNonNegative(
+          item.quantidadeContada,
+          'quantidadeContada',
+        );
+        const inventoryItem = await tx.itemInventarioEstoque.findUnique({
+          where: {
+            inventarioId_materialId: {
+              inventarioId: id,
+              materialId: item.materialId,
             },
-          });
+          },
+        });
 
         if (!inventoryItem) {
           throw new NotFoundException(
@@ -109,20 +157,19 @@ export class StockInventoriesService {
           );
         }
 
-        const systemQty =
-          new Prisma.Decimal(
-            inventoryItem.quantidadeSistema,
-          );
+        const systemQty = new Prisma.Decimal(inventoryItem.quantidadeSistema);
 
-        const averageCost =
-          new Prisma.Decimal(
-            inventoryItem.custoMedio,
-          );
+        const averageCost = new Prisma.Decimal(inventoryItem.custoMedio);
 
         const diff = counted.minus(systemQty);
         const valueDiff = diff.mul(averageCost);
         await tx.itemInventarioEstoque.upsert({
-          where: { inventarioId_materialId: { inventarioId: id, materialId: item.materialId } },
+          where: {
+            inventarioId_materialId: {
+              inventarioId: id,
+              materialId: item.materialId,
+            },
+          },
           create: {
             inventarioId: id,
             materialId: item.materialId,
@@ -150,25 +197,26 @@ export class StockInventoriesService {
         include: this.includeRelations(),
       });
     });
-    await this.audit(userId, 'ESTOQUE_INVENTARIO_CONTADO', id, inventory, updated);
+    await this.audit(
+      userId,
+      'ESTOQUE_INVENTARIO_CONTADO',
+      id,
+      inventory,
+      updated,
+    );
     return updated;
   }
 
   async submit(id: string, userId: string) {
     const before = await this.findOne(id);
 
-    if (
-      before.status !==
-      StatusInventarioEstoque.EM_CONTAGEM
-    ) {
+    if (before.status !== StatusInventarioEstoque.EM_CONTAGEM) {
       throw new BadRequestException(
         'Inventário deve estar em contagem para envio à aprovação',
       );
     }
 
-    const notCounted = before.itens.filter(
-      (item: any) => !item.contado,
-    );
+    const notCounted = before.itens.filter((item: any) => !item.contado);
 
     if (notCounted.length) {
       throw new BadRequestException(
@@ -176,12 +224,11 @@ export class StockInventoriesService {
       );
     }
 
-    const withoutJustification =
-      before.itens.filter(
-        (item: any) =>
-          !new Prisma.Decimal(item.diferenca).eq(0) &&
-          !item.justificativa?.trim(),
-      );
+    const withoutJustification = before.itens.filter(
+      (item: any) =>
+        !new Prisma.Decimal(item.diferenca).eq(0) &&
+        !item.justificativa?.trim(),
+    );
 
     if (withoutJustification.length) {
       throw new BadRequestException(
@@ -189,15 +236,13 @@ export class StockInventoriesService {
       );
     }
 
-    const updated =
-      await this.prisma.inventarioEstoque.update({
-        where: { id },
-        data: {
-          status:
-            StatusInventarioEstoque.PENDENTE_APROVACAO,
-        },
-        include: this.includeRelations(),
-      });
+    const updated = await this.prisma.inventarioEstoque.update({
+      where: { id },
+      data: {
+        status: StatusInventarioEstoque.PENDENTE_APROVACAO,
+      },
+      include: this.includeRelations(),
+    });
 
     await this.audit(
       userId,
@@ -212,10 +257,7 @@ export class StockInventoriesService {
 
   async approve(id: string, userId: string) {
     const before = await this.findOne(id);
-    if (
-      before.status !==
-      StatusInventarioEstoque.PENDENTE_APROVACAO
-    ) {
+    if (before.status !== StatusInventarioEstoque.PENDENTE_APROVACAO) {
       throw new BadRequestException(
         'Inventário deve estar pendente de aprovação',
       );
@@ -225,14 +267,22 @@ export class StockInventoriesService {
       data: { status: StatusInventarioEstoque.APROVADO, aprovadoPorId: userId },
       include: this.includeRelations(),
     });
-    await this.audit(userId, 'ESTOQUE_INVENTARIO_APROVADO', id, before, updated);
+    await this.audit(
+      userId,
+      'ESTOQUE_INVENTARIO_APROVADO',
+      id,
+      before,
+      updated,
+    );
     return updated;
   }
 
   async close(id: string, userId: string) {
     const inventory = await this.findOne(id);
     if (inventory.status !== StatusInventarioEstoque.APROVADO) {
-      throw new BadRequestException('Inventário deve estar aprovado para fechamento');
+      throw new BadRequestException(
+        'Inventário deve estar aprovado para fechamento',
+      );
     }
 
     for (const item of inventory.itens) {
@@ -240,7 +290,9 @@ export class StockInventoriesService {
       if (diff.eq(0)) continue;
       await this.movementService.execute(
         {
-          tipo: diff.gt(0) ? TipoMovimentoEstoque.ENTRADA_AJUSTE : TipoMovimentoEstoque.SAIDA_AJUSTE,
+          tipo: diff.gt(0)
+            ? TipoMovimentoEstoque.ENTRADA_AJUSTE
+            : TipoMovimentoEstoque.SAIDA_AJUSTE,
           materialId: item.materialId,
           localDestinoId: diff.gt(0) ? inventory.localEstoqueId : undefined,
           localOrigemId: diff.lt(0) ? inventory.localEstoqueId : undefined,
@@ -249,7 +301,8 @@ export class StockInventoriesService {
           custoUnitario: item.custoMedio.toString(),
           documentoTipo: 'INVENTARIO',
           documentoNumero: id,
-          observacao: item.justificativa || `Ajuste gerado pelo inventário ${id}`,
+          observacao:
+            item.justificativa || `Ajuste gerado pelo inventário ${id}`,
         },
         userId,
       );
@@ -257,10 +310,19 @@ export class StockInventoriesService {
 
     const updated = await this.prisma.inventarioEstoque.update({
       where: { id },
-      data: { status: StatusInventarioEstoque.FECHADO, dataFechamento: new Date() },
+      data: {
+        status: StatusInventarioEstoque.FECHADO,
+        dataFechamento: new Date(),
+      },
       include: this.includeRelations(),
     });
-    await this.audit(userId, 'ESTOQUE_INVENTARIO_FECHADO', id, inventory, updated);
+    await this.audit(
+      userId,
+      'ESTOQUE_INVENTARIO_FECHADO',
+      id,
+      inventory,
+      updated,
+    );
     return updated;
   }
 
@@ -269,11 +331,20 @@ export class StockInventoriesService {
       localEstoque: true,
       criadoPor: true,
       aprovadoPor: true,
-      itens: { include: { material: { include: { categoriaMaterial: true } } }, orderBy: { material: { nome: 'asc' as const } } },
+      itens: {
+        include: { material: { include: { categoriaMaterial: true } } },
+        orderBy: { material: { nome: 'asc' as const } },
+      },
     };
   }
 
-  private async audit(userId: string, action: string, entityId: string, before: unknown, after: unknown) {
+  private async audit(
+    userId: string,
+    action: string,
+    entityId: string,
+    before: unknown,
+    after: unknown,
+  ) {
     await this.prisma.logAuditoria.create({
       data: {
         usuarioId: userId,

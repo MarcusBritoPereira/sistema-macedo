@@ -6,9 +6,11 @@ export class OfxService {
 
   parseOfx(ofxContent: string): any[] {
     const transactions: any[] = [];
-    
+
     // Normalize line endings to facilitate parsing
-    const normalizedContent = ofxContent.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const normalizedContent = ofxContent
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n');
     const lines = normalizedContent.split('\n');
     let currentTx: any = null;
     let insideTx = false;
@@ -70,7 +72,7 @@ export class OfxService {
         } else if (cleanedAmt.endsWith('+')) {
           cleanedAmt = cleanedAmt.slice(0, -1);
         }
-        
+
         // Handle decimals and thousands separator
         if (cleanedAmt.includes(',') && cleanedAmt.includes('.')) {
           if (cleanedAmt.indexOf(',') > cleanedAmt.indexOf('.')) {
@@ -105,9 +107,10 @@ export class OfxService {
         t.payeeid,
       );
 
-      const isCredit = (t.type || '').toUpperCase() === 'CREDIT' || 
-                       (t.type || '').toUpperCase() === 'DEP' || 
-                       amount >= 0;
+      const isCredit =
+        (t.type || '').toUpperCase() === 'CREDIT' ||
+        (t.type || '').toUpperCase() === 'DEP' ||
+        amount >= 0;
 
       return {
         id: t.id,

@@ -25,7 +25,9 @@ export class ClientsService {
             },
           });
         }
-        throw new ConflictException('Já existe um cliente cadastrado com este CPF.');
+        throw new ConflictException(
+          'Já existe um cliente cadastrado com este CPF.',
+        );
       }
     }
 
@@ -44,7 +46,9 @@ export class ClientsService {
             },
           });
         }
-        throw new ConflictException('Já existe um cliente cadastrado com este CNPJ.');
+        throw new ConflictException(
+          'Já existe um cliente cadastrado com este CNPJ.',
+        );
       }
     }
 
@@ -52,19 +56,21 @@ export class ClientsService {
   }
 
   getTemplate(res: Response) {
-    const csv = Papa.unparse([{
-      'Razão Social': 'Empresa Exemplo LTDA',
-      'Nome Fantasia': 'Exemplo',
-      'CNPJ': '00.000.000/0000-00',
-      'CPF': '',
-      'Email': 'contato@exemplo.com',
-      'Telefone': '11999999999',
-      'Endereço': 'Rua Exemplo, 123',
-      'Representante Nome': 'João da Silva',
-      'Representante CPF': '000.000.000-00',
-      'Financeiro Nome': 'Maria Souza',
-      'Financeiro Email': 'financeiro@exemplo.com'
-    }]);
+    const csv = Papa.unparse([
+      {
+        'Razão Social': 'Empresa Exemplo LTDA',
+        'Nome Fantasia': 'Exemplo',
+        CNPJ: '00.000.000/0000-00',
+        CPF: '',
+        Email: 'contato@exemplo.com',
+        Telefone: '11999999999',
+        Endereço: 'Rua Exemplo, 123',
+        'Representante Nome': 'João da Silva',
+        'Representante CPF': '000.000.000-00',
+        'Financeiro Nome': 'Maria Souza',
+        'Financeiro Email': 'financeiro@exemplo.com',
+      },
+    ]);
     res.header('Content-Type', 'text/csv');
     res.attachment('clientes_modelo.csv');
     return res.send(csv);
@@ -72,10 +78,13 @@ export class ClientsService {
 
   async importCsv(file: Express.Multer.File) {
     const csvData = file.buffer.toString('utf-8');
-    const { data } = Papa.parse(csvData, { header: true, skipEmptyLines: true });
-    
+    const { data } = Papa.parse(csvData, {
+      header: true,
+      skipEmptyLines: true,
+    });
+
     const validData: any[] = [];
-    
+
     const normalizeKey = (key: string): string => {
       return key
         .toLowerCase()
@@ -102,7 +111,7 @@ export class ClientsService {
       financeiroemail: 'financeiroEmail',
       emailfinanceiro: 'financeiroEmail',
     };
-    
+
     for (const rawRow of data as any[]) {
       const row: any = {};
       for (const rawKey of Object.keys(rawRow)) {
@@ -117,7 +126,7 @@ export class ClientsService {
 
       let razaoSocial = row.razaoSocial?.toString().trim();
       let nomeFantasia = row.nomeFantasia?.toString().trim();
-      
+
       if (!razaoSocial && nomeFantasia) {
         razaoSocial = nomeFantasia;
       }
@@ -152,7 +161,7 @@ export class ClientsService {
         skipped: result.skipped,
       };
     }
-    
+
     return { success: true, imported: 0, total: 0, created: 0, skipped: 0 };
   }
 
@@ -189,7 +198,9 @@ export class ClientsService {
         where: { cpf: data.cpf, NOT: { id } },
       });
       if (existingCpf) {
-        throw new ConflictException('Já existe um cliente cadastrado com este CPF.');
+        throw new ConflictException(
+          'Já existe um cliente cadastrado com este CPF.',
+        );
       }
     }
 
@@ -198,7 +209,9 @@ export class ClientsService {
         where: { cnpj: data.cnpj, NOT: { id } },
       });
       if (existingCnpj) {
-        throw new ConflictException('Já existe um cliente cadastrado com este CNPJ.');
+        throw new ConflictException(
+          'Já existe um cliente cadastrado com este CNPJ.',
+        );
       }
     }
 

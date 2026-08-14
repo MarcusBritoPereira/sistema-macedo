@@ -1,10 +1,19 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStockCategoryDto } from '../dto/create-stock-category.dto';
 import { UpdateStockCategoryDto } from '../dto/update-stock-category.dto';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
-import { cleanString, normalizePagination, stringifyAudit } from './stock-common';
+import {
+  cleanString,
+  normalizePagination,
+  stringifyAudit,
+} from './stock-common';
 
 @Injectable()
 export class StockCategoriesService {
@@ -12,13 +21,22 @@ export class StockCategoriesService {
 
   async create(dto: CreateStockCategoryDto, userId: string) {
     const data = await this.sanitize(dto);
-    await this.ensureUniqueName(data.nome as string, data.parentId as string | null | undefined);
+    await this.ensureUniqueName(
+      data.nome as string,
+      data.parentId as string | null | undefined,
+    );
 
     const category = await this.prisma.categoriaMaterial.create({
       data: data as any,
       include: this.includeRelations(),
     });
-    await this.audit(userId, 'ESTOQUE_CATEGORIA_CRIADA', category.id, null, category);
+    await this.audit(
+      userId,
+      'ESTOQUE_CATEGORIA_CRIADA',
+      category.id,
+      null,
+      category,
+    );
     return category;
   }
 
@@ -30,15 +48,10 @@ export class StockCategoriesService {
   ) {
     const { skip, take } = normalizePagination(query.skip, query.take);
     const where: Prisma.CategoriaMaterialWhereInput = {
-      ...(query.ativo !== undefined
-        ? { ativo: query.ativo === 'true' }
-        : {}),
+      ...(query.ativo !== undefined ? { ativo: query.ativo === 'true' } : {}),
       ...(query.parentId
         ? {
-            parentId:
-              query.parentId === 'ROOT'
-                ? null
-                : query.parentId,
+            parentId: query.parentId === 'ROOT' ? null : query.parentId,
           }
         : {}),
       ...(query.search
@@ -116,7 +129,8 @@ export class StockCategoriesService {
       where: { id },
       include: this.includeRelations(),
     });
-    if (!category) throw new NotFoundException('Categoria de material não encontrada');
+    if (!category)
+      throw new NotFoundException('Categoria de material não encontrada');
     return category;
   }
 
@@ -124,7 +138,10 @@ export class StockCategoriesService {
     const current = await this.findOne(id);
     const data = await this.sanitize(dto, id);
     const desiredName = (data.nome as string | undefined) ?? current.nome;
-    const desiredParent = data.parentId === undefined ? current.parentId : (data.parentId as string | null);
+    const desiredParent =
+      data.parentId === undefined
+        ? current.parentId
+        : (data.parentId as string | null);
     await this.ensureUniqueName(desiredName, desiredParent, id);
 
     const updated = await this.prisma.categoriaMaterial.update({
@@ -132,7 +149,13 @@ export class StockCategoriesService {
       data: data as any,
       include: this.includeRelations(),
     });
-    await this.audit(userId, 'ESTOQUE_CATEGORIA_ATUALIZADA', id, current, updated);
+    await this.audit(
+      userId,
+      'ESTOQUE_CATEGORIA_ATUALIZADA',
+      id,
+      current,
+      updated,
+    );
     return updated;
   }
 
@@ -143,7 +166,13 @@ export class StockCategoriesService {
       data: { ativo: false },
       include: this.includeRelations(),
     });
-    await this.audit(userId, 'ESTOQUE_CATEGORIA_INATIVADA', id, current, updated);
+    await this.audit(
+      userId,
+      'ESTOQUE_CATEGORIA_INATIVADA',
+      id,
+      current,
+      updated,
+    );
     return updated;
   }
 
@@ -187,25 +216,39 @@ export class StockCategoriesService {
     };
   }
 
-  private async sanitize(dto: CreateStockCategoryDto | UpdateStockCategoryDto, currentId?: string) {
-    const data: Prisma.CategoriaMaterialUncheckedCreateInput | Prisma.CategoriaMaterialUncheckedUpdateInput = {};
+  private async sanitize(
+    dto: CreateStockCategoryDto | UpdateStockCategoryDto,
+    currentId?: string,
+  ) {
+    const data:
+      | Prisma.CategoriaMaterialUncheckedCreateInput
+      | Prisma.CategoriaMaterialUncheckedUpdateInput = {};
     if (dto.nome !== undefined) {
       const nome = dto.nome.trim();
-      if (!nome) throw new BadRequestException('Nome da categoria é obrigatório');
+      if (!nome)
+        throw new BadRequestException('Nome da categoria é obrigatório');
       data.nome = nome;
     }
-    if (dto.descricao !== undefined) data.descricao = cleanString(dto.descricao);
+    if (dto.descricao !== undefined)
+      data.descricao = cleanString(dto.descricao);
     if (dto.parentId !== undefined) {
-      if (dto.parentId === currentId) throw new BadRequestException('Categoria não pode ser pai dela mesma');
+      if (dto.parentId === currentId)
+        throw new BadRequestException('Categoria não pode ser pai dela mesma');
       data.parentId = dto.parentId || null;
     }
-    if (dto.categoriaFinanceiraId !== undefined) data.categoriaFinanceiraId = dto.categoriaFinanceiraId || null;
-    if (dto.centroCustoPadraoId !== undefined) data.centroCustoPadraoId = dto.centroCustoPadraoId || null;
+    if (dto.categoriaFinanceiraId !== undefined)
+      data.categoriaFinanceiraId = dto.categoriaFinanceiraId || null;
+    if (dto.centroCustoPadraoId !== undefined)
+      data.centroCustoPadraoId = dto.centroCustoPadraoId || null;
     if (dto.ativo !== undefined) data.ativo = dto.ativo;
     return data;
   }
 
-  private async ensureUniqueName(nome: string, parentId?: string | null, currentId?: string) {
+  private async ensureUniqueName(
+    nome: string,
+    parentId?: string | null,
+    currentId?: string,
+  ) {
     const existing = await this.prisma.categoriaMaterial.findFirst({
       where: {
         nome: { equals: nome, mode: 'insensitive' },
@@ -214,10 +257,19 @@ export class StockCategoriesService {
       },
       select: { id: true },
     });
-    if (existing) throw new ConflictException('Já existe uma categoria de material com este nome neste nível');
+    if (existing)
+      throw new ConflictException(
+        'Já existe uma categoria de material com este nome neste nível',
+      );
   }
 
-  private audit(userId: string, acao: string, registroId: string, oldValue: unknown, newValue: unknown) {
+  private audit(
+    userId: string,
+    acao: string,
+    registroId: string,
+    oldValue: unknown,
+    newValue: unknown,
+  ) {
     return this.prisma.logAuditoria.create({
       data: {
         acao,

@@ -17,6 +17,7 @@ import { StockCategoriesService } from './services/stock-categories.service';
 import { CreateStockCategoryDto } from './dto/create-stock-category.dto';
 import { UpdateStockCategoryDto } from './dto/update-stock-category.dto';
 import { PaginationQueryDto } from './dto/pagination-query.dto';
+import { StockCategoryQueryDto } from './dto/stock-category-query.dto';
 
 @Controller('stock/categories')
 @UseGuards(AuthGuard('jwt'), PermissionsGuard)
@@ -39,10 +40,7 @@ export class StockCategoriesController {
   @RequirePermissions('ESTOQUE_VISUALIZAR')
   findAll(
     @Query()
-    query: PaginationQueryDto & {
-      ativo?: string;
-      parentId?: string;
-    },
+    query: StockCategoryQueryDto,
   ) {
     return this.service.findAll(query);
   }

@@ -9,6 +9,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStockCategoryDto } from '../dto/create-stock-category.dto';
 import { UpdateStockCategoryDto } from '../dto/update-stock-category.dto';
 import { PaginationQueryDto } from '../dto/pagination-query.dto';
+import { StockCategoryQueryDto } from '../dto/stock-category-query.dto';
 import {
   cleanString,
   normalizePagination,
@@ -41,10 +42,7 @@ export class StockCategoriesService {
   }
 
   async findAll(
-    query: PaginationQueryDto & {
-      ativo?: string;
-      parentId?: string;
-    },
+    query: StockCategoryQueryDto,
   ) {
     const { skip, take } = normalizePagination(query.skip, query.take);
     const where: Prisma.CategoriaMaterialWhereInput = {

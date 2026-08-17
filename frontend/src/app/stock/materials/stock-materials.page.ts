@@ -317,11 +317,20 @@ export class StockMaterialsPage implements OnInit {
 
     this.saving = true;
 
-    const payload: Partial<StockMaterial> = {
-      ...this.form,
+    const payload: any = {
       codigo: this.form.codigo.trim(),
       nome: this.form.nome.trim(),
+      tipoItem: this.form.tipoItem,
+      descricao: this.form.descricao,
       categoriaMaterialId: this.form.categoriaMaterialId,
+      unidade: this.form.unidade,
+      codigoBarras: this.form.codigoBarras,
+      referenciaFornecedor: this.form.referenciaFornecedor,
+      marca: this.form.marca,
+      fabricante: this.form.fabricante,
+      permiteFracionado: this.form.permiteFracionado,
+      ativo: this.form.ativo,
+      observacoes: this.form.observacoes,
       estoqueMinimo: String(this.form.estoqueMinimo || '0'),
       estoqueMaximo:
         this.form.estoqueMaximo === '' ||
@@ -338,7 +347,7 @@ export class StockMaterialsPage implements OnInit {
           : String(this.form.custoPadrao),
     };
 
-    if (!payload.id) {
+    if (!this.form.id) {
       if (this.form.estoqueInicial && Number(this.form.estoqueInicial) > 0) {
         if (!this.form.localEstoqueInicialId) {
           this.showToast('Você informou um estoque inicial. Por favor, selecione o Local de Estoque.', 'warning');
@@ -351,15 +360,11 @@ export class StockMaterialsPage implements OnInit {
           payload.custoUnitarioInicial = String(this.form.custoUnitarioInicial);
         }
         payload.localEstoqueInicialId = this.form.localEstoqueInicialId;
-      } else {
-        delete payload.estoqueInicial;
-        delete payload.custoUnitarioInicial;
-        delete payload.localEstoqueInicialId;
       }
     }
 
-    const request = payload.id
-      ? this.stock.updateMaterial(payload.id, payload as StockMaterial)
+    const request = this.form.id
+      ? this.stock.updateMaterial(this.form.id, payload as StockMaterial)
       : this.stock.createMaterial(payload as StockMaterial);
 
     request.subscribe({

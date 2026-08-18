@@ -52,8 +52,8 @@ export class StockRequestsPage implements OnInit {
 
   loadReferenceData(): void {
     this.obrasService.getAll().subscribe({ next: r => this.obras = r || [] });
-    this.stock.getLocations({ take: 500, ativo: true }).subscribe({ next: r => this.locations = r.items || [] });
-    this.stock.getMaterials({ take: 500, ativo: true }).subscribe({ next: r => this.materials = r.items || [] });
+    this.stock.getLocations({ take: 5000, ativo: true }).subscribe({ next: r => this.locations = r.items || [] });
+    this.stock.getMaterials({ take: 5000, ativo: true }).subscribe({ next: r => this.materials = r.items || [] });
   }
 
   load(): void {

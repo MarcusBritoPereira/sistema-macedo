@@ -112,7 +112,7 @@ export class StockLocationsPage implements OnInit {
   load(): void {
     this.loading = true;
 
-    this.stock.getLocations({ take: 500 }).subscribe({
+    this.stock.getLocations({ take: 5000 }).subscribe({
       next: (response) => {
         this.locations = response.items || [];
         this.applyFilters();

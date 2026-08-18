@@ -181,7 +181,7 @@ export class StockBalancesPage implements OnInit {
 
   loadAuxiliaryData(): void {
     this.stock
-      .getCategories({ take: 500, ativo: true })
+      .getCategories({ take: 5000, ativo: true })
       .subscribe({
         next: (response) => {
           this.categories = response.items || [];
@@ -189,7 +189,7 @@ export class StockBalancesPage implements OnInit {
       });
 
     this.stock
-      .getLocations({ take: 500, ativo: true })
+      .getLocations({ take: 5000, ativo: true })
       .subscribe({
         next: (response) => {
           this.locations = response.items || [];

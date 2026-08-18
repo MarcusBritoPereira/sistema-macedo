@@ -98,7 +98,7 @@ export class StockBudgetsPage implements OnInit {
     });
 
     this.stock.getMaterials({
-      take: 500,
+      take: 5000,
       ativo: true
     }).subscribe({
       next: r => {

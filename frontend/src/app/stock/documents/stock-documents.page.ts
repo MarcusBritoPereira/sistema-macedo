@@ -235,7 +235,7 @@ export class StockDocumentsPage implements OnInit {
 
   loadReferenceData(): void {
     this.stock
-      .getMaterials({ take: 500, ativo: true })
+      .getMaterials({ take: 5000, ativo: true })
       .subscribe({
         next: (response) => {
           this.materials =
@@ -244,7 +244,7 @@ export class StockDocumentsPage implements OnInit {
       });
 
     this.stock
-      .getLocations({ take: 500, ativo: true })
+      .getLocations({ take: 5000, ativo: true })
       .subscribe({
         next: (response) => {
           this.locations =
@@ -276,7 +276,7 @@ export class StockDocumentsPage implements OnInit {
 
     this.stock
       .getDocuments(this.kind, {
-        take: 500,
+        take: 5000,
       })
       .subscribe({
         next: (response) => {

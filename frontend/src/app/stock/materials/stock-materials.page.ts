@@ -134,7 +134,7 @@ export class StockMaterialsPage implements OnInit {
 
     this.stock
       .getCategories({
-        take: 500,
+        take: 5000,
         ativo: true,
       })
       .subscribe({
@@ -147,7 +147,7 @@ export class StockMaterialsPage implements OnInit {
       });
 
     this.stock
-      .getLocations({ take: 500 })
+      .getLocations({ take: 5000 })
       .subscribe({
         next: (response) => {
           this.locations = response.items || [];
@@ -159,7 +159,7 @@ export class StockMaterialsPage implements OnInit {
 
     this.stock
       .getMaterials({
-        take: 500,
+        take: 5000,
       })
       .subscribe({
         next: (response) => {

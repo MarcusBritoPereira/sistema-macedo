@@ -28,7 +28,7 @@ import { FinancialService, BankAccount } from '../../services/financial/financia
 import { BankStatement, SuggestedMatch } from '../../services/financial/reconciliation';
 import { format, parseISO, startOfMonth, endOfMonth, addMonths, subMonths } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Subject, Subscription } from 'rxjs';
+import { Subject, Subscription, interval } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { ReconciliationDetailComponent } from './components/reconciliation-detail/reconciliation-detail.component';
 import { CategoriesService } from '../../services/financial/categories.service';
@@ -106,6 +106,7 @@ export class ReconciliationPage implements OnInit, OnDestroy {
     totalPages = 1;
     private searchSubject = new Subject<string>();
     private searchSub?: Subscription;
+    private refreshSub?: Subscription;
 
     constructor(
         private route: ActivatedRoute,
@@ -150,10 +151,18 @@ export class ReconciliationPage implements OnInit, OnDestroy {
             const accId = params['accountId'];
             this.loadAccounts(accId);
         });
+
+        // Auto-refresh data every 60 seconds silently
+        this.refreshSub = interval(60000).subscribe(() => {
+            if (this.selectedAccountId && !this.loading) {
+                this.loadStatements(null, true);
+            }
+        });
     }
 
     ngOnDestroy(): void {
         this.searchSub?.unsubscribe();
+        this.refreshSub?.unsubscribe();
     }
 
     loadCategories() {
@@ -190,10 +199,13 @@ export class ReconciliationPage implements OnInit, OnDestroy {
         });
     }
 
-    loadStatements(event?: any) {
+    loadStatements(event?: any, silent = false) {
         if (!this.selectedAccountId) return;
-        this.loading = true;
-        this.loadError = null;
+        
+        if (!silent) {
+            this.loading = true;
+            this.loadError = null;
+        }
 
         this.selectedAccount = this.bankAccounts.find(a => a.id === this.selectedAccountId) || null;
 
@@ -224,15 +236,24 @@ export class ReconciliationPage implements OnInit, OnDestroy {
 
                 this.calculateSummary();
                 this.applySearch(); // Apply type filter
-                this.collapseAll(); // DO NOT expand all by default for large datasets (3,000+ rows) to avoid massive rendering freeze
-                this.loading = false;
+                
+                if (!silent) {
+                    this.collapseAll(); // DO NOT expand all by default for large datasets
+                    this.loading = false;
+                }
+                
                 if (event) event.target.complete();
-                setTimeout(() => this.restoreScroll(), 100);
+                
+                if (!silent) {
+                    setTimeout(() => this.restoreScroll(), 100);
+                }
             },
             error: (err) => {
                 console.error(err);
-                this.loading = false;
-                this.loadError = "Não foi possível carregar as conciliações. Tente novamente.";
+                if (!silent) {
+                    this.loading = false;
+                    this.loadError = "Não foi possível carregar as conciliações. Tente novamente.";
+                }
                 if (event) event.target.complete();
             }
         });

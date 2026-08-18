@@ -92,7 +92,7 @@ export class StockCategoriesPage implements OnInit {
 
     this.stock
       .getCategories({
-        take: 500,
+        take: 5000,
       })
       .subscribe({
         next: (response) => {
